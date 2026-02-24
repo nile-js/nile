@@ -208,7 +208,7 @@ describe("executeAction - Before/After Hooks", () => {
             handler: (data) => Ok(data),
             hooks: {
               before: [
-                { service: "hooks", action: "addTimestamp", canFail: true },
+                { service: "hooks", action: "addTimestamp", isCritical: true },
               ],
             },
             accessControl: ["public"],
@@ -249,7 +249,7 @@ describe("executeAction - Before/After Hooks", () => {
             handler: () => Ok({ data: "test" }),
             hooks: {
               after: [
-                { service: "hooks", action: "wrapResult", canFail: true },
+                { service: "hooks", action: "wrapResult", isCritical: true },
               ],
             },
             accessControl: ["public"],
@@ -273,7 +273,7 @@ describe("executeAction - Before/After Hooks", () => {
     }
   });
 
-  it("should fail execution when canFail hook fails", async () => {
+  it("should fail execution when isCritical hook fails", async () => {
     const services: Service[] = [
       {
         name: "hooks",
@@ -291,7 +291,7 @@ describe("executeAction - Before/After Hooks", () => {
             handler: () => Ok("success"),
             hooks: {
               before: [
-                { service: "hooks", action: "failingHook", canFail: true },
+                { service: "hooks", action: "failingHook", isCritical: true },
               ],
             },
             accessControl: ["public"],
@@ -314,7 +314,7 @@ describe("executeAction - Before/After Hooks", () => {
     }
   });
 
-  it("should continue execution when canFail=false hook fails", async () => {
+  it("should continue execution when isCritical=false hook fails", async () => {
     const services: Service[] = [
       {
         name: "hooks",
@@ -332,7 +332,7 @@ describe("executeAction - Before/After Hooks", () => {
             handler: () => Ok("success despite hook failure"),
             hooks: {
               before: [
-                { service: "hooks", action: "optionalHook", canFail: false },
+                { service: "hooks", action: "optionalHook", isCritical: false },
               ],
             },
             accessControl: ["public"],
@@ -355,7 +355,7 @@ describe("executeAction - Before/After Hooks", () => {
     }
   });
 
-  it("should skip hook when hook action not found and canFail=false", async () => {
+  it("should skip hook when hook action not found and isCritical=false", async () => {
     const services: Service[] = [
       {
         name: "hooks",
@@ -367,7 +367,7 @@ describe("executeAction - Before/After Hooks", () => {
             handler: () => Ok("executed"),
             hooks: {
               before: [
-                { service: "nonexistent", action: "hook", canFail: false },
+                { service: "nonexistent", action: "hook", isCritical: false },
               ],
             },
             accessControl: ["public"],
@@ -387,7 +387,7 @@ describe("executeAction - Before/After Hooks", () => {
     expect(result.isOk).toBe(true);
   });
 
-  it("should fail when hook action not found and canFail=true", async () => {
+  it("should fail when hook action not found and isCritical=true", async () => {
     const services: Service[] = [
       {
         name: "hooks",
@@ -399,7 +399,7 @@ describe("executeAction - Before/After Hooks", () => {
             handler: () => Ok("executed"),
             hooks: {
               before: [
-                { service: "nonexistent", action: "hook", canFail: true },
+                { service: "nonexistent", action: "hook", isCritical: true },
               ],
             },
             accessControl: ["public"],
@@ -610,7 +610,7 @@ describe("executeAction - Crash Safety (safeTry)", () => {
     }
   });
 
-  it("should catch throwing before hook and respect canFail", async () => {
+  it("should catch throwing before hook and respect isCritical", async () => {
     const services: Service[] = [
       {
         name: "unsafe",
@@ -630,7 +630,7 @@ describe("executeAction - Crash Safety (safeTry)", () => {
             handler: () => Ok("should not reach"),
             hooks: {
               before: [
-                { service: "unsafe", action: "throwingHook", canFail: true },
+                { service: "unsafe", action: "throwingHook", isCritical: true },
               ],
             },
             accessControl: ["public"],
@@ -719,7 +719,7 @@ describe("executeAction - Crash Safety (safeTry)", () => {
     }
   });
 
-  it("should continue when non-critical hook throws (canFail=false)", async () => {
+  it("should continue when non-critical hook throws (isCritical=false)", async () => {
     const services: Service[] = [
       {
         name: "unsafe",
@@ -739,7 +739,11 @@ describe("executeAction - Crash Safety (safeTry)", () => {
             handler: () => Ok("still works"),
             hooks: {
               before: [
-                { service: "unsafe", action: "throwingHook", canFail: false },
+                {
+                  service: "unsafe",
+                  action: "throwingHook",
+                  isCritical: false,
+                },
               ],
             },
             accessControl: ["public"],
@@ -783,7 +787,7 @@ describe("executeAction - Pipeline Response Mode", () => {
             handler: () => Ok({ result: "data" }),
             hooks: {
               before: [
-                { service: "pipeline", action: "logHook", canFail: false },
+                { service: "pipeline", action: "logHook", isCritical: false },
               ],
             },
             result: { pipeline: true },

@@ -1,23 +1,36 @@
-import type { BaseContext, NileContext, Sessions } from "./types";
+import type { BaseContext, NileContext, Resources, Sessions } from "./types";
 
-/** In-memory store for authentication sessions per interface type (rest, ws, rpc) */
-const sessions: Sessions = {};
+interface CreateNileContextParams {
+  interfaceContext?: BaseContext;
+  resources?: Resources;
+}
 
 /**
  * Creates a new Nile context with an internal key-value store.
  * The context carries interface-specific data (REST, WebSocket, RPC),
  * hook execution context, and provides get/set methods for storing arbitrary values.
  *
- * @param interfaceContext - Optional base context containing interface adapters
+ * Sessions are instance-scoped — each NileContext owns its own session store,
+ * so multiple server instances don't share authentication state.
+ *
+ * @param params - Optional configuration including interface adapters and shared resources
  * @returns A fully initialized NileContext
  */
-export function createNileContext(interfaceContext?: BaseContext): NileContext {
+export function createNileContext(
+  params?: CreateNileContextParams
+): NileContext {
   const store = new Map<string, unknown>();
+  const interfaceContext = params?.interfaceContext;
+
+  /** Instance-scoped session store — not shared across server instances */
+  const sessions: Sessions = {};
 
   const context: NileContext = {
     rest: interfaceContext?.rest,
     ws: interfaceContext?.ws,
     rpc: interfaceContext?.rpc,
+    resources: params?.resources,
+    sessions,
     _store: store,
 
     get<T = unknown>(key: string): T | undefined {
@@ -28,6 +41,14 @@ export function createNileContext(interfaceContext?: BaseContext): NileContext {
       store.set(key, value);
     },
 
+    getSession(name: keyof Sessions) {
+      return sessions[name];
+    },
+
+    setSession(name: keyof Sessions, data: Record<string, unknown>) {
+      sessions[name] = data;
+    },
+
     hookContext: {
       actionName: "",
       input: null,
@@ -36,7 +57,7 @@ export function createNileContext(interfaceContext?: BaseContext): NileContext {
     },
 
     updateHookState(key: string, value: unknown) {
-      this.hookContext.state[key] = value;
+      context.hookContext.state[key] = value;
     },
 
     addHookLog(
@@ -48,19 +69,19 @@ export function createNileContext(interfaceContext?: BaseContext): NileContext {
         passed: boolean;
       }
     ) {
-      this.hookContext.log[phase].push(logEntry);
+      context.hookContext.log[phase].push(logEntry);
     },
 
     setHookError(error: string) {
-      this.hookContext.error = error;
+      context.hookContext.error = error;
     },
 
     setHookOutput(output: unknown) {
-      this.hookContext.output = output;
+      context.hookContext.output = output;
     },
 
     resetHookContext(actionName: string, input: unknown) {
-      this.hookContext = {
+      context.hookContext = {
         actionName,
         input,
         state: {},
@@ -71,21 +92,3 @@ export function createNileContext(interfaceContext?: BaseContext): NileContext {
 
   return context;
 }
-
-/**
- * Retrieves all active authentication sessions.
- * @returns The sessions object containing all registered auth sessions
- */
-export const getSessions = () => sessions;
-
-/**
- * Registers or updates an authentication session for a specific interface.
- * @param sessionName - The interface type: 'rest', 'ws', or 'rpc'
- * @param sessionData - The session data to store
- */
-export const setSession = (
-  sessionName: keyof Sessions,
-  sessionData: unknown
-): void => {
-  sessions[sessionName] = sessionData as Record<string, unknown>;
-};

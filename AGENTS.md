@@ -62,7 +62,7 @@ export function safeTry<T>(fn: () => T | Promise<T>) {
 
 - I am always the one to start servers, not you, you ask me!
 - Am also one to approve any db related commands
-- Use pnpm not npm
+- Use project package manager not npm
 - Always first copy files to /backup if your to make changes more than 10 lines
 - And for files where a backup is needed, also create an accompanying intent.md which documents the purpose and scope of the changes that you intent to make and also include my orignal intent as well.
 - Always approach things systematically, step by step, use a todo if you should also always understand things from flow, not just the individual parts, trace an implementation before you make any assumptions.

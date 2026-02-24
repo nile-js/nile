@@ -1,19 +1,23 @@
+import type { Store } from "hono-rate-limiter";
 import type { CorsConfig } from "@/cors/types";
 
-export type RestConfig = {
+export interface RateLimitConfig {
+  windowMs?: number;
+  limit?: number;
+  standardHeaders?: boolean;
+  limitingHeader: string;
+  store?: Store;
+  diagnostics?: boolean;
+}
+
+export interface RestConfig {
   baseUrl: string;
   host?: string;
   port?: string;
+  diagnostics?: boolean;
   enableStatic?: boolean;
   enableStatus?: boolean;
-  rateLimiting?: {
-    windowMs?: number;
-    limit?: number;
-    standardHeaders?: boolean;
-    limitingHeader: string;
-    store?: any;
-    diagnostics?: boolean;
-  };
+  rateLimiting?: RateLimitConfig;
   allowedOrigins: string[];
   cors?: CorsConfig;
   uploads?: {
@@ -31,4 +35,4 @@ export type RestConfig = {
     };
     diagnostics?: boolean;
   };
-};
+}

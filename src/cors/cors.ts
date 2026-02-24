@@ -1,47 +1,43 @@
-import type { Context, Hono } from 'hono';
-import { cors } from 'hono/cors';
-import type { CorsConfig, CorsOptions } from './types';
-import type { AppContext, ServerConfig } from './rest-server';
+import type { Context, Hono } from "hono";
+import { cors } from "hono/cors";
+import type { RestConfig } from "@/rest/types";
+import type { CorsConfig, CorsOptions } from "./types";
 
 /**
- * Build default CORS options from server config
+ * Build default CORS options from REST config
  */
-export const buildDefaultCorsOptions = (config: ServerConfig): CorsOptions => {
+export const buildDefaultCorsOptions = (config: RestConfig): CorsOptions => {
   const getDefaultOrigin = (reqOrigin: string) => {
     if (config.allowedOrigins.length > 0) {
-      return config.allowedOrigins.includes(reqOrigin ?? '') ? reqOrigin : '';
+      return config.allowedOrigins.includes(reqOrigin ?? "") ? reqOrigin : "";
     }
-    return '*';
+    return "*";
   };
 
   return {
     origin: config.cors?.defaults?.origin ?? getDefaultOrigin,
     credentials: config.cors?.defaults?.credentials ?? true,
     allowHeaders: config.cors?.defaults?.allowHeaders ?? [
-      'Content-Type',
-      'Authorization',
+      "Content-Type",
+      "Authorization",
     ],
     allowMethods: config.cors?.defaults?.allowMethods ?? [
-      'POST',
-      'GET',
-      'OPTIONS',
+      "POST",
+      "GET",
+      "OPTIONS",
     ],
-    exposeHeaders: config.cors?.defaults?.exposeHeaders ?? ['Content-Length'],
+    exposeHeaders: config.cors?.defaults?.exposeHeaders ?? ["Content-Length"],
     maxAge: config.cors?.defaults?.maxAge ?? 600,
   };
 };
 
 /**
- * Apply CORS configuration to Hono app
+ * Apply CORS configuration to a Hono app based on RestConfig
  */
-export const applyCorsConfig = (
-  app: Hono<AppContext>,
-  config: ServerConfig
-): void => {
-  const corsEnabled = config.cors?.enabled ?? 'default';
+export const applyCorsConfig = (app: Hono, config: RestConfig): void => {
+  const corsEnabled = config.cors?.enabled ?? "default";
 
   if (corsEnabled === false) {
-    // CORS disabled - skip middleware
     return;
   }
 
@@ -54,15 +50,15 @@ export const applyCorsConfig = (
   }
 
   // Apply global CORS as fallback
-  app.use('*', cors(defaultCorsOpts as any));
+  app.use("*", cors(defaultCorsOpts as Parameters<typeof cors>[0]));
 };
 
 /**
  * Apply a single route-specific CORS rule
  */
 const applyRouteCorsRule = (
-  app: Hono<AppContext>,
-  rule: NonNullable<CorsConfig['addCors']>[number],
+  app: Hono,
+  rule: NonNullable<CorsConfig["addCors"]>[number],
   defaultOpts: CorsOptions
 ): void => {
   if (rule.resolver) {
@@ -76,9 +72,9 @@ const applyRouteCorsRule = (
  * Apply resolver-based CORS for a specific path
  */
 const applyResolverBasedCors = (
-  app: Hono<AppContext>,
+  app: Hono,
   path: string,
-  resolver: NonNullable<CorsConfig['addCors']>[number]['resolver'],
+  resolver: NonNullable<CorsConfig["addCors"]>[number]["resolver"],
   defaultOpts: CorsOptions
 ): void => {
   if (!resolver) {
@@ -86,9 +82,9 @@ const applyResolverBasedCors = (
   }
 
   app.use(path, (c, next) => {
-    const reqOrigin = c.req.header('origin') ?? '';
+    const reqOrigin = c.req.header("origin") ?? "";
     const corsOpts = evaluateResolver(resolver, reqOrigin, c, defaultOpts);
-    return cors(corsOpts as any)(c, next);
+    return cors(corsOpts as Parameters<typeof cors>[0])(c, next);
   });
 };
 
@@ -96,19 +92,22 @@ const applyResolverBasedCors = (
  * Apply static CORS options for a specific path
  */
 const applyStaticCors = (
-  app: Hono<AppContext>,
+  app: Hono,
   path: string,
   options: CorsOptions,
   defaultOpts: CorsOptions
 ): void => {
-  app.use(path, cors({ ...defaultOpts, ...options } as any));
+  app.use(
+    path,
+    cors({ ...defaultOpts, ...options } as Parameters<typeof cors>[0])
+  );
 };
 
 /**
  * Evaluate CORS resolver and return appropriate options
  */
 const evaluateResolver = (
-  resolver: NonNullable<CorsConfig['addCors']>[number]['resolver'],
+  resolver: NonNullable<CorsConfig["addCors"]>[number]["resolver"],
   origin: string,
   c: Context,
   defaultOpts: CorsOptions
@@ -121,20 +120,21 @@ const evaluateResolver = (
     const result = resolver(origin, c);
 
     if (result === true) {
-      return { ...defaultOpts, origin: origin || '*' };
+      return { ...defaultOpts, origin: origin || "*" };
     }
 
     if (result === false) {
-      return { ...defaultOpts, origin: '' };
+      return { ...defaultOpts, origin: "" };
     }
 
-    if (result && typeof result === 'object') {
+    if (result && typeof result === "object") {
       return { ...defaultOpts, ...result };
     }
 
     return defaultOpts;
   } catch (error) {
-    console.error('CORS resolver error:', error);
-    return defaultOpts;
+    // Security: deny on resolver failure — never fall through to allow
+    console.error("CORS resolver error:", error);
+    return { ...defaultOpts, origin: "" };
   }
 };

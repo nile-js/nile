@@ -1,26 +1,26 @@
-import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { nanoid } from 'nanoid';
-import pino, { type Logger } from 'pino';
+import { appendFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { nanoid } from "nanoid";
+import pino, { type Logger } from "pino";
 
-export type Log = {
+export interface Log {
   atFunction: string;
   appName: string;
   message: string;
-  data?: any;
-  type?: 'info' | 'warn' | 'error';
+  data?: unknown;
+  type?: "info" | "warn" | "error";
   log_id?: string;
-};
+}
 
 // Lazy evaluation of MODE - only check when logging is actually used
 const getMode = () => {
   if (!process.env.MODE) {
-    throw new Error('Missing MODE environment variable');
+    throw new Error("Missing MODE environment variable");
   }
   return process.env.MODE;
 };
 
-const logDir = join(process.cwd(), 'logs');
+const logDir = join(process.cwd(), "logs");
 
 if (!existsSync(logDir)) {
   mkdirSync(logDir);
@@ -33,8 +33,8 @@ const createLoggerForApp = (appName: string): Logger => {
   const transport = pino.transport({
     targets: [
       {
-        level: 'info',
-        target: 'pino/file',
+        level: "info",
+        target: "pino/file",
         options: {
           destination: logFile,
           mkdir: true,
@@ -58,12 +58,12 @@ const createLoggerForApp = (appName: string): Logger => {
 };
 
 // Default logger for backwards compatibility
-const defaultLogFile = join(logDir, 'app.log');
+const defaultLogFile = join(logDir, "app.log");
 const defaultTransport = pino.transport({
   targets: [
     {
-      level: 'info',
-      target: 'pino/file',
+      level: "info",
+      target: "pino/file",
       options: {
         destination: defaultLogFile,
         mkdir: true,
@@ -96,7 +96,7 @@ export const createLog = (log: Log) => {
     throw new Error(`Missing appName in log: ${JSON.stringify(log)}`);
   }
 
-  const type = log.type || 'info';
+  const type = log.type || "info";
   const log_id = log.log_id || nanoid(6);
 
   const logRecord = {
@@ -111,35 +111,35 @@ export const createLog = (log: Log) => {
 
   const mode = getMode();
 
-  if (mode === 'prod' || process.env.NODE_ENV === 'test') {
-    if (process.env.NODE_ENV === 'test') {
+  if (mode === "prod" || process.env.NODE_ENV === "test") {
+    if (process.env.NODE_ENV === "test") {
       // For tests, write synchronously to ensure file exists immediately
       const logFile = join(logDir, `${log.appName}.log`);
-      appendFileSync(logFile, `${JSON.stringify(logRecord)}\n`, 'utf-8');
+      appendFileSync(logFile, `${JSON.stringify(logRecord)}\n`, "utf-8");
     } else {
       // For production, use pino logger
       const appLogger = createLoggerForApp(log.appName);
-      appLogger[type as 'info' | 'warn' | 'error'](logRecord);
+      appLogger[type as "info" | "warn" | "error"](logRecord);
     }
     return log_id;
   }
-  if (mode === 'agentic') {
+  if (mode === "agentic") {
     return JSON.stringify(logRecord);
   }
   console.log({
     ...logRecord,
     data: JSON.stringify(logRecord.data, null, 2),
   });
-  return 'dev-mode, see your dev console!';
+  return "dev-mode, see your dev console!";
 };
 
-type LogFilter = {
+interface LogFilter {
   appName?: string;
   log_id?: string;
-  type?: 'info' | 'warn' | 'error';
+  type?: "info" | "warn" | "error";
   from?: Date;
   to?: Date;
-};
+}
 
 /**
  * Retrieves logs based on the provided filters
@@ -149,14 +149,14 @@ type LogFilter = {
 export const getLogs = (filters: LogFilter = {}): Log[] => {
   const logFile = filters.appName
     ? join(logDir, `${filters.appName}.log`)
-    : join(logDir, 'app.log');
+    : join(logDir, "app.log");
 
   if (!existsSync(logFile)) {
     return [];
   }
 
-  const content = readFileSync(logFile, 'utf-8');
-  const lines = content.trim().split('\n');
+  const content = readFileSync(logFile, "utf-8");
+  const lines = content.trim().split("\n");
 
   const logs = lines
     .map((line) => {

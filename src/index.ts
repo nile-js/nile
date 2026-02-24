@@ -1,0 +1,46 @@
+// Server factory — the main entry point for developers
+
+// CORS types — origin control, per-route rules, and resolver functions
+export type {
+  CorsConfig,
+  CorsOptions,
+  CorsResolver,
+  CorsRouteRule,
+} from "./cors/types";
+
+// Engine types — defining services, actions, hooks, and the engine interface
+export type {
+  Action,
+  ActionHandler,
+  ActionResultConfig,
+  ActionSummary,
+  Actions,
+  Engine,
+  EngineOptions,
+  HookContext,
+  HookDefinition,
+  HookLogEntry,
+  Service,
+  ServiceSummary,
+  Services,
+} from "./engine/types";
+// biome-ignore lint/performance/noBarrelFile: Public API entry point — this is the sole value re-export
+export { createNileServer } from "./nile/server";
+// Nile types — server config, context, request/response, and lifecycle hooks
+export type {
+  AfterActionHandler,
+  BaseContext,
+  BeforeActionHandler,
+  ExternalRequest,
+  ExternalResponse,
+  NileContext,
+  NileServer,
+  Resources,
+  RPCContext,
+  ServerConfig,
+  ServerRuntime,
+  Sessions,
+  WebSocketContext,
+} from "./nile/types";
+// REST types — REST interface and rate limiting configuration
+export type { RateLimitConfig, RestConfig } from "./rest/types";

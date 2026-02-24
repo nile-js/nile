@@ -49,7 +49,7 @@ export async function processHooks(
     if (hookActionResult.isErr) {
       const errorMsg = `${logTarget} hook '${hookDef.service}.${hookDef.action}' not found`;
       log(errorMsg);
-      if (hookDef.canFail) {
+      if (hookDef.isCritical) {
         nileContext.setHookError(errorMsg);
         return Err(errorMsg);
       }
@@ -70,7 +70,7 @@ export async function processHooks(
         `${logTarget} hook '${hookDef.service}.${hookDef.action}' failed`,
         result.error
       );
-      if (hookDef.canFail) {
+      if (hookDef.isCritical) {
         nileContext.setHookError(errorMsg);
         return Err(errorMsg);
       }

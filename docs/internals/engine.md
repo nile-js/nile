@@ -108,9 +108,9 @@ When `executeAction` is called, the following steps run in sequence:
 
 ### 4.1 Hook Failure Behavior
 
-- Each `HookDefinition` has a `canFail: boolean` flag
-- `canFail: true` — if the hook returns `Err` or throws, the pipeline halts immediately
-- `canFail: false` — failure is logged but execution continues with the previous value
+- Each `HookDefinition` has an `isCritical: boolean` flag
+- `isCritical: true` — if the hook returns `Err` or throws, the pipeline halts immediately
+- `isCritical: false` — failure is logged but execution continues with the previous value
 
 ### 4.2 Pipeline Response Mode
 
@@ -154,3 +154,82 @@ If a handler throws instead of returning a `Result`, `safeTry` catches the excep
 
 *   **Missing Service/Action:** Calling `getServiceActions`, `getAction`, or `executeAction` with an unregistered name will immediately return an `Err(string)` result. The transport layer must handle this by returning a `404 Not Found` or equivalent error to the client.
 *   **Duplicate Actions:** If the `services` array contains duplicate action names within the same service, the last one in the array will silently overwrite the previous one during map construction.
+
+## 7. Key Types
+
+All types below are exported from `src/index.ts` and defined in `src/engine/types.ts`.
+
+### 7.1 `EngineOptions`
+
+Configuration passed to `createEngine`:
+
+```typescript
+{
+  diagnostics?: boolean;
+  services: Services;
+  onBeforeActionHandler?: BeforeActionHandler<unknown, unknown>;
+  onAfterActionHandler?: AfterActionHandler<unknown, unknown>;
+}
+```
+
+`createEngine` is consumed internally by `createNileServer` — developers configure these values via `ServerConfig`.
+
+### 7.2 `HookContext`
+
+Tracks the full lifecycle state of a single action execution. Attached to `NileContext.hookContext` and reset at the start of each `executeAction` call.
+
+```typescript
+{
+  actionName: string;
+  input: unknown;
+  output?: unknown;
+  error?: string;
+  state: Record<string, unknown>;
+  log: {
+    before: HookLogEntry[];
+    after: HookLogEntry[];
+  };
+}
+```
+
+- `state` — mutable key-value store for hooks to share data within a single execution
+- `log` — accumulated `HookLogEntry` records from before/after hook phases
+
+### 7.3 `HookLogEntry`
+
+A single hook execution record:
+
+```typescript
+{
+  name: string;    // "serviceName.actionName"
+  input: unknown;
+  output: unknown;
+  passed: boolean;
+}
+```
+
+### 7.4 `HookDefinition`
+
+Declares a hook as a reference to another action in the system:
+
+```typescript
+{
+  service: string;
+  action: string;
+  isCritical: boolean;
+}
+```
+
+See section 4.1 for `isCritical` behavior.
+
+### 7.5 `ActionResultConfig`
+
+Controls the shape of `executeAction` return values:
+
+```typescript
+{
+  pipeline: boolean;
+}
+```
+
+When `pipeline: true`, the result includes the full hook execution log alongside the data. See section 4.2.

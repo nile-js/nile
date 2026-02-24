@@ -1,12 +1,44 @@
 {
-  "name": "nile",
-  "module": "index.ts",
+  "name": "@nilejs/nile",
+  "version": "0.0.1",
   "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "repository": "git@github.com:nile-js/nile.git",
+  "author": "Hussein Kizz",
+  "license": "MIT",
+  "keywords": [
+    "framework",
+    "backend",
+    "api",
+    "server",
+    "typescript",
+    "service",
+    "actions",
+    "post only",
+    "functional programming",
+    "rpc",
+    "bun",
+    "ai-backend"
+  ],
   "devDependencies": {
     "@biomejs/biome": "2.3.13",
     "@types/bun": "latest",
     "husky": "^9.1.7",
+    "tsup": "^8.5.1",
     "ultracite": "7.1.5",
+    "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.0.18"
   },
   "peerDependencies": {
@@ -17,10 +49,13 @@
     "fix": "ultracite fix",
     "prepare": "husky",
     "test": "bunx vitest",
-    "test:run": "bunx vitest run"
+    "test:run": "bunx vitest run",
+    "build": "tsup",
+    "export": "bun run fix && bun run test:run && bun run build"
   },
   "dependencies": {
     "hono": "^4.11.9",
+    "hono-rate-limiter": "^0.5.3",
     "nanoid": "^5.1.6",
     "pino": "^10.3.1",
     "slang-ts": "^0.0.7",

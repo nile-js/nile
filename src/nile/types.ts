@@ -1,47 +1,51 @@
-import type { Context as HonoContext } from "hono";
+import type { Hono, Context as HonoContext } from "hono";
 import type { Result } from "slang-ts";
-import type { Action, HookContext, Services } from "@/engine/types.js";
+import type { Action, Engine, HookContext, Services } from "@/engine/types";
 import type { RestConfig } from "@/rest/types";
 
-export type WebSocketContext = {
+export interface WebSocketContext {
   connection: unknown;
   headers?: Record<string, string>;
   cookies?: Record<string, string>;
   [key: string]: unknown;
-};
+}
 
-export type RPCContext = {
+export interface RPCContext {
   [key: string]: unknown;
-};
+}
 
-export type BaseContext = {
+export interface BaseContext {
   rest?: HonoContext;
   ws?: WebSocketContext;
   rpc?: RPCContext;
-};
+}
 
-export type Sessions = {
+export interface Sessions {
   rest?: Record<string, unknown>;
   ws?: Record<string, unknown>;
   rpc?: Record<string, unknown>;
-};
+}
 
-export type Resources = {
+export interface Resources {
   logger?: unknown;
   database?: unknown;
   cache?: unknown;
   [key: string]: unknown;
-};
+}
 
-export type NileContext = {
+export interface NileContext {
   readonly rest?: HonoContext;
   readonly ws?: WebSocketContext;
   readonly rpc?: RPCContext;
-  readonly sessions?: Readonly<Sessions>;
+  sessions: Sessions;
   readonly _store: Readonly<Map<string, unknown>>;
   readonly get: <T = unknown>(key: string) => T | undefined;
   readonly set: <T = unknown>(key: string, value: T) => void;
   readonly resources?: Resources;
+  /** Retrieve session data for a specific interface */
+  getSession: (name: keyof Sessions) => Record<string, unknown> | undefined;
+  /** Store session data for a specific interface */
+  setSession: (name: keyof Sessions, data: Record<string, unknown>) => void;
   hookContext: HookContext;
   updateHookState: (key: string, value: unknown) => void;
   addHookLog: (
@@ -51,7 +55,7 @@ export type NileContext = {
   setHookError: (error: string) => void;
   setHookOutput: (output: unknown) => void;
   resetHookContext: (actionName: string, input: unknown) => void;
-};
+}
 
 export type BeforeActionHandler<T, E> = (params: {
   nileContext: NileContext;
@@ -66,31 +70,45 @@ export type AfterActionHandler<T, E> = (params: {
   result: Result<T, E>;
 }) => Result<T, E>;
 
-export type ServerConfig = {
+export type ServerRuntime = "bun" | "node";
+
+export interface ServerConfig {
   serverName: string;
-  services?: Services;
+  runtime?: ServerRuntime;
+  services: Services;
   diagnostics?: boolean;
+  resources?: Resources;
   rest?: RestConfig;
-  websocket?: "WSConfig";
-  rpc?: "RPCConfig";
+  // websocket and rpc interfaces — types TBD when implemented
+  websocket?: Record<string, unknown>;
+  rpc?: Record<string, unknown>;
   onBeforeActionHandler?: BeforeActionHandler<unknown, unknown>;
   onAfterActionHandler?: AfterActionHandler<unknown, unknown>;
   onBoot?: {
     fn: (context: NileContext) => Promise<void> | void;
     logServices?: boolean;
   };
-};
+}
 
-export type ExternalResponse = {
+export interface ExternalResponse {
   status: boolean;
   message: string;
   data: {
     error_id?: string;
     [key: string]: unknown;
   };
-};
+}
 
-export type ExternalRequest = {
+export interface ExternalRequest {
+  intent: "explore" | "execute" | "schema";
+  service: string;
   action: string;
   payload: Record<string, unknown>;
-};
+}
+
+export interface NileServer {
+  config: ServerConfig;
+  engine: Engine;
+  context: NileContext;
+  rest?: { app: Hono; config: RestConfig };
+}

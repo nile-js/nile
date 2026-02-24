@@ -1,8 +1,9 @@
-bun test
-
 #!/bin/sh
 # Exit on any error
 set -e
+
+# Run tests (non-watch mode)
+bun run test:run
 
 # Check if there are any staged files
 if [ -z "$(git diff --cached --name-only)" ]; then

@@ -1,29 +1,35 @@
 import type { Result } from "slang-ts";
 import type z from "zod";
+/**
+ * Circular `import type` with @/nile/types is intentional and safe —
+ * type imports are erased at compile time and produce no runtime dependency.
+ * Engine needs NileContext for ActionHandler; Nile needs Action/Engine/HookContext for its types.
+ */
 import type {
   AfterActionHandler,
   BeforeActionHandler,
   NileContext,
 } from "@/nile/types";
 
-export type HookDefinition = {
+export interface HookDefinition {
   service: string;
   action: string;
-  canFail: boolean;
-};
+  /** When true, hook failure stops the pipeline. Non-critical hooks log errors but continue. */
+  isCritical: boolean;
+}
 
-export type ActionResultConfig = {
+export interface ActionResultConfig {
   pipeline: boolean;
-};
+}
 
-export type HookLogEntry = {
+export interface HookLogEntry {
   name: string;
   input: unknown;
   output: unknown;
   passed: boolean;
-};
+}
 
-export type HookContext = {
+export interface HookContext {
   actionName: string;
   input: unknown;
   output?: unknown;
@@ -33,14 +39,14 @@ export type HookContext = {
     before: HookLogEntry[];
     after: HookLogEntry[];
   };
-};
+}
 
-export type ActionHandler<T = unknown, E = unknown> = (
+export type ActionHandler<T = unknown, E = string> = (
   data: Record<string, unknown>,
   context?: NileContext
-) => Result<T, E>;
+) => Result<T, E> | Promise<Result<T, E>>;
 
-export type Action = {
+export interface Action {
   name: string;
   description: string;
   isProtected?: boolean;
@@ -53,45 +59,61 @@ export type Action = {
     uploadMode?: "flat" | "structured";
   };
   handler: ActionHandler;
-  validation?: z.ZodObject<any> | null;
+  validation?: z.ZodTypeAny | null;
   hooks?: {
     before?: HookDefinition[];
     after?: HookDefinition[];
   };
   result?: ActionResultConfig;
-  accessControl: string[];
+  accessControl?: string[];
   meta?: Record<string, unknown>; // Generic metadata for any purpose, caching, rate limiting, etc.)
-};
+}
 
 export type Actions = Action[];
 
-export type Service = {
+export interface Service {
   name: string;
   description: string;
   actions: Action[];
   meta?: Record<string, unknown>;
-};
+}
 
 export type Services = Service[];
 
-export type ServiceSummary = {
+export interface ServiceSummary {
   name: string;
   description: string;
   meta?: Record<string, unknown>;
   actions: string[];
-};
+}
 
-export type ActionSummary = {
+export interface ActionSummary {
   name: string;
   description: string;
   isProtected: boolean;
   validation: boolean;
   accessControl: string[];
-};
+}
 
-export type EngineOptions = {
+export interface EngineOptions {
   diagnostics?: boolean;
   services: Services;
   onBeforeActionHandler?: BeforeActionHandler<unknown, unknown>;
   onAfterActionHandler?: AfterActionHandler<unknown, unknown>;
-};
+}
+
+/** Formalized return type of createEngine */
+export interface Engine {
+  getServices: () => Result<ServiceSummary[], string>;
+  getServiceActions: (serviceName: string) => Result<ActionSummary[], string>;
+  getAction: (
+    serviceName: string,
+    actionName: string
+  ) => Result<Action, string>;
+  executeAction: (
+    serviceName: string,
+    actionName: string,
+    payload: unknown,
+    nileContext: NileContext
+  ) => Promise<Result<unknown, string>>;
+}
