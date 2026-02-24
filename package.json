@@ -1,0 +1,29 @@
+{
+  "name": "nile",
+  "module": "index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@biomejs/biome": "2.3.13",
+    "@types/bun": "latest",
+    "husky": "^9.1.7",
+    "ultracite": "7.1.5",
+    "vitest": "^4.0.18"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "scripts": {
+    "check": "ultracite check",
+    "fix": "ultracite fix",
+    "prepare": "husky",
+    "test": "bunx vitest",
+    "test:run": "bunx vitest run"
+  },
+  "dependencies": {
+    "hono": "^4.11.9",
+    "nanoid": "^5.1.6",
+    "pino": "^10.3.1",
+    "slang-ts": "^0.0.7",
+    "zod": "^4.3.6"
+  }
+}
