@@ -12,7 +12,7 @@ The Nile Server module provides the top-level factory for bootstrapping a Nile a
 - **Bootstrapping:** Create and connect the Action Engine, `NileContext`, and REST interface from a single `ServerConfig`
 - **Context ownership:** Create a single `NileContext` instance shared across all interfaces
 - **Lifecycle:** Execute `onBoot` hooks after initialization with crash safety
-- **Diagnostics:** Route diagnostic output through `resources.logger` when available, falling back to `console.log`
+- **Diagnostics:** Route diagnostic output through `createDiagnosticsLog` from `src/utils.ts`, which checks `resources.logger` first and falls back to `console.log`. See `docs/internals/logging.md` section 7.
 
 ### 1.2 Non-Goals
 
@@ -204,4 +204,4 @@ type Resources = {
 
 - **Empty services** — `createNileServer` throws immediately with a descriptive error
 - **`onBoot` crash** — Caught by `safeTry`, logged to `console.error`, does not prevent server from starting
-- **Missing resources** — `resources` is optional. Diagnostics fall back to `console.log` when `resources.logger` is absent
+- **Missing resources** — `resources` is optional. Diagnostics fall back to `console.log` when `resources.logger` is absent (handled by `createDiagnosticsLog`)

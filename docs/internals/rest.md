@@ -13,6 +13,7 @@ The REST interface exposes the Action Engine over HTTP via Hono. It implements a
 - **Intent routing** — Dispatches `explore`, `execute`, and `schema` intents to dedicated handlers
 - **Response mapping** — Converts internal `Result<T, E>` types to the `ExternalResponse` shape at the HTTP boundary
 - **Middleware application** — CORS, rate limiting, and static file serving
+- **Diagnostics** — Emit request routing information via `createDiagnosticsLog` from `src/utils.ts` when `diagnostics` is enabled. See `docs/internals/logging.md` section 7.
 
 ### 1.2 Non-Goals
 

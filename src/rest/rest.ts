@@ -8,6 +8,7 @@ import type {
   NileContext,
   ServerRuntime,
 } from "@/nile/types";
+import { createDiagnosticsLog } from "@/utils";
 import { intentHandlers } from "./intent-handlers";
 import { applyRateLimiting, applyStaticServing } from "./middleware";
 import type { RestConfig } from "./types";
@@ -42,21 +43,12 @@ export function createRestApp(params: CreateRestAppParams): Hono {
   const { config, engine, nileContext, serverName, runtime } = params;
   const app = new Hono();
 
-  const log = (message: string, data?: unknown) => {
-    if (!config.diagnostics) {
-      return;
-    }
-
-    const logger = nileContext.resources?.logger as
+  const log = createDiagnosticsLog("REST", {
+    diagnostics: config.diagnostics,
+    logger: nileContext.resources?.logger as
       | { info: (msg: string, data?: unknown) => void }
-      | undefined;
-
-    if (logger?.info) {
-      logger.info(`[REST] ${message}`, data);
-    } else {
-      console.log(`[REST] ${message}`, data ?? "");
-    }
-  };
+      | undefined,
+  });
 
   // Apply CORS
   applyCorsConfig(app, config);

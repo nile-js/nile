@@ -2,6 +2,7 @@ import { safeTry } from "slang-ts";
 import { createEngine } from "@/engine/engine";
 import type { Engine } from "@/engine/types";
 import { createRestApp } from "@/rest/rest";
+import { createDiagnosticsLog } from "@/utils";
 import { createNileContext } from "./nile";
 import type { NileServer, ServerConfig } from "./types";
 
@@ -18,21 +19,12 @@ export function createNileServer(config: ServerConfig): NileServer {
     );
   }
 
-  const log = (message: string, data?: unknown) => {
-    if (!config.diagnostics) {
-      return;
-    }
-
-    const logger = config.resources?.logger as
+  const log = createDiagnosticsLog("NileServer", {
+    diagnostics: config.diagnostics,
+    logger: config.resources?.logger as
       | { info: (msg: string, data?: unknown) => void }
-      | undefined;
-
-    if (logger?.info) {
-      logger.info(`[NileServer] ${message}`, data);
-    } else {
-      console.log(`[NileServer] ${message}`, data ?? "");
-    }
-  };
+      | undefined,
+  });
 
   // Shared context -- created once with resources, passed to all layers
   const nileContext = createNileContext({

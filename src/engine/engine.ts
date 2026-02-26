@@ -1,5 +1,6 @@
 import { Err, Ok, type Result } from "slang-ts";
 import type { NileContext } from "@/nile/types";
+import { createDiagnosticsLog } from "@/utils";
 import {
   processHooks,
   runGlobalAfterHook,
@@ -17,11 +18,7 @@ import type {
 export function createEngine(options: EngineOptions) {
   const { diagnostics, services } = options;
 
-  const log = (message: string, data?: unknown) => {
-    if (diagnostics) {
-      console.log(`[Engine]: ${message}`, data ?? "");
-    }
-  };
+  const log = createDiagnosticsLog("Engine", { diagnostics });
 
   // O(1) Pre-computed Lookups
   const serviceSummaries: ServiceSummary[] = [];

@@ -1,11 +1,20 @@
-import { type Log, createLog as newLog } from "./logger";
+import { type Log, type LoggerConfig, createLog as newLog } from "./logger";
 
 type LogInput = Omit<Log, "appName">;
 
-export const createLogger = (appName: string) => {
+/**
+ * Creates a logger instance bound to a specific app name.
+ * Optionally accepts a LoggerConfig for time-based file chunking.
+ * @param appName - The application name (determines log file/directory)
+ * @param config - Optional config for chunking (monthly, daily, weekly)
+ */
+export const createLogger = (appName: string, config?: LoggerConfig) => {
   return {
-    info: (input: LogInput) => newLog({ ...input, appName, type: "info" }),
-    warn: (input: LogInput) => newLog({ ...input, appName, type: "warn" }),
-    error: (input: LogInput) => newLog({ ...input, appName, type: "error" }),
+    info: (input: LogInput) =>
+      newLog({ ...input, appName, level: "info" }, config),
+    warn: (input: LogInput) =>
+      newLog({ ...input, appName, level: "warn" }, config),
+    error: (input: LogInput) =>
+      newLog({ ...input, appName, level: "error" }, config),
   };
 };
