@@ -191,7 +191,7 @@ export const createLog = (log: Log, config?: LoggerConfig) => {
   return "dev-mode, see your dev console!";
 };
 
-interface LogFilter {
+export interface LogFilter {
   appName?: string;
   log_id?: string;
   level?: "info" | "warn" | "error";
