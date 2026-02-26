@@ -44,6 +44,19 @@ export function createNileServer(config: ServerConfig): NileServer {
 
   log(`Engine initialized with ${config.services.length} service(s)`);
 
+  // Print registered services table (on by default, opt-out with logServices: false)
+  if (config.logServices !== false) {
+    const servicesResult = engine.getServices();
+    if (servicesResult.isOk) {
+      const table = servicesResult.value.map((s) => ({
+        Service: s.name,
+        Description: s.description,
+        Actions: s.actions.length,
+      }));
+      console.table(table);
+    }
+  }
+
   // Build the server object incrementally
   const server: NileServer = {
     config,
@@ -62,20 +75,21 @@ export function createNileServer(config: ServerConfig): NileServer {
     });
 
     server.rest = { app, config: config.rest };
-    log(`REST interface mounted at ${config.rest.baseUrl}/services`);
+
+    const host = config.rest.host ?? "localhost";
+    const port = config.rest.port ?? 3000;
+    const base = `http://${host}:${port}`;
+
+    console.log(`\n  POST ${base}${config.rest.baseUrl}/services`);
+    if (config.rest.enableStatus) {
+      console.log(`  GET  ${base}/status`);
+    }
+    console.log("");
   }
 
   // Run onBoot lifecycle hook
   if (config.onBoot) {
-    const { fn, logServices } = config.onBoot;
-
-    if (logServices) {
-      const servicesResult = engine.getServices();
-      if (servicesResult.isOk) {
-        log("Registered services:", servicesResult.value);
-      }
-    }
-
+    const { fn } = config.onBoot;
     // Fire-and-forget with crash safety via async IIFE
     const _boot = (async () => {
       const result = await safeTry(() => fn(nileContext));

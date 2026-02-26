@@ -189,28 +189,46 @@ describe("createNileServer - onBoot", () => {
     errorSpy.mockRestore();
   });
 
-  it("should log services when logServices is true", async () => {
+  it("should log services table by default", () => {
+    const tableSpy = vi.spyOn(console, "table").mockImplementation(() => {
+      // intentional no-op for test
+    });
     const logSpy = vi.spyOn(console, "log").mockImplementation(() => {
+      // suppress REST endpoint URL output
+    });
+
+    createNileServer({
+      serverName: "Test",
+      services: mockServices,
+    });
+
+    expect(tableSpy).toHaveBeenCalledTimes(1);
+    expect(tableSpy.mock.calls[0]?.[0]).toEqual([
+      {
+        Service: "users",
+        Description: "User management",
+        Actions: 1,
+      },
+    ]);
+
+    tableSpy.mockRestore();
+    logSpy.mockRestore();
+  });
+
+  it("should not log services table when logServices is false", () => {
+    const tableSpy = vi.spyOn(console, "table").mockImplementation(() => {
       // intentional no-op for test
     });
 
     createNileServer({
       serverName: "Test",
       services: mockServices,
-      diagnostics: true,
-      onBoot: {
-        fn: () => {
-          // no-op boot function, testing logServices flag
-        },
-        logServices: true,
-      },
+      logServices: false,
     });
 
-    await flushMicrotasks();
-    const calls = logSpy.mock.calls.flat().join(" ");
-    expect(calls).toContain("Registered services");
+    expect(tableSpy).not.toHaveBeenCalled();
 
-    logSpy.mockRestore();
+    tableSpy.mockRestore();
   });
 });
 

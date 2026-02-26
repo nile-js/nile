@@ -77,6 +77,8 @@ export interface ServerConfig {
   runtime?: ServerRuntime;
   services: Services;
   diagnostics?: boolean;
+  /** Print registered services table to console on boot (default: true) */
+  logServices?: boolean;
   resources?: Resources;
   rest?: RestConfig;
   // websocket and rpc interfaces — types TBD when implemented
@@ -86,7 +88,6 @@ export interface ServerConfig {
   onAfterActionHandler?: AfterActionHandler<unknown, unknown>;
   onBoot?: {
     fn: (context: NileContext) => Promise<void> | void;
-    logServices?: boolean;
   };
 }
 

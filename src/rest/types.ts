@@ -13,7 +13,7 @@ export interface RateLimitConfig {
 export interface RestConfig {
   baseUrl: string;
   host?: string;
-  port?: string;
+  port?: number;
   diagnostics?: boolean;
   enableStatic?: boolean;
   enableStatus?: boolean;

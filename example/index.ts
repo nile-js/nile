@@ -16,17 +16,16 @@ const logger = {
 
 const server = createNileServer({
   serverName: "task-app",
-  diagnostics: true,
   services: [taskService],
   resources: { logger },
   rest: {
     baseUrl: "/api",
+    host: "localhost",
+    port: 3000,
     allowedOrigins: ["http://localhost:3000"],
     enableStatus: true,
-    diagnostics: true,
   },
   onBoot: {
-    logServices: true,
     fn: () => {
       appLogger.info({
         atFunction: "onBoot",
@@ -38,21 +37,14 @@ const server = createNileServer({
 
 // --- Start listening ---
 
-const port = 3000;
-
 if (server.rest) {
+  const port = server.config.rest?.port ?? 3000;
   const { fetch } = server.rest.app;
 
-  Bun.serve({
-    port,
-    fetch,
-  });
+  Bun.serve({ port, fetch });
 
-  console.log(`Task app listening on http://localhost:${port}`);
-  console.log(`  POST http://localhost:${port}/api/services`);
-  console.log(`  GET  http://localhost:${port}/status`);
-  console.log("");
-  console.log("Try it:");
+  console.log(`\nTask app listening on http://localhost:${port}`);
+  console.log("\nTry it:");
   console.log(`  curl -X POST http://localhost:${port}/api/services \\`);
   console.log(`    -H "Content-Type: application/json" \\`);
   console.log(

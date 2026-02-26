@@ -42,8 +42,10 @@ const server = createNileServer({
 1. **Validate** — Throws immediately if `config.services` is empty
 2. **Create `NileContext`** — Single instance with `config.resources` attached
 3. **Create Engine** — Passes `services`, `diagnostics`, and global hook handlers
-4. **Create REST app** — Only if `config.rest` is provided. Passes engine, context, `serverName`, and `runtime` (defaults to `"bun"`)
-5. **Run `onBoot`** — Fire-and-forget async IIFE. Failures are logged via `console.error` but do not crash the server
+4. **Log services table** — When `config.logServices` is `true`, prints a `console.table` of registered services (name, description, actions). Always prints — not gated by `diagnostics`
+5. **Create REST app** — Only if `config.rest` is provided. Passes engine, context, `serverName`, and `runtime` (defaults to `"bun"`)
+6. **Print REST endpoint URLs** — When REST is configured, prints `POST http://host:port/baseUrl/services` and optionally `GET http://host:port/status` via `console.log`. Uses `rest.host` (default `"localhost"`) and `rest.port` (default `3000`)
+7. **Run `onBoot`** — Fire-and-forget async IIFE. Failures are logged via `console.error` but do not crash the server
 
 ### 2.2 Return Value (`NileServer`)
 
@@ -67,7 +69,8 @@ const server = createNileServer({
   serverName: string;
   runtime?: ServerRuntime;            // "bun" | "node", defaults to "bun"
   services: Services;                 // required, at least one
-  diagnostics?: boolean;
+  diagnostics?: boolean;              // default: false
+  logServices?: boolean;              // default: true, print services table via console.table
   resources?: Resources;              // logger, database, cache, custom keys
   rest?: RestConfig;
   websocket?: Record<string, unknown>; // placeholder, not yet implemented
@@ -76,14 +79,15 @@ const server = createNileServer({
   onAfterActionHandler?: AfterActionHandler<unknown, unknown>;
   onBoot?: {
     fn: (context: NileContext) => Promise<void> | void;
-    logServices?: boolean;
   };
 }
 ```
 
 - `runtime` lives only on `ServerConfig` and is piped to `createRestApp` as a parameter. It is not duplicated onto `RestConfig`.
 - `services` is required. An empty array throws at initialization.
-- `onBoot.logServices` logs the registered services via diagnostics before running the boot function.
+- `diagnostics` defaults to `false`. When enabled, internal modules emit diagnostic output through `createDiagnosticsLog`.
+- `logServices` defaults to `true`. Prints a `console.table` of registered services (Service, Description, Actions count). Not gated by `diagnostics` — set `logServices: false` to suppress.
+- When REST is configured, endpoint URLs are always printed via `console.log` using `rest.host` (default `"localhost"`) and `rest.port` (default `3000`).
 
 ## 4. `NileContext`
 
