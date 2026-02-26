@@ -35,6 +35,9 @@ export function createNileServer(config: ServerConfig): NileServer {
   const engine: Engine = createEngine({
     services: config.services,
     diagnostics: config.diagnostics,
+    logger: config.resources?.logger as
+      | { info: (msg: string, data?: unknown) => void }
+      | undefined,
     onBeforeActionHandler: config.onBeforeActionHandler,
     onAfterActionHandler: config.onAfterActionHandler,
   });

@@ -16,9 +16,9 @@ import type {
 } from "./types";
 
 export function createEngine(options: EngineOptions) {
-  const { diagnostics, services } = options;
+  const { diagnostics, services, logger } = options;
 
-  const log = createDiagnosticsLog("Engine", { diagnostics });
+  const log = createDiagnosticsLog("Engine", { diagnostics, logger });
 
   // O(1) Pre-computed Lookups
   const serviceSummaries: ServiceSummary[] = [];
