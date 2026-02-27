@@ -1,10 +1,11 @@
 {
   "name": "@nilejs/nile",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "description": "TypeScript-first, service and actions oriented backend framework",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -22,6 +23,7 @@
     "framework",
     "backend",
     "api",
+    "hono",
     "server",
     "typescript",
     "service",

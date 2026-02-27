@@ -1,4 +1,4 @@
-name: Deploy Dialogue Docs
+name: Deploy Nile Ts Docs
 
 on:
   push:

@@ -1,6 +1,6 @@
 {
   "name": "nile",
-  "description": "A functional-first, type-safe backend framework for scalable applications.",
+  "description": "TypeScript-first, service and actions oriented backend framework",
   "version": "1.0.0",
   "private": true,
   "type": "module",

@@ -7,7 +7,7 @@ export default defineConfig({
   base: "/nile/",
   title: "Nile",
   description:
-    "Functional-first, type-safe backend framework for scalable applications",
+    "TypeScript-first, service and actions oriented backend framework",
   icon: "/rspress-icon.png",
   logoText: "🌊 Nile",
   plugins: [
@@ -23,7 +23,7 @@ export default defineConfig({
       {
         icon: "github",
         mode: "link",
-        content: "https://github.com/Hussseinkizz/dialogue",
+        content: "https://github.com/nile-js/nile",
       },
     ],
     // Built-in search is enabled by default
