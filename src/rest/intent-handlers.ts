@@ -224,7 +224,7 @@ function safeTrySync<T>(fn: () => T): { err: unknown; result: T | null } {
 export const intentHandlers: Record<
   ExternalRequest["intent"],
   (
-    engine: Engine<unknown>,
+    engine: Engine,
     request: ExternalRequest,
     nileContext: NileContext<unknown>
   ) => ExternalResponse | Promise<ExternalResponse>

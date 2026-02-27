@@ -1,0 +1,32 @@
+[
+  {
+    "type": "file",
+    "name": "server",
+    "label": "Server"
+  },
+  {
+    "type": "file",
+    "name": "db",
+    "label": "Database"
+  },
+  {
+    "type": "file",
+    "name": "logging",
+    "label": "Logging"
+  },
+  {
+    "type": "file",
+    "name": "engine",
+    "label": "Engine"
+  },
+  {
+    "type": "file",
+    "name": "rest",
+    "label": "REST"
+  },
+  {
+    "type": "file",
+    "name": "cors",
+    "label": "CORS"
+  }
+]

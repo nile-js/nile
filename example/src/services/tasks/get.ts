@@ -1,18 +1,18 @@
+import { type Action, createAction } from "@nilejs/nile";
 import { Err, Ok } from "slang-ts";
 import z from "zod";
-import { type Action, createAction } from "../../../dist/index.js";
-import { tasks } from "./store.js";
+import { getTaskById } from "@/db/models";
 
 const getTaskSchema = z.object({
   id: z.string().min(1, "Task ID is required"),
 });
 
-const getTaskHandler = (data: Record<string, unknown>) => {
-  const task = tasks.get(data.id as string);
-  if (!task) {
-    return Err(`Task '${data.id}' not found`);
+const getTaskHandler = async (data: Record<string, unknown>) => {
+  const result = await getTaskById(data.id as string);
+  if (result.isErr) {
+    return Err(result.error);
   }
-  return Ok({ task });
+  return Ok({ task: result.value });
 };
 
 export const getTaskAction: Action = createAction({

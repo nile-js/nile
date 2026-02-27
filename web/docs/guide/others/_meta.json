@@ -1,0 +1,25 @@
+[
+  {
+    "type": "file",
+    "name": "architecture",
+    "label": "Architecture"
+  },
+  {
+    "type": "file",
+    "name": "roadmap",
+    "label": "Roadmap"
+  },
+  {
+    "type": "divider"
+  },
+  {
+    "type": "file",
+    "name": "llms-txt",
+    "label": "LLMs"
+  },
+  {
+    "type": "file",
+    "name": "llms-full-txt",
+    "label": "LLMs Full"
+  }
+]

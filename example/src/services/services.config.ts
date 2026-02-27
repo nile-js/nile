@@ -1,4 +1,4 @@
-import { createActions, type Services } from "../../dist/index.js";
+import { createActions, type Services } from "@nilejs/nile";
 import { createTaskAction } from "./tasks/create";
 import { deleteTaskAction } from "./tasks/delete";
 import { getTaskAction } from "./tasks/get";

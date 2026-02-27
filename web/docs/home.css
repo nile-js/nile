@@ -1,0 +1,535 @@
+.dialogue-home {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  overflow-x: hidden;
+}
+
+/* Hero Section */
+.hero {
+  text-align: center;
+  padding: 4rem 0 6rem;
+}
+
+.hero-content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.hero-title {
+  font-size: 3.5rem;
+  font-weight: 800;
+  line-height: 1.2;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.hero-icon {
+  color: var(--rp-c-brand);
+  display: flex;
+  align-items: center;
+  font-size: 3.5rem;
+}
+
+.highlight {
+  background: linear-gradient(
+    135deg,
+    var(--rp-c-brand) 0%,
+    var(--rp-c-brand-light) 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.3))
+    drop-shadow(0 0 20px rgba(59, 130, 246, 0.15));
+}
+
+.hero-tagline {
+  font-size: 1.25rem;
+  color: var(--rp-c-text-2);
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  font-size: 1rem;
+}
+
+.btn-primary {
+  background-color: var(--rp-c-brand);
+  color: white;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.btn-primary:hover {
+  background-color: var(--rp-c-brand-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.3);
+}
+
+.btn-secondary {
+  background-color: transparent;
+  color: var(--rp-c-brand);
+  border: 2px solid var(--rp-c-brand);
+}
+
+.btn-secondary:hover {
+  background-color: var(--rp-c-brand-tint);
+  transform: translateY(-2px);
+}
+
+/* Installation Section */
+.installation {
+  padding: 3rem 0;
+  text-align: center;
+}
+
+.installation h2 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 2rem;
+}
+
+.install-alt {
+  margin-top: 0.75rem;
+  color: var(--rp-c-text-3);
+  font-size: 0.9rem;
+}
+
+/* Code Block Wrapper with Copy Button */
+.code-wrapper {
+  position: relative;
+  max-width: 800px;
+  margin: 0 auto;
+  background-color: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--rp-c-divider);
+  border-radius: 12px;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Light mode variant for code wrapper */
+html:not(.dark) .code-wrapper {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.code-block {
+  max-width: 100%;
+  text-align: left;
+  overflow: hidden;
+}
+
+.code-block pre {
+  margin: 0;
+  padding: 1.5rem !important;
+  border-radius: 12px;
+  overflow-x: auto;
+  background-color: transparent !important;
+  max-width: 100%;
+}
+
+.copy-button {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background-color: var(--rp-c-bg);
+  border: 1px solid var(--rp-c-divider);
+  border-radius: 6px;
+  padding: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  color: var(--rp-c-text-2);
+  transition: all 0.2s ease;
+}
+
+.copy-button:hover {
+  background-color: var(--rp-c-brand-tint);
+  color: var(--rp-c-brand);
+  border-color: var(--rp-c-brand);
+}
+
+/* Features Section - Bento Grid */
+.features {
+  padding: 4rem 0;
+  background-color: var(--rp-c-bg);
+}
+
+.features-title {
+  text-align: center;
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 3rem;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: auto auto;
+  gap: 1.5rem;
+  margin-top: 2rem;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.feature {
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+  border-radius: 16px;
+  background-color: var(--rp-c-bg);
+  border: 1px solid var(--rp-c-divider);
+  transition: all 0.3s ease;
+  text-align: left;
+}
+
+.feature:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+  border-color: var(--rp-c-brand);
+}
+
+/* Bento grid spans */
+.feature-large {
+  grid-column: span 2;
+  grid-row: span 1;
+}
+
+.feature-tall {
+  grid-column: span 1;
+  grid-row: span 2;
+  min-height: 300px;
+}
+
+.feature-icon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  color: var(--rp-c-brand);
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.feature h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: var(--rp-c-brand);
+}
+
+.feature p {
+  color: var(--rp-c-text-2);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Quick Start Section */
+.quick-start {
+  padding: 4rem 0;
+}
+
+.quick-start h2 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 3rem;
+  text-align: center;
+}
+
+.code-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.code-column h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: var(--rp-c-brand);
+}
+
+.code-column {
+  width: 100%;
+}
+
+.code-column .code-block {
+  max-width: 100%;
+}
+
+.code-column .code-block pre {
+  margin: 0;
+  border-radius: 12px;
+  overflow-x: auto;
+}
+
+.code-column .code-wrapper {
+  max-width: 100%;
+}
+
+/* Use Cases Section */
+.use-cases {
+  padding: 4rem 0;
+}
+
+.use-cases h2 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 3rem;
+  text-align: center;
+}
+
+.use-cases-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.use-case {
+  padding: 2rem;
+  border-radius: 12px;
+  background-color: var(--rp-c-bg);
+  border: 1px solid var(--rp-c-divider);
+  transition: all 0.3s ease;
+}
+
+.use-case:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+  border-color: var(--rp-c-brand);
+}
+
+.use-case h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: var(--rp-c-brand);
+}
+
+.use-case p {
+  color: var(--rp-c-text-2);
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.use-case-link {
+  color: var(--rp-c-brand);
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.use-case-link:hover {
+  color: var(--rp-c-brand-dark);
+}
+
+/* Inline code in use cases */
+.use-case code {
+  background-color: rgba(0, 0, 0, 0.3);
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+  font-size: 0.9em;
+  color: var(--rp-c-brand-light);
+  border: 1px solid var(--rp-c-divider);
+}
+
+/* Prevent code element from expanding pre beyond container */
+.code-block pre code {
+  display: block;
+  width: fit-content;
+  min-width: 100%;
+}
+
+/* Comparison Section */
+.comparison {
+  padding: 4rem 0;
+  background-color: var(--rp-c-bg);
+}
+
+.comparison h2 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 3rem;
+  text-align: center;
+}
+
+.comparison-table-wrapper {
+  max-width: 1000px;
+  margin: 0 auto;
+  overflow-x: auto;
+}
+
+.comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: var(--rp-c-bg);
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--rp-c-divider);
+}
+
+.comparison-table thead {
+  background-color: rgba(34, 197, 94, 0.1);
+}
+
+.comparison-table th {
+  padding: 1.25rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--rp-c-brand);
+  border-bottom: 2px solid var(--rp-c-divider);
+}
+
+.comparison-table th:first-child {
+  width: 30%;
+}
+
+.comparison-table td {
+  padding: 1.25rem;
+  border-bottom: 1px solid var(--rp-c-divider);
+  color: var(--rp-c-text-2);
+  line-height: 1.6;
+}
+
+.comparison-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.comparison-table tbody tr:hover {
+  background-color: rgba(34, 197, 94, 0.05);
+}
+
+.has-feature {
+  color: var(--rp-c-text-1);
+  font-weight: 500;
+}
+
+.no-feature {
+  color: var(--rp-c-text-3);
+  opacity: 0.8;
+}
+
+/* Footer Section */
+.home-footer {
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  padding: 3rem 0;
+  text-align: center;
+  border-top: 1px solid var(--rp-c-divider);
+  margin-top: 4rem;
+}
+
+.home-footer p {
+  margin: 0;
+  color: var(--rp-c-text-2);
+  font-size: 0.95rem;
+}
+
+.home-footer a {
+  color: var(--rp-c-brand);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.home-footer a:hover {
+  color: var(--rp-c-brand-light);
+  text-decoration: underline;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .features-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .feature-large {
+    grid-column: span 1;
+  }
+
+  .feature-tall {
+    grid-column: span 2;
+    grid-row: span 1;
+    min-height: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero-title {
+    font-size: 2.5rem;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .hero-icon {
+    font-size: 3rem;
+  }
+
+  .hero-tagline {
+    font-size: 1.1rem;
+  }
+
+  .installation h2,
+  .features-title,
+  .quick-start h2,
+  .use-cases h2,
+  .comparison h2 {
+    font-size: 2rem;
+  }
+
+  .features-grid,
+  .use-cases-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .feature-large,
+  .feature-tall {
+    grid-column: span 1;
+    grid-row: span 1;
+  }
+
+  .code-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .code-block pre {
+    padding: 1rem !important;
+    font-size: 0.8rem;
+  }
+
+  .comparison-table-wrapper {
+    overflow-x: auto;
+  }
+
+  .comparison-table th,
+  .comparison-table td {
+    padding: 1rem;
+    font-size: 0.9rem;
+  }
+}

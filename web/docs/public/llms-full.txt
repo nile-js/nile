@@ -1,0 +1,3693 @@
+---
+url: /nile/guide/start/getting-started.md
+---
+
+
+# Getting Started with Nile
+
+Nile is a functional-first, type-safe backend framework built on Hono. It works with **Bun**, **Node.js**, and **Deno**, uses Zod for validation, and returns Results from all action handlers using the `Ok` / `Err` pattern from `slang-ts`.
+
+## 1. Installation
+
+:::tabs
+
+@tab Bun
+
+```bash
+bun add @nilejs/nile zod slang-ts
+```
+
+@tab npm
+
+```bash
+npm install @nilejs/nile zod slang-ts
+```
+
+@tab pnpm
+
+```bash
+pnpm add @nilejs/nile zod slang-ts
+```
+
+:::
+
+## 2. Quick Start
+
+### 2.1 Create Actions
+
+Actions are the core building blocks. Each action has a name, optional Zod validation schema, and a handler that returns a `Result`.
+
+```typescript
+// services/todos/create.ts
+import { Ok } from "slang-ts";
+import z from "zod";
+import { createAction, type Action } from "@nilejs/nile";
+
+const createTodoSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  completed: z.boolean().default(false),
+});
+
+const createTodoHandler = (data: Record<string, unknown>) => {
+  const todo = {
+    id: crypto.randomUUID(),
+    title: data.title as string,
+    completed: (data.completed as boolean) ?? false,
+  };
+  return Ok({ todo });
+};
+
+export const createTodoAction: Action = createAction({
+  name: "create",
+  description: "Create a new todo",
+  validation: createTodoSchema,
+  handler: createTodoHandler,
+});
+```
+
+### 2.2 Group Actions into a Service
+
+```typescript
+// services/todos/list.ts
+import { Ok } from "slang-ts";
+import { createAction, type Action } from "@nilejs/nile";
+
+const listTodoHandler = () => {
+  return Ok({
+    todos: [
+      { id: "1", title: "Learn Nile", completed: false },
+      { id: "2", title: "Build an API", completed: true },
+    ],
+  });
+};
+
+export const listTodoAction: Action = createAction({
+  name: "list",
+  description: "List all todos",
+  handler: listTodoHandler,
+});
+```
+
+```typescript
+// services/todos.ts
+import { createActions, type Services } from "@nilejs/nile";
+import { createTodoAction } from "./create";
+import { listTodoAction } from "./list";
+
+export const services: Services = [
+  {
+    name: "todos",
+    description: "Todo list management",
+    actions: createActions([createTodoAction, listTodoAction]),
+  },
+];
+```
+
+### 2.3 Create and Start the Server
+
+```typescript
+// server.ts
+import { createNileServer } from "@nilejs/nile";
+import { services } from "./services/todos";
+
+const server = createNileServer({
+  serverName: "my-app",
+  services,
+  rest: {
+    baseUrl: "/api",
+    port: 3000,
+  },
+});
+
+if (server.rest) {
+  const { fetch } = server.rest.app;
+  Bun.serve({ fetch, port: 3000 });
+  console.log("Server running at http://localhost:3000");
+}
+```
+
+Run with Bun:
+
+```bash
+bun run server.ts
+```
+
+### 2.4 Invoke Your Actions
+
+Nile uses a single POST endpoint with an intent-driven payload:
+
+```bash
+# List todos
+curl -X POST http://localhost:3000/api/services \
+  -H "Content-Type: application/json" \
+  -d '{
+    "intent": "execute",
+    "service": "todos",
+    "action": "list",
+    "payload": {}
+  }'
+
+# Create a todo
+curl -X POST http:localhost:3000/api/services \
+  -H "Content-Type: application/json" \
+  -d '{
+    "intent": "execute",
+    "service": "todos",
+    "action": "create",
+    "payload": { "title": "Ship Nile", "completed": false }
+  }'
+```
+
+## 3. Project Structure
+
+```
+my-api/
+├── server.ts                  # Entry point
+├── services/
+│   ├── todos.ts               # Service definition
+│   └── todos/
+│       ├── create.ts          # Action: create todo
+│       └── list.ts            # Action: list todos
+└── package.json
+```
+
+## 4. Next Steps
+
+- Learn about [Actions](/guide/basics/actions) and [Services](/guide/basics/services)
+- Explore the [Context](/guide/basics/context) for accessing resources like databases
+- Set up a [database layer with model files](/guide/internals/db) for structured data access
+- See [Server Configuration](/guide/internals/server) for more options
+
+*This documentation reflects the current implementation and is subject to evolution.*
+
+
+
+---
+url: /nile/guide/basics/actions.md
+---
+
+# Actions
+
+Actions are the core building blocks of Nile. Each action represents a single operation that can be called via the REST-RPC interface.
+
+## createAction
+
+```typescript
+import { Ok, Err } from "slang-ts";
+import { createAction, type Action } from "@nilejs/nile";
+
+export const myAction: Action = createAction({
+  name: "actionName",
+  description: "What this action does",
+  handler: (data) => {
+    // Return Ok with data on success
+    return Ok({ result: "success" });
+    // Or return Err on failure
+    // return Err("Something went wrong");
+  },
+});
+```
+
+## Options
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `name` | `string` | Unique identifier for the action |
+| `description` | `string` | Human-readable description |
+| `validation` | `z.ZodTypeAny \| null` | Optional Zod schema for input validation |
+| `handler` | `ActionHandler` | The function that executes when the action is called |
+| `isProtected` | `boolean` | If true, requires authentication |
+| `visibility` | `{ rest?: boolean; rpc?: boolean }` | Control which interfaces expose this action |
+
+## Handler Signature
+
+The handler receives input data and context, and must return a `Result<T, E>` from `slang-ts`:
+
+```typescript
+import type { Result } from "slang-ts";
+import type { NileContext } from "@nilejs/nile";
+
+type ActionHandler<T = unknown, E = string> = (
+  data: Record<string, unknown>,
+  context?: NileContext<unknown>
+) => Result<T, E> | Promise<Result<T, E>>;
+```
+
+Use `Ok(data)` for success and `Err(error)` for failures:
+
+```typescript
+handler: (data) => {
+  if (!data.requiredField) {
+    return Err("Required field is missing");
+  }
+  return Ok({ id: "1", name: "Item" });
+},
+```
+
+## Example: Action with Validation
+
+```typescript
+// services/tasks/create.ts
+import { Ok } from "slang-ts";
+import z from "zod";
+import { createAction, type Action } from "@nilejs/nile";
+
+const createTaskSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  status: z.enum(["pending", "in-progress", "done"]).default("pending"),
+});
+
+const createTaskHandler = (data: Record<string, unknown>) => {
+  const task = {
+    id: crypto.randomUUID(),
+    title: data.title as string,
+    status: (data.status as string) ?? "pending",
+  };
+  return Ok({ task });
+};
+
+export const createTaskAction: Action = createAction({
+  name: "create",
+  description: "Create a new task",
+  validation: createTaskSchema,
+  handler: createTaskHandler,
+});
+```
+
+## Multiple Actions
+
+Actions are typically defined in separate files and then grouped into a service:
+
+```typescript
+// services/tasks/create.ts
+import { Ok } from "slang-ts";
+import z from "zod";
+import { createAction, type Action } from "@nilejs/nile";
+
+const createTaskSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+});
+
+const createTaskHandler = (data: Record<string, unknown>) => {
+  return Ok({ task: { id: crypto.randomUUID(), title: data.title } });
+};
+
+export const createTaskAction: Action = createAction({
+  name: "create",
+  description: "Create a new task",
+  validation: createTaskSchema,
+  handler: createTaskHandler,
+});
+```
+
+```typescript
+// services/tasks/list.ts
+import { Ok } from "slang-ts";
+import { createAction, type Action } from "@nilejs/nile";
+
+export const listTaskAction: Action = createAction({
+  name: "list",
+  description: "List all tasks",
+  handler: () => Ok({ tasks: [] }),
+});
+```
+
+Then group them in the service config:
+
+```typescript
+// services/tasks.ts
+import { createActions, type Services } from "@nilejs/nile";
+import { createTaskAction } from "./tasks/create";
+import { listTaskAction } from "./tasks/list";
+
+export const services: Services = [
+  {
+    name: "tasks",
+    description: "Task management",
+    actions: createActions([createTaskAction, listTaskAction]),
+  },
+];
+```
+
+## Accessing Context
+
+The handler receives a second parameter with access to resources:
+
+```typescript
+handler: (data, context) => {
+  // Access database from context
+  const users = await context.database.query.users.findMany();
+  
+  // Access logger
+  context.logger.info({ atFunction: "myAction", message: "Processing" });
+  
+  return Ok({ count: users.length });
+}
+```
+
+
+
+---
+url: /nile/guide/basics/services.md
+---
+
+# Services
+
+Services group related actions together. A service is a logical container that organizes your actions under a common namespace.
+
+## Defining a Service
+
+Services are plain objects with a name, description, and array of actions:
+
+```typescript
+import { createActions, type Services } from "@nilejs/nile";
+import { createTaskAction } from "./tasks/create";
+import { listTaskAction } from "./tasks/list";
+
+export const services: Services = [
+  {
+    name: "tasks",
+    description: "Task management with CRUD operations",
+    actions: createActions([createTaskAction, listTaskAction]),
+  },
+];
+```
+
+## Options
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `name` | `string` | Unique identifier for the service |
+| `description` | `string` | Human-readable description |
+| `actions` | `Action[]` | Array of actions belonging to this service |
+| `meta` | `Record<string, unknown>` | Optional metadata for the service |
+
+## Example: Full Service Setup
+
+```typescript
+// services/tasks/create.ts
+import { Ok } from "slang-ts";
+import z from "zod";
+import { createAction, type Action } from "@nilejs/nile";
+
+const createTaskSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  status: z.enum(["pending", "in-progress", "done"]).default("pending"),
+});
+
+const createTaskHandler = (data: Record<string, unknown>) => {
+  const task = {
+    id: crypto.randomUUID(),
+    title: data.title as string,
+    status: (data.status as string) ?? "pending",
+  };
+  return Ok({ task });
+};
+
+export const createTaskAction: Action = createAction({
+  name: "create",
+  description: "Create a new task",
+  validation: createTaskSchema,
+  handler: createTaskHandler,
+});
+```
+
+```typescript
+// services/tasks/list.ts
+import { Ok } from "slang-ts";
+import { createAction, type Action } from "@nilejs/nile";
+
+const listTaskHandler = () => {
+  return Ok({
+    tasks: [
+      { id: "1", title: "Learn Nile", status: "pending" },
+      { id: "2", title: "Build something", status: "done" },
+    ],
+  });
+};
+
+export const listTaskAction: Action = createAction({
+  name: "list",
+  description: "List all tasks",
+  handler: listTaskHandler,
+});
+```
+
+```typescript
+// services/tasks.ts
+import { createActions, type Services } from "@nilejs/nile";
+import { createTaskAction } from "./tasks/create";
+import { listTaskAction } from "./tasks/list";
+
+export const services: Services = [
+  {
+    name: "tasks",
+    description: "Task management operations",
+    actions: createActions([createTaskAction, listTaskAction]),
+  },
+];
+```
+
+## Using Services in the Server
+
+```typescript
+// server.ts
+import { createNileServer } from "@nilejs/nile";
+import { services } from "./services/tasks";
+
+const server = createNileServer({
+  serverName: "my-app",
+  services,
+  rest: {
+    baseUrl: "/api",
+    port: 3000,
+  },
+});
+
+if (server.rest) {
+  const { fetch } = server.rest.app;
+  Bun.serve({ fetch, port: 3000 });
+  console.log("Server running at http://localhost:3000");
+}
+```
+
+## Invoking Actions
+
+Once the server is running, invoke actions via POST to `/api/services`:
+
+```bash
+curl -X POST http://localhost:3000/api/services \
+  -H "Content-Type: application/json" \
+  -d '{
+    "intent": "execute",
+    "service": "tasks",
+    "action": "list",
+    "payload": {}
+  }'
+```
+
+
+
+---
+url: /nile/guide/basics/context.md
+---
+
+# Context
+
+`NileContext` provides access to request context, session data, and shared resources throughout your application.
+
+## Accessing Context
+
+The context is passed as the second parameter to your action handler:
+
+```typescript
+import { Ok } from "slang-ts";
+import { createAction, type Action } from "@nilejs/nile";
+
+export const myAction: Action = createAction({
+  name: "myAction",
+  description: "Example action",
+  handler: (data, context) => {
+    // Use context here
+    return Ok({ result: "success" });
+  },
+});
+```
+
+You can also use `getContext()` to access context from anywhere:
+
+```typescript
+import { getContext } from "@nilejs/nile";
+
+const context = getContext();
+```
+
+## What's in Context
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `rest` | `ExternalRequest \| undefined` | REST request/response context (when called via HTTP) |
+| `ws` | `WebSocketContext \| undefined` | WebSocket context (when called via WS) |
+| `rpc` | `RPCContext \| undefined` | RPC context (when called via RPC) |
+| `sessions` | `Sessions` | Session data per interface (`rest`, `ws`, `rpc`) |
+| `resources` | `Resources \| undefined` | Shared resources (logger, database, cache) |
+| `logger` | `NileLogger` | Built-in logger |
+
+## Accessing Resources
+
+Resources are provided at server startup and available via context:
+
+```typescript
+handler: (data, context) => {
+  const logger = context?.logger;
+  
+  // Access logger
+  logger?.info({
+    atFunction: "myAction",
+    message: "Action executed",
+    data: { timestamp: Date.now() },
+  });
+  
+  // Access database (passed in server config)
+  const db = context?.resources?.database;
+  
+  return Ok({ result: "done" });
+},
+```
+
+## Session Management
+
+Store and retrieve session data per interface:
+
+```typescript
+handler: (data, context) => {
+  // Set session data
+  context?.sessions.set("rest", { userId: "123", role: "admin" });
+  
+  // Get session data
+  const session = context?.sessions.get("rest");
+  console.log(session?.userId); // "123"
+  
+  return Ok({ session });
+},
+```
+
+## Type-Safe Context
+
+Pass a generic to get type safety for your database:
+
+```typescript
+import type { MyDatabase } from "./db";
+
+handler: (data, context) => {
+  const db = context?.resources?.database as MyDatabase | undefined;
+  // db is typed as MyDatabase
+  return Ok({});
+}
+```
+
+## Example: Full Context Usage
+
+```typescript
+// services/users/create.ts
+import { Ok, Err } from "slang-ts";
+import z from "zod";
+import { createAction, type Action } from "@nilejs/nile";
+
+const createUserSchema = z.object({
+  name: z.string().min(1),
+  email: z.string().email(),
+});
+
+const createUserHandler = (data: Record<string, unknown>, context) => {
+  const { name, email } = data as { name: string; email: string };
+  
+  // Log the action
+  context?.logger?.info({
+    atFunction: "createUser",
+    message: "Creating user",
+    data: { email },
+  });
+  
+  // Access database
+  // const db = context?.resources?.database;
+  // const user = await db.users.create({ name, email });
+  
+  const user = { id: crypto.randomUUID(), name, email };
+  return Ok({ user });
+};
+
+export const createUserAction: Action = createAction({
+  name: "create",
+  description: "Create a new user",
+  validation: createUserSchema,
+  handler: createUserHandler,
+});
+```
+
+## Server Configuration with Resources
+
+Pass resources when creating the server:
+
+```typescript
+// server.ts
+import { createNileServer, createLogger } from "@nilejs/nile";
+import { services } from "./services";
+
+const logger = createLogger("my-api", { chunking: "monthly" });
+
+const server = createNileServer({
+  serverName: "my-app",
+  services,
+  resources: {
+    logger,
+    database: myDatabaseInstance,
+  },
+  rest: {
+    baseUrl: "/api",
+    port: 3000,
+  },
+});
+```
+
+
+
+---
+url: /nile/guide/basics/interacting.md
+---
+
+# Interacting with Nile
+
+Nile exposes a single HTTP endpoint for all interactions. All requests are POST requests with a JSON body that specifies the `intent`, `service`, `action`, and `payload`.
+
+## The Single Endpoint
+
+```
+POST {baseUrl}/services
+```
+
+The default base URL is `/api`, so the full endpoint is typically:
+```
+POST /api/services
+```
+
+## Request Format
+
+Every request follows this structure:
+
+```json
+{
+  "intent": "explore" | "execute" | "schema",
+  "service": "serviceName",
+  "action": "actionName",
+  "payload": { ... }
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `intent` | `string` | What you want to do: `explore`, `execute`, or `schema` |
+| `service` | `string` | The service name, or `"*"` for wildcard |
+| `action` | `string` | The action name, or `"*"` for wildcard |
+| `payload` | `object` | The input data for the action |
+
+## Intents
+
+### 1. Execute (`intent: "execute"`)
+
+Execute an action. This is the most common intent for running your business logic.
+
+```bash
+curl -X POST http://localhost:3000/api/services \
+  -H "Content-Type: application/json" \
+  -d '{
+    "intent": "execute",
+    "service": "tasks",
+    "action": "create",
+    "payload": { "title": "Buy milk", "status": "pending" }
+  }'
+```
+
+**Response:**
+```json
+{
+  "status": true,
+  "message": "Action 'tasks.create' executed",
+  "data": {
+    "task": {
+      "id": "abc-123",
+      "title": "Buy milk",
+      "status": "pending"
+    }
+  }
+}
+```
+
+### 2. Explore (`intent: "explore"`)
+
+Discover available services and actions. Use wildcards to explore.
+
+**List all services:**
+
+```bash
+curl -X POST http://localhost:3000/api/services \
+  -H "Content-Type: application/json" \
+  -d '{
+    "intent": "explore",
+    "service": "*",
+    "action": "*",
+    "payload": {}
+  }'
+```
+
+**Response:**
+```json
+{
+  "status": true,
+  "message": "Available services",
+  "data": [
+    {
+      "name": "tasks",
+      "description": "Task management operations",
+      "meta": { "version": "1.0.0" },
+      "actions": ["create", "list", "get", "update", "delete"]
+    },
+    {
+      "name": "auth",
+      "description": "Authentication service",
+      "actions": ["login", "logout", "register"]
+    }
+  ]
+}
+```
+
+**List all actions in a service:**
+
+```bash
+curl -X POST http://localhost:3000/api/services \
+  -H "Content-Type: application/json" \
+  -d '{
+    "intent": "explore",
+    "service": "tasks",
+    "action": "*",
+    "payload": {}
+  }'
+```
+
+**Response:**
+```json
+{
+  "status": true,
+  "message": "Actions for 'tasks'",
+  "data": [
+    {
+      "name": "create",
+      "description": "Create a new task",
+      "isProtected": false,
+      "validation": true,
+      "accessControl": []
+    },
+    {
+      "name": "list",
+      "description": "List all tasks",
+      "isProtected": false,
+      "validation": false,
+      "accessControl": []
+    },
+    {
+      "name": "get",
+      "description": "Get a task by ID",
+      "isProtected": true,
+      "validation": true,
+      "accessControl": []
+    }
+  ]
+}
+```
+
+**Get details of a specific action:**
+
+```bash
+curl -X POST http://localhost:3000/api/services \
+  -H "Content-Type: application/json" \
+  -d '{
+    "intent": "explore",
+    "service": "tasks",
+    "action": "create",
+    "payload": {}
+  }'
+```
+
+**Response:**
+```json
+{
+  "status": true,
+  "message": "Details for 'tasks.create'",
+  "data": {
+    "name": "create",
+    "description": "Create a new task",
+    "isProtected": false,
+    "accessControl": null,
+    "hooks": {
+      "before": [],
+      "after": []
+    },
+    "meta": null
+  }
+}
+```
+
+### 3. Schema (`intent: "schema"`)
+
+Get the Zod validation schemas as JSON Schema. Useful for generating type-safe clients.
+
+**Get all schemas:**
+
+```bash
+curl -X POST http://localhost:3000/api/services \
+  -H "Content-Type: application/json" \
+  -d '{
+    "intent": "schema",
+    "service": "*",
+    "action": "*",
+    "payload": {}
+  }'
+```
+
+**Response:**
+```json
+{
+  "status": true,
+  "message": "All service schemas",
+  "data": {
+    "tasks": {
+      "create": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string", "minLength": 1 },
+          "status": { "type": "string", "enum": ["pending", "in-progress", "done"] }
+        },
+        "required": ["title"]
+      },
+      "list": null,
+      "get": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" }
+        },
+        "required": ["id"]
+      }
+    },
+    "auth": {
+      "login": {
+        "type": "object",
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "password": { "type": "string" }
+        },
+        "required": ["email", "password"]
+      }
+    }
+  }
+}
+```
+
+**Get schemas for a specific service:**
+
+```bash
+curl -X POST http://localhost:3000/api/services \
+  -H "Content-Type: application/json" \
+  -d '{
+    "intent": "schema",
+    "service": "tasks",
+    "action": "*",
+    "payload": {}
+  }'
+```
+
+**Response:**
+```json
+{
+  "status": true,
+  "message": "Schemas for 'tasks'",
+  "data": {
+    "create": {
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "minLength": 1 },
+        "status": { "type": "string", "enum": ["pending", "in-progress", "done"] }
+      },
+      "required": ["title"]
+    },
+    "list": null,
+    "get": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" }
+      },
+      "required": ["id"]
+    }
+  }
+}
+```
+
+**Get schema for a specific action:**
+
+```bash
+curl -X POST http://localhost:3000/api/services \
+  -H "Content-Type: application/json" \
+  -d '{
+    "intent": "schema",
+    "service": "tasks",
+    "action": "create",
+    "payload": {}
+  }'
+```
+
+**Response:**
+```json
+{
+  "status": true,
+  "message": "Schema for 'tasks.create'",
+  "data": {
+    "create": {
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "minLength": 1 },
+        "status": { "type": "string", "enum": ["pending", "in-progress", "done"] }
+      },
+      "required": ["title"]
+    }
+  }
+}
+```
+
+## Response Format
+
+All responses follow a consistent structure:
+
+```typescript
+{
+  status: boolean;       // true for success, false for error
+  message: string;      // human-readable message
+  data: {               // the actual response data
+    error_id?: string;  // present on errors
+    [key: string]: any;
+  }
+}
+```
+
+**Success response:**
+```json
+{
+  "status": true,
+  "message": "Action executed successfully",
+  "data": { ... }
+}
+```
+
+**Error response:**
+```json
+{
+  "status": false,
+  "message": "Validation failed: Title is required",
+  "data": {}
+}
+```
+
+## Error Handling
+
+Nile uses a Result pattern internally. All errors are returned in the response without throwing HTTP exceptions:
+
+| HTTP Status | Meaning |
+|-------------|---------|
+| `200` | Success |
+| `400` | Bad request (invalid JSON, missing fields, validation errors) |
+| `404` | Service or action not found |
+
+## Health Check
+
+If enabled in config, you can check server health:
+
+```
+GET /status
+```
+
+```json
+{
+  "status": true,
+  "message": "my-app is running",
+  "data": {}
+}
+```
+
+
+
+---
+url: /nile/guide/internals/server.md
+---
+
+# Nile Server
+
+**Type:** Reference / Specification
+**Path:** `src/nile/`
+
+## 1. Purpose
+
+The Nile Server module provides the top-level factory for bootstrapping a Nile application. `createNileServer` is the single entry point developers use to wire together the Action Engine, shared context, and interface layers (REST, and later WebSocket/RPC).
+
+### 1.1 Responsibilities
+
+- **Bootstrapping:** Create and connect the Action Engine, `NileContext`, and REST interface from a single `ServerConfig`
+- **Context ownership:** Create a single `NileContext` instance shared across all interfaces
+- **Context access:** Export `getContext()` to retrieve the runtime context from anywhere within a request scope
+- **Lifecycle:** Execute `onBoot` hooks after initialization with crash safety
+- **Diagnostics:** Route diagnostic output through `createDiagnosticsLog` from `src/utils.ts`, which checks `resources.logger` first and falls back to `console.log`. See `docs/internals/logging.md` section 7.
+
+### 1.2 Non-Goals
+
+- **Transport logic:** The server module does not handle HTTP routing, CORS, or request parsing. That is the REST layer's responsibility.
+- **Engine internals:** The server does not manage action execution or hook pipelines. It delegates to the engine.
+
+## 2. `createNileServer`
+
+**Path:** `src/nile/server.ts`
+
+```typescript
+import { createNileServer } from "nile"; // or src/index.ts
+
+const server = createNileServer({
+  serverName: "my-app",
+  services: [/* ... */],
+  rest: {
+    baseUrl: "/api",
+    allowedOrigins: ["http://localhost:3000"],
+    enableStatus: true,
+  },
+});
+```
+
+### 2.1 Initialization Sequence
+
+1. **Validate** — Throws immediately if `config.services` is empty
+2. **Create `NileContext`** — Single instance with `config.resources` attached
+3. **Create Engine** — Passes `services`, `diagnostics`, and global hook handlers
+4. **Log services table** — When `config.logServices` is `true`, prints a `console.table` of registered services (name, description, actions). Always prints — not gated by `diagnostics`
+5. **Create REST app** — Only if `config.rest` is provided. Passes engine, context, `serverName`, and `runtime` (defaults to `"bun"`)
+6. **Print REST endpoint URLs** — When REST is configured, prints `POST http://host:port/baseUrl/services` and optionally `GET http://host:port/status` via `console.log`. Uses `rest.host` (default `"localhost"`) and `rest.port` (default `3000`)
+7. **Run `onBoot`** — Fire-and-forget async IIFE. Failures are logged via `console.error` but do not crash the server
+
+### 2.2 Return Value (`NileServer`)
+
+```typescript
+{
+  config: ServerConfig;
+  engine: Engine;
+  context: NileContext;
+  rest?: { app: Hono; config: RestConfig };
+}
+```
+
+- `rest` is only present when `config.rest` was provided
+- `engine` provides direct access to `getServices`, `getServiceActions`, `getAction`, `executeAction`
+- `context` is the shared `NileContext` passed to all layers
+
+## 3. `ServerConfig`
+
+```typescript
+{
+  serverName: string;
+  runtime?: ServerRuntime;            // "bun" | "node", defaults to "bun"
+  services: Services;                 // required, at least one
+  diagnostics?: boolean;              // default: false
+  logServices?: boolean;              // default: true, print services table via console.table
+  resources?: Resources;              // logger, database, cache, custom keys
+  rest?: RestConfig;
+  websocket?: Record<string, unknown>; // placeholder, not yet implemented
+  rpc?: Record<string, unknown>;       // placeholder, not yet implemented
+  onBeforeActionHandler?: BeforeActionHandler<unknown, unknown>;
+  onAfterActionHandler?: AfterActionHandler<unknown, unknown>;
+  onBoot?: {
+    fn: (context: NileContext) => Promise<void> | void;
+  };
+}
+```
+
+- `runtime` lives only on `ServerConfig` and is piped to `createRestApp` as a parameter. It is not duplicated onto `RestConfig`.
+- `services` is required. An empty array throws at initialization.
+- `diagnostics` defaults to `false`. When enabled, internal modules emit diagnostic output through `createDiagnosticsLog`.
+- `logServices` defaults to `true`. Prints a `console.table` of registered services (Service, Description, Actions count). Not gated by `diagnostics` — set `logServices: false` to suppress.
+- When REST is configured, endpoint URLs are always printed via `console.log` using `rest.host` (default `"localhost"`) and `rest.port` (default `3000`).
+
+## 4. `NileContext`
+
+**Path:** `src/nile/nile.ts`
+**Factory:** `createNileContext(params?)`
+
+The context is a singleton per server. It carries interface-specific data, hook execution state, session storage, and a general-purpose key-value store. It supports an optional `TDB` generic to provide type safety for the database resource.
+
+### 4.1 Key-Value Store
+
+```typescript
+context.set("tenant", { id: "abc" });
+const tenant = context.get<{ id: string }>("tenant");
+```
+
+`_store` is a `Map<string, unknown>` exposed as readonly. Use `get`/`set` methods for access.
+
+### 4.2 Sessions
+...
+### 4.5 Resources
+
+```typescript
+context.resources?.logger;
+context.resources?.database; // typed as TDB
+context.resources?.cache;
+```
+
+Extensible via index signature. Passed through from `ServerConfig.resources`. The `database` field is typed as `TDB` (defaulting to `unknown`).
+
+## 5. Key Types
+
+### 5.1 `BeforeActionHandler`
+
+Global hook that runs before every action. Returns a `Result` — `Err` halts the pipeline.
+
+```typescript
+type BeforeActionHandler<T, E> = (params: {
+  nileContext: NileContext<unknown>;
+  action: Action;
+  payload: unknown;
+}) => Result<T, E>;
+```
+
+### 5.2 `AfterActionHandler`
+
+Global hook that runs after every action. Receives the action result and can transform it.
+
+```typescript
+type AfterActionHandler<T, E> = (params: {
+  nileContext: NileContext<unknown>;
+  action: Action;
+  payload: unknown;
+  result: Result<T, E>;
+}) => Result<T, E>;
+```
+
+### 5.3 `Sessions`
+...
+### 5.4 `Resources`
+
+```typescript
+interface NileLogger {
+  info: (input: { atFunction: string; message: string; data?: unknown }) => string;
+  warn: (input: { atFunction: string; message: string; data?: unknown }) => string;
+  error: (input: { atFunction: string; message: string; data?: unknown }) => string;
+}
+
+type Resources<TDB = unknown> = {
+  logger?: NileLogger;
+  database?: TDB;
+  cache?: unknown;
+  [key: string]: unknown;
+};
+```
+
+The `logger` field accepts a `NileLogger` — the return type of `createLogger` from the logging module. This enables `handleError` and `createDiagnosticsLog` to log through the same logger instance.
+
+## 6. Constraints
+
+- **One context per server** — `createNileContext` is called once in `createNileServer`. All interfaces share this instance.
+- **Generic Database Support** — To avoid generic leakage into the core engine, the database type `TDB` is only present in `NileContext` and `Resources`. High-level components (Engine, REST) use `unknown`.
+...
+## 8. `getContext`
+
+**Path:** `src/nile/server.ts`
+
+Exported function that retrieves the runtime `NileContext` from anywhere within a request scope. It accepts an optional `TDB` generic for type-safe database access.
+
+```typescript
+import { getContext } from "@nilejs/nile";
+
+// Type-safe access to your database
+const ctx = getContext<MyDatabaseType>();
+
+// Access resources, sessions, etc.
+const db = ctx.resources?.database; // typed as MyDatabaseType
+ctx.resources?.logger;
+ctx.getSession("rest");
+ctx.set("user", { id: "123" });
+```
+
+
+`_store` is a `Map<string, unknown>` exposed as readonly. Use `get`/`set` methods for access.
+
+### 4.2 Sessions
+
+Each `NileContext` owns its own session store. Multiple server instances do not share session state.
+
+```typescript
+context.setSession("rest", { userId: "123", token: "abc" });
+const session = context.getSession("rest");
+// { userId: "123", token: "abc" }
+```
+
+Session keys are `"rest" | "ws" | "rpc"`, matching the interface types.
+
+### 4.3 Hook Context
+
+`hookContext` tracks the lifecycle of a single action execution. It is reset at the start of each `executeAction` call via `resetHookContext(actionName, input)`.
+
+```typescript
+context.hookContext.actionName;  // current action
+context.hookContext.state;       // mutable key-value shared between hooks
+context.hookContext.log;         // { before: HookLogEntry[], after: HookLogEntry[] }
+```
+
+Mutation methods: `updateHookState`, `addHookLog`, `setHookError`, `setHookOutput`.
+
+### 4.4 Interface Contexts
+
+```typescript
+context.rest  // HonoContext (readonly, set at creation)
+context.ws    // WebSocketContext (readonly)
+context.rpc   // RPCContext (readonly)
+```
+
+These are set once during `createNileContext` via the `interfaceContext` parameter. The REST layer creates a fresh context per request with the Hono context attached.
+
+### 4.5 Resources
+
+```typescript
+context.resources?.logger;
+context.resources?.database;
+context.resources?.cache;
+```
+
+Extensible via index signature. Passed through from `ServerConfig.resources`.
+
+## 5. Key Types
+
+### 5.1 `BeforeActionHandler`
+
+Global hook that runs before every action. Returns a `Result` — `Err` halts the pipeline.
+
+```typescript
+type BeforeActionHandler<T, E> = (params: {
+  nileContext: NileContext;
+  action: Action;
+  payload: unknown;
+}) => Result<T, E>;
+```
+
+### 5.2 `AfterActionHandler`
+
+Global hook that runs after every action. Receives the action result and can transform it.
+
+```typescript
+type AfterActionHandler<T, E> = (params: {
+  nileContext: NileContext;
+  action: Action;
+  payload: unknown;
+  result: Result<T, E>;
+}) => Result<T, E>;
+```
+
+### 5.3 `Sessions`
+
+```typescript
+type Sessions = {
+  rest?: Record<string, unknown>;
+  ws?: Record<string, unknown>;
+  rpc?: Record<string, unknown>;
+};
+```
+
+### 5.4 `Resources`
+
+```typescript
+interface NileLogger {
+  info: (input: { atFunction: string; message: string; data?: unknown }) => string;
+  warn: (input: { atFunction: string; message: string; data?: unknown }) => string;
+  error: (input: { atFunction: string; message: string; data?: unknown }) => string;
+}
+
+type Resources = {
+  logger?: NileLogger;
+  database?: unknown;
+  cache?: unknown;
+  [key: string]: unknown;
+};
+```
+
+The `logger` field accepts a `NileLogger` — the return type of `createLogger` from the logging module. This enables `handleError` and `createDiagnosticsLog` to log through the same logger instance.
+
+## 6. Constraints
+
+- **One context per server** — `createNileContext` is called once in `createNileServer`. All interfaces share this instance.
+- **`onBoot` is fire-and-forget** — It runs in an async IIFE and is not awaited. Errors are caught by `safeTry` and logged to `console.error`.
+- **Runtime default** — If `config.runtime` is omitted, it defaults to `"bun"`. This affects static file serving and future runtime-specific behavior.
+- **No dynamic service injection** — Services are fixed at boot time. Adding services after initialization is not supported.
+
+## 7. Failure Modes
+
+- **Empty services** — `createNileServer` throws immediately with a descriptive error
+- **`onBoot` crash** — Caught by `safeTry`, logged to `console.error`, does not prevent server from starting
+- **Missing resources** — `resources` is optional. Diagnostics fall back to `console.log` when `resources.logger` is absent (handled by `createDiagnosticsLog`)
+
+## 8. `getContext`
+
+**Path:** `src/nile/server.ts`
+
+Exported function that retrieves the runtime `NileContext` from anywhere within a request scope. The context is stored in a module-level variable set during `createNileServer` initialization.
+
+```typescript
+import { getContext } from "@nilejs/nile";
+
+const ctx = getContext();
+
+// Access resources, sessions, etc.
+ctx.resources?.logger;
+ctx.getSession("rest");
+ctx.set("user", { id: "123" });
+```
+
+### 8.1 Usage Pattern
+
+`getContext` is designed to be called from action handlers or utility functions that need access to the context but don't receive it as a parameter:
+
+```typescript
+// In an action handler
+const handler = async (data, ctx) => {
+  // Both ctx and getContext() work
+  const userId = ctx.get("userId") ?? getContext().get("userId");
+  return Ok({ userId });
+};
+```
+
+### 8.2 Constraints
+
+- **Must be called after server initialization** — `getContext` throws if called before `createNileServer` has run
+- **Must be called within a request scope** — The context is set once at server boot, not per-request. For per-request isolation, use the context passed to action handlers
+
+### 8.3 Failure Modes
+
+- **Called before server boot** — Throws `"getContext: Server not initialized. Call createNileServer first."`
+
+
+
+---
+url: /nile/guide/internals/db.md
+---
+
+# Database Utilities
+
+## Purpose
+
+Provides utilities for integrating with Drizzle ORM, including schema generation, transaction management, and a recommended **model file** pattern for organizing database operations.
+
+## Constraints
+
+- Requires `drizzle-orm` and `drizzle-zod` as peer dependencies.
+- Intended for use with Drizzle-compatible databases (PostgreSQL, SQLite, etc.).
+
+## 1. Folder Organization
+
+Nile recommends a dedicated `db/` directory for all database concerns, with a `models/` subdirectory for data access functions:
+
+```
+src/
+├── db/
+│   ├── client.ts           # Database client setup (connection, ORM wrapper)
+│   ├── schema.ts           # Drizzle table definitions
+│   ├── types.ts            # Inferred types from schema
+│   ├── index.ts            # Barrel exports
+│   └── models/
+│       ├── tasks.ts        # Model functions for the tasks table
+│       ├── users.ts        # Model functions for the users table
+│       └── index.ts        # Barrel re-exports all models
+├── services/
+│   └── ...                 # Action handlers import from @/db/models
+└── index.ts                # Server entry point
+```
+
+Each layer has a clear responsibility:
+
+| File | Responsibility |
+|------|---------------|
+| `client.ts` | Initialize the database connection and export the `db` instance |
+| `schema.ts` | Define Drizzle table schemas (columns, types, defaults) |
+| `types.ts` | Infer TypeScript types from the schema (`Task`, `NewTask`, etc.) |
+| `models/*.ts` | CRUD functions that validate, query, and return `Result<T, string>` |
+| `index.ts` | Barrel files for clean imports |
+
+### Example: client.ts
+
+```typescript
+import { PGlite } from "@electric-sql/pglite";
+import { drizzle } from "drizzle-orm/pglite";
+import { tasks } from "./schema";
+
+const DATA_DIR = `${process.cwd()}/data`;
+Bun.spawnSync(["mkdir", "-p", DATA_DIR]);
+
+export const pglite = new PGlite(DATA_DIR);
+export const db = drizzle(pglite, { schema: { tasks } });
+```
+
+### Example: schema.ts
+
+```typescript
+import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+
+export const tasks = pgTable("tasks", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+  status: text("status", { enum: ["pending", "in-progress", "done"] })
+    .notNull()
+    .default("pending"),
+  created_at: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updated_at: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});
+```
+
+### Example: types.ts
+
+```typescript
+import type { tasks } from "./schema";
+
+export type Task = typeof tasks.$inferSelect;
+export type NewTask = typeof tasks.$inferInsert;
+```
+
+## 2. Model Files
+
+Model files are the core pattern for database operations in Nile. Each model file contains functions that interact with a single table, using consistent patterns for validation, error handling, and result returns.
+
+### Key Principles
+
+- **One model file per table** — `models/tasks.ts` handles all task operations
+- **All model functions return `Result<T, string>`** — using `Ok()` for success and `handleError()` for failures
+- **Null checks belong in model files** — not in action handlers. If a row is not found, the model returns `handleError(...)`, not the handler.
+- **Use `safeTry` from `slang-ts`** for all database calls — check `result.isOk` / `result.isErr` and access `result.value` / `result.error`
+- **Use `handleError` from `@nilejs/nile`** for all error returns — this logs the error and returns an `Err` with a traceable log ID
+- **Use `getZodSchema`** for input validation before writes
+- **Accept `dbx` parameter** for transaction support via `DBX<typeof db>`
+
+### Full Model File Example
+
+```typescript
+// db/models/tasks.ts
+import {
+  createTransactionVariant,
+  type DBX,
+  getZodSchema,
+  handleError,
+} from "@nilejs/nile";
+import { desc, eq } from "drizzle-orm";
+import { Ok, safeTry } from "slang-ts";
+import { db } from "@/db/client";
+import { tasks } from "@/db/schema";
+import type { NewTask, Task } from "@/db/types";
+
+const parsedSchema = getZodSchema(tasks);
+
+/** Create a new task with validation */
+export const createTask = async ({
+  task,
+  dbx = db,
+}: {
+  task: NewTask;
+  dbx?: DBX<typeof db>;
+}) => {
+  const parsed = parsedSchema.insert.safeParse(task);
+  if (!parsed.success) {
+    return handleError({
+      message: "Invalid task data",
+      data: { errors: parsed.error },
+      atFunction: "createTask",
+    });
+  }
+
+  const result = await safeTry(() => {
+    return dbx.insert(tasks).values(task).returning();
+  });
+  if (result.isErr) {
+    return handleError({
+      message: "Error creating task",
+      data: { task, error: result.error },
+      atFunction: "createTask",
+    });
+  }
+
+  const data = result.value?.[0] ?? null;
+  if (!data) {
+    return handleError({
+      message: "Task creation returned no data",
+      data: { task },
+      atFunction: "createTask",
+    });
+  }
+  return Ok(data);
+};
+
+// Transaction-aware variant — automatically wraps in db.transaction(...)
+export const createTaskTx = createTransactionVariant(createTask);
+
+/** Get a single task by ID */
+export const getTaskById = async (taskId: string) => {
+  const result = await safeTry(() => {
+    return db.query.tasks.findFirst({ where: eq(tasks.id, taskId) });
+  });
+  if (result.isErr) {
+    return handleError({
+      message: "Error getting task",
+      data: { taskId, error: result.error },
+      atFunction: "getTaskById",
+    });
+  }
+
+  // Null check in the model, not the handler
+  if (!result.value) {
+    return handleError({
+      message: "Task not found",
+      data: { taskId },
+      atFunction: "getTaskById",
+    });
+  }
+  return Ok(result.value);
+};
+
+/** Update an existing task by ID */
+export const updateTask = async ({
+  taskId,
+  task,
+  dbx = db,
+}: {
+  taskId: string;
+  task: Partial<Task>;
+  dbx?: DBX<typeof db>;
+}) => {
+  const parsed = parsedSchema.update.safeParse(task);
+  if (!parsed.success) {
+    return handleError({
+      message: "Invalid task data",
+      data: { errors: parsed.error },
+      atFunction: "updateTask",
+    });
+  }
+
+  const result = await safeTry(() => {
+    return dbx.update(tasks).set(task).where(eq(tasks.id, taskId)).returning();
+  });
+  if (result.isErr) {
+    return handleError({
+      message: "Error updating task",
+      data: { taskId, task, error: result.error },
+      atFunction: "updateTask",
+    });
+  }
+
+  const data = result.value?.[0] ?? null;
+  if (!data) {
+    return handleError({
+      message: "Task not found",
+      data: { taskId },
+      atFunction: "updateTask",
+    });
+  }
+  return Ok(data);
+};
+
+export const updateTaskTx = createTransactionVariant(updateTask);
+
+/** Delete a task by ID */
+export const deleteTask = async (taskId: string) => {
+  const result = await safeTry(() => {
+    return db.delete(tasks).where(eq(tasks.id, taskId)).returning();
+  });
+  if (result.isErr) {
+    return handleError({
+      message: "Error deleting task",
+      data: { taskId, error: result.error },
+      atFunction: "deleteTask",
+    });
+  }
+
+  const data = result.value?.[0] ?? null;
+  if (!data) {
+    return handleError({
+      message: "Task not found",
+      data: { taskId },
+      atFunction: "deleteTask",
+    });
+  }
+  return Ok(data);
+};
+
+/** List all tasks, newest first */
+export const getAllTasks = async () => {
+  const result = await safeTry(() => {
+    return db.select().from(tasks).orderBy(desc(tasks.created_at));
+  });
+  if (result.isErr) {
+    return handleError({
+      message: "Error getting all tasks",
+      data: { error: result.error },
+      atFunction: "getAllTasks",
+    });
+  }
+
+  return Ok(result.value ?? []);
+};
+```
+
+### How Action Handlers Use Models
+
+Action handlers stay thin — they call the model function and forward the result:
+
+```typescript
+// services/tasks/create.ts
+import { type Action, createAction } from "@nilejs/nile";
+import { Err, Ok } from "slang-ts";
+import z from "zod";
+import { createTask } from "@/db/models";
+
+const createTaskSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  description: z.string().optional().default(""),
+  status: z.enum(["pending", "in-progress", "done"]).optional().default("pending"),
+});
+
+const createTaskHandler = async (data: Record<string, unknown>) => {
+  const result = await createTask({
+    task: {
+      title: data.title as string,
+      description: (data.description as string) ?? "",
+      status: (data.status as "pending" | "in-progress" | "done") ?? "pending",
+    },
+  });
+  if (result.isErr) {
+    return Err(result.error);
+  }
+  return Ok({ task: result.value });
+};
+
+export const createTaskAction: Action = createAction({
+  name: "create",
+  description: "Create a new task",
+  handler: createTaskHandler,
+  validation: createTaskSchema,
+});
+```
+
+## 3. handleError
+
+The `handleError` utility is the standard way to return errors from model functions. It logs the error and returns a traceable `Err` result.
+
+### Usage
+
+```typescript
+import { handleError } from "@nilejs/nile";
+
+// In a model function:
+if (!result.value) {
+  return handleError({
+    message: "Task not found",
+    data: { taskId },
+    atFunction: "getTaskById",
+  });
+}
+```
+
+### Behavior
+
+1. **Logger resolution** — uses the explicit `logger` param if provided, otherwise resolves from `getContext().resources.logger`
+2. **Caller inference** — parses `Error().stack` to detect the calling function name. Override with `atFunction` when needed (arrow functions, callbacks)
+3. **Logging** — calls `logger.error({ atFunction, message, data })` and receives a `log_id` back
+4. **Return** — returns `Err("[log_id] message")`, making every error traceable in logs
+
+### Interface
+
+```typescript
+interface HandleErrorParams {
+  message: string;        // Human-readable error description
+  data?: unknown;         // Structured context data for debugging
+  logger?: NileLogger;    // Explicit logger (optional — resolved from context)
+  atFunction?: string;    // Override auto-inferred caller name
+}
+```
+
+### Return Type
+
+```typescript
+ErrType<string> & ResultMethods<never>
+```
+
+Always returns an `Err` variant. Compatible with any `Result<T, E>` union, so model functions can return `Ok(data)` or `handleError(...)` from the same function.
+
+### Why handleError Instead of Err()
+
+- **Traceability** — every error gets a unique `log_id` for log correlation
+- **Automatic logging** — errors are logged at the error site, not somewhere upstream
+- **Context-aware** — resolves the logger from the Nile context without explicit imports
+- **Consistent** — all errors follow the same `[logId] message` format
+
+## 4. Key Types
+
+### DBX
+
+```typescript
+type DBX<TDB> = TDB | Parameters<Parameters<TDB["transaction"]>[0]>[0];
+```
+
+A union type representing either a root database instance or a transaction pointer. Used in model function signatures to accept both:
+
+```typescript
+export const createTask = async ({
+  task,
+  dbx = db,    // defaults to root db, but accepts a transaction
+}: {
+  task: NewTask;
+  dbx?: DBX<typeof db>;
+}) => { ... };
+```
+
+### DBParams
+
+```typescript
+interface DBParams<TDB> {
+  dbx?: DBX<TDB>;
+}
+```
+
+Standard interface for functions that accept an optional database or transaction parameter.
+
+### TableSchemas
+
+```typescript
+interface TableSchemas<TTable> {
+  insert: ZodObject<ZodRawShape>;
+  update: ZodObject<ZodRawShape>;
+  select: ZodObject<ZodRawShape>;
+}
+```
+
+Object containing Zod schemas for insert, update, and select operations. Generated by `getZodSchema`.
+
+## 5. Utilities
+
+### getZodSchema
+
+Generates Zod validation schemas from a Drizzle table definition:
+
+```typescript
+import { getZodSchema } from "@nilejs/nile";
+import { tasks } from "@/db/schema";
+
+const parsedSchema = getZodSchema(tasks);
+
+// parsedSchema.insert  — for validating new records
+// parsedSchema.update  — for validating partial updates
+// parsedSchema.select  — for validating query results
+```
+
+Call this once per table at module scope and reuse across model functions.
+
+### getContext
+
+Retrieves the shared Nile context with type-safe database access:
+
+```typescript
+import { getContext } from "@nilejs/nile";
+
+const handler = async (data: any) => {
+  const db = getContext<MyDatabase>().resources?.database;
+  if (!db) return Err("Database not found");
+
+  const results = await db.select().from(users);
+  return Ok(results);
+};
+```
+
+### createTransactionVariant
+
+Creates a transaction-aware wrapper around a model function. When called, it automatically wraps the operation in `db.transaction(...)` and triggers rollback if the function returns `Err`.
+
+```typescript
+import { createTransactionVariant } from "@nilejs/nile";
+
+// Standard model function
+const createTask = async ({ task, dbx = db }: { task: NewTask; dbx?: DBX<typeof db> }) => {
+  // ... validate, insert, return Ok or handleError
+};
+
+// Transaction variant — wraps in db.transaction automatically
+const createTaskTx = createTransactionVariant(createTask);
+
+// Usage: automatically runs inside a transaction
+const result = await createTaskTx({ task: data, dbx: db });
+```
+
+**Behavior:**
+- Wraps the function call inside `dbx.transaction(tx => fn({ ...params, dbx: tx }))`
+- If the inner function returns `Err`, the transaction wrapper throws to trigger rollback
+- The thrown error is caught and the original `Err` is returned to the caller
+
+## 6. Putting It All Together
+
+A complete Nile project with database integration follows this structure:
+
+```
+my-app/
+├── src/
+│   ├── index.ts                    # Server entry point
+│   ├── db/
+│   │   ├── client.ts               # DB connection setup
+│   │   ├── schema.ts               # Drizzle table definitions
+│   │   ├── types.ts                # Inferred types
+│   │   ├── index.ts                # Barrel exports
+│   │   └── models/
+│   │       ├── tasks.ts            # CRUD for tasks table
+│   │       ├── users.ts            # CRUD for users table
+│   │       └── index.ts            # Barrel re-exports
+│   └── services/
+│       ├── services.config.ts      # Service definitions
+│       └── tasks/
+│           ├── create.ts           # Action: calls createTask model
+│           ├── list.ts             # Action: calls getAllTasks model
+│           ├── get.ts              # Action: calls getTaskById model
+│           ├── update.ts           # Action: calls updateTask model
+│           └── delete.ts           # Action: calls deleteTask model
+├── package.json
+├── tsconfig.json                   # Path alias: @/* → ./src/*
+└── drizzle.config.ts               # Drizzle Kit config
+```
+
+The data flows in one direction:
+
+```
+Request → Action Handler → Model Function → Database
+                ↑                  ↓
+            Ok/Err            Ok/handleError
+```
+
+Action handlers never touch the database directly. They call model functions, which validate inputs, run queries via `safeTry`, handle null checks, and return typed `Result` values.
+
+## 7. Failure Modes
+
+- **`getZodSchema`** — throws if passed a relation schema instead of a table schema
+- **`createTransactionVariant`** — throws when the wrapped function returns `Err` (intentional, triggers rollback)
+- **`handleError`** — throws if no logger is available (neither explicit nor on context)
+
+
+
+---
+url: /nile/guide/internals/logging.md
+---
+
+# Logging
+
+**Type:** Reference / Specification
+**Path:** `src/logging/`
+
+## 1. Purpose
+
+The logging module provides structured, append-only log persistence for Nile applications. It writes NDJSON log entries to disk via pino, supports optional time-based file chunking, and exposes a query API for reading logs back with filters.
+
+### 1.1 Responsibilities
+
+- **Log creation** — Write structured NDJSON records to disk (production/test) or stdout (dev/agentic mode)
+- **File chunking** — Optionally split log files into time-based chunks (monthly, daily, weekly) organized in per-app directories
+- **Log retrieval** — Query logs with filters (appName, log_id, level, date range) with smart chunk selection to avoid scanning irrelevant files
+- **Factory API** — `createLogger(appName, config?)` returns a bound logger with `.info()`, `.warn()`, `.error()` methods
+
+### 1.2 Non-Goals
+
+- **Size-based rotation** — The module does not implement log rotation by file size. Only time-based chunking is supported.
+- **Log shipping** — No built-in support for sending logs to external services (e.g., Datadog, Elasticsearch). Consumers can build this on top of the query API.
+- **Diagnostics logging** — Internal nile diagnostics (engine, REST, server boot messages) use `createDiagnosticsLog` from `src/utils.ts`, not this module. See section 7.
+
+## 2. Architecture
+
+| File | Responsibility |
+|------|----------------|
+| `logger.ts` | Core logic: `createLog`, `getLogs`, `resolveLogPath`, `formatChunkName`, chunk helpers, types |
+| `create-log.ts` | `createLogger` factory — returns a bound logger with level methods |
+| `index.ts` | Barrel exports for the public API |
+
+## 3. Public API
+
+### 3.1 `createLogger(appName, config?)`
+
+**Path:** `src/logging/create-log.ts`
+
+Factory that returns a logger bound to a specific app name. Optionally accepts chunking config.
+
+```typescript
+import { createLogger } from "@/logging";
+
+// Flat mode (backwards compatible) — writes to logs/my-app.log
+const logger = createLogger("my-app");
+
+// With monthly chunking — writes to logs/my-app/2026-02.log
+const logger = createLogger("my-app", { chunking: "monthly" });
+
+logger.info({ atFunction: "handleRequest", message: "Request received", data: { path: "/api" } });
+logger.warn({ atFunction: "validateInput", message: "Missing field" });
+logger.error({ atFunction: "processOrder", message: "Payment failed", data: { orderId: "123" } });
+```
+
+**Returns:** `{ info, warn, error }` — each method takes a `LogInput` (same as `Log` minus `appName`).
+
+### 3.2 `createLog(log, config?)`
+
+**Path:** `src/logging/logger.ts`
+
+Lower-level function that writes a single log entry. Used internally by `createLogger`.
+
+```typescript
+import { createLog } from "@/logging";
+
+const logId = createLog({
+  appName: "my-app",
+  atFunction: "startup",
+  message: "Server started",
+  level: "info",
+  data: { port: 3000 },
+}, { chunking: "daily" });
+```
+
+**Behavior by MODE:**
+- `prod` / `NODE_ENV=test` — Writes NDJSON to the resolved log file path. Test mode uses `appendFileSync` for deterministic reads; prod uses pino async transport.
+- `agentic` — Returns the log record as a JSON string (no file I/O).
+- Any other value — Prints to `console.log` and returns `"dev-mode, see your dev console!"`.
+
+**Returns:** The generated `log_id` (nanoid, 6 chars), or JSON string in agentic mode.
+
+**Throws:** If `log.appName` is missing.
+
+### 3.3 `getLogs(filters?, config?)`
+
+**Path:** `src/logging/logger.ts`
+
+Reads and filters log entries from disk. Supports both flat files and chunked directories.
+
+```typescript
+import { getLogs } from "@/logging";
+
+// All logs for an app (flat mode)
+const logs = getLogs({ appName: "my-app" });
+
+// Filtered by level and date range (chunked mode)
+const errors = getLogs(
+  { appName: "my-app", level: "error", from: new Date("2026-01-01"), to: new Date("2026-01-31") },
+  { chunking: "monthly" }
+);
+```
+
+**Filters (`LogFilter`):**
+- `appName` — Filter by app name (required for chunked mode to locate the directory)
+- `log_id` — Filter by specific log ID
+- `level` — Filter by `"info"`, `"warn"`, or `"error"`
+- `from` / `to` — Date range filter (inclusive)
+
+**Smart chunk selection:** When chunking is enabled and date filters are provided, `getLogs` computes the date range of each chunk file and skips files that fall entirely outside the requested range. This avoids reading and parsing irrelevant files.
+
+**Returns:** `Log[]` — array of matching log entries.
+
+### 3.4 `resolveLogPath(appName, config?)`
+
+Computes the file path for a given app and chunking config. Exported for testing and advanced use.
+
+```typescript
+import { resolveLogPath } from "@/logging";
+
+resolveLogPath("my-app");                              // logs/my-app.log
+resolveLogPath("my-app", { chunking: "monthly" });     // logs/my-app/2026-02.log
+resolveLogPath("my-app", { chunking: "daily" });       // logs/my-app/2026-02-27.log
+resolveLogPath("my-app", { chunking: "weekly" });      // logs/my-app/2026-W09.log
+```
+
+Creates the app subdirectory if it doesn't exist.
+
+### 3.5 `formatChunkName(date, chunking)`
+
+Formats a date into the chunk filename (without extension). Exported for testing and reuse.
+
+```typescript
+import { formatChunkName } from "@/logging";
+
+formatChunkName(new Date("2026-02-15"), "monthly");  // "2026-02"
+formatChunkName(new Date("2026-02-15"), "daily");    // "2026-02-15"
+formatChunkName(new Date("2026-02-15"), "weekly");   // "2026-W07"
+```
+
+## 4. Key Types
+
+### 4.1 `Log`
+
+```typescript
+{
+  atFunction: string;
+  appName: string;
+  message: string;
+  data?: unknown;
+  level?: "info" | "warn" | "error";
+  log_id?: string;
+}
+```
+
+The `level` field is used both in the TypeScript interface and in the serialized NDJSON records. Previously this was `type` in the interface and `level` in the JSON — this mismatch has been normalized.
+
+### 4.2 `LoggerConfig`
+
+```typescript
+{
+  chunking?: "monthly" | "daily" | "weekly" | "none";
+}
+```
+
+- `"none"` (default) — Single flat file per app: `logs/{appName}.log`
+- `"monthly"` — `logs/{appName}/YYYY-MM.log`
+- `"daily"` — `logs/{appName}/YYYY-MM-DD.log`
+- `"weekly"` — `logs/{appName}/YYYY-WNN.log` (ISO 8601 week number)
+
+### 4.3 `LogFilter`
+
+```typescript
+{
+  appName?: string;
+  log_id?: string;
+  level?: "info" | "warn" | "error";
+  from?: Date;
+  to?: Date;
+}
+```
+
+## 5. File Layout
+
+### 5.1 Flat Mode (default)
+
+```
+logs/
+  my-app.log          # NDJSON, one record per line
+  another-app.log
+```
+
+### 5.2 Chunked Mode
+
+```
+logs/
+  my-app/
+    2026-01.log       # monthly
+    2026-02.log
+  daily-app/
+    2026-02-25.log    # daily
+    2026-02-26.log
+    2026-02-27.log
+  weekly-app/
+    2026-W08.log      # weekly (ISO week)
+    2026-W09.log
+```
+
+Each file contains NDJSON records identical in format to flat mode. The only difference is where they are written.
+
+## 6. Internal Helpers
+
+These functions are not exported but are critical to `getLogs` performance:
+
+- `resolveLogFiles(filters, chunking)` — Determines which files to read. For flat mode, returns the single file. For chunked mode, scans the app directory and filters by date relevance.
+- `isChunkRelevant(filename, chunking, filters)` — Checks if a chunk file's date range overlaps with the filter's `from`/`to` range.
+- `getChunkDateRange(chunkName, chunking)` — Parses a chunk filename into start/end date boundaries.
+- `readAndParseLogFiles(files)` — Reads NDJSON from multiple files into a single array, skipping malformed lines.
+- `applyLogFilters(logs, filters)` — Applies `appName`, `log_id`, `level`, and time range filters.
+- `getISOWeekNumber(date)` — ISO 8601 week number calculation.
+- `getDateFromISOWeek(year, week)` — Returns the Monday of a given ISO week.
+
+## 7. Diagnostics Logging (Nile Internals)
+
+Nile's internal modules (server, engine, REST) use a separate diagnostics logging system that is distinct from this module. The `createDiagnosticsLog` utility in `src/utils.ts` provides centralized diagnostic output:
+
+```typescript
+import { createDiagnosticsLog } from "@/utils";
+
+const log = createDiagnosticsLog("Engine", {
+  diagnostics: config.diagnostics,
+  logger: nileContext.resources?.logger,
+});
+
+log("Initialized in 2ms. Loaded 3 services.");
+```
+
+**Behavior:**
+- When `diagnostics` is `false` (or absent), returns a no-op function
+- When `diagnostics` is `true`, checks `resources.logger` first, falls back to `console.log`
+- The prefix (e.g. `"Engine"`) is automatically prepended as `[Engine]`
+
+This replaces the previous pattern where `server.ts`, `rest.ts`, and `engine.ts` each defined their own inline `log()` closures.
+
+## 8. `handleError` — Userland Error Utility
+
+**Path:** `src/utils/handle-error.ts`
+
+A utility for application developers that combines error logging and error return in a single call. Infers `atFunction` from the caller stack when not provided.
+
+```typescript
+import { handleError } from "@nilejs/nile";
+
+// With explicit logger
+return handleError({
+  message: "Invalid credentials",
+  data: { phone_number: data.phone_number },
+  logger: log,
+});
+
+// Without explicit logger — uses getContext().resources.logger
+return handleError({
+  message: "User not found",
+  data: { userId: data.id },
+});
+```
+
+### 8.1 Behavior
+
+1. **Logger resolution:** Uses explicit `logger` param if provided, otherwise calls `getContext()` and uses `ctx.resources.logger`. If neither is available, throws.
+2. **atFunction inference:** Parses `new Error().stack` to extract the caller function name. Falls back to `"unknown"` if parsing fails. Override via the `atFunction` param.
+3. **Logging:** Calls `logger.error({ atFunction, message, data })` — receives a `log_id` back
+4. **Return:** Returns `Err("[log_id] message")` — error ID first, then user-facing message
+
+### 8.2 Interface
+
+```typescript
+interface HandleErrorParams {
+  message: string;          // User-facing error message
+  data?: unknown;          // Optional context data to log
+  logger?: NileLogger;    // Explicit logger instance
+  atFunction?: string;     // Override auto-detected caller name
+}
+```
+
+### 8.3 Constraints
+
+- **Logger required** — Throws if no explicit logger and no `resources.logger` on the context
+- **Stack parsing** — Relies on `Error().stack` which may behave differently across runtimes. Override `atFunction` when the inferred name is unhelpful (e.g., arrow functions, callbacks)
+
+### 8.4 Failure Modes
+
+- **No logger available** — Throws `"handleError: No logger available. Provide a logger param or set resources.logger on server config."`
+
+## 8. Constraints
+
+- **MODE required** — `createLog` throws if `process.env.MODE` is not set (lazy-evaluated on first log call, not at import time)
+- **appName required** — `createLog` throws if `log.appName` is missing
+- **Chunked getLogs requires appName** — Without `appName`, chunked mode returns an empty array (no directory to scan)
+- **No concurrent write safety** — In test mode, uses `appendFileSync`. In production, pino handles buffering. No file-level locking is implemented.
+- **Pino transport per call** — In production, `createLog` creates a new pino transport for each log entry. Callers writing many logs should use `createLogger` and consider caching.
+
+## 9. Failure Modes
+
+- **Missing MODE** — Throws `"Missing MODE environment variable"` on first `createLog` call
+- **Missing appName** — Throws immediately with the stringified log object for debugging
+- **Malformed log lines** — `getLogs` silently skips lines that fail `JSON.parse` (NDJSON tolerance)
+- **Missing log directory** — Created automatically on first write (`mkdirSync` with `{ recursive: true }`)
+- **Unparseable chunk filenames** — `isChunkRelevant` returns `true` (includes the file to be safe rather than silently dropping data)
+
+
+
+---
+url: /nile/guide/internals/engine.md
+---
+
+# Service Action Engine
+
+**Type:** Reference / Specification  
+**Path:** `src/engine/`
+
+## 1. Purpose
+
+The Service Action Engine provides a high-performance, $O(1)$ routing and introspection layer for business operations, and a unified execution pipeline. It maps a flat array of domain-specific `Services` (and their nested `Actions`) into pre-computed memory structures upon initialization. 
+
+This engine is designed to sit below the HTTP/RPC transport layer (e.g., Hono), decoupling the knowledge of available actions from the transport mechanism used to invoke them.
+
+### 1.1 Responsibilities
+
+*   **Initialization:** Parse the `services` array exactly once on boot.
+*   **Introspection:** Provide lightweight, zero-latency metadata for available services and actions to enable dynamic discovery.
+*   **Routing:** Provide strict $O(1)$ memory pointer lookups for specific actions based on `serviceName` and `actionName`.
+*   **Execution Pipeline:** Process the full action lifecycle safely, including Global/Action-level Hooks, Payload Validation (Zod), and safe Handler execution.
+*   **Diagnostics:** Emit timing and status information via `createDiagnosticsLog` from `src/utils.ts` when `diagnostics` is enabled. See `docs/internals/logging.md` section 7.
+*   **Result Pattern Enforcement:** Ensure all internal engine methods return a `Result<T, E>` from the `slang-ts` library to eliminate `try/catch` requirements in the transport layer.
+
+### 1.2 Non-Goals
+
+*   **HTTP Routing:** The engine has no concept of HTTP methods, headers, or paths.
+
+## 2. Architecture and Data Structures
+
+To achieve guaranteed $O(1)$ lookups and prevent latency spikes, the engine pre-computes three internal data structures during `createEngine`:
+
+1.  `serviceSummaries`: An array of `ServiceSummary` objects used for fast enumeration of all available services.
+2.  `serviceActionsStore`: A dictionary mapping a `serviceName` to an array of lightweight `ActionSummary` objects. This avoids sending bulky schema/handler definitions during introspection.
+3.  `actionStore`: A nested dictionary (`Record<serviceName, Record<actionName, Action>>`) that holds the exact memory pointers to the full `Action` objects for execution routing.
+
+The engine execution pipeline helpers are extracted into `pipeline.ts` to keep the code modular and under the 400 LOC limit.
+
+## 3. Public API
+
+The engine exposes four strictly-typed methods. All methods return a `slang-ts` `Result`.
+
+### 3.1 `getServices()`
+
+Returns an array of all registered services.
+
+**Returns:** `Result<ServiceSummary[], string>`
+
+```typescript
+const result = engine.getServices();
+if (result.isOk) {
+  const services = result.value; 
+  // [ { name: 'auth', description: '...', actions: ['login', 'logout'] } ]
+}
+```
+
+### 3.2 `getServiceActions(serviceName: string)`
+
+Returns lightweight metadata for all actions within a specific service.
+
+**Returns:** `Result<ActionSummary[], string>`
+
+```typescript
+const result = engine.getServiceActions('auth');
+if (result.isOk) {
+  const actions = result.value;
+  // [ { name: 'login', isProtected: false, validation: true, accessControl: ['public'] } ]
+}
+```
+
+*Note:* The `validation` property is a boolean indicating whether the action has a defined Zod schema (`!!action.validation`).
+
+### 3.3 `getAction(serviceName: string, actionName: string)`
+
+Returns the full, executable `Action` object. Typically used internally by the execution pipeline.
+
+**Returns:** `Result<Action, string>`
+
+```typescript
+const result = engine.getAction('auth', 'login');
+if (result.isOk) {
+  const action = result.value;
+  // { name: 'login', handler: [Function], validation: ZodObject, hooks: {...} }
+}
+```
+
+### 3.4 `executeAction(serviceName: string, actionName: string, payload: unknown, nileContext: NileContext)`
+
+Executes an action through the full pipeline (Global Before Hook -> Action Before Hooks -> Validation -> Handler -> Action After Hooks -> Global After Hook). The caller must provide a `NileContext` instance — the engine never creates one internally.
+
+**Returns:** `Promise<Result<unknown, string>>`
+
+```typescript
+const nileContext = createNileContext();
+const result = await engine.executeAction('auth', 'login', { username: 'test', password: '123' }, nileContext);
+if (result.isOk) {
+  const data = result.value;
+} else {
+  console.error("Action failed:", result.error);
+}
+```
+
+## 4. Execution Pipeline
+
+When `executeAction` is called, the following steps run in sequence:
+
+1. **Global Before Hook** (`onBeforeActionHandler`) — Pass/fail guard only, does not mutate payload
+2. **Action-Level Before Hooks** (`action.hooks.before`) — Sequential, output becomes next input (mutates payload)
+3. **Zod Validation** — Uses `action.validation.safeParse()` with `prettifyError` for formatting
+4. **Main Handler** — Core business logic
+5. **Action-Level After Hooks** (`action.hooks.after`) — Sequential, mutates result
+6. **Global After Hook** (`onAfterActionHandler`) — Final cleanup/logging
+
+### 4.1 Hook Failure Behavior
+
+- Each `HookDefinition` has an `isCritical: boolean` flag
+- `isCritical: true` — if the hook returns `Err` or throws, the pipeline halts immediately
+- `isCritical: false` — failure is logged but execution continues with the previous value
+
+### 4.2 Pipeline Response Mode
+
+If an action sets `result: { pipeline: true }`, the return includes the full hook execution log:
+
+```typescript
+// Standard return
+Ok(data)
+
+// Pipeline mode return
+Ok({
+  data: data,
+  pipeline: {
+    before: [ { name: "service.hook", passed: true, input: ..., output: ... } ],
+    after: []
+  }
+})
+```
+
+## 5. Crash Safety (`safeTry`)
+
+All handler and hook invocations in `pipeline.ts` are wrapped in `safeTry` from `slang-ts`. This prevents uncaught exceptions from crashing the process.
+
+Protected call sites:
+- `runHook` — action-level before/after hook handlers
+- `runHandler` — main action handler
+- `runGlobalBeforeHook` — global before hook
+- `runGlobalAfterHook` — global after hook
+
+If a handler throws instead of returning a `Result`, `safeTry` catches the exception and returns `Err(error.message)`. The pipeline then handles it identically to a handler-returned `Err`.
+
+## 6. Constraints and Failure Modes
+
+### 6.1 Constraints
+
+*   **Memory Bound:** Because the engine loads all `services` and their dependencies (Zod schemas, DB models via imports) into memory upfront, it is designed for persistent, long-running server environments (e.g., standard Node.js/Bun containers), not aggressive cold-start environments.
+*   **Immutability:** The initialized stores (`actionStore`, etc.) are closed over in the factory function and cannot be modified at runtime. Dynamic injection of actions post-boot is not supported.
+*   **File Size:** The core `engine.ts` must remain under 400 LOC, relying on `pipeline.ts` for pipeline steps.
+
+### 6.2 Failure Modes
+
+*   **Missing Service/Action:** Calling `getServiceActions`, `getAction`, or `executeAction` with an unregistered name will immediately return an `Err(string)` result. The transport layer must handle this by returning a `404 Not Found` or equivalent error to the client.
+*   **Duplicate Actions:** If the `services` array contains duplicate action names within the same service, the last one in the array will silently overwrite the previous one during map construction.
+
+## 7. Key Types
+
+All types below are exported from `src/index.ts` and defined in `src/engine/types.ts`.
+
+### 7.1 `EngineOptions`
+
+Configuration passed to `createEngine`:
+
+```typescript
+{
+  diagnostics?: boolean;
+  services: Services;
+  onBeforeActionHandler?: BeforeActionHandler<unknown, unknown>;
+  onAfterActionHandler?: AfterActionHandler<unknown, unknown>;
+}
+```
+
+`createEngine` is consumed internally by `createNileServer` — developers configure these values via `ServerConfig`.
+
+### 7.2 `HookContext`
+
+Tracks the full lifecycle state of a single action execution. Attached to `NileContext.hookContext` and reset at the start of each `executeAction` call.
+
+```typescript
+{
+  actionName: string;
+  input: unknown;
+  output?: unknown;
+  error?: string;
+  state: Record<string, unknown>;
+  log: {
+    before: HookLogEntry[];
+    after: HookLogEntry[];
+  };
+}
+```
+
+- `state` — mutable key-value store for hooks to share data within a single execution
+- `log` — accumulated `HookLogEntry` records from before/after hook phases
+
+### 7.3 `HookLogEntry`
+
+A single hook execution record:
+
+```typescript
+{
+  name: string;    // "serviceName.actionName"
+  input: unknown;
+  output: unknown;
+  passed: boolean;
+}
+```
+
+### 7.4 `HookDefinition`
+
+Declares a hook as a reference to another action in the system:
+
+```typescript
+{
+  service: string;
+  action: string;
+  isCritical: boolean;
+}
+```
+
+See section 4.1 for `isCritical` behavior.
+
+### 7.5 `ActionResultConfig`
+
+Controls the shape of `executeAction` return values:
+
+```typescript
+{
+  pipeline: boolean;
+}
+```
+
+When `pipeline: true`, the result includes the full hook execution log alongside the data. See section 4.2.
+
+## 8. Factory Functions
+
+The `@nilejs/nile` package exports typed identity functions for defining services and actions with full type inference.
+
+### 8.1 `createAction`
+
+Creates a single action with full type inference. No runtime overhead — returns the config as-is.
+
+```typescript
+import { createAction } from '@nilejs/nile';
+
+export const loginAction = createAction({
+  name: 'login',
+  description: 'User login',
+  handler: async (data, ctx) => { /* ... */ },
+  validation: loginSchema,
+  isProtected: false,
+  accessControl: ['public'],
+});
+```
+
+### 8.2 `createActions`
+
+Creates multiple actions at once.
+
+```typescript
+import { createActions } from '@nilejs/nile';
+
+export const authActions = createActions([
+  createAction({ name: 'login', description: '...', handler: loginHandler, validation: loginSchema }),
+  createAction({ name: 'logout', description: '...', handler: logoutHandler }),
+]);
+```
+
+### 8.3 `createService`
+
+Creates a service with full type inference.
+
+```typescript
+import { createService } from '@nilejs/nile';
+
+export const authService = createService({
+  name: 'auth',
+  description: 'Authentication service',
+  actions: authActions,
+});
+```
+
+### 8.4 `createServices`
+
+Creates multiple services at once.
+
+```typescript
+import { createServices } from '@nilejs/nile';
+
+export const allServices = createServices([
+  authService,
+  userService,
+  taskService,
+]);
+```
+
+### 8.5 Recommended Project Structure
+
+For larger applications, organize actions one-per-file in domain folders. Define all services in a single `services.config.ts` file that imports the actions and exports the services array. No barrel (`index.ts`) file per service folder is needed.
+
+Keep database code in a separate `db/` directory — schema definitions, client setup, and model files that encapsulate all data access logic. See [Database Utilities](/guide/internals/db) for the full model file pattern.
+
+```
+src/
+├── db/
+│   ├── client.ts              # database client setup (e.g. PGlite + Drizzle)
+│   ├── schema.ts              # Drizzle table definitions
+│   ├── types.ts               # inferred types from schema
+│   ├── index.ts               # barrel exports
+│   └── models/
+│       ├── tasks.ts           # CRUD model functions for tasks table
+│       ├── users.ts           # CRUD model functions for users table
+│       └── index.ts           # barrel exports
+├── services/
+│   ├── auth/
+│   │   ├── login.ts           # exports loginAction
+│   │   ├── logout.ts          # exports logoutAction
+│   │   └── profile.ts         # exports profileAction
+│   ├── tasks/
+│   │   ├── create.ts          # exports createTaskAction
+│   │   ├── list.ts            # exports listTaskAction
+│   │   ├── get.ts             # exports getTaskAction
+│   │   ├── update.ts          # exports updateTaskAction
+│   │   └── delete.ts          # exports deleteTaskAction
+│   └── services.config.ts     # imports all actions, defines all services, exports Services array
+├── server.config.ts           # imports services, exports ServerConfig (optional, can be inline in index.ts)
+└── index.ts                   # imports server config/services, creates server
+```
+
+Action handlers call model functions for data access — they should not contain raw database queries. Models handle validation, error logging, and return `Result` types that handlers forward to the client.
+
+Each action file defines the handler inline (not exported) and only exports the action:
+
+```typescript
+// services/auth/login.ts
+import { Ok } from 'slang-ts';
+import z from 'zod';
+import { createAction } from '@nilejs/nile';
+
+const loginSchema = z.object({
+  username: z.string(),
+  password: z.string(),
+});
+
+const loginHandler = (data) => {
+  // ... validation and logic
+  return Ok({ userId: '123' });
+};
+
+export const loginAction = createAction({
+  name: 'login',
+  description: 'User login',
+  handler: loginHandler,
+  validation: loginSchema,
+});
+```
+
+The `services.config.ts` file imports all actions and defines services as plain objects:
+
+```typescript
+// services/services.config.ts
+import type { Services } from '@nilejs/nile';
+import { createActions } from '@nilejs/nile';
+import { loginAction } from './auth/login';
+import { logoutAction } from './auth/logout';
+import { profileAction } from './auth/profile';
+import { createTaskAction } from './tasks/create';
+import { listTaskAction } from './tasks/list';
+
+export const services: Services = [
+  {
+    name: 'auth',
+    description: 'Authentication service',
+    actions: createActions([
+      loginAction,
+      logoutAction,
+      profileAction,
+    ]),
+  },
+  {
+    name: 'tasks',
+    description: 'Task management service',
+    actions: createActions([
+      createTaskAction,
+      listTaskAction,
+    ]),
+  },
+];
+```
+
+For larger applications, you may extract the server configuration into a separate `server.config.ts` that imports the services array. For smaller projects, defining the config directly in `index.ts` is equally valid.
+
+### 8.6 Alternative — Barrel File Pattern
+
+An alternative (not recommended for most projects) is to create a barrel file per service folder using `createService`. This adds a file per domain but can be useful for very large codebases where you want explicit service boundaries:
+
+```
+services/
+├── auth/
+│   ├── login.ts           # exports loginAction
+│   ├── logout.ts          # exports logoutAction
+│   └── index.ts           # imports actions, exports authService via createService
+├── tasks/
+│   ├── create.ts
+│   ├── list.ts
+│   └── index.ts           # exports taskService via createService
+└── index.ts               # imports all services, exports via createServices
+```
+
+```typescript
+// services/auth/index.ts
+import { createAction, createActions, createService } from '@nilejs/nile';
+import { loginAction } from './login';
+import { logoutAction } from './logout';
+
+export const authService = createService({
+  name: 'auth',
+  description: 'Authentication service',
+  actions: createActions([loginAction, logoutAction]),
+});
+```
+
+
+---
+url: /nile/guide/internals/rest.md
+---
+
+# REST Interface
+
+**Type:** Reference / Specification
+**Path:** `src/rest/`
+
+## 1. Purpose
+
+The REST interface exposes the Action Engine over HTTP via Hono. It implements a single-POST-endpoint architecture where all service communication flows through one route, discriminated by an `intent` field in the request body.
+
+### 1.1 Responsibilities
+
+- **Request validation** — Validates incoming JSON against a Zod schema before processing
+- **Intent routing** — Dispatches `explore`, `execute`, and `schema` intents to dedicated handlers
+- **Response mapping** — Converts internal `Result<T, E>` types to the `ExternalResponse` shape at the HTTP boundary
+- **Middleware application** — CORS, rate limiting, and static file serving
+- **Diagnostics** — Emit request routing information via `createDiagnosticsLog` from `src/utils.ts` when `diagnostics` is enabled. See `docs/internals/logging.md` section 7.
+
+### 1.2 Non-Goals
+
+- **Business logic** — The REST layer does not contain domain logic. It delegates to the engine.
+- **Authentication** — Not yet implemented. Request context (headers, cookies) is available via `NileContext.rest`.
+- **File uploads** — `RestConfig.uploads` is defined in types but not yet implemented.
+
+## 2. Architecture
+
+The REST module is split into three files to stay under the 400 LOC limit:
+
+| File | LOC | Responsibility |
+|------|-----|----------------|
+| `rest.ts` | 136 | Hono app factory, request validation, route registration |
+| `intent-handlers.ts` | 236 | Explore, execute, schema handlers, `toExternalResponse`, `intentHandlers` lookup |
+| `middleware.ts` | 108 | `applyRateLimiting`, `applyStaticServing` |
+
+## 3. Endpoints
+
+### 3.1 `POST {baseUrl}/services`
+
+The single endpoint for all service interactions. The request body must conform to `ExternalRequest`:
+
+```typescript
+{
+  intent: "explore" | "execute" | "schema";
+  service: string;   // service name or "*" for wildcard
+  action: string;    // action name or "*" for wildcard
+  payload: Record<string, unknown>;
+}
+```
+
+The body is validated against a Zod schema. Invalid JSON or missing fields return `400`.
+
+### 3.2 `GET /status`
+
+Health check endpoint. Only registered when `config.enableStatus` is `true`.
+
+Returns:
+```json
+{ "status": true, "message": "{serverName} is running", "data": {} }
+```
+
+### 3.3 404 Handler
+
+All unmatched routes return:
+```json
+{
+  "status": false,
+  "message": "Route not found. Use POST {baseUrl}/services for all operations.",
+  "data": {}
+}
+```
+
+## 4. Intent Handlers
+
+Intent dispatch uses an object lookup (`intentHandlers`) rather than switch/if-else.
+
+### 4.1 Explore
+
+Discovers services and actions.
+
+| `service` | `action` | Behavior |
+|-----------|----------|----------|
+| `"*"` | any | List all services via `engine.getServices()` |
+| `"name"` | `"*"` | List actions for service via `engine.getServiceActions()` |
+| `"name"` | `"name"` | Return action metadata (name, description, isProtected, accessControl, hooks, meta) |
+
+### 4.2 Execute
+
+Runs an action through the engine pipeline. Wildcards are rejected — both `service` and `action` must be specific.
+
+Calls `engine.executeAction(service, action, payload, nileContext)` and maps the result.
+
+### 4.3 Schema
+
+Exports Zod validation schemas as JSON Schema (via `z.toJSONSchema()` from Zod v4).
+
+| `service` | `action` | Behavior |
+|-----------|----------|----------|
+| `"*"` | any | All schemas across all services |
+| `"name"` | `"*"` | All schemas in a service |
+| `"name"` | `"name"` | Single action schema |
+
+Actions without a `validation` schema return `null`. Schema conversion failures are caught by `safeTrySync` and also return `null`.
+
+## 5. Response Format
+
+All responses use the `ExternalResponse` shape:
+
+```typescript
+{
+  status: boolean;
+  message: string;
+  data: {
+    error_id?: string;
+    [key: string]: unknown;
+  };
+}
+```
+
+The `toExternalResponse` function handles the `Result` to `ExternalResponse` mapping:
+- `Ok(value)` — if value is a plain object, it becomes `data` directly. Arrays and primitives are wrapped as `{ result: value }`.
+- `Err(message)` — `status: false`, message is the error string, `data` is empty.
+
+HTTP status codes: `200` for success, `400` for failures and validation errors, `404` for unmatched routes.
+
+## 6. Middleware
+
+### 6.1 CORS
+
+Applied first via `applyCorsConfig` from `src/cors/cors.ts`. See `docs/internals/cors.md`.
+
+### 6.2 Rate Limiting
+
+**File:** `src/rest/middleware.ts` — `applyRateLimiting`
+
+Only applied when `config.rateLimiting.limitingHeader` is set. Uses `hono-rate-limiter`.
+
+- Client key is extracted from the configured request header
+- If the header is missing, falls back to a shared `__unknown_client__` key (graceful degradation, not a crash)
+- Defaults: 100 requests per 15-minute window
+
+### 6.3 Static File Serving
+
+**File:** `src/rest/middleware.ts` — `applyStaticServing`
+
+Only applied when `config.enableStatic` is `true` and `runtime` is `"bun"`.
+
+- Serves files from `./assets` at `/assets/*`
+- Uses dynamic `import("hono/bun")` to avoid referencing Bun globals at import time
+- The import result is cached after first successful load
+- Import failures are caught by `safeTry` — static serving is silently skipped
+
+## 7. Key Types
+
+### 7.1 `RestConfig`
+
+```typescript
+{
+  baseUrl: string;
+  host?: string;
+  port?: number;
+  diagnostics?: boolean;
+  enableStatic?: boolean;
+  enableStatus?: boolean;
+  rateLimiting?: RateLimitConfig;
+  allowedOrigins: string[];
+  cors?: CorsConfig;
+  uploads?: { /* not yet implemented */ };
+}
+```
+
+### 7.2 `RateLimitConfig`
+
+```typescript
+{
+  windowMs?: number;          // default: 900000 (15 min)
+  limit?: number;             // default: 100
+  standardHeaders?: boolean;  // default: true
+  limitingHeader: string;     // required — header name for client key
+  store?: Store;              // custom rate limiter store
+  diagnostics?: boolean;
+}
+```
+
+### 7.3 `ExternalRequest`
+
+```typescript
+{
+  intent: "explore" | "execute" | "schema";
+  service: string;
+  action: string;
+  payload: Record<string, unknown>;
+}
+```
+
+### 7.4 `ExternalResponse`
+
+```typescript
+{
+  status: boolean;
+  message: string;
+  data: { error_id?: string; [key: string]: unknown };
+}
+```
+
+## 8. Constraints
+
+- **Single POST endpoint** — All service interactions go through `POST {baseUrl}/services`. No per-action routes.
+- **No streaming** — Responses are JSON only. No SSE or chunked transfer.
+- **Bun-only static serving** — Node.js runtime skips static file serving with a diagnostic log.
+- **Rate limiter requires header** — Without `limitingHeader`, rate limiting is not applied at all.
+
+## 9. Failure Modes
+
+- **Invalid JSON body** — Returns `400` with "Invalid or missing JSON body"
+- **Schema validation failure** — Returns `400` with Zod issue details in `data.errors`
+- **Wildcard in execute** — Returns `400` with descriptive message
+- **Missing service/action** — Engine returns `Err`, mapped to `400` via `toExternalResponse`
+- **Handler crash** — Caught by `safeTry` in the engine pipeline, returned as `Err`
+
+
+
+---
+url: /nile/guide/internals/cors.md
+---
+
+# CORS Middleware
+
+**Type:** Reference / Specification
+**Path:** `src/cors/`
+
+## 1. Purpose
+
+The CORS module configures Cross-Origin Resource Sharing middleware on the Hono app. It supports global defaults derived from `RestConfig.allowedOrigins`, per-route static overrides, and dynamic resolver functions for runtime origin decisions.
+
+### 1.1 Responsibilities
+
+- **Default CORS derivation** — Build sensible defaults from `RestConfig.allowedOrigins`
+- **Global middleware** — Apply a catch-all CORS handler to all routes
+- **Route-specific rules** — Apply per-path overrides or resolver-based CORS before the global handler
+- **Security boundary** — Deny access (empty origin) when resolvers throw errors
+
+### 1.2 Non-Goals
+
+- **Authentication** — CORS is a browser security mechanism, not an auth layer
+- **Request blocking** — CORS headers influence browser behavior but do not block server-side requests
+
+## 2. Architecture
+
+| File | LOC | Responsibility |
+|------|-----|----------------|
+| `cors.ts` | 140 | `buildDefaultCorsOptions`, `applyCorsConfig`, route rule application, resolver evaluation |
+| `types.ts` | 94 | `CorsOptions`, `CorsResolver`, `CorsRouteRule`, `CorsConfig` |
+
+`applyCorsConfig` accepts `RestConfig` directly (not `ServerConfig`).
+
+## 3. Configuration Flow
+
+### 3.1 Enabled States
+
+`CorsConfig.enabled` controls whether CORS middleware is applied:
+
+- `true` or `"default"` (default) — CORS middleware is active
+- `false` — No CORS middleware is applied, no CORS headers are set
+
+### 3.2 Default Options
+
+`buildDefaultCorsOptions` derives defaults from `RestConfig`:
+
+```typescript
+{
+  origin: config.cors?.defaults?.origin ?? getDefaultOrigin,
+  credentials: true,
+  allowHeaders: ["Content-Type", "Authorization"],
+  allowMethods: ["POST", "GET", "OPTIONS"],
+  exposeHeaders: ["Content-Length"],
+  maxAge: 600
+}
+```
+
+Origin resolution when no `cors.defaults.origin` is specified:
+- If `allowedOrigins` has entries — request origin is checked against the list, rejected origins get `""`
+- If `allowedOrigins` is empty — returns `"*"` (allow all)
+
+All defaults can be overridden via `cors.defaults`.
+
+### 3.3 Application Order
+
+1. **Route-specific rules** (`cors.addCors[]`) are applied first as path-scoped middleware
+2. **Global CORS** (`app.use("*", cors(...))`) is applied last as a catch-all
+
+This order matters in Hono: route-specific middleware runs before global middleware for matching paths.
+
+## 4. Route Rules (`CorsRouteRule`)
+
+Each rule targets a specific path and can use either static options or a dynamic resolver:
+
+```typescript
+{
+  path: "/api/public/*",
+  options: { origin: "*", credentials: false }
+}
+```
+
+Or with a resolver:
+
+```typescript
+{
+  path: "/api/partners/*",
+  resolver: (origin, c) => {
+    if (partnerOrigins.includes(origin)) return true;
+    return false;
+  }
+}
+```
+
+If both `options` and `resolver` are present, `resolver` takes precedence.
+
+## 5. Resolver Behavior
+
+A `CorsResolver` function receives the request origin and Hono context, and returns:
+
+| Return value | Behavior |
+|-------------|----------|
+| `true` | Allow origin with default options |
+| `false` | Deny (origin set to `""`) |
+| `CorsOptions` object | Merge with defaults and use |
+| `undefined` | Use default options |
+| **throws** | **Deny** (origin set to `""`) |
+
+The deny-on-error behavior is a security decision: resolver failures never fall through to allow.
+
+## 6. Key Types
+
+### 6.1 `CorsConfig`
+
+```typescript
+{
+  enabled?: boolean | "default";
+  defaults?: CorsOptions;
+  addCors?: CorsRouteRule[];
+}
+```
+
+### 6.2 `CorsOptions`
+
+```typescript
+{
+  origin?: string | string[] | ((origin: string, c: Context) => string | undefined | null);
+  allowMethods?: string[] | ((origin: string, c: Context) => string[]);
+  allowHeaders?: string[];
+  maxAge?: number;
+  credentials?: boolean;
+  exposeHeaders?: string[];
+}
+```
+
+Compatible with Hono's `cors()` middleware parameter shape.
+
+### 6.3 `CorsResolver`
+
+```typescript
+type CorsResolver = (origin: string, c: Context) => boolean | CorsOptions | undefined;
+```
+
+### 6.4 `CorsRouteRule`
+
+```typescript
+{
+  path: string;
+  options?: CorsOptions;
+  resolver?: CorsResolver;
+}
+```
+
+## 7. Constraints
+
+- **Hono middleware ordering** — The global `app.use("*", cors(...))` also fires on routes that have route-specific rules. In practice this means the global handler may overwrite route-specific headers. This is known Hono behavior.
+- **No preflight caching per-route** — `maxAge` is set globally. Route-specific `maxAge` overrides are applied but browser caching behavior may vary.
+
+## 8. Failure Modes
+
+- **Resolver throws** — Caught, logged to `console.error`, origin set to `""` (deny)
+- **Empty `allowedOrigins` with no `cors.defaults.origin`** — Falls through to `"*"` (allow all). This is intentional for development convenience but should be restricted in production.
+- **`enabled: false`** — No CORS middleware is applied. Browsers will block cross-origin requests entirely.
+
+
+
+---
+url: /nile/guide/others/architecture.md
+---
+
+
+# Dialogue Architecture
+
+This document describes the internal architecture, design decisions, and component interactions of the Dialogue real-time communication library.
+
+## 1. Overview
+
+Dialogue is an event-based realtime communication library built on Socket.IO and Hono, supporting both Bun and Node.js runtimes. The architecture prioritizes simplicity, type safety, and predictable behavior over flexibility.
+
+### 1.1 Core Philosophy
+
+- **Config-first**: All rooms and events defined upfront in one file
+- **Event-centric**: Events are first-class citizens, not just message payloads
+- **Bounded rooms**: Optional `maxSize` for predictable scaling
+- **Same mental model**: Frontend and backend share similar patterns
+- **Extensible**: Designed for future SSE, Web Push, and FCM channels
+
+### 1.2 Technology Stack
+
+- **Bun / Node.js**: Supported JavaScript runtimes (auto-detected)
+- **Socket.IO**: WebSocket abstraction with fallbacks
+- **Hono**: Lightweight HTTP framework
+- **Zod**: Runtime schema validation
+- **slang-ts**: Result pattern utilities (`Ok`, `Err`, `Result`)
+- **@hono/node-server**: Bridges Hono's fetch API to Node.js `http.createServer()` (Node runtime only)
+- **@socket.io/bun-engine**: Socket.IO engine adapter for Bun (Bun runtime only)
+
+## 2. System Architecture
+
+### 2.1 High-Level Component Diagram
+
+```
++------------------+     WebSocket      +------------------+
+|                  | <----------------> |                  |
+|  DialogueClient  |    Socket.IO       |     Dialogue     |
+|    (Frontend)    |                    |     (Backend)    |
+|                  |                    |                  |
++------------------+                    +------------------+
+        |                                       |
+        v                                       v
++------------------+                    +------------------+
+|   RoomContext    |                    |   RoomManager    |
+|   (per room)     |                    |   (coordinator)  |
++------------------+                    +------------------+
+                                                |
+                                    +-----------+-----------+
+                                    |           |           |
+                                    v           v           v
+                                +-------+   +-------+   +-------+
+                                | Room  |   | Room  |   | Room  |
+                                | chat  |   | orders|   |  ...  |
+                                +-------+   +-------+   +-------+
+```
+
+### 2.2 Component Responsibilities
+
+| Component | Responsibility |
+|-----------|----------------|
+| `Dialogue` | Main API surface, coordinates rooms, triggers events |
+| `RoomManager` | Tracks all rooms and their participants |
+| `Room` | Manages participants, subscriptions, event broadcasting |
+| `ConnectedClient` | Wraps socket with user context and subscriptions |
+| `DialogueClient` | Frontend client factory for connecting and joining rooms |
+| `RoomContext` | Frontend room handle for triggering and listening |
+
+## 3. Backend Architecture
+
+### 3.1 Module Structure
+
+```
+dialogue/
+  types.ts           # Type definitions (interfaces, no implementation)
+  define-event.ts    # Event definition factory with Zod validation
+  room.ts            # Room creation and room manager
+  client-handler.ts  # Connected client wrapper
+  server.ts          # Socket.IO + Hono server setup (runtime-agnostic)
+  create-dialogue.ts # Main factory function
+  index.ts           # Barrel exports
+  adapters/
+    types.ts         # RuntimeAdapter interface, Runtime type
+    bun-adapter.ts   # Bun.serve() + @socket.io/bun-engine
+    node-adapter.ts  # http.createServer() + @hono/node-server
+    index.ts         # detectRuntime() + createRuntimeAdapter()
+```
+
+### 3.2 Initialization Flow
+
+When `createDialogue(config)` is called:
+
+```
+1. createDialogue(config)
+   |
+   +--> Create or use existing Hono app
+   |
+   +--> createRuntimeAdapter(config.runtime)
+   |    |
+   |    +--> detectRuntime() if not specified
+   |    |    (checks globalThis.Bun, falls back to "node")
+   |    |
+   |    +--> Return BunAdapter or NodeAdapter
+   |
+   +--> setupServer(app, config, adapter)
+        |
+        +--> Create Socket.IO server
+        |
+        +--> adapter.bind(io)
+        |    (Bun: BunEngine, Node: deferred to start)
+        |
+        +--> createRoomManager(io)
+        |    |
+        |    +--> For each room in config:
+        |         roomManager.register(id, config)
+        |
+        +--> Set up connection handler
+        |    |
+        |    +--> io.on("connection", ...)
+        |
+        +--> Return { io, roomManager, start, stop }
+   |
+   +--> Return Dialogue instance
+```
+
+### 3.3 Room Manager
+
+The `RoomManager` is the central coordinator for all rooms. It maintains two parallel maps:
+
+```typescript
+const rooms = new Map<string, Room>();
+const roomParticipants = new Map<string, Map<string, ConnectedClient>>();
+```
+
+**Why two maps?**
+
+The `Room` instance is immutable after creation. Participant tracking is handled separately in `roomParticipants` to allow the room manager to enforce capacity limits across all operations.
+
+### 3.4 Event Flow (Server-Side Trigger)
+
+When `dialogue.trigger(roomId, event, data)` is called:
+
+```
+1. dialogue.trigger(roomId, event, data)
+   |
+   +--> roomManager.get(roomId)
+   |
+   +--> room.trigger(event, data, from)
+        |
+        +--> isEventAllowed(event.name, config.events)
+        |
+        +--> validateEventData(eventDef, data)  [Zod validation]
+        |
+        +--> Create EventMessage envelope
+        |    {
+        |      event: "message",
+        |      roomId: "chat",
+        |      data: { text: "Hello" },
+        |      from: "user-123",
+        |      timestamp: 1707750000000
+        |    }
+        |
+        +--> io.to(roomId).emit("dialogue:event", message)
+        |
+        +--> Call all registered event handlers
+```
+
+### 3.5 Event Flow (Client-Triggered)
+
+When a client triggers an event via WebSocket:
+
+```
+1. Client emits "dialogue:trigger" { roomId, event, data }
+   |
+   +--> Server validates roomId and event name
+   |
+   +--> roomManager.get(roomId)
+   |
+   +--> Check if event is allowed in room
+   |
+   +--> room.trigger(eventDef, data, client.userId)
+        |
+        +--> [Same flow as server-side trigger]
+```
+
+## 4. Client Architecture
+
+### 4.1 Module Structure
+
+```
+client/
+  types.ts            # Client-side type definitions
+  dialogue-client.ts  # Main DialogueClient class
+  room-context.ts     # RoomContext factory
+  index.ts            # Barrel exports
+```
+
+### 4.2 Connection Flow
+
+```
+1. createDialogueClient({ url, auth })
+   |
+   +--> Create socket.io-client instance
+   |
+   +--> Connect with auth in handshake
+   |
+   +--> Wait for "dialogue:connected" event
+   |
+   +--> Extract userId from response
+   |
+   +--> Set connected = true
+```
+
+### 4.3 Room Join Flow
+
+```
+1. client.join("chat")
+   |
+   +--> socket.emit("dialogue:join", { roomId: "chat" })
+   |
+   +--> Wait for "dialogue:joined" event
+   |
+   +--> createRoomContext(socket, roomId, roomName)
+   |
+   +--> Return RoomContext
+```
+
+### 4.4 RoomContext Event Handling
+
+The `RoomContext` listens for `dialogue:event` messages and filters by room:
+
+```typescript
+socket.on("dialogue:event", (msg) => {
+  if (msg.roomId !== roomId) return;
+  
+  // Call specific event handlers
+  const handlers = eventHandlers.get(msg.event);
+  if (handlers) {
+    handlers.forEach(h => h(msg));
+  }
+  
+  // Call wildcard handlers
+  anyHandlers.forEach(h => h(msg.event, msg));
+});
+```
+
+## 5. Wire Protocol
+
+### 5.1 Socket.IO Events
+
+All events are prefixed with `dialogue:` to avoid conflicts.
+
+**Client to Server:**
+
+| Event | Payload | Description |
+|-------|---------|-------------|
+| `dialogue:join` | `{ roomId }` | Request to join room |
+| `dialogue:leave` | `{ roomId }` | Request to leave room |
+| `dialogue:subscribe` | `{ roomId, eventName }` | Subscribe to event |
+| `dialogue:subscribeAll` | `{ roomId }` | Subscribe to all events |
+| `dialogue:unsubscribe` | `{ roomId, eventName }` | Unsubscribe from event |
+| `dialogue:trigger` | `{ roomId, event, data }` | Trigger event |
+| `dialogue:listRooms` | (none) | Request room list |
+
+**Server to Client:**
+
+| Event | Payload | Description |
+|-------|---------|-------------|
+| `dialogue:connected` | `{ clientId, userId }` | Connection established |
+| `dialogue:joined` | `{ roomId, roomName }` | Successfully joined room |
+| `dialogue:left` | `{ roomId }` | Successfully left room |
+| `dialogue:event` | `EventMessage` | Event broadcast |
+| `dialogue:rooms` | `RoomInfo[]` | Room list response |
+| `dialogue:error` | `{ code, message }` | Error notification |
+
+### 5.2 EventMessage Envelope
+
+All events are wrapped in a consistent envelope:
+
+```typescript
+interface EventMessage<T> {
+  event: string;      // Event name (e.g., "message")
+  roomId: string;     // Room ID (e.g., "chat")
+  data: T;            // Event payload
+  from: string;       // Sender's userId
+  timestamp: number;  // Unix timestamp in milliseconds
+}
+```
+
+## 6. Design Decisions
+
+### 6.1 Config-First with Dynamic Creation
+
+Dialogue is designed with a **config-first philosophy** while supporting dynamic room creation for flexibility.
+
+#### Recommended Approach (80/20 Rule)
+
+**80% Predefined Rooms** (config-first):
+```typescript
+const dialogue = createDialogue({
+  rooms: [
+    { id: 'lobby', name: 'Main Lobby', events: [...] },
+    { id: 'notifications', name: 'Notifications', events: [...] },
+    { id: 'support', name: 'Support Chat', events: [...] }
+  ]
+});
+```
+
+**Benefits:**
+- Type safety and validation at startup
+- Clear system architecture
+- Predictable resource usage
+- Better documentation
+
+**20% Dynamic Rooms** (runtime creation):
+```typescript
+// User creates a game room
+dialogue.createRoom({
+  id: `game-${gameId}`,
+  name: `Game ${gameId}`,
+  events: gameEvents
+});
+
+// Clean up when done
+dialogue.deleteRoom(`game-${gameId}`);
+```
+
+**Use for:**
+- User-generated content (custom game rooms, DMs)
+- Temporary sessions (video calls, screen shares)
+- Per-entity rooms (document editing, ticket threads)
+
+#### Hybrid Example
+
+```typescript
+// Predefined: System-wide rooms
+const systemRooms = [
+  { id: 'global-chat', name: 'Chat', events: [chatEvent] },
+  { id: 'notifications', name: 'Notifications', events: [notifEvent] }
+];
+
+const dialogue = createDialogue({ rooms: systemRooms });
+
+// Dynamic: User-specific rooms
+app.post('/games', async (c) => {
+  const gameId = nanoid();
+  
+  dialogue.createRoom({
+    id: `game-${gameId}`,
+    name: 'Game Session',
+    events: [moveEvent, scoreEvent],
+    maxSize: 4
+  });
+  
+  return c.json({ gameId });
+});
+```
+
+#### When to Use Each
+
+| Use Case | Approach | Example |
+|----------|----------|---------|
+| System-wide features | Predefined | Notifications, global chat |
+| Known room types | Predefined | Support channels, lobbies |
+| User-generated | Dynamic | Private DMs, custom games |
+| Temporary sessions | Dynamic | Video calls, collaborations |
+| Per-entity rooms | Dynamic | Document editing, tickets |
+
+**Key principle:** If you know the room type at build time, define it in config. If it's created by user actions, create it dynamically.
+
+### 6.2 Why Event-Centric?
+
+**Problem**: Generic "message" events require runtime type checking and are error-prone.
+
+**Solution**: First-class event definitions with optional Zod schemas:
+
+```typescript
+const Message = defineEvent("message", {
+  schema: z.object({
+    text: z.string(),
+    senderId: z.string()
+  })
+});
+```
+
+Benefits:
+
+- Compile-time type inference
+- Runtime validation
+- Self-documenting code
+- IDE autocomplete
+
+### 6.3 Why Bounded Rooms?
+
+**Problem**: Unbounded rooms can grow indefinitely, causing memory issues and performance degradation.
+
+**Solution**: Optional `maxSize` configuration:
+
+```typescript
+rooms: {
+  chat: {
+    name: "Support Chat",
+    maxSize: 50,  // Enforced at join time
+    events: [Message]
+  }
+}
+```
+
+### 6.4 Why Separate RoomManager?
+
+**Problem**: Rooms need to track participants, but participant state must be consistent across the system.
+
+**Solution**: The `RoomManager` owns participant state in a separate map, ensuring:
+
+- Consistent capacity enforcement
+- Single source of truth for participants
+- Clean separation between room definition and runtime state
+
+### 6.5 Why Socket.IO Over Raw WebSockets?
+
+**Advantages**:
+
+- Automatic reconnection
+- Fallback transports (polling)
+- Built-in room abstraction
+- Mature, well-tested library
+- Easy integration with existing infrastructure
+
+**Trade-offs**:
+
+- Larger bundle size
+- Additional protocol overhead
+- Less control over low-level behavior
+
+### 6.6 Why a Runtime Adapter Pattern?
+
+**Problem**: Dialogue was originally hard-coupled to Bun via `Bun.serve()` and `@socket.io/bun-engine`. This prevented usage with Node.js.
+
+**Solution**: A `RuntimeAdapter` interface that abstracts the three runtime-specific touch points:
+
+1. **Engine binding** — Bun needs `@socket.io/bun-engine`, Node uses Socket.IO's built-in `engine.io`
+2. **HTTP server startup** — Bun uses `Bun.serve()`, Node uses `http.createServer()` with `@hono/node-server`
+3. **Server shutdown** — Each runtime has its own cleanup mechanism
+
+```typescript
+interface RuntimeAdapter {
+  readonly runtime: Runtime;
+  bind(io: Server): void;
+  start(options: RuntimeStartOptions): Promise<void>;
+  stop(): Promise<void>;
+}
+```
+
+The adapter is selected automatically via `detectRuntime()` (which checks `globalThis.Bun`) or explicitly via the `runtime` config option. All other Dialogue code (rooms, events, hooks, client handling) is runtime-agnostic.
+
+## 7. Data Flow Diagrams
+
+### 7.1 Client Sends Message
+
+```
+DialogueClient         Socket.IO          Dialogue           Room
+     |                     |                  |                |
+     | trigger("message",  |                  |                |
+     |   { text: "Hi" })   |                  |                |
+     |-------------------->|                  |                |
+     |                     | dialogue:trigger |                |
+     |                     |----------------->|                |
+     |                     |                  | room.trigger() |
+     |                     |                  |--------------->|
+     |                     |                  |                |
+     |                     |                  |  validate()    |
+     |                     |                  |<---------------|
+     |                     |                  |                |
+     |                     |  io.to(roomId)   |                |
+     |                     |     .emit()      |                |
+     |                     |<-----------------|                |
+     |  dialogue:event     |                  |                |
+     |<--------------------|                  |                |
+     |                     |                  |                |
+```
+
+### 7.2 Server Broadcasts Event
+
+```
+API Route              Dialogue           Room           Clients
+     |                    |                |                |
+     | trigger("orders",  |                |                |
+     |   OrderUpdated,    |                |                |
+     |   { status: ... }) |                |                |
+     |------------------->|                |                |
+     |                    | room.trigger() |                |
+     |                    |--------------->|                |
+     |                    |                |                |
+     |                    |                | validate()     |
+     |                    |                |                |
+     |                    |  io.to(roomId) |                |
+     |                    |     .emit()    |                |
+     |                    |--------------->|--------------->|
+     |                    |                |                |
+```
+
+## 8. Security Considerations
+
+### 8.1 Authentication
+
+Authentication is handled via Socket.IO handshake:
+
+```typescript
+const client = createDialogueClient({
+  url: "ws://localhost:3000",
+  auth: { token: "user-jwt-token" }
+});
+```
+
+The server extracts user identity in `extractUserFromSocket()`:
+
+```typescript
+export function extractUserFromSocket(socket: Socket) {
+  const auth = socket.handshake.auth;
+  // Extract userId from token or auth payload
+  // Return { userId, meta }
+}
+```
+
+### 8.2 Event Validation
+
+All events with Zod schemas are validated before broadcasting. Validation returns a `Result<T, string>` using the slang-ts pattern:
+
+```typescript
+const validation = validateEventData(eventDef, data);
+if (validation.isErr) {
+  // Reject invalid data - validation.error contains the error message
+  return;
+}
+// validation.value contains the validated data
+```
+
+### 8.3 Room Access Control
+
+Room access can be controlled in the `onConnect` handler:
+
+```typescript
+onConnect: (client) => {
+  if (client.meta.role === "admin") {
+    client.join("admin-room");
+  }
+}
+```
+
+## 9. Scalability Considerations
+
+### 9.1 Current Limitations
+
+- Single server instance only
+- In-memory participant tracking
+- No persistence layer
+
+### 9.2 Future Scaling Options
+
+**Horizontal Scaling**: Add Redis adapter for multi-instance:
+
+```typescript
+// Future API (not implemented)
+import { createRedisAdapter } from "dialogue/adapters/redis";
+
+const dialogue = createDialogue({
+  adapter: createRedisAdapter({ host: "localhost", port: 6379 }),
+  // ...
+});
+```
+
+**Persistence Layer**: Add event persistence interface:
+
+```typescript
+// Future API (not implemented)
+const dialogue = createDialogue({
+  persistence: {
+    saveEvent: (msg) => db.events.insert(msg),
+    loadEvents: (roomId, limit) => db.events.find({ roomId }).limit(limit)
+  }
+});
+```
+
+## 10. Performance Characteristics
+
+### 10.1 Memory Usage
+
+- Each connected client: ~1-2 KB (socket + metadata)
+- Each room: ~200 bytes + participants
+- Event handlers: ~100 bytes per handler
+
+### 10.2 Message Latency
+
+- Local (same machine): < 1ms
+- Network: RTT + ~1-2ms processing
+
+### 10.3 Throughput
+
+- Depends on Bun/Node event loop
+- Socket.IO overhead: ~5-10% vs raw WebSockets
+- Zod validation: ~0.1ms per event (for typical payloads)
+
+## 11. Extension Points
+
+### 11.1 Custom Authentication
+
+Override `extractUserFromSocket()` for custom auth strategies:
+
+```typescript
+// Verify JWT, check database, etc.
+export function extractUserFromSocket(socket: Socket) {
+  const token = socket.handshake.auth.token;
+  const user = verifyJWT(token);
+  return { userId: user.id, meta: { role: user.role } };
+}
+```
+
+### 11.2 Event Middleware (Future)
+
+Planned middleware pipeline for events:
+
+```typescript
+// Future API (not implemented)
+dialogue.use("chat", (msg, next) => {
+  // Rate limiting, content filtering, etc.
+  if (isSpam(msg)) return;
+  next();
+});
+```
+
+### 11.3 Additional Channels (Future)
+
+Planned support for alternative delivery channels:
+
+- **SSE**: Server-sent events for one-way server to client
+- **Web Push**: Push notifications via FCM/APNS
+- **HTTP Polling**: For environments without WebSocket support
+*This specification reflects the current implementation and is subject to evolution. Contributions and feedback are welcome.*
+
+
+
+---
+url: /nile/guide/others/llms-full-txt.md
+---
+
+
+# LLMs Full
+
+[View LLMs Full](/llms-full.txt)
+
+
+
+---
+url: /nile/guide/others/llms-txt.md
+---
+
+
+# LLMs.txt
+
+[View LLMs.txt](/llms.txt)
+
+
+
+---
+url: /nile/index.md
+---
+
+
+

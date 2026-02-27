@@ -161,9 +161,15 @@ describe("createNileContext - hookContext", () => {
 describe("createNileContext - params passthrough", () => {
   it("should attach resources when provided", () => {
     const logger = {
-      info: (_msg: string) => {
-        // no-op logger for test
-      },
+      info: (_input: { atFunction: string; message: string; data?: unknown }) =>
+        "log-id",
+      warn: (_input: { atFunction: string; message: string; data?: unknown }) =>
+        "log-id",
+      error: (_input: {
+        atFunction: string;
+        message: string;
+        data?: unknown;
+      }) => "log-id",
     };
     const ctx = createNileContext({ resources: { logger } });
 

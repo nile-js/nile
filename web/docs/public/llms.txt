@@ -1,0 +1,24 @@
+# Nile
+
+> Functional-first, type-safe backend framework for scalable applications
+
+## Guide
+
+- [Getting Started](/nile/guide/start/getting-started.md): Installation, basic setup, and your first Nile server
+- [Actions](/nile/guide/basics/actions.md): Actions are the core building blocks of Nile. Each action represents a single operation that can be called via the REST-RPC interface.
+- [Services](/nile/guide/basics/services.md): Services group related actions together. A service is a logical container that organizes your actions under a common namespace.
+- [Context](/nile/guide/basics/context.md): NileContext provides access to request context, session data, and shared resources throughout your application.
+- [Interacting with Nile](/nile/guide/basics/interacting.md): Nile exposes a single HTTP endpoint for all interactions. All requests are POST requests with a JSON body that specifies the intent, service, action, and payload.
+- [Nile Server](/nile/guide/internals/server.md): Type: Reference / Specification
+Path: src/nile/
+- [Database Utilities](/nile/guide/internals/db.md)
+- [Logging](/nile/guide/internals/logging.md): Type: Reference / Specification
+Path: src/logging/
+- [Service Action Engine](/nile/guide/internals/engine.md): Type: Reference / SpecificationPath: src/engine/
+- [REST Interface](/nile/guide/internals/rest.md): Type: Reference / Specification
+Path: src/rest/
+- [CORS Middleware](/nile/guide/internals/cors.md): Type: Reference / Specification
+Path: src/cors/
+- [Architecture](/nile/guide/others/architecture.md): Internal architecture, design decisions, and component interactions of Dialogue
+- [LLMs Full](/nile/guide/others/llms-full-txt.md): View LLMs Full
+- [LLMs](/nile/guide/others/llms-txt.md): View LLMs.txt

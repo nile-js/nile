@@ -1,7 +1,15 @@
-import { Err, type Err as ErrType } from "slang-ts";
+import { Err, type ErrType, type ResultMethods } from "slang-ts";
 import { getContext } from "@/nile/server";
 import type { NileLogger } from "@/nile/types";
 
+/**
+ * Parameters for the handleError utility.
+ *
+ * @property message - Human-readable error description, included in the returned Result error string
+ * @property data - Optional structured data logged alongside the error for debugging
+ * @property logger - Explicit logger instance; when omitted, resolves from the current Nile request context
+ * @property atFunction - Name of the calling function for log attribution; auto-inferred from stack trace when omitted
+ */
 export interface HandleErrorParams {
   message: string;
   data?: unknown;
@@ -37,7 +45,28 @@ function resolveLogger(explicit?: NileLogger): NileLogger {
   );
 }
 
-export function handleError(params: HandleErrorParams): ErrType<string> {
+/**
+ * Logs an error via the resolved logger and returns a typed Err result.
+ * Resolves the logger from the current Nile request context when not provided explicitly.
+ * The returned error string includes the log ID for traceability: `[logId] message`.
+ *
+ * @param params - Error details including message, optional data, logger, and caller function name
+ * @returns Always an Err variant — `ErrType<string> & ResultMethods<never>`, compatible with any `Result<T, E>` union
+ *
+ * @example
+ * ```typescript
+ * if (!user) {
+ *   return handleError({
+ *     message: "User not found",
+ *     data: { userId },
+ *     atFunction: "getUserById",
+ *   });
+ * }
+ * ```
+ */
+export function handleError(
+  params: HandleErrorParams
+): ErrType<string> & ResultMethods<never> {
   const atFunction = params.atFunction ?? inferCallerName();
   const logger = resolveLogger(params.logger);
   const logId = logger.error({

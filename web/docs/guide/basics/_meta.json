@@ -1,0 +1,6 @@
+[
+  { "type": "file", "name": "actions", "label": "Actions" },
+  { "type": "file", "name": "services", "label": "Services" },
+  { "type": "file", "name": "context", "label": "Context" },
+  { "type": "file", "name": "interacting", "label": "Interacting" }
+]

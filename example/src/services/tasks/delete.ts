@@ -1,16 +1,16 @@
+import { type Action, createAction } from "@nilejs/nile";
 import { Err, Ok } from "slang-ts";
 import z from "zod";
-import { type Action, createAction } from "../../../dist/index.js";
-import { tasks } from "./store.js";
+import { deleteTask } from "@/db/models";
 
 const deleteTaskSchema = z.object({
   id: z.string().min(1, "Task ID is required"),
 });
 
-const deleteTaskHandler = (data: Record<string, unknown>) => {
-  const existed = tasks.delete(data.id as string);
-  if (!existed) {
-    return Err(`Task '${data.id}' not found`);
+const deleteTaskHandler = async (data: Record<string, unknown>) => {
+  const result = await deleteTask(data.id as string);
+  if (result.isErr) {
+    return Err(result.error);
   }
   return Ok({ deleted: true, id: data.id });
 };
