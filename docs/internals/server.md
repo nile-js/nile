@@ -11,6 +11,7 @@ The Nile Server module provides the top-level factory for bootstrapping a Nile a
 
 - **Bootstrapping:** Create and connect the Action Engine, `NileContext`, and REST interface from a single `ServerConfig`
 - **Context ownership:** Create a single `NileContext` instance shared across all interfaces
+- **Context access:** Export `getContext()` to retrieve the runtime context from anywhere within a request scope
 - **Lifecycle:** Execute `onBoot` hooks after initialization with crash safety
 - **Diagnostics:** Route diagnostic output through `createDiagnosticsLog` from `src/utils.ts`, which checks `resources.logger` first and falls back to `console.log`. See `docs/internals/logging.md` section 7.
 
@@ -189,13 +190,21 @@ type Sessions = {
 ### 5.4 `Resources`
 
 ```typescript
+interface NileLogger {
+  info: (input: { atFunction: string; message: string; data?: unknown }) => string;
+  warn: (input: { atFunction: string; message: string; data?: unknown }) => string;
+  error: (input: { atFunction: string; message: string; data?: unknown }) => string;
+}
+
 type Resources = {
-  logger?: unknown;
+  logger?: NileLogger;
   database?: unknown;
   cache?: unknown;
   [key: string]: unknown;
 };
 ```
+
+The `logger` field accepts a `NileLogger` — the return type of `createLogger` from the logging module. This enables `handleError` and `createDiagnosticsLog` to log through the same logger instance.
 
 ## 6. Constraints
 
@@ -209,3 +218,42 @@ type Resources = {
 - **Empty services** — `createNileServer` throws immediately with a descriptive error
 - **`onBoot` crash** — Caught by `safeTry`, logged to `console.error`, does not prevent server from starting
 - **Missing resources** — `resources` is optional. Diagnostics fall back to `console.log` when `resources.logger` is absent (handled by `createDiagnosticsLog`)
+
+## 8. `getContext`
+
+**Path:** `src/nile/server.ts`
+
+Exported function that retrieves the runtime `NileContext` from anywhere within a request scope. The context is stored in a module-level variable set during `createNileServer` initialization.
+
+```typescript
+import { getContext } from "@nilejs/nile";
+
+const ctx = getContext();
+
+// Access resources, sessions, etc.
+ctx.resources?.logger;
+ctx.getSession("rest");
+ctx.set("user", { id: "123" });
+```
+
+### 8.1 Usage Pattern
+
+`getContext` is designed to be called from action handlers or utility functions that need access to the context but don't receive it as a parameter:
+
+```typescript
+// In an action handler
+const handler = async (data, ctx) => {
+  // Both ctx and getContext() work
+  const userId = ctx.get("userId") ?? getContext().get("userId");
+  return Ok({ userId });
+};
+```
+
+### 8.2 Constraints
+
+- **Must be called after server initialization** — `getContext` throws if called before `createNileServer` has run
+- **Must be called within a request scope** — The context is set once at server boot, not per-request. For per-request isolation, use the context passed to action handlers
+
+### 8.3 Failure Modes
+
+- **Called before server boot** — Throws `"getContext: Server not initialized. Call createNileServer first."`

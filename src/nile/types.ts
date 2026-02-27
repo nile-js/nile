@@ -26,8 +26,32 @@ export interface Sessions {
   rpc?: Record<string, unknown>;
 }
 
+export interface Sessions {
+  rest?: Record<string, unknown>;
+  ws?: Record<string, unknown>;
+  rpc?: Record<string, unknown>;
+}
+
+export interface NileLogger {
+  info: (input: {
+    atFunction: string;
+    message: string;
+    data?: unknown;
+  }) => string;
+  warn: (input: {
+    atFunction: string;
+    message: string;
+    data?: unknown;
+  }) => string;
+  error: (input: {
+    atFunction: string;
+    message: string;
+    data?: unknown;
+  }) => string;
+}
+
 export interface Resources {
-  logger?: unknown;
+  logger?: NileLogger;
   database?: unknown;
   cache?: unknown;
   [key: string]: unknown;
@@ -94,10 +118,7 @@ export interface ServerConfig {
 export interface ExternalResponse {
   status: boolean;
   message: string;
-  data: {
-    error_id?: string;
-    [key: string]: unknown;
-  };
+  data: Record<string, unknown>;
 }
 
 export interface ExternalRequest {

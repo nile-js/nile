@@ -98,7 +98,9 @@ export interface ActionSummary {
 export interface EngineOptions {
   diagnostics?: boolean;
   /** Optional logger from resources — used for diagnostics output when available */
-  logger?: { info: (msg: string, data?: unknown) => void };
+  logger?:
+    | { info: (msg: string, data?: unknown) => void }
+    | import("@/nile/types").NileLogger;
   services: Services;
   onBeforeActionHandler?: BeforeActionHandler<unknown, unknown>;
   onAfterActionHandler?: AfterActionHandler<unknown, unknown>;

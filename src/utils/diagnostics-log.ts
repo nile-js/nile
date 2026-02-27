@@ -1,11 +1,18 @@
-/** Minimal interface for a logger that nile internals can use */
+import type { NileLogger } from "@/nile/types";
+
 interface DiagnosticsLogger {
   info: (msg: string, data?: unknown) => void;
 }
 
+type AnyLogger = NileLogger | DiagnosticsLogger;
+
+function isNileLogger(logger: AnyLogger): logger is NileLogger {
+  return "atFunction" in logger.info;
+}
+
 interface CreateDiagnosticsLogParams {
   diagnostics?: boolean;
-  logger?: DiagnosticsLogger;
+  logger?: AnyLogger;
 }
 
 /**
@@ -29,10 +36,19 @@ export function createDiagnosticsLog(
   const { logger } = params;
 
   return (message: string, data?: unknown) => {
-    if (logger?.info) {
-      logger.info(`[${prefix}] ${message}`, data);
-    } else {
+    if (!logger) {
       console.log(`[${prefix}] ${message}`, data ?? "");
+      return;
+    }
+
+    if (isNileLogger(logger)) {
+      logger.info({
+        atFunction: prefix,
+        message: `[${prefix}] ${message}`,
+        data,
+      });
+    } else {
+      logger.info(`[${prefix}] ${message}`, data);
     }
   };
 }

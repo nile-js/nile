@@ -5,7 +5,9 @@ export type {
   CorsResolver,
   CorsRouteRule,
 } from "./cors/types";
-
+// Engine utilities — action and service factory functions
+export { createAction, createActions } from "./engine/create-action";
+export { createService, createServices } from "./engine/create-service";
 // Engine types — defining services, actions, hooks, and the engine interface
 export type {
   Action,
@@ -32,10 +34,8 @@ export {
   type LogFilter,
   type LoggerConfig,
 } from "./logging";
-
 // Server factory — the main entry point for developers
-export { createNileServer } from "./nile/server";
-
+export { createNileServer, getContext } from "./nile/server";
 // Nile types — server config, context, request/response, and lifecycle hooks
 export type {
   AfterActionHandler,
@@ -44,6 +44,7 @@ export type {
   ExternalRequest,
   ExternalResponse,
   NileContext,
+  NileLogger,
   NileServer,
   Resources,
   RPCContext,
@@ -52,6 +53,7 @@ export type {
   Sessions,
   WebSocketContext,
 } from "./nile/types";
-
 // REST types — REST interface and rate limiting configuration
 export type { RateLimitConfig, RestConfig } from "./rest/types";
+// Utilities — error handling and diagnostics
+export { handleError } from "./utils";

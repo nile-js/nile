@@ -239,6 +239,56 @@ log("Initialized in 2ms. Loaded 3 services.");
 
 This replaces the previous pattern where `server.ts`, `rest.ts`, and `engine.ts` each defined their own inline `log()` closures.
 
+## 8. `handleError` — Userland Error Utility
+
+**Path:** `src/utils/handle-error.ts`
+
+A utility for application developers that combines error logging and error return in a single call. Infers `atFunction` from the caller stack when not provided.
+
+```typescript
+import { handleError } from "@nilejs/nile";
+
+// With explicit logger
+return handleError({
+  message: "Invalid credentials",
+  data: { phone_number: data.phone_number },
+  logger: log,
+});
+
+// Without explicit logger — uses getContext().resources.logger
+return handleError({
+  message: "User not found",
+  data: { userId: data.id },
+});
+```
+
+### 8.1 Behavior
+
+1. **Logger resolution:** Uses explicit `logger` param if provided, otherwise calls `getContext()` and uses `ctx.resources.logger`. If neither is available, throws.
+2. **atFunction inference:** Parses `new Error().stack` to extract the caller function name. Falls back to `"unknown"` if parsing fails. Override via the `atFunction` param.
+3. **Logging:** Calls `logger.error({ atFunction, message, data })` — receives a `log_id` back
+4. **Return:** Returns `Err("[log_id] message")` — error ID first, then user-facing message
+
+### 8.2 Interface
+
+```typescript
+interface HandleErrorParams {
+  message: string;          // User-facing error message
+  data?: unknown;          // Optional context data to log
+  logger?: NileLogger;    // Explicit logger instance
+  atFunction?: string;     // Override auto-detected caller name
+}
+```
+
+### 8.3 Constraints
+
+- **Logger required** — Throws if no explicit logger and no `resources.logger` on the context
+- **Stack parsing** — Relies on `Error().stack` which may behave differently across runtimes. Override `atFunction` when the inferred name is unhelpful (e.g., arrow functions, callbacks)
+
+### 8.4 Failure Modes
+
+- **No logger available** — Throws `"handleError: No logger available. Provide a logger param or set resources.logger on server config."`
+
 ## 8. Constraints
 
 - **MODE required** — `createLog` throws if `process.env.MODE` is not set (lazy-evaluated on first log call, not at import time)

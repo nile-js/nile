@@ -4,7 +4,22 @@ import type { Engine } from "@/engine/types";
 import { createRestApp } from "@/rest/rest";
 import { createDiagnosticsLog } from "@/utils";
 import { createNileContext } from "./nile";
-import type { NileServer, ServerConfig } from "./types";
+import type { NileContext, NileServer, ServerConfig } from "./types";
+
+let _nileContext: NileContext | null = null;
+
+/**
+ * Retrieves the runtime NileContext.
+ * Throws if called before createNileServer has initialized.
+ */
+export function getContext(): NileContext {
+  if (!_nileContext) {
+    throw new Error(
+      "getContext: Server not initialized. Call createNileServer first."
+    );
+  }
+  return _nileContext;
+}
 
 /**
  * Creates a Nile server instance that wires together the Action Engine,
@@ -21,9 +36,7 @@ export function createNileServer(config: ServerConfig): NileServer {
 
   const log = createDiagnosticsLog("NileServer", {
     diagnostics: config.diagnostics,
-    logger: config.resources?.logger as
-      | { info: (msg: string, data?: unknown) => void }
-      | undefined,
+    logger: config.resources?.logger,
   });
 
   // Shared context -- created once with resources, passed to all layers
@@ -31,13 +44,13 @@ export function createNileServer(config: ServerConfig): NileServer {
     resources: config.resources,
   });
 
+  _nileContext = nileContext;
+
   // Initialize the Action Engine
   const engine: Engine = createEngine({
     services: config.services,
     diagnostics: config.diagnostics,
-    logger: config.resources?.logger as
-      | { info: (msg: string, data?: unknown) => void }
-      | undefined,
+    logger: config.resources?.logger,
     onBeforeActionHandler: config.onBeforeActionHandler,
     onAfterActionHandler: config.onAfterActionHandler,
   });

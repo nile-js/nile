@@ -234,3 +234,177 @@ Controls the shape of `executeAction` return values:
 ```
 
 When `pipeline: true`, the result includes the full hook execution log alongside the data. See section 4.2.
+
+## 8. Factory Functions
+
+The `@nilejs/nile` package exports typed identity functions for defining services and actions with full type inference.
+
+### 8.1 `createAction`
+
+Creates a single action with full type inference. No runtime overhead — returns the config as-is.
+
+```typescript
+import { createAction } from '@nilejs/nile';
+
+export const loginAction = createAction({
+  name: 'login',
+  description: 'User login',
+  handler: async (data, ctx) => { /* ... */ },
+  validation: loginSchema,
+  isProtected: false,
+  accessControl: ['public'],
+});
+```
+
+### 8.2 `createActions`
+
+Creates multiple actions at once.
+
+```typescript
+import { createActions } from '@nilejs/nile';
+
+export const authActions = createActions([
+  createAction({ name: 'login', description: '...', handler: loginHandler, validation: loginSchema }),
+  createAction({ name: 'logout', description: '...', handler: logoutHandler }),
+]);
+```
+
+### 8.3 `createService`
+
+Creates a service with full type inference.
+
+```typescript
+import { createService } from '@nilejs/nile';
+
+export const authService = createService({
+  name: 'auth',
+  description: 'Authentication service',
+  actions: authActions,
+});
+```
+
+### 8.4 `createServices`
+
+Creates multiple services at once.
+
+```typescript
+import { createServices } from '@nilejs/nile';
+
+export const allServices = createServices([
+  authService,
+  userService,
+  taskService,
+]);
+```
+
+### 8.5 Recommended Project Structure
+
+For larger applications, organize actions one-per-file in domain folders. Define all services in a single `services.config.ts` file that imports the actions and exports the services array. No barrel (`index.ts`) file per service folder is needed.
+
+```
+services/
+├── auth/
+│   ├── login.ts           # exports loginAction
+│   ├── logout.ts          # exports logoutAction
+│   └── profile.ts         # exports profileAction
+├── tasks/
+│   ├── create.ts          # exports createTaskAction
+│   ├── list.ts            # exports listTaskAction
+│   ├── get.ts             # exports getTaskAction
+│   ├── update.ts          # exports updateTaskAction
+│   └── delete.ts          # exports deleteTaskAction
+└── services.config.ts     # imports all actions, defines all services, exports Services array
+server.config.ts           # imports services, exports ServerConfig (optional, can be inline in index.ts)
+index.ts                   # imports server config/services, creates server
+```
+
+Each action file defines the handler inline (not exported) and only exports the action:
+
+```typescript
+// services/auth/login.ts
+import { Ok } from 'slang-ts';
+import z from 'zod';
+import { createAction } from '@nilejs/nile';
+
+const loginSchema = z.object({
+  username: z.string(),
+  password: z.string(),
+});
+
+const loginHandler = (data) => {
+  // ... validation and logic
+  return Ok({ userId: '123' });
+};
+
+export const loginAction = createAction({
+  name: 'login',
+  description: 'User login',
+  handler: loginHandler,
+  validation: loginSchema,
+});
+```
+
+The `services.config.ts` file imports all actions and defines services as plain objects:
+
+```typescript
+// services/services.config.ts
+import type { Services } from '@nilejs/nile';
+import { createActions } from '@nilejs/nile';
+import { loginAction } from './auth/login';
+import { logoutAction } from './auth/logout';
+import { profileAction } from './auth/profile';
+import { createTaskAction } from './tasks/create';
+import { listTaskAction } from './tasks/list';
+
+export const services: Services = [
+  {
+    name: 'auth',
+    description: 'Authentication service',
+    actions: createActions([
+      loginAction,
+      logoutAction,
+      profileAction,
+    ]),
+  },
+  {
+    name: 'tasks',
+    description: 'Task management service',
+    actions: createActions([
+      createTaskAction,
+      listTaskAction,
+    ]),
+  },
+];
+```
+
+For larger applications, you may extract the server configuration into a separate `server.config.ts` that imports the services array. For smaller projects, defining the config directly in `index.ts` is equally valid.
+
+### 8.6 Alternative — Barrel File Pattern
+
+An alternative (not recommended for most projects) is to create a barrel file per service folder using `createService`. This adds a file per domain but can be useful for very large codebases where you want explicit service boundaries:
+
+```
+services/
+├── auth/
+│   ├── login.ts           # exports loginAction
+│   ├── logout.ts          # exports logoutAction
+│   └── index.ts           # imports actions, exports authService via createService
+├── tasks/
+│   ├── create.ts
+│   ├── list.ts
+│   └── index.ts           # exports taskService via createService
+└── index.ts               # imports all services, exports via createServices
+```
+
+```typescript
+// services/auth/index.ts
+import { createAction, createActions, createService } from '@nilejs/nile';
+import { loginAction } from './login';
+import { logoutAction } from './logout';
+
+export const authService = createService({
+  name: 'auth',
+  description: 'Authentication service',
+  actions: createActions([loginAction, logoutAction]),
+});
+```

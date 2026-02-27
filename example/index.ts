@@ -1,22 +1,15 @@
 import { createLogger, createNileServer } from "../dist/index.js";
-import { taskService } from "./services/tasks.js";
+import { services } from "./services/services.config.js";
 
 // --- Application logger (uses the logging module with monthly chunking) ---
 
-const appLogger = createLogger("task-app", { chunking: "monthly" });
-
-// Wrap as a resources.logger so nile internals can use it for diagnostics
-const logger = {
-  info: (msg: string, data?: unknown) => {
-    appLogger.info({ atFunction: "diagnostics", message: msg, data });
-  },
-};
+const logger = createLogger("task-app", { chunking: "monthly" });
 
 // --- Create the server ---
 
 const server = createNileServer({
   serverName: "task-app",
-  services: [taskService],
+  services,
   resources: { logger },
   rest: {
     baseUrl: "/api",
@@ -27,7 +20,7 @@ const server = createNileServer({
   },
   onBoot: {
     fn: () => {
-      appLogger.info({
+      logger.info({
         atFunction: "onBoot",
         message: "Task app booted successfully",
       });
