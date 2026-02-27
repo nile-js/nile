@@ -99,6 +99,7 @@ The tone must reflect calm engineering confidence.
 * No slang
 * No marketing-style adjectives
 * No hype language
+* No "—" characters, use standard punctuation such as commas or periods.
 
 ---
 
