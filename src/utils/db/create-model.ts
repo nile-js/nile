@@ -126,22 +126,14 @@ function findTimestampColumn(table: Record<string, unknown>): string | null {
  * ```
  */
 export function createModel<
-  TTable extends Record<string, unknown>,
+  TTable extends { $inferSelect: unknown; $inferInsert: unknown },
   TDB = unknown,
 >(
   table: TTable,
   options: ModelOptions<TDB>
-): ModelOperations<
-  TTable extends { $inferSelect: infer S } ? S : Record<string, unknown>,
-  TTable extends { $inferInsert: infer I } ? I : Record<string, unknown>,
-  TDB
-> {
-  type TSelect = TTable extends { $inferSelect: infer S }
-    ? S
-    : Record<string, unknown>;
-  type TInsert = TTable extends { $inferInsert: infer I }
-    ? I
-    : Record<string, unknown>;
+): ModelOperations<TTable["$inferSelect"], TTable["$inferInsert"], TDB> {
+  type TSelect = TTable["$inferSelect"];
+  type TInsert = TTable["$inferInsert"];
 
   const { name, cursorColumn = "id" } = options;
   const entityName = name.charAt(0).toUpperCase() + name.slice(1);
