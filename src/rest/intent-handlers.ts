@@ -83,7 +83,7 @@ export function handleExplore(
 export async function handleExecute(
   engine: Engine,
   request: ExternalRequest,
-  nileContext: NileContext
+  nileContext: NileContext<unknown>
 ): Promise<ExternalResponse> {
   const { service, action, payload } = request;
 
@@ -192,7 +192,7 @@ function buildServiceSchemas(
  * Extracts JSON schema from an action's zod validation, returns null on failure
  */
 function extractActionSchema(action: {
-  validation?: z.ZodType | null;
+  validation?: import("zod").ZodType | null;
 }): unknown {
   const schema = action.validation;
   if (!schema) {
@@ -224,9 +224,9 @@ function safeTrySync<T>(fn: () => T): { err: unknown; result: T | null } {
 export const intentHandlers: Record<
   ExternalRequest["intent"],
   (
-    engine: Engine,
+    engine: Engine<unknown>,
     request: ExternalRequest,
-    nileContext: NileContext
+    nileContext: NileContext<unknown>
   ) => ExternalResponse | Promise<ExternalResponse>
 > = {
   explore: (engine, request) => handleExplore(engine, request),

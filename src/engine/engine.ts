@@ -18,7 +18,12 @@ import type {
 export function createEngine(options: EngineOptions) {
   const { diagnostics, services, logger } = options;
 
-  const log = createDiagnosticsLog("Engine", { diagnostics, logger });
+  const log = createDiagnosticsLog("Engine", {
+    diagnostics,
+    logger: logger as unknown as Parameters<
+      typeof createDiagnosticsLog
+    >[1]["logger"],
+  });
 
   // O(1) Pre-computed Lookups
   const serviceSummaries: ServiceSummary[] = [];
@@ -89,22 +94,11 @@ export function createEngine(options: EngineOptions) {
       : Err(`Action '${actionName}' not found in service '${serviceName}'`);
   };
 
-  // --- Execution API ---
-
-  /**
-   * Executes an action through the full pipeline:
-   * 1. Global before hook (pass/fail guard)
-   * 2. Action-level before hooks (sequential, mutates payload)
-   * 3. Zod validation
-   * 4. Main handler
-   * 5. Action-level after hooks (sequential, mutates result)
-   * 6. Global after hook (final cleanup)
-   */
   const executeAction = async (
     serviceName: string,
     actionName: string,
     payload: unknown,
-    nileContext: NileContext
+    nileContext: NileContext<unknown>
   ): Promise<Result<unknown, string>> => {
     const { onBeforeActionHandler, onAfterActionHandler } = options;
 

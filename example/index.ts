@@ -5,12 +5,18 @@ import { services } from "./services/services.config.js";
 
 const logger = createLogger("task-app", { chunking: "monthly" });
 
+// --- Mock Database ---
+
+const db = {
+  query: async () => [{ id: 1, title: "Task 1" }],
+};
+
 // --- Create the server ---
 
 const server = createNileServer({
   serverName: "task-app",
   services,
-  resources: { logger },
+  resources: { logger, database: db },
   rest: {
     baseUrl: "/api",
     host: "localhost",

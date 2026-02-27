@@ -50,14 +50,14 @@ export interface NileLogger {
   }) => string;
 }
 
-export interface Resources {
+export interface Resources<TDB = unknown> {
   logger?: NileLogger;
-  database?: unknown;
+  database?: TDB;
   cache?: unknown;
   [key: string]: unknown;
 }
 
-export interface NileContext {
+export interface NileContext<TDB = unknown> {
   readonly rest?: HonoContext;
   readonly ws?: WebSocketContext;
   readonly rpc?: RPCContext;
@@ -65,7 +65,7 @@ export interface NileContext {
   readonly _store: Readonly<Map<string, unknown>>;
   readonly get: <T = unknown>(key: string) => T | undefined;
   readonly set: <T = unknown>(key: string, value: T) => void;
-  readonly resources?: Resources;
+  readonly resources?: Resources<TDB>;
   /** Retrieve session data for a specific interface */
   getSession: (name: keyof Sessions) => Record<string, unknown> | undefined;
   /** Store session data for a specific interface */
@@ -82,13 +82,13 @@ export interface NileContext {
 }
 
 export type BeforeActionHandler<T, E> = (params: {
-  nileContext: NileContext;
+  nileContext: NileContext<unknown>;
   action: Action;
   payload: unknown;
 }) => Result<T, E>;
 
 export type AfterActionHandler<T, E> = (params: {
-  nileContext: NileContext;
+  nileContext: NileContext<unknown>;
   action: Action;
   payload: unknown;
   result: Result<T, E>;
@@ -103,7 +103,7 @@ export interface ServerConfig {
   diagnostics?: boolean;
   /** Print registered services table to console on boot (default: true) */
   logServices?: boolean;
-  resources?: Resources;
+  resources?: Resources<unknown>;
   rest?: RestConfig;
   // websocket and rpc interfaces — types TBD when implemented
   websocket?: Record<string, unknown>;
@@ -111,7 +111,7 @@ export interface ServerConfig {
   onBeforeActionHandler?: BeforeActionHandler<unknown, unknown>;
   onAfterActionHandler?: AfterActionHandler<unknown, unknown>;
   onBoot?: {
-    fn: (context: NileContext) => Promise<void> | void;
+    fn: (context: NileContext<unknown>) => Promise<void> | void;
   };
 }
 
@@ -131,6 +131,6 @@ export interface ExternalRequest {
 export interface NileServer {
   config: ServerConfig;
   engine: Engine;
-  context: NileContext;
+  context: NileContext<unknown>;
   rest?: { app: Hono; config: RestConfig };
 }

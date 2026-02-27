@@ -43,7 +43,7 @@ export interface HookContext {
 
 export type ActionHandler<T = unknown, E = string> = (
   data: Record<string, unknown>,
-  context?: NileContext
+  context?: NileContext<unknown>
 ) => Result<T, E> | Promise<Result<T, E>>;
 
 export interface Action {
@@ -74,7 +74,7 @@ export type Actions = Action[];
 export interface Service {
   name: string;
   description: string;
-  actions: Action[];
+  actions: Actions;
   meta?: Record<string, unknown>;
 }
 
@@ -118,6 +118,6 @@ export interface Engine {
     serviceName: string,
     actionName: string,
     payload: unknown,
-    nileContext: NileContext
+    nileContext: NileContext<unknown>
   ) => Promise<Result<unknown, string>>;
 }

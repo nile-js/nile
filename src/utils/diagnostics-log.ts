@@ -1,13 +1,9 @@
 import type { NileLogger } from "@/nile/types";
 
-interface DiagnosticsLogger {
-  info: (msg: string, data?: unknown) => void;
-}
-
-type AnyLogger = NileLogger | DiagnosticsLogger;
+type AnyLogger = NileLogger | { info: (msg: string, data?: unknown) => void };
 
 function isNileLogger(logger: AnyLogger): logger is NileLogger {
-  return "atFunction" in logger.info;
+  return "warn" in logger && "error" in logger;
 }
 
 interface CreateDiagnosticsLogParams {

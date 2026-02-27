@@ -95,7 +95,7 @@ const server = createNileServer({
 **Path:** `src/nile/nile.ts`
 **Factory:** `createNileContext(params?)`
 
-The context is a singleton per server. It carries interface-specific data, hook execution state, session storage, and a general-purpose key-value store.
+The context is a singleton per server. It carries interface-specific data, hook execution state, session storage, and a general-purpose key-value store. It supports an optional `TDB` generic to provide type safety for the database resource.
 
 ### 4.1 Key-Value Store
 
@@ -103,6 +103,93 @@ The context is a singleton per server. It carries interface-specific data, hook 
 context.set("tenant", { id: "abc" });
 const tenant = context.get<{ id: string }>("tenant");
 ```
+
+`_store` is a `Map<string, unknown>` exposed as readonly. Use `get`/`set` methods for access.
+
+### 4.2 Sessions
+...
+### 4.5 Resources
+
+```typescript
+context.resources?.logger;
+context.resources?.database; // typed as TDB
+context.resources?.cache;
+```
+
+Extensible via index signature. Passed through from `ServerConfig.resources`. The `database` field is typed as `TDB` (defaulting to `unknown`).
+
+## 5. Key Types
+
+### 5.1 `BeforeActionHandler`
+
+Global hook that runs before every action. Returns a `Result` — `Err` halts the pipeline.
+
+```typescript
+type BeforeActionHandler<T, E> = (params: {
+  nileContext: NileContext<unknown>;
+  action: Action;
+  payload: unknown;
+}) => Result<T, E>;
+```
+
+### 5.2 `AfterActionHandler`
+
+Global hook that runs after every action. Receives the action result and can transform it.
+
+```typescript
+type AfterActionHandler<T, E> = (params: {
+  nileContext: NileContext<unknown>;
+  action: Action;
+  payload: unknown;
+  result: Result<T, E>;
+}) => Result<T, E>;
+```
+
+### 5.3 `Sessions`
+...
+### 5.4 `Resources`
+
+```typescript
+interface NileLogger {
+  info: (input: { atFunction: string; message: string; data?: unknown }) => string;
+  warn: (input: { atFunction: string; message: string; data?: unknown }) => string;
+  error: (input: { atFunction: string; message: string; data?: unknown }) => string;
+}
+
+type Resources<TDB = unknown> = {
+  logger?: NileLogger;
+  database?: TDB;
+  cache?: unknown;
+  [key: string]: unknown;
+};
+```
+
+The `logger` field accepts a `NileLogger` — the return type of `createLogger` from the logging module. This enables `handleError` and `createDiagnosticsLog` to log through the same logger instance.
+
+## 6. Constraints
+
+- **One context per server** — `createNileContext` is called once in `createNileServer`. All interfaces share this instance.
+- **Generic Database Support** — To avoid generic leakage into the core engine, the database type `TDB` is only present in `NileContext` and `Resources`. High-level components (Engine, REST) use `unknown`.
+...
+## 8. `getContext`
+
+**Path:** `src/nile/server.ts`
+
+Exported function that retrieves the runtime `NileContext` from anywhere within a request scope. It accepts an optional `TDB` generic for type-safe database access.
+
+```typescript
+import { getContext } from "@nilejs/nile";
+
+// Type-safe access to your database
+const ctx = getContext<MyDatabaseType>();
+
+// Access resources, sessions, etc.
+const db = ctx.resources?.database; // typed as MyDatabaseType
+ctx.resources?.logger;
+ctx.getSession("rest");
+ctx.set("user", { id: "123" });
+```
+
 
 `_store` is a `Map<string, unknown>` exposed as readonly. Use `get`/`set` methods for access.
 

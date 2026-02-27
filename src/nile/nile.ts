@@ -1,8 +1,8 @@
 import type { BaseContext, NileContext, Resources, Sessions } from "./types";
 
-interface CreateNileContextParams {
+interface CreateNileContextParams<TDB = unknown> {
   interfaceContext?: BaseContext;
-  resources?: Resources;
+  resources?: Resources<TDB>;
 }
 
 /**
@@ -16,16 +16,16 @@ interface CreateNileContextParams {
  * @param params - Optional configuration including interface adapters and shared resources
  * @returns A fully initialized NileContext
  */
-export function createNileContext(
-  params?: CreateNileContextParams
-): NileContext {
+export function createNileContext<TDB = unknown>(
+  params?: CreateNileContextParams<TDB>
+): NileContext<TDB> {
   const store = new Map<string, unknown>();
   const interfaceContext = params?.interfaceContext;
 
   /** Instance-scoped session store — not shared across server instances */
   const sessions: Sessions = {};
 
-  const context: NileContext = {
+  const context: NileContext<TDB> = {
     rest: interfaceContext?.rest,
     ws: interfaceContext?.ws,
     rpc: interfaceContext?.rpc,

@@ -4,28 +4,39 @@ import type { Engine } from "@/engine/types";
 import { createRestApp } from "@/rest/rest";
 import { createDiagnosticsLog } from "@/utils";
 import { createNileContext } from "./nile";
-import type { NileContext, NileServer, ServerConfig } from "./types";
+import type { NileContext, NileServer, Resources, ServerConfig } from "./types";
 
 let _nileContext: NileContext | null = null;
 
 /**
  * Retrieves the runtime NileContext.
- * Throws if called before createNileServer has initialized.
+ *
+ * Use this to access shared resources (database, logger) and context storage
+ * from anywhere in your application. Supports a TDB generic to provide
+ * end-to-end type safety for your database instance.
+ *
+ * @template TDB - The type of your database instance (e.g. typeof db)
+ * @returns The active NileContext<TDB>
+ * @throws If called before createNileServer has initialized the global context.
  */
-export function getContext(): NileContext {
+export function getContext<TDB = unknown>(): NileContext<TDB> {
   if (!_nileContext) {
     throw new Error(
       "getContext: Server not initialized. Call createNileServer first."
     );
   }
-  return _nileContext;
+  return _nileContext as NileContext<TDB>;
 }
 
 /**
- * Creates a Nile server instance that wires together the Action Engine,
- * shared NileContext, and interface layers (REST, and later WS/RPC).
+ * Bootstraps a Nile server instance.
  *
- * The NileContext is created once here and shared across all interfaces.
+ * Wires together the Action Engine, shared NileContext, and interface layers (REST).
+ * This is the primary entry point for a Nile application. It handles service
+ * registration, resource attachment, and server lifecycle.
+ *
+ * @param config - Server configuration including services, rest options, and resources
+ * @returns A NileServer instance containing the engine and (optional) REST app
  */
 export function createNileServer(config: ServerConfig): NileServer {
   if (!config.services?.length) {
@@ -36,21 +47,25 @@ export function createNileServer(config: ServerConfig): NileServer {
 
   const log = createDiagnosticsLog("NileServer", {
     diagnostics: config.diagnostics,
-    logger: config.resources?.logger,
+    logger: config.resources?.logger as unknown as Parameters<
+      typeof createDiagnosticsLog
+    >[1]["logger"],
   });
 
   // Shared context -- created once with resources, passed to all layers
   const nileContext = createNileContext({
-    resources: config.resources,
+    resources: config.resources as unknown as Resources<unknown>,
   });
 
-  _nileContext = nileContext;
+  _nileContext = nileContext as unknown as NileContext<unknown>;
 
   // Initialize the Action Engine
   const engine: Engine = createEngine({
     services: config.services,
     diagnostics: config.diagnostics,
-    logger: config.resources?.logger,
+    logger: config.resources?.logger as unknown as Parameters<
+      typeof createEngine
+    >[0]["logger"],
     onBeforeActionHandler: config.onBeforeActionHandler,
     onAfterActionHandler: config.onAfterActionHandler,
   });
@@ -74,7 +89,7 @@ export function createNileServer(config: ServerConfig): NileServer {
   const server: NileServer = {
     config,
     engine,
-    context: nileContext,
+    context: nileContext as NileContext<unknown>,
   };
 
   // Initialize REST interface if configured
@@ -82,7 +97,7 @@ export function createNileServer(config: ServerConfig): NileServer {
     const app = createRestApp({
       config: config.rest,
       engine,
-      nileContext,
+      nileContext: nileContext as NileContext<unknown>,
       serverName: config.serverName,
       runtime: config.runtime ?? "bun",
     });

@@ -27,7 +27,7 @@ const externalRequestSchema = z.object({
 interface CreateRestAppParams {
   config: RestConfig;
   engine: Engine;
-  nileContext: NileContext;
+  nileContext: NileContext<unknown>;
   serverName: string;
   runtime: ServerRuntime;
 }
@@ -93,7 +93,8 @@ export function createRestApp(params: CreateRestAppParams): Hono {
     log(`${request.intent} -> ${request.service}.${request.action}`);
 
     const handler = intentHandlers[request.intent];
-    const response = await handler(engine, request, nileContext);
+    // biome-ignore lint/suspicious/noExplicitAny: internal dispatch
+    const response = await (handler as any)(engine, request, nileContext);
 
     const statusCode = response.status ? 200 : 400;
     return c.json(response, statusCode);

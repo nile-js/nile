@@ -56,4 +56,10 @@ export type {
 // REST types — REST interface and rate limiting configuration
 export type { RateLimitConfig, RestConfig } from "./rest/types";
 // Utilities — error handling and diagnostics
-export { handleError } from "./utils";
+export {
+  createTransactionVariant,
+  type DBParams,
+  type DBX,
+  getZodSchema,
+  handleError,
+} from "./utils";
