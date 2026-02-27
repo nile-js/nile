@@ -5,7 +5,7 @@
     "label": "Server"
   },
   {
-    "type": "file",
+    "type": "dir",
     "name": "db",
     "label": "Database"
   },

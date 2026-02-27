@@ -1,14 +1,14 @@
 import { type Action, createAction } from "@nilejs/nile";
 import { Err, Ok } from "slang-ts";
 import z from "zod";
-import { getTaskById } from "@/db/models";
+import { taskModel } from "@/db/models";
 
 const getTaskSchema = z.object({
   id: z.string().min(1, "Task ID is required"),
 });
 
 const getTaskHandler = async (data: Record<string, unknown>) => {
-  const result = await getTaskById(data.id as string);
+  const result = await taskModel.findById(data.id as string);
   if (result.isErr) {
     return Err(result.error);
   }

@@ -1,7 +1,7 @@
 import { type Action, createAction } from "@nilejs/nile";
 import { Err, Ok } from "slang-ts";
 import z from "zod";
-import { createTask } from "@/db/models";
+import { taskModel } from "@/db/models";
 
 const createTaskSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -13,8 +13,8 @@ const createTaskSchema = z.object({
 });
 
 const createTaskHandler = async (data: Record<string, unknown>) => {
-  const result = await createTask({
-    task: {
+  const result = await taskModel.create({
+    data: {
       title: data.title as string,
       description: (data.description as string) ?? "",
       status: (data.status as "pending" | "in-progress" | "done") ?? "pending",

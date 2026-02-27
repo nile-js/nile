@@ -1,9 +1,9 @@
 import { type Action, createAction } from "@nilejs/nile";
 import { Err, Ok } from "slang-ts";
-import { getAllTasks } from "@/db/models";
+import { taskModel } from "@/db/models";
 
 const listTasksHandler = async () => {
-  const result = await getAllTasks();
+  const result = await taskModel.findAll();
   if (result.isErr) {
     return Err(result.error);
   }

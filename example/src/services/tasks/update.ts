@@ -1,7 +1,7 @@
 import { type Action, createAction } from "@nilejs/nile";
 import { Err, Ok } from "slang-ts";
 import z from "zod";
-import { updateTask } from "@/db/models";
+import { taskModel } from "@/db/models";
 
 const updateTaskSchema = z.object({
   id: z.string().min(1, "Task ID is required"),
@@ -13,9 +13,9 @@ const updateTaskSchema = z.object({
 const updateTaskHandler = async (data: Record<string, unknown>) => {
   const { id, ...updates } = data;
 
-  const result = await updateTask({
-    taskId: id as string,
-    task: updates,
+  const result = await taskModel.update({
+    id: id as string,
+    data: updates,
   });
   if (result.isErr) {
     return Err(result.error);

@@ -55,11 +55,18 @@ export type {
 } from "./nile/types";
 // REST types — REST interface and rate limiting configuration
 export type { RateLimitConfig, RestConfig } from "./rest/types";
-// Utilities — error handling and diagnostics
+// Utilities — error handling, diagnostics, and database helpers
 export {
+  type CursorPage,
+  type CursorPaginationOptions,
+  createModel,
   createTransactionVariant,
   type DBParams,
   type DBX,
   getZodSchema,
   handleError,
+  type ModelOperations,
+  type ModelOptions,
+  type OffsetPage,
+  type OffsetPaginationOptions,
 } from "./utils";
