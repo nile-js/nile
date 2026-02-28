@@ -1,6 +1,6 @@
 {
   "name": "@nilejs/cli",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "CLI for scaffolding and generating Nile backend projects",
   "type": "module",
   "bin": {
@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "commander": "^13.1.0",
+    "json-schema-to-zod": "^2.7.0",
     "picocolors": "^1.1.1"
   },
   "devDependencies": {

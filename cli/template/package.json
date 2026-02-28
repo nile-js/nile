@@ -10,7 +10,7 @@
     "db:studio": "bunx drizzle-kit studio"
   },
   "dependencies": {
-    "@nilejs/nile": "^0.0.1",
+    "@nilejs/nile": "latest",
     "@electric-sql/pglite": "^0.2.5",
     "drizzle-orm": "^0.39.2",
     "pino": "^10.3.1",

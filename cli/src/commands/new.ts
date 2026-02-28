@@ -79,5 +79,11 @@ export const newCommand = async (projectName: string): Promise<void> => {
   hint("cp .env.example .env");
   hint("bun run dev");
 
+  console.log("");
+  success("Generate with the CLI:");
+  hint("nile g service <name>          Add a new service");
+  hint("nile g action <service> <name> Add an action to a service");
+  hint("nile g schema                  Generate Zod schemas & types");
+
   outro();
 };

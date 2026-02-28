@@ -29,7 +29,7 @@ npx @nilejs/cli new my-app
 cd my-app && bun install && bun run dev
 ```
 
-The CLI also includes generators for adding services and actions to an existing project. See [`@nilejs/cli`](./cli/README.md) for details.
+The CLI also includes generators for adding services, actions, and extracting Zod schemas with TypeScript types. See [`@nilejs/cli`](./cli/README.md) for details.
 
 ### Manual install
 

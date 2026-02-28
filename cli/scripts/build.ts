@@ -10,7 +10,7 @@ const result = await Bun.build({
   target: "node",
   format: "esm",
   minify: false,
-  external: ["commander", "picocolors"],
+  external: ["commander", "picocolors", "json-schema-to-zod"],
 });
 
 if (!result.success) {

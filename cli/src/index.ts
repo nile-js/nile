@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { Command } from "commander";
 import { generateActionCommand } from "./commands/generate-action.js";
+import { generateSchemaCommand } from "./commands/generate-schema.js";
 import { generateServiceCommand } from "./commands/generate-service.js";
 import { newCommand } from "./commands/new.js";
 
@@ -34,5 +35,14 @@ generate
   .argument("<action-name>", "Name of the action to create")
   .description("Generate a new action in an existing service")
   .action(generateActionCommand);
+
+generate
+  .command("schema")
+  .option("-e, --entry <path>", "Path to services config file")
+  .option("-o, --output <path>", "Output directory for generated files")
+  .description(
+    "Generate Zod schemas and TypeScript types from action validations"
+  )
+  .action(generateSchemaCommand);
 
 program.parse();

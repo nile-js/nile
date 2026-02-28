@@ -18,7 +18,7 @@ npx @nilejs/cli new my-app
 cd my-app && bun install && bun run dev
 ```
 
-The generated project includes a tasks service, PGLite database, Drizzle ORM, and a running server. You can add more services and actions with `npx @nilejs/cli generate service <name>` and `npx @nilejs/cli generate action <service> <name>`.
+The generated project includes a tasks service, PGLite database, Drizzle ORM, and a running server. You can add more services and actions with `npx @nilejs/cli generate service <name>` and `npx @nilejs/cli generate action <service> <name>`. To extract Zod schemas and TypeScript types from your actions, run `npx @nilejs/cli generate schema`.
 
 ### Manual install
 
@@ -103,17 +103,17 @@ export const listTodoAction: Action = createAction({
 
 ```typescript
 // services/todos.ts
-import { createActions, type Services } from "@nilejs/nile";
+import { createServices, type Services } from "@nilejs/nile";
 import { createTodoAction } from "./create";
 import { listTodoAction } from "./list";
 
-export const services: Services = [
+export const services: Services = createServices([
   {
     name: "todos",
     description: "Todo list management",
-    actions: createActions([createTodoAction, listTodoAction]),
+    actions: [createTodoAction, listTodoAction],
   },
-];
+]);
 ```
 
 ### 2.3 Create and Start the Server

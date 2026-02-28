@@ -341,17 +341,17 @@ All errors go through `handleError`:
 | Insert returns empty | Returns `Err("{Name} creation returned no data")` |
 | Invalid cursor column | Returns `Err("Cursor column '{col}' does not exist on {name} table")` |
 
-## Pairing with createActions
+## Pairing with createServices
 
-`createModel` eliminates model boilerplate. Pair it with [`createActions`](/guide/basics/actions) to eliminate the service/action layer boilerplate too. Together they reduce a full CRUD service from ~250 lines across 7 files to ~40 lines across 3 files.
+`createModel` eliminates model boilerplate. Pair it with `createServices` to eliminate the service/action layer boilerplate too. Together they reduce a full CRUD service from ~250 lines across 7 files to ~40 lines across 3 files.
 
 ### The pattern
 
 ```
 Schema (pgTable)
   └─ createModel  → CRUD model (1 line)
-       └─ createActions → CRUD actions (5 action definitions)
-            └─ Service config → done
+       └─ Service config (with direct action arrays) → CRUD actions (5 action definitions)
+            └─ done
 ```
 
 ### Step 1: Model — one line
@@ -451,26 +451,26 @@ const deleteTaskHandler = async (data: Record<string, unknown>) => {
 
 ```typescript
 // services/services.config.ts
-import { createActions, type Services } from '@nilejs/nile';
+import { createServices, type Services } from '@nilejs/nile';
 import { createTaskAction } from './tasks/create';
 import { deleteTaskAction } from './tasks/delete';
 import { getTaskAction } from './tasks/get';
 import { listTaskAction } from './tasks/list';
 import { updateTaskAction } from './tasks/update';
 
-export const services: Services = [
+export const services: Services = createServices([
   {
     name: 'tasks',
     description: 'Task management with CRUD operations',
-    actions: createActions([
+    actions: [
       createTaskAction,
       listTaskAction,
       getTaskAction,
       updateTaskAction,
       deleteTaskAction,
-    ]),
+    ],
   },
-];
+]);
 ```
 
 ### What each layer handles
@@ -480,12 +480,12 @@ export const services: Services = [
 | Table schema, columns, defaults | `pgTable` (Drizzle) |
 | Validation, CRUD queries, error handling, transactions | `createModel` |
 | Input schemas, business logic wrapping, response shaping | `createAction` per action |
-| Type-safe action grouping, service registration | `createActions` + service config |
+| Type-safe action grouping, service registration | `createServices` with direct action arrays |
 | Routing, execution pipeline, hooks | Nile engine (automatic) |
 
 ### When to go beyond this pattern
 
-The `createModel` + `createActions` pairing covers standard CRUD. Go custom when you need:
+The `createModel` + `createServices` pattern covers standard CRUD. Go custom when you need:
 
 - **Complex queries**: Joins, aggregations, CTEs — use `model.table` escape hatch with raw Drizzle
 - **Multi-model operations**: Actions that span multiple models or have complex business logic

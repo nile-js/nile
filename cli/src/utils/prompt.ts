@@ -28,3 +28,21 @@ export const confirmPrompt = (
     });
   });
 };
+
+/**
+ * Prompt the user for free-form text input.
+ * Returns the trimmed input string, or empty string if nothing entered.
+ */
+export const inputPrompt = (question: string): Promise<string> => {
+  const rl = createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  return new Promise((resolve) => {
+    rl.question(`  ${question} `, (answer) => {
+      rl.close();
+      resolve(answer.trim());
+    });
+  });
+};

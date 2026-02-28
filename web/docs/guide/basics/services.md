@@ -4,21 +4,23 @@ Services group related actions together. A service is a logical container that o
 
 ## Defining a Service
 
-Services are plain objects with a name, description, and array of actions:
+Services are plain objects with a name, description, and array of actions. You can define them directly or use the `createServices` helper for better type inference:
 
 ```typescript
-import { createActions, type Services } from "@nilejs/nile";
+import { createServices, type Services } from "@nilejs/nile";
 import { createTaskAction } from "./tasks/create";
 import { listTaskAction } from "./tasks/list";
 
-export const services: Services = [
+export const services: Services = createServices([
   {
     name: "tasks",
     description: "Task management with CRUD operations",
-    actions: createActions([createTaskAction, listTaskAction]),
+    actions: [createTaskAction, listTaskAction],
   },
-];
+]);
 ```
+
+> **Note:** The `createServices` helper is optional - you can also pass the array directly (`services: [...]`). Similarly, you can use `createActions` to wrap action arrays, or pass them directly - both approaches work.
 
 ## Options
 
@@ -82,17 +84,17 @@ export const listTaskAction: Action = createAction({
 
 ```typescript
 // services/tasks.ts
-import { createActions, type Services } from "@nilejs/nile";
+import { createServices, type Services } from "@nilejs/nile";
 import { createTaskAction } from "./tasks/create";
 import { listTaskAction } from "./tasks/list";
 
-export const services: Services = [
+export const services: Services = createServices([
   {
     name: "tasks",
     description: "Task management operations",
-    actions: createActions([createTaskAction, listTaskAction]),
+    actions: [createTaskAction, listTaskAction],
   },
-];
+]);
 ```
 
 ## Using Services in the Server

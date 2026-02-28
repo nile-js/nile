@@ -128,17 +128,17 @@ Then group them in the service config:
 
 ```typescript
 // services/tasks.ts
-import { createActions, type Services } from "@nilejs/nile";
+import { createServices, type Services } from "@nilejs/nile";
 import { createTaskAction } from "./tasks/create";
 import { listTaskAction } from "./tasks/list";
 
-export const services: Services = [
+export const services: Services = createServices([
   {
     name: "tasks",
     description: "Task management",
-    actions: createActions([createTaskAction, listTaskAction]),
+    actions: [createTaskAction, listTaskAction],
   },
-];
+]);
 ```
 
 ## Accessing Context

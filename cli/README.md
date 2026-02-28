@@ -114,6 +114,43 @@ export const getUserAction: Action = createAction({
 
 Kebab-case names are converted to camelCase for variables and PascalCase for types.
 
+### `nile generate schema`
+
+Alias: `nile g schema`
+
+Extract Zod validation schemas from your action definitions and generate TypeScript files with schema exports and inferred types.
+
+```bash
+nile g schema
+```
+
+The command auto-detects `src/services/services.config.ts`. If the file is not found, it prompts for the path. It spawns a `bun` subprocess to import your services config, extracts JSON Schema from each action's validation field, and converts them back to Zod code strings.
+
+Output (default `src/generated/`):
+
+- `schemas.ts` — named Zod schema exports (`tasksCreateSchema`, `tasksUpdateSchema`, etc.)
+- `types.ts` — TypeScript types via `z.infer` (`TasksCreatePayload`, `TasksUpdatePayload`, etc.)
+
+Options:
+
+| Flag | Description |
+|---|---|
+| `-e, --entry <path>` | Path to services config (auto-detected by default) |
+| `-o, --output <path>` | Output directory (default: `src/generated`) |
+
+Actions without a `validation` schema are skipped and listed in the CLI output.
+
+Requires [Bun](https://bun.sh) installed for the extraction subprocess.
+
+### Quick Reference
+
+| Command | Description |
+|---|---|
+| `nile new <name>` | Scaffold a new project |
+| `nile g service <name>` | Add a service with a demo action |
+| `nile g action <service> <name>` | Add an action to an existing service |
+| `nile g schema` | Generate Zod schemas and TypeScript types |
+
 ## Generated Project Structure
 
 ```

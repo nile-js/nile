@@ -258,7 +258,7 @@ export const loginAction = createAction({
 
 ### 8.2 `createActions`
 
-Creates multiple actions at once.
+Creates multiple actions at once. This is optional — you can also pass action arrays directly.
 
 ```typescript
 import { createActions } from '@nilejs/nile';
@@ -358,37 +358,36 @@ export const loginAction = createAction({
 });
 ```
 
-The `services.config.ts` file imports all actions and defines services as plain objects:
+The `services.config.ts` file imports all actions and defines services using `createServices`:
 
 ```typescript
 // services/services.config.ts
-import type { Services } from '@nilejs/nile';
-import { createActions } from '@nilejs/nile';
+import { createServices, type Services } from '@nilejs/nile';
 import { loginAction } from './auth/login';
 import { logoutAction } from './auth/logout';
 import { profileAction } from './auth/profile';
 import { createTaskAction } from './tasks/create';
 import { listTaskAction } from './tasks/list';
 
-export const services: Services = [
+export const services: Services = createServices([
   {
     name: 'auth',
     description: 'Authentication service',
-    actions: createActions([
+    actions: [
       loginAction,
       logoutAction,
       profileAction,
-    ]),
+    ],
   },
   {
     name: 'tasks',
     description: 'Task management service',
-    actions: createActions([
+    actions: [
       createTaskAction,
       listTaskAction,
-    ]),
+    ],
   },
-];
+]);
 ```
 
 For larger applications, you may extract the server configuration into a separate `server.config.ts` that imports the services array. For smaller projects, defining the config directly in `index.ts` is equally valid.
@@ -412,13 +411,13 @@ services/
 
 ```typescript
 // services/auth/index.ts
-import { createAction, createActions, createService } from '@nilejs/nile';
+import { createAction, createService } from '@nilejs/nile';
 import { loginAction } from './login';
 import { logoutAction } from './logout';
 
 export const authService = createService({
   name: 'auth',
   description: 'Authentication service',
-  actions: createActions([loginAction, logoutAction]),
+  actions: [loginAction, logoutAction],
 });
 ```

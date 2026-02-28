@@ -78,6 +78,7 @@ Generate a new service with the CLI:
 
 ```bash
 nile generate service users
+# or: nile g service users
 ```
 
 Or manually create a directory under `src/services/` with action files and register it in `src/services/services.config.ts`.
@@ -88,9 +89,33 @@ Generate a new action in an existing service:
 
 ```bash
 nile generate action users get-user
+# or: nile g action users get-user
 ```
 
 Each action file exports a single action created with `createAction`, which takes a Zod validation schema and a handler function that returns `Ok(data)` or `Err(message)`.
+
+## Generating Schemas & Types
+
+Extract Zod validation schemas from your actions and generate TypeScript types:
+
+```bash
+nile generate schema
+# or: nile g schema
+```
+
+This auto-detects `src/services/services.config.ts`, reads validation schemas from all actions, and outputs two files:
+
+- `src/generated/schemas.ts` — named Zod schema exports
+- `src/generated/types.ts` — inferred TypeScript types via `z.infer`
+
+Options:
+
+| Flag | Description |
+|---|---|
+| `-e, --entry <path>` | Path to services config (auto-detected by default) |
+| `-o, --output <path>` | Output directory (default: `src/generated`) |
+
+Actions without a validation schema are skipped and listed in the CLI output.
 
 ## Database
 

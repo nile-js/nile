@@ -71,7 +71,7 @@ const generateConfigSnippet = (serviceName: string): string => {
   const serviceEntry = `  {
     name: "${serviceName}",
     description: "${pascal} service",
-    actions: createActions([sample${pascal}Action]),
+    actions: [sample${pascal}Action],
   },`;
 
   return `${importLine}\n\n// Add to services array:\n${serviceEntry}`;
@@ -110,7 +110,7 @@ const autoRegisterService = async (
     const serviceEntry = `  {
     name: "${serviceName}",
     description: "${pascal} service",
-    actions: createActions([sample${pascal}Action]),
+    actions: [sample${pascal}Action],
   },`;
 
     // Insert before the last ]; in the services array
