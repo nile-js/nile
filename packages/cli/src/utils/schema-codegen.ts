@@ -113,10 +113,8 @@ export const generateTypesFile = (extraction: ExtractionResult): string => {
     generateHeader(),
     `import type { z } from "zod";`,
     "import type {",
-    ...schemaImports.map((name, i) =>
-      i < schemaImports.length - 1 ? `  ${name},` : `  ${name},`
-    ),
-    `} from "./schemas";`,
+    ...schemaImports.map((name) => `  ${name},`),
+    `} from "./schemas.js";`,
     "",
   ];
 
@@ -126,6 +124,31 @@ export const generateTypesFile = (extraction: ExtractionResult): string => {
     );
   }
 
+  lines.push("");
+
+  // Generate ServicePayloads map for @nilejs/client
+  lines.push(
+    "/** Map of all services and their action payloads for @nilejs/client */"
+  );
+  lines.push("export type ServicePayloads = {");
+
+  const serviceMap: Record<string, string[]> = {};
+  for (const entry of entries) {
+    if (!serviceMap[entry.serviceName]) {
+      serviceMap[entry.serviceName] = [];
+    }
+    serviceMap[entry.serviceName].push(
+      `    "${entry.actionName}": ${entry.typeName};`
+    );
+  }
+
+  for (const [service, actions] of Object.entries(serviceMap)) {
+    lines.push(`  "${service}": {`);
+    lines.push(...actions);
+    lines.push("  };");
+  }
+
+  lines.push("};");
   lines.push("");
 
   return lines.join("\n");

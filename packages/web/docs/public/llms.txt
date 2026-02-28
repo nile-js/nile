@@ -9,6 +9,7 @@
 - [Services](/nile/guide/basics/services.md): Services group related actions together. A service is a logical container that organizes your actions under a common namespace.
 - [Context](/nile/guide/basics/context.md): NileContext provides access to request context, session data, and shared resources throughout your application.
 - [Interacting with Nile](/nile/guide/basics/interacting.md): Nile exposes a single HTTP endpoint for all interactions. All requests are POST requests with a JSON body that specifies the intent, service, action, and payload.
+- [Nile Client](/nile/guide/basics/client.md): The @nilejs/client package is a standalone, type-safe client for interacting with a Nile backend from any JavaScript environment (browser, server, or edge).
 - [Nile Server](/nile/guide/internals/server.md): Type: Reference / Specification
 Path: src/nile/
 - [Database Utilities](/nile/guide/internals/db/index.md)

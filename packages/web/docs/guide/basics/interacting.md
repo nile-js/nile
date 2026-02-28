@@ -2,6 +2,29 @@
 
 Nile exposes a single HTTP endpoint for all interactions. All requests are POST requests with a JSON body that specifies the `intent`, `service`, `action`, and `payload`.
 
+## The Nile Client (Recommended)
+
+While you can interact with Nile using raw HTTP requests, we recommend using the `@nilejs/client` package for a better developer experience, type-safety, and graceful error handling.
+
+```bash
+bun add @nilejs/client
+```
+
+```typescript
+import { createNileClient } from "@nilejs/client";
+import type { ServicePayloads } from "./generated/types";
+
+const nile = createNileClient<ServicePayloads>({ baseUrl: "/api" });
+
+const { error, data } = await nile.invoke({
+  service: "tasks",
+  action: "create",
+  payload: { title: "Buy milk" }
+});
+```
+
+See the [Client](/guide/basics/client) guide for the full API reference.
+
 ## The Single Endpoint
 
 ```
@@ -37,7 +60,7 @@ Every request follows this structure:
 
 ### 1. Execute (`intent: "execute"`)
 
-Execute an action. This is the most common intent for running your business logic.
+Execute an action. This is the most common intent for running your business logic. In the Nile Client, this is called via `nile.invoke()`.
 
 ```bash
 curl -X POST http://localhost:8000/api/services \

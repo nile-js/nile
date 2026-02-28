@@ -1,72 +1,13 @@
 {
-  "name": "@nilejs/nile",
-  "version": "0.0.4",
-  "type": "module",
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "description": "TypeScript-first, service and actions oriented backend framework",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    }
-  },
-  "files": [
-    "dist"
+  "name": "nile-monorepo",
+  "private": true,
+  "workspaces": [
+    "packages/*"
   ],
-  "repository": "git@github.com:nile-js/nile.git",
-  "author": "Hussein Kizz",
-  "license": "MIT",
-  "keywords": [
-    "framework",
-    "backend",
-    "api",
-    "hono",
-    "server",
-    "typescript",
-    "service",
-    "actions",
-    "post only",
-    "functional programming",
-    "rpc",
-    "bun",
-    "ai-backend"
-  ],
-  "devDependencies": {
-    "@biomejs/biome": "2.3.13",
-    "@electric-sql/pglite": "^0.2.5",
-    "@rspress/core": "^2.0.3",
-    "@types/bun": "latest",
-    "drizzle-orm": "^0.39.2",
-    "drizzle-zod": "0.8.3",
-    "husky": "^9.1.7",
-    "tsup": "^8.5.1",
-    "ultracite": "7.1.5",
-    "vite-tsconfig-paths": "^6.1.1",
-    "vitest": "^4.0.18"
-  },
-  "peerDependencies": {
-    "drizzle-orm": "^0.39.2",
-    "drizzle-zod": "^0.8.3",
-    "typescript": "^5"
-  },
   "scripts": {
-    "check": "ultracite check",
-    "fix": "ultracite fix",
-    "prepare": "husky",
-    "test": "bunx vitest",
-    "test:run": "bunx vitest run",
-    "build": "tsup",
-    "export": "bun run check && bun run fix && bun run test:run && bun run build"
+    "prepare": "husky"
   },
-  "dependencies": {
-    "hono": "^4.11.9",
-    "hono-rate-limiter": "^0.5.3",
-    "nanoid": "^5.1.6",
-    "pino": "^10.3.1",
-    "slang-ts": "^0.0.7",
-    "zod": "^4.3.6"
+  "devDependencies": {
+    "husky": "^9.1.7"
   }
 }

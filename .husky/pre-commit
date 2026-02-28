@@ -3,7 +3,7 @@
 set -e
 
 # Run tests (non-watch mode)
-bun run test:run
+bun run --cwd packages/nile test:run
 
 # Check if there are any staged files
 if [ -z "$(git diff --cached --name-only)" ]; then
@@ -24,7 +24,7 @@ git stash push --quiet --keep-index --message "pre-commit-stash" || true
 STASHED=$?
 
 # Run formatter on the staged files
-bun x ultracite fix
+bun run --cwd packages/nile fix
 FORMAT_EXIT_CODE=$?
 
 # Restore working directory state
