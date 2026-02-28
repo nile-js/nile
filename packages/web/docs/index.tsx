@@ -1,21 +1,21 @@
-import "./home.css";
-import { useState } from "react";
+import './home.css';
+import { useState } from 'react';
 import {
   IoCheckmark,
   IoCopyOutline,
   IoFlashSharp,
   IoServerSharp,
   IoShieldCheckmarkSharp,
-} from "react-icons/io5";
-import { MdSpeed } from "react-icons/md";
-import { codeToHtml } from "shiki";
-import { PiWavesBold } from "react-icons/pi";
+} from 'react-icons/io5';
+import { MdSpeed } from 'react-icons/md';
+import { codeToHtml } from 'shiki';
+import { PiWavesBold } from 'react-icons/pi';
 
-const BASE_PATH = "/nile";
+const BASE_PATH = '/nile';
 const withBase = (path: string) => `${BASE_PATH}${path}`;
 
 export const frontmatter = {
-  pageType: "custom",
+  pageType: 'custom',
 };
 
 const CopyButton = ({ code }: { code: string }) => {
@@ -35,10 +35,10 @@ const CopyButton = ({ code }: { code: string }) => {
 };
 
 export const Home = async () => {
-  const bunInstallRaw = "npx @nilejs/cli new my-app";
+  const bunInstallRaw = 'npx @nilejs/cli new my-app';
   const bunInstallCode = await codeToHtml(bunInstallRaw, {
-    lang: "bash",
-    theme: "material-theme-ocean",
+    lang: 'bash',
+    theme: 'material-theme-ocean',
   });
 
   const serverCodeRaw = `// tasks/create.ts
@@ -64,8 +64,8 @@ export const createTaskAction: Action = createAction({
 });`;
 
   const serverCode = await codeToHtml(serverCodeRaw, {
-    lang: "typescript",
-    theme: "material-theme-ocean",
+    lang: 'typescript',
+    theme: 'material-theme-ocean',
   });
 
   const clientCodeRaw = `# Invoke the action via POST
@@ -79,8 +79,8 @@ curl -X POST http://localhost:8000/api/services \\
   }'`;
 
   const clientCode = await codeToHtml(clientCodeRaw, {
-    lang: "bash",
-    theme: "material-theme-ocean",
+    lang: 'bash',
+    theme: 'material-theme-ocean',
   });
 
   return (
@@ -94,22 +94,28 @@ curl -X POST http://localhost:8000/api/services \\
             <span className="highlight">Nile</span>
           </h1>
           <p className="hero-tagline">
-            The backend framework for fast-moving teams. Build predictable,
-            AI-ready services without the boilerplate.
+            TypeScript-first, service and actions oriented backend framework for
+            building modern, fast, safe and AI-ready backends with simplest
+            developer experience possible.
+            <br />
+            You define actions, group them into services, and get a predictable
+            API with validation, error handling, and schema export, no route
+            definitions, no controllers, no middleware chains and rest api
+            conventions to care about, just your business logic. And it's all AI
+            agent-ready out of the box, progressively discoverable and tool
+            calling ready with validation.
           </p>
           <div className="hero-actions">
             <a
               className="btn btn-primary"
-              href={withBase("/guide/start/getting-started")}
-            >
+              href={withBase('/guide/start/getting-started')}>
               Get Started
             </a>
             <a
               className="btn btn-secondary"
               href="https://github.com/nile-js/nile"
               rel="noopener noreferrer"
-              target="_blank"
-            >
+              target="_blank">
               View on GitHub
             </a>
           </div>
@@ -247,12 +253,11 @@ curl -X POST http://localhost:8000/api/services \\
 
       <footer className="home-footer">
         <p>
-          Built with love by{" "}
+          Built with love by{' '}
           <a
             href="https://github.com/Hussseinkizz"
             rel="noopener noreferrer"
-            target="_blank"
-          >
+            target="_blank">
             Hussein Kizz
           </a>
         </p>
