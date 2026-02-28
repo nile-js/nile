@@ -34,7 +34,7 @@ const CopyButton = ({ code }: { code: string }) => {
 };
 
 export const Home = async () => {
-  const bunInstallRaw = "bun add @nilejs/nile zod slang-ts";
+  const bunInstallRaw = "npx @nilejs/cli new my-app";
   const bunInstallCode = await codeToHtml(bunInstallRaw, {
     lang: "bash",
     theme: "material-theme-ocean",
@@ -116,7 +116,7 @@ curl -X POST http://localhost:8000/api/services \\
       </section>
 
       <section className="installation">
-        <h2>Installation</h2>
+        <h2>Quick Start</h2>
         <div className="code-wrapper">
           <div
             className="code-block"
@@ -126,7 +126,7 @@ curl -X POST http://localhost:8000/api/services \\
           <CopyButton code={bunInstallRaw} />
         </div>
         <p className="install-alt">
-          or with npm: <code>npm install @nilejs/nile zod slang-ts</code>
+          or with bunx: <code>bunx @nilejs/cli new my-app</code>
         </p>
       </section>
 

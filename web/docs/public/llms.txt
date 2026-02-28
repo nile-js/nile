@@ -1,6 +1,6 @@
 # Nile
 
-> Functional-first, type-safe backend framework for scalable applications
+> TypeScript-first, service and actions oriented backend framework
 
 ## Guide
 
@@ -11,7 +11,8 @@
 - [Interacting with Nile](/nile/guide/basics/interacting.md): Nile exposes a single HTTP endpoint for all interactions. All requests are POST requests with a JSON body that specifies the intent, service, action, and payload.
 - [Nile Server](/nile/guide/internals/server.md): Type: Reference / Specification
 Path: src/nile/
-- [Database Utilities](/nile/guide/internals/db.md)
+- [Database Utilities](/nile/guide/internals/db/index.md)
+- [createModel](/nile/guide/internals/db/create-model.md): CRUD model factory for Drizzle tables. Replaces repetitive safeTry + handleError + null-check boilerplate with a single function call.
 - [Logging](/nile/guide/internals/logging.md): Type: Reference / Specification
 Path: src/logging/
 - [Service Action Engine](/nile/guide/internals/engine.md): Type: Reference / SpecificationPath: src/engine/
