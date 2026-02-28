@@ -9,6 +9,19 @@ Nile is a functional-first, type-safe backend framework built on Hono. It works 
 
 ## 1. Installation
 
+### Scaffold with the CLI (recommended)
+
+The CLI creates a working project with services, database setup, and dev tooling:
+
+```bash
+npx @nilejs/cli new my-app
+cd my-app && bun install && bun run dev
+```
+
+The generated project includes a tasks service, PGLite database, Drizzle ORM, and a running server. You can add more services and actions with `npx @nilejs/cli generate service <name>` and `npx @nilejs/cli generate action <service> <name>`.
+
+### Manual install
+
 :::tabs
 
 @tab Bun
@@ -115,14 +128,14 @@ const server = createNileServer({
   services,
   rest: {
     baseUrl: "/api",
-    port: 3000,
+    port: 8000,
   },
 });
 
 if (server.rest) {
   const { fetch } = server.rest.app;
-  Bun.serve({ fetch, port: 3000 });
-  console.log("Server running at http://localhost:3000");
+  Bun.serve({ fetch, port: 8000 });
+  console.log("Server running at http://localhost:8000");
 }
 ```
 
@@ -138,7 +151,7 @@ Nile uses a single POST endpoint with an intent-driven payload:
 
 ```bash
 # List todos
-curl -X POST http://localhost:3000/api/services \
+curl -X POST http://localhost:8000/api/services \
   -H "Content-Type: application/json" \
   -d '{
     "intent": "execute",
@@ -148,7 +161,7 @@ curl -X POST http://localhost:3000/api/services \
   }'
 
 # Create a todo
-curl -X POST http:localhost:3000/api/services \
+curl -X POST http:localhost:8000/api/services \
   -H "Content-Type: application/json" \
   -d '{
     "intent": "execute",

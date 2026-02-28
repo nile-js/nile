@@ -68,7 +68,7 @@ export const createTaskAction: Action = createAction({
   });
 
   const clientCodeRaw = `# Invoke the action via POST
-curl -X POST http://localhost:3000/api/services \\
+curl -X POST http://localhost:8000/api/services \\
   -H "Content-Type: application/json" \\
   -d '{
     "intent": "execute",

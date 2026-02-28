@@ -36,8 +36,8 @@ const server = createNileServer({
   rest: {
     baseUrl: "/api",
     host: "localhost",
-    port: 3000,
-    allowedOrigins: ["http://localhost:3000"],
+    port: 8000,
+    allowedOrigins: ["http://localhost:8000"],
     enableStatus: true,
   },
   onBoot: {
@@ -52,7 +52,7 @@ const server = createNileServer({
 });
 
 if (server.rest) {
-  const port = server.config.rest?.port ?? 3000;
+  const port = server.config.rest?.port ?? 8000;
   const { fetch } = server.rest.app;
 
   Bun.serve({ port, fetch });

@@ -105,7 +105,7 @@ export function createNileServer(config: ServerConfig): NileServer {
     server.rest = { app, config: config.rest };
 
     const host = config.rest.host ?? "localhost";
-    const port = config.rest.port ?? 3000;
+    const port = config.rest.port ?? 8000;
     const base = `http://${host}:${port}`;
 
     console.log(`\n  POST ${base}${config.rest.baseUrl}/services`);

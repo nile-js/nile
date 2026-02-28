@@ -16,7 +16,7 @@ bun install
 bun run dev
 ```
 
-The site will be available at `http://localhost:3000`
+The site will be available at `http://localhost:8000`
 
 ## Building
 

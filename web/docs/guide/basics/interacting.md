@@ -40,7 +40,7 @@ Every request follows this structure:
 Execute an action. This is the most common intent for running your business logic.
 
 ```bash
-curl -X POST http://localhost:3000/api/services \
+curl -X POST http://localhost:8000/api/services \
   -H "Content-Type: application/json" \
   -d '{
     "intent": "execute",
@@ -72,7 +72,7 @@ Discover available services and actions. Use wildcards to explore.
 **List all services:**
 
 ```bash
-curl -X POST http://localhost:3000/api/services \
+curl -X POST http://localhost:8000/api/services \
   -H "Content-Type: application/json" \
   -d '{
     "intent": "explore",
@@ -106,7 +106,7 @@ curl -X POST http://localhost:3000/api/services \
 **List all actions in a service:**
 
 ```bash
-curl -X POST http://localhost:3000/api/services \
+curl -X POST http://localhost:8000/api/services \
   -H "Content-Type: application/json" \
   -d '{
     "intent": "explore",
@@ -150,7 +150,7 @@ curl -X POST http://localhost:3000/api/services \
 **Get details of a specific action:**
 
 ```bash
-curl -X POST http://localhost:3000/api/services \
+curl -X POST http://localhost:8000/api/services \
   -H "Content-Type: application/json" \
   -d '{
     "intent": "explore",
@@ -186,7 +186,7 @@ Get the Zod validation schemas as JSON Schema. Useful for generating type-safe c
 **Get all schemas:**
 
 ```bash
-curl -X POST http://localhost:3000/api/services \
+curl -X POST http://localhost:8000/api/services \
   -H "Content-Type: application/json" \
   -d '{
     "intent": "schema",
@@ -237,7 +237,7 @@ curl -X POST http://localhost:3000/api/services \
 **Get schemas for a specific service:**
 
 ```bash
-curl -X POST http://localhost:3000/api/services \
+curl -X POST http://localhost:8000/api/services \
   -H "Content-Type: application/json" \
   -d '{
     "intent": "schema",
@@ -276,7 +276,7 @@ curl -X POST http://localhost:3000/api/services \
 **Get schema for a specific action:**
 
 ```bash
-curl -X POST http://localhost:3000/api/services \
+curl -X POST http://localhost:8000/api/services \
   -H "Content-Type: application/json" \
   -d '{
     "intent": "schema",

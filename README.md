@@ -17,6 +17,22 @@ You define actions, group them into services, and get a predictable API with val
 
 > Or View Full Docs -> [nile-js.github.io/nile](https://nile-js.github.io/nile)
 
+### Scaffold a project (recommended)
+
+The fastest way to start is with the CLI. It creates a working project with services, database, and dev tooling pre-configured:
+
+```bash
+npx @nilejs/cli new my-app
+```
+
+```bash
+cd my-app && bun install && bun run dev
+```
+
+The CLI also includes generators for adding services and actions to an existing project. See [`@nilejs/cli`](./cli/README.md) for details.
+
+### Manual install
+
 ```bash
 bun add @nilejs/nile zod slang-ts
 ```

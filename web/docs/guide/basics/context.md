@@ -151,7 +151,7 @@ const server = createNileServer({
   },
   rest: {
     baseUrl: "/api",
-    port: 3000,
+    port: 8000,
   },
 });
 ```

@@ -6,7 +6,14 @@ import {
   pathExists,
   replaceInFile,
 } from "../utils/files.js";
-import { error, header, hint, info, success } from "../utils/log.js";
+import {
+  brand,
+  createSpinner,
+  error,
+  hint,
+  outro,
+  success,
+} from "../utils/log.js";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 
@@ -42,14 +49,13 @@ export const newCommand = async (projectName: string): Promise<void> => {
     process.exit(1);
   }
 
-  header(`Creating project: ${projectName}`);
+  brand();
+
+  const spinner = createSpinner(`Creating ${projectName}...`);
 
   const templateDir = resolveTemplateDir();
-
-  info("Copying project files...");
   await copyDir(templateDir, targetDir);
 
-  info("Configuring project...");
   const allFiles = await getFilesRecursive(targetDir);
   const replacements = { "{{projectName}}": projectName };
 
@@ -63,11 +69,15 @@ export const newCommand = async (projectName: string): Promise<void> => {
     }
   }
 
-  success(`Project "${projectName}" created.`);
+  spinner.stop("Project ready.");
 
-  header("Next steps:");
+  success(`Created ${projectName}`);
+
+  console.log("");
   hint(`cd ${projectName}`);
   hint("bun install");
   hint("cp .env.example .env");
   hint("bun run dev");
+
+  outro();
 };

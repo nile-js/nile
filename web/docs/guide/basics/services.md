@@ -107,14 +107,14 @@ const server = createNileServer({
   services,
   rest: {
     baseUrl: "/api",
-    port: 3000,
+    port: 8000,
   },
 });
 
 if (server.rest) {
   const { fetch } = server.rest.app;
-  Bun.serve({ fetch, port: 3000 });
-  console.log("Server running at http://localhost:3000");
+  Bun.serve({ fetch, port: 8000 });
+  console.log("Server running at http://localhost:8000");
 }
 ```
 
@@ -123,7 +123,7 @@ if (server.rest) {
 Once the server is running, invoke actions via POST to `/api/services`:
 
 ```bash
-curl -X POST http://localhost:3000/api/services \
+curl -X POST http://localhost:8000/api/services \
   -H "Content-Type: application/json" \
   -d '{
     "intent": "execute",

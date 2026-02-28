@@ -508,7 +508,7 @@ Authentication is handled via Socket.IO handshake:
 
 ```typescript
 const client = createDialogueClient({
-  url: "ws://localhost:3000",
+  url: "ws://localhost:8000",
   auth: { token: "user-jwt-token" }
 });
 ```

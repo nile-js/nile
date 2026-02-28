@@ -1,6 +1,6 @@
 import { resolve } from "node:path";
 import { pathExists, writeFileSafe } from "../utils/files.js";
-import { error, header, hint, success } from "../utils/log.js";
+import { brand, createSpinner, error, hint, outro } from "../utils/log.js";
 
 /**
  * Convert a kebab-case name to camelCase.
@@ -72,17 +72,23 @@ export const generateActionCommand = async (
     process.exit(1);
   }
 
-  header(`Generating action: ${serviceName}/${actionName}`);
+  brand();
+
+  const spinner = createSpinner(`Creating action ${actionName}...`);
 
   await writeFileSafe(
     actionFile,
     generateActionContent(actionName, serviceName)
   );
 
-  success(`Action created at src/services/${serviceName}/${actionName}.ts`);
+  spinner.stop(
+    `Action created at src/services/${serviceName}/${actionName}.ts`
+  );
 
   const camel = toCamelCase(actionName);
-  header("Next steps:");
-  hint("Import and register the action in your service config:");
+  console.log("");
+  hint("Register the action in your service config:");
   hint(`  import { ${camel}Action } from "./${serviceName}/${actionName}";`);
+
+  outro();
 };

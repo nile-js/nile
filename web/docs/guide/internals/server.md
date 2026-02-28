@@ -32,7 +32,7 @@ const server = createNileServer({
   services: [/* ... */],
   rest: {
     baseUrl: "/api",
-    allowedOrigins: ["http://localhost:3000"],
+    allowedOrigins: ["http://localhost:8000"],
     enableStatus: true,
   },
 });
@@ -45,7 +45,7 @@ const server = createNileServer({
 3. **Create Engine** — Passes `services`, `diagnostics`, and global hook handlers
 4. **Log services table** — When `config.logServices` is `true`, prints a `console.table` of registered services (name, description, actions). Always prints — not gated by `diagnostics`
 5. **Create REST app** — Only if `config.rest` is provided. Passes engine, context, `serverName`, and `runtime` (defaults to `"bun"`)
-6. **Print REST endpoint URLs** — When REST is configured, prints `POST http://host:port/baseUrl/services` and optionally `GET http://host:port/status` via `console.log`. Uses `rest.host` (default `"localhost"`) and `rest.port` (default `3000`)
+6. **Print REST endpoint URLs** — When REST is configured, prints `POST http://host:port/baseUrl/services` and optionally `GET http://host:port/status` via `console.log`. Uses `rest.host` (default `"localhost"`) and `rest.port` (default `8000`)
 7. **Run `onBoot`** — Fire-and-forget async IIFE. Failures are logged via `console.error` but do not crash the server
 
 ### 2.2 Return Value (`NileServer`)
@@ -88,7 +88,7 @@ const server = createNileServer({
 - `services` is required. An empty array throws at initialization.
 - `diagnostics` defaults to `false`. When enabled, internal modules emit diagnostic output through `createDiagnosticsLog`.
 - `logServices` defaults to `true`. Prints a `console.table` of registered services (Service, Description, Actions count). Not gated by `diagnostics` — set `logServices: false` to suppress.
-- When REST is configured, endpoint URLs are always printed via `console.log` using `rest.host` (default `"localhost"`) and `rest.port` (default `3000`).
+- When REST is configured, endpoint URLs are always printed via `console.log` using `rest.host` (default `"localhost"`) and `rest.port` (default `8000`).
 
 ## 4. `NileContext`
 

@@ -5,7 +5,15 @@ import {
   readFileContent,
   writeFileSafe,
 } from "../utils/files.js";
-import { error, header, hint, info, success, warn } from "../utils/log.js";
+import {
+  brand,
+  createSpinner,
+  error,
+  hint,
+  outro,
+  success,
+  warn,
+} from "../utils/log.js";
 import { confirmPrompt } from "../utils/prompt.js";
 
 /**
@@ -147,31 +155,33 @@ export const generateServiceCommand = async (
     process.exit(1);
   }
 
-  header(`Generating service: ${serviceName}`);
+  brand();
+
+  const spinner = createSpinner(`Creating service ${serviceName}...`);
 
   await ensureDir(serviceDir);
 
-  info("Creating demo action...");
   await writeFileSafe(
     resolve(serviceDir, "sample.ts"),
     generateActionContent(serviceName)
   );
 
-  info("Creating barrel export...");
   await writeFileSafe(
     resolve(serviceDir, "index.ts"),
     generateBarrelContent(serviceName)
   );
 
-  success(`Service "${serviceName}" created at src/services/${serviceName}/`);
+  spinner.stop(`Service created at src/services/${serviceName}/`);
 
   // Try to register in services.config.ts
   const configPath = resolve(servicesDir, "services.config.ts");
 
   if (!pathExists(configPath)) {
     warn("Could not find services.config.ts");
-    header("Add this to your services config:");
+    console.log("");
+    hint("Add this to your services config:");
     console.log(generateConfigSnippet(serviceName));
+    outro();
     return;
   }
 
@@ -182,13 +192,16 @@ export const generateServiceCommand = async (
   if (shouldRegister) {
     const registered = await autoRegisterService(configPath, serviceName);
     if (registered) {
-      success("Service registered in services.config.ts");
+      success("Registered in services.config.ts");
     } else {
       warn("Could not auto-register. Add manually:");
       console.log(`\n${generateConfigSnippet(serviceName)}\n`);
     }
   } else {
-    header("Add this to your services config:");
+    console.log("");
+    hint("Add this to your services config:");
     console.log(generateConfigSnippet(serviceName));
   }
+
+  outro();
 };

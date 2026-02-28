@@ -66,7 +66,7 @@ const logId = createLog({
   atFunction: "startup",
   message: "Server started",
   level: "info",
-  data: { port: 3000 },
+  data: { port: 8000 },
 }, { chunking: "daily" });
 ```
 

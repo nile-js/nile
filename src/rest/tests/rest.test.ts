@@ -49,7 +49,7 @@ const mockServices: Service[] = [
 
 const restConfig: RestConfig = {
   baseUrl: "/api/v1",
-  allowedOrigins: ["http://localhost:3000"],
+  allowedOrigins: ["http://localhost:8000"],
   enableStatus: true,
   diagnostics: false,
 };

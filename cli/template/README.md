@@ -10,7 +10,7 @@ cp .env.example .env
 bun run dev
 ```
 
-The server starts at `http://localhost:3000`. PGLite creates an embedded Postgres database automatically, no external database required.
+The server starts at `http://localhost:8000`. PGLite creates an embedded Postgres database automatically, no external database required.
 
 ## Scripts
 
@@ -51,7 +51,7 @@ All requests go through a single POST endpoint. The `intent` field determines th
 ### Explore available services
 
 ```bash
-curl -X POST http://localhost:3000/api/services \
+curl -X POST http://localhost:8000/api/services \
   -H "Content-Type: application/json" \
   -d '{"intent":"explore","service":"*","action":"*","payload":{}}'
 ```
@@ -59,7 +59,7 @@ curl -X POST http://localhost:3000/api/services \
 ### Execute an action
 
 ```bash
-curl -X POST http://localhost:3000/api/services \
+curl -X POST http://localhost:8000/api/services \
   -H "Content-Type: application/json" \
   -d '{"intent":"execute","service":"tasks","action":"create","payload":{"title":"My first task"}}'
 ```
@@ -67,7 +67,7 @@ curl -X POST http://localhost:3000/api/services \
 ### Get action schemas
 
 ```bash
-curl -X POST http://localhost:3000/api/services \
+curl -X POST http://localhost:8000/api/services \
   -H "Content-Type: application/json" \
   -d '{"intent":"schema","service":"tasks","action":"*","payload":{}}'
 ```
