@@ -97,11 +97,14 @@ curl -X POST http://localhost:8000/api/services \\
             TypeScript-first, service and actions oriented backend framework for
             building modern, fast, safe and AI-ready backends with simplest
             developer experience possible.
-            <br />
+          </p>
+          <p className="hero-description">
             You define actions, group them into services, and get a predictable
             API with validation, error handling, and schema export, no route
             definitions, no controllers, no middleware chains and rest api
-            conventions to care about, just your business logic. And it's all AI
+            conventions to care about, just your business logic.
+            <br/><br/>
+            And it's all AI
             agent-ready out of the box, progressively discoverable and tool
             calling ready with validation.
           </p>

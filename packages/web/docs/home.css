@@ -54,6 +54,14 @@
   line-height: 1.6;
 }
 
+.hero-description {
+  font-size: 1.25rem;
+  color: var(--rp-c-text-3);
+  margin-top: 0.5rem;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
 .hero-actions {
   display: flex;
   gap: 1rem;
