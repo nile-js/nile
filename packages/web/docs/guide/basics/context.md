@@ -32,12 +32,13 @@ const context = getContext();
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `rest` | `ExternalRequest \| undefined` | REST request/response context (when called via HTTP) |
+| `rest` | `HonoContext \| undefined` | Hono request context (when called via HTTP) |
 | `ws` | `WebSocketContext \| undefined` | WebSocket context (when called via WS) |
 | `rpc` | `RPCContext \| undefined` | RPC context (when called via RPC) |
 | `sessions` | `Sessions` | Session data per interface (`rest`, `ws`, `rpc`) |
 | `resources` | `Resources \| undefined` | Shared resources (logger, database, cache) |
-| `logger` | `NileLogger` | Built-in logger |
+| `get` / `set` | `(key: string) => T` | General-purpose key-value store |
+| `getSession` / `setSession` | `(name: keyof Sessions, ...) => ...` | Session access per interface |
 
 ## Accessing Resources
 
@@ -45,7 +46,7 @@ Resources are provided at server startup and available via context:
 
 ```typescript
 handler: (data, context) => {
-  const logger = context?.logger;
+  const logger = context?.resources?.logger;
   
   // Access logger
   logger?.info({
@@ -68,10 +69,10 @@ Store and retrieve session data per interface:
 ```typescript
 handler: (data, context) => {
   // Set session data
-  context?.sessions.set("rest", { userId: "123", role: "admin" });
+  context?.setSession("rest", { userId: "123", role: "admin" });
   
   // Get session data
-  const session = context?.sessions.get("rest");
+  const session = context?.getSession("rest");
   console.log(session?.userId); // "123"
   
   return Ok({ session });
@@ -109,7 +110,7 @@ const createUserHandler = (data: Record<string, unknown>, context) => {
   const { name, email } = data as { name: string; email: string };
   
   // Log the action
-  context?.logger?.info({
+  context?.resources?.logger?.info({
     atFunction: "createUser",
     message: "Creating user",
     data: { email },

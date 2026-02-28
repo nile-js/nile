@@ -29,7 +29,7 @@ npx @nilejs/cli new my-app
 cd my-app && bun install && bun run dev
 ```
 
-The CLI also includes generators for adding services, actions, and extracting Zod schemas with TypeScript types. See [`@nilejs/cli`](https://www.npmjs.com/package/@nilejs/cli) for details.
+The CLI also includes generators for adding services, actions, and extracting Zod schemas with TypeScript types. See [`@nilejs/cli`](https://github.com/nile-js/nile/tree/main/packages/cli) for details.
 
 ### Client Library
 
@@ -39,7 +39,7 @@ For frontend applications, use the standalone, type-safe client:
 bun add @nilejs/client
 ```
 
-See [`@nilejs/client`](https://www.npmjs.com/package/@nilejs/client) for full usage and type-safe action invocation.
+See [`@nilejs/client`](https://github.com/nile-js/nile/tree/main/packages/client) for full usage and type-safe action invocation.
 
 ### Manual install
 

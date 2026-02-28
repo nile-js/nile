@@ -148,10 +148,10 @@ The handler receives a second parameter with access to resources:
 ```typescript
 handler: (data, context) => {
   // Access database from context
-  const users = await context.database.query.users.findMany();
+  const users = await context?.resources?.database?.query.users.findMany();
   
   // Access logger
-  context.logger.info({ atFunction: "myAction", message: "Processing" });
+  context?.resources?.logger?.info({ atFunction: "myAction", message: "Processing" });
   
   return Ok({ count: users.length });
 }

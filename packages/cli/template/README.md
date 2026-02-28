@@ -1,6 +1,6 @@
 # {{projectName}}
 
-Built with [Nile](https://www.npmjs.com/package/@nilejs/nile).
+Built with [Nile](https://github.com/nile-js/nile).
 
 ## Setup
 
@@ -17,6 +17,9 @@ The server starts at `http://localhost:8000`. PGLite creates an embedded Postgre
 | Script | Description |
 |---|---|
 | `bun run dev` | Start the development server |
+| `bun run gen service <name>` | Generate a new service |
+| `bun run gen action <service> <name>` | Generate a new action |
+| `bun run gen schema` | Generate Zod schemas and TypeScript types |
 | `bun run db:generate` | Generate Drizzle migrations from schema changes |
 | `bun run db:push` | Push schema changes directly to the database |
 | `bun run db:studio` | Open Drizzle Studio to browse your data |
@@ -77,8 +80,7 @@ curl -X POST http://localhost:8000/api/services \
 Generate a new service with the CLI:
 
 ```bash
-nile generate service users
-# or: nile g service users
+bun run gen service users
 ```
 
 Or manually create a directory under `src/services/` with action files and register it in `src/services/services.config.ts`.
@@ -88,8 +90,7 @@ Or manually create a directory under `src/services/` with action files and regis
 Generate a new action in an existing service:
 
 ```bash
-nile generate action users get-user
-# or: nile g action users get-user
+bun run gen action users get-user
 ```
 
 Each action file exports a single action created with `createAction`, which takes a Zod validation schema and a handler function that returns `Ok(data)` or `Err(message)`.
@@ -99,8 +100,7 @@ Each action file exports a single action created with `createAction`, which take
 Extract Zod validation schemas from your actions and generate TypeScript types:
 
 ```bash
-nile generate schema
-# or: nile g schema
+bun run gen schema
 ```
 
 This auto-detects `src/services/services.config.ts`, reads validation schemas from all actions, and outputs two files:
@@ -126,7 +126,7 @@ See the [Drizzle getting started guide](https://orm.drizzle.team/docs/get-starte
 ## Tech Stack
 
 - **Runtime:** [Bun](https://bun.sh)
-- **Framework:** [@nilejs/nile](https://www.npmjs.com/package/@nilejs/nile)
+- **Framework:** [@nilejs/nile](https://github.com/nile-js/nile/tree/main/packages/nile)
 - **Database:** [PGLite](https://electric-sql.com/product/pglite) (embedded Postgres)
 - **ORM:** [Drizzle](https://orm.drizzle.team)
 - **Validation:** [Zod](https://zod.dev)

@@ -11,16 +11,15 @@
 - [Interacting with Nile](/nile/guide/basics/interacting.md): Nile exposes a single HTTP endpoint for all interactions. All requests are POST requests with a JSON body that specifies the intent, service, action, and payload.
 - [Nile Client](/nile/guide/basics/client.md): The @nilejs/client package is a standalone, type-safe client for interacting with a Nile backend from any JavaScript environment (browser, server, or edge).
 - [Nile Server](/nile/guide/internals/server.md): Type: Reference / Specification
-Path: src/nile/
+Path: nile/
 - [Database Utilities](/nile/guide/internals/db/index.md)
 - [createModel](/nile/guide/internals/db/create-model.md): CRUD model factory for Drizzle tables. Replaces repetitive safeTry + handleError + null-check boilerplate with a single function call.
 - [Logging](/nile/guide/internals/logging.md): Type: Reference / Specification
-Path: src/logging/
-- [Service Action Engine](/nile/guide/internals/engine.md): Type: Reference / SpecificationPath: src/engine/
+Path: logging/
+- [Service Action Engine](/nile/guide/internals/engine.md): Type: Reference / SpecificationPath: engine/
 - [REST Interface](/nile/guide/internals/rest.md): Type: Reference / Specification
-Path: src/rest/
+Path: rest/
 - [CORS Middleware](/nile/guide/internals/cors.md): Type: Reference / Specification
-Path: src/cors/
-- [Architecture](/nile/guide/others/architecture.md): Internal architecture, design decisions, and component interactions of Dialogue
+Path: cors/
 - [LLMs Full](/nile/guide/others/llms-full-txt.md): View LLMs Full
 - [LLMs](/nile/guide/others/llms-txt.md): View LLMs.txt

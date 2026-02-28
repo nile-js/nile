@@ -1,7 +1,7 @@
 # CORS Middleware
 
 **Type:** Reference / Specification
-**Path:** `src/cors/`
+**Path:** `cors/`
 
 ## 1. Purpose
 

@@ -1,7 +1,7 @@
 # Service Action Engine
 
 **Type:** Reference / Specification  
-**Path:** `src/engine/`
+**Path:** `engine/`
 
 ## 1. Purpose
 
@@ -15,7 +15,7 @@ This engine is designed to sit below the HTTP/RPC transport layer (e.g., Hono), 
 *   **Introspection:** Provide lightweight, zero-latency metadata for available services and actions to enable dynamic discovery.
 *   **Routing:** Provide strict $O(1)$ memory pointer lookups for specific actions based on `serviceName` and `actionName`.
 *   **Execution Pipeline:** Process the full action lifecycle safely, including Global/Action-level Hooks, Payload Validation (Zod), and safe Handler execution.
-*   **Diagnostics:** Emit timing and status information via `createDiagnosticsLog` from `src/utils.ts` when `diagnostics` is enabled. See `docs/internals/logging.md` section 7.
+*   **Diagnostics:** Emit timing and status information via `createDiagnosticsLog` from `utils/diagnostics-log.ts` when `diagnostics` is enabled. See `docs/internals/logging.md` section 7.
 *   **Result Pattern Enforcement:** Ensure all internal engine methods return a `Result<T, E>` from the `slang-ts` library to eliminate `try/catch` requirements in the transport layer.
 
 ### 1.2 Non-Goals
@@ -158,7 +158,7 @@ If a handler throws instead of returning a `Result`, `safeTry` catches the excep
 
 ## 7. Key Types
 
-All types below are exported from `src/index.ts` and defined in `src/engine/types.ts`.
+All types below are exported from `index.ts` and defined in `engine/types.ts`.
 
 ### 7.1 `EngineOptions`
 

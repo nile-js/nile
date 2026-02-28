@@ -1,7 +1,7 @@
 # Logging
 
 **Type:** Reference / Specification
-**Path:** `src/logging/`
+**Path:** `logging/`
 
 ## 1. Purpose
 
@@ -18,7 +18,7 @@ The logging module provides structured, append-only log persistence for Nile app
 
 - **Size-based rotation** — The module does not implement log rotation by file size. Only time-based chunking is supported.
 - **Log shipping** — No built-in support for sending logs to external services (e.g., Datadog, Elasticsearch). Consumers can build this on top of the query API.
-- **Diagnostics logging** — Internal nile diagnostics (engine, REST, server boot messages) use `createDiagnosticsLog` from `src/utils.ts`, not this module. See section 7.
+- **Diagnostics logging** — Internal nile diagnostics (engine, REST, server boot messages) use `createDiagnosticsLog` from `utils/diagnostics-log.ts`, not this module. See section 7.
 
 ## 2. Architecture
 
@@ -32,7 +32,7 @@ The logging module provides structured, append-only log persistence for Nile app
 
 ### 3.1 `createLogger(appName, config?)`
 
-**Path:** `src/logging/create-log.ts`
+**Path:** `logging/create-log.ts`
 
 Factory that returns a logger bound to a specific app name. Optionally accepts chunking config.
 
@@ -54,7 +54,7 @@ logger.error({ atFunction: "processOrder", message: "Payment failed", data: { or
 
 ### 3.2 `createLog(log, config?)`
 
-**Path:** `src/logging/logger.ts`
+**Path:** `logging/logger.ts`
 
 Lower-level function that writes a single log entry. Used internally by `createLogger`.
 
@@ -81,7 +81,7 @@ const logId = createLog({
 
 ### 3.3 `getLogs(filters?, config?)`
 
-**Path:** `src/logging/logger.ts`
+**Path:** `logging/logger.ts`
 
 Reads and filters log entries from disk. Supports both flat files and chunked directories.
 
@@ -219,7 +219,7 @@ These functions are not exported but are critical to `getLogs` performance:
 
 ## 7. Diagnostics Logging (Nile Internals)
 
-Nile's internal modules (server, engine, REST) use a separate diagnostics logging system that is distinct from this module. The `createDiagnosticsLog` utility in `src/utils.ts` provides centralized diagnostic output:
+Nile's internal modules (server, engine, REST) use a separate diagnostics logging system that is distinct from this module. The `createDiagnosticsLog` utility in `utils/diagnostics-log.ts` provides centralized diagnostic output:
 
 ```typescript
 import { createDiagnosticsLog } from "@/utils";
@@ -241,7 +241,7 @@ This replaces the previous pattern where `server.ts`, `rest.ts`, and `engine.ts`
 
 ## 8. `handleError` — Userland Error Utility
 
-**Path:** `src/utils/handle-error.ts`
+**Path:** `utils/handle-error.ts`
 
 A utility for application developers that combines error logging and error return in a single call. Infers `atFunction` from the caller stack when not provided.
 

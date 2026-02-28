@@ -2,7 +2,7 @@
 
 [![NPM Version](https://img.shields.io/npm/v/@nilejs/cli.svg)](https://www.npmjs.com/package/@nilejs/cli)
 
-CLI for scaffolding and generating [Nile](https://www.npmjs.com/package/@nilejs/nile) backend projects.
+CLI for scaffolding and generating [Nile](https://github.com/nile-js/nile/tree/main/packages/nile) backend projects.
 
 ## Install
 
@@ -60,12 +60,12 @@ The scaffolded project includes:
 
 ### `nile generate service <name>`
 
-Alias: `nile g service <name>`
+Alias: `nile gen service <name>`
 
 Generate a new service directory under `src/services/` with a demo action and barrel export. Run this from the project root.
 
 ```bash
-nile g service users
+nile gen service users
 ```
 
 Creates:
@@ -80,12 +80,12 @@ After creating the files, the CLI asks whether to auto-register the service in `
 
 ### `nile generate action <service-name> <action-name>`
 
-Alias: `nile g action <service-name> <action-name>`
+Alias: `nile gen action <service-name> <action-name>`
 
 Generate a new action file in an existing service directory.
 
 ```bash
-nile g action users get-user
+nile gen action users get-user
 ```
 
 Creates `src/services/users/get-user.ts` with:
@@ -116,12 +116,12 @@ Kebab-case names are converted to camelCase for variables and PascalCase for typ
 
 ### `nile generate schema`
 
-Alias: `nile g schema`
+Alias: `nile gen schema`
 
 Extract Zod validation schemas from your action definitions and generate TypeScript files with schema exports and inferred types.
 
 ```bash
-nile g schema
+nile gen schema
 ```
 
 The command auto-detects `src/services/services.config.ts`. If the file is not found, it prompts for the path. It spawns a `bun` subprocess to import your services config, extracts JSON Schema from each action's validation field, and converts them back to Zod code strings.
@@ -147,9 +147,9 @@ Requires [Bun](https://bun.sh) installed for the extraction subprocess.
 | Command | Description |
 |---|---|
 | `nile new <name>` | Scaffold a new project |
-| `nile g service <name>` | Add a service with a demo action |
-| `nile g action <service> <name>` | Add an action to an existing service |
-| `nile g schema` | Generate Zod schemas and TypeScript types |
+| `nile gen service <name>` | Add a service with a demo action |
+| `nile gen action <service> <name>` | Add an action to an existing service |
+| `nile gen schema` | Generate Zod schemas and TypeScript types |
 
 ## Generated Project Structure
 

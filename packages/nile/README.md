@@ -85,8 +85,8 @@ bun run check && bun run fix
 
 ## Related packages
 
-- [`@nilejs/cli`](https://www.npmjs.com/package/@nilejs/cli) - Project scaffolding and code generation
-- [`@nilejs/client`](https://www.npmjs.com/package/@nilejs/client) - Type-safe frontend client
+- [`@nilejs/cli`](https://github.com/nile-js/nile/tree/main/packages/cli) - Project scaffolding and code generation
+- [`@nilejs/client`](https://github.com/nile-js/nile/tree/main/packages/client) - Type-safe frontend client
 
 ## License
 

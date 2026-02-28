@@ -161,7 +161,7 @@ curl -X POST http://localhost:8000/api/services \
   }'
 
 # Create a todo
-curl -X POST http:localhost:8000/api/services \
+curl -X POST http://localhost:8000/api/services \
   -H "Content-Type: application/json" \
   -d '{
     "intent": "execute",

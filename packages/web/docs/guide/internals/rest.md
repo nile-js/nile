@@ -1,7 +1,7 @@
 # REST Interface
 
 **Type:** Reference / Specification
-**Path:** `src/rest/`
+**Path:** `rest/`
 
 ## 1. Purpose
 
@@ -13,7 +13,7 @@ The REST interface exposes the Action Engine over HTTP via Hono. It implements a
 - **Intent routing** — Dispatches `explore`, `execute`, and `schema` intents to dedicated handlers
 - **Response mapping** — Converts internal `Result<T, E>` types to the `ExternalResponse` shape at the HTTP boundary
 - **Middleware application** — CORS, rate limiting, and static file serving
-- **Diagnostics** — Emit request routing information via `createDiagnosticsLog` from `src/utils.ts` when `diagnostics` is enabled. See `docs/internals/logging.md` section 7.
+- **Diagnostics** — Emit request routing information via `createDiagnosticsLog` from `utils/diagnostics-log.ts` when `diagnostics` is enabled. See `docs/internals/logging.md` section 7.
 
 ### 1.2 Non-Goals
 
@@ -125,11 +125,11 @@ HTTP status codes: `200` for success, `400` for failures and validation errors, 
 
 ### 6.1 CORS
 
-Applied first via `applyCorsConfig` from `src/cors/cors.ts`. See `docs/internals/cors.md`.
+Applied first via `applyCorsConfig` from `cors/cors.ts`. See `docs/internals/cors.md`.
 
 ### 6.2 Rate Limiting
 
-**File:** `src/rest/middleware.ts` — `applyRateLimiting`
+**File:** `rest/middleware.ts` — `applyRateLimiting`
 
 Only applied when `config.rateLimiting.limitingHeader` is set. Uses `hono-rate-limiter`.
 
@@ -139,7 +139,7 @@ Only applied when `config.rateLimiting.limitingHeader` is set. Uses `hono-rate-l
 
 ### 6.3 Static File Serving
 
-**File:** `src/rest/middleware.ts` — `applyStaticServing`
+**File:** `rest/middleware.ts` — `applyStaticServing`
 
 Only applied when `config.enableStatic` is `true` and `runtime` is `"bun"`.
 

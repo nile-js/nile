@@ -161,7 +161,7 @@ curl -X POST http://localhost:8000/api/services \
   }'
 
 # Create a todo
-curl -X POST http:localhost:8000/api/services \
+curl -X POST http://localhost:8000/api/services \
   -H "Content-Type: application/json" \
   -d '{
     "intent": "execute",
@@ -349,10 +349,10 @@ The handler receives a second parameter with access to resources:
 ```typescript
 handler: (data, context) => {
   // Access database from context
-  const users = await context.database.query.users.findMany();
+  const users = await context?.resources?.database?.query.users.findMany();
   
   // Access logger
-  context.logger.info({ atFunction: "myAction", message: "Processing" });
+  context?.resources?.logger?.info({ atFunction: "myAction", message: "Processing" });
   
   return Ok({ count: users.length });
 }
@@ -541,12 +541,13 @@ const context = getContext();
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `rest` | `ExternalRequest \| undefined` | REST request/response context (when called via HTTP) |
+| `rest` | `HonoContext \| undefined` | Hono request context (when called via HTTP) |
 | `ws` | `WebSocketContext \| undefined` | WebSocket context (when called via WS) |
 | `rpc` | `RPCContext \| undefined` | RPC context (when called via RPC) |
 | `sessions` | `Sessions` | Session data per interface (`rest`, `ws`, `rpc`) |
 | `resources` | `Resources \| undefined` | Shared resources (logger, database, cache) |
-| `logger` | `NileLogger` | Built-in logger |
+| `get` / `set` | `(key: string) => T` | General-purpose key-value store |
+| `getSession` / `setSession` | `(name: keyof Sessions, ...) => ...` | Session access per interface |
 
 ## Accessing Resources
 
@@ -554,7 +555,7 @@ Resources are provided at server startup and available via context:
 
 ```typescript
 handler: (data, context) => {
-  const logger = context?.logger;
+  const logger = context?.resources?.logger;
   
   // Access logger
   logger?.info({
@@ -577,10 +578,10 @@ Store and retrieve session data per interface:
 ```typescript
 handler: (data, context) => {
   // Set session data
-  context?.sessions.set("rest", { userId: "123", role: "admin" });
+  context?.setSession("rest", { userId: "123", role: "admin" });
   
   // Get session data
-  const session = context?.sessions.get("rest");
+  const session = context?.getSession("rest");
   console.log(session?.userId); // "123"
   
   return Ok({ session });
@@ -618,7 +619,7 @@ const createUserHandler = (data: Record<string, unknown>, context) => {
   const { name, email } = data as { name: string; email: string };
   
   // Log the action
-  context?.logger?.info({
+  context?.resources?.logger?.info({
     atFunction: "createUser",
     message: "Creating user",
     data: { email },
@@ -1129,7 +1130,7 @@ This is the Result pattern. The client never throws exceptions for expected fail
 For full compile-time type checking, generate types using the Nile CLI and pass them as a generic:
 
 ```bash
-nile generate schema --output ./src/generated
+bun run gen schema --output ./src/generated
 ```
 
 ```typescript
@@ -1254,7 +1255,7 @@ url: /nile/guide/internals/server.md
 # Nile Server
 
 **Type:** Reference / Specification
-**Path:** `src/nile/`
+**Path:** `nile/`
 
 ## 1. Purpose
 
@@ -1266,7 +1267,7 @@ The Nile Server module provides the top-level factory for bootstrapping a Nile a
 - **Context ownership:** Create a single `NileContext` instance shared across all interfaces
 - **Context access:** Export `getContext()` to retrieve the runtime context from anywhere within a request scope
 - **Lifecycle:** Execute `onBoot` hooks after initialization with crash safety
-- **Diagnostics:** Route diagnostic output through `createDiagnosticsLog` from `src/utils.ts`, which checks `resources.logger` first and falls back to `console.log`. See `docs/internals/logging.md` section 7.
+- **Diagnostics:** Route diagnostic output through `createDiagnosticsLog` from `utils/diagnostics-log.ts`, which checks `resources.logger` first and falls back to `console.log`. See `docs/internals/logging.md` section 7.
 
 ### 1.2 Non-Goals
 
@@ -1275,10 +1276,10 @@ The Nile Server module provides the top-level factory for bootstrapping a Nile a
 
 ## 2. `createNileServer`
 
-**Path:** `src/nile/server.ts`
+**Path:** `nile/server.ts`
 
 ```typescript
-import { createNileServer } from "nile"; // or src/index.ts
+import { createNileServer } from "@nilejs/nile";
 
 const server = createNileServer({
   serverName: "my-app",
@@ -1345,7 +1346,7 @@ const server = createNileServer({
 
 ## 4. `NileContext`
 
-**Path:** `src/nile/nile.ts`
+**Path:** `nile/nile.ts`
 **Factory:** `createNileContext(params?)`
 
 The context is a singleton per server. It carries interface-specific data, hook execution state, session storage, and a general-purpose key-value store. It supports an optional `TDB` generic to provide type safety for the database resource.
@@ -1356,93 +1357,6 @@ The context is a singleton per server. It carries interface-specific data, hook 
 context.set("tenant", { id: "abc" });
 const tenant = context.get<{ id: string }>("tenant");
 ```
-
-`_store` is a `Map<string, unknown>` exposed as readonly. Use `get`/`set` methods for access.
-
-### 4.2 Sessions
-...
-### 4.5 Resources
-
-```typescript
-context.resources?.logger;
-context.resources?.database; // typed as TDB
-context.resources?.cache;
-```
-
-Extensible via index signature. Passed through from `ServerConfig.resources`. The `database` field is typed as `TDB` (defaulting to `unknown`).
-
-## 5. Key Types
-
-### 5.1 `BeforeActionHandler`
-
-Global hook that runs before every action. Returns a `Result` — `Err` halts the pipeline.
-
-```typescript
-type BeforeActionHandler<T, E> = (params: {
-  nileContext: NileContext<unknown>;
-  action: Action;
-  payload: unknown;
-}) => Result<T, E>;
-```
-
-### 5.2 `AfterActionHandler`
-
-Global hook that runs after every action. Receives the action result and can transform it.
-
-```typescript
-type AfterActionHandler<T, E> = (params: {
-  nileContext: NileContext<unknown>;
-  action: Action;
-  payload: unknown;
-  result: Result<T, E>;
-}) => Result<T, E>;
-```
-
-### 5.3 `Sessions`
-...
-### 5.4 `Resources`
-
-```typescript
-interface NileLogger {
-  info: (input: { atFunction: string; message: string; data?: unknown }) => string;
-  warn: (input: { atFunction: string; message: string; data?: unknown }) => string;
-  error: (input: { atFunction: string; message: string; data?: unknown }) => string;
-}
-
-type Resources<TDB = unknown> = {
-  logger?: NileLogger;
-  database?: TDB;
-  cache?: unknown;
-  [key: string]: unknown;
-};
-```
-
-The `logger` field accepts a `NileLogger` — the return type of `createLogger` from the logging module. This enables `handleError` and `createDiagnosticsLog` to log through the same logger instance.
-
-## 6. Constraints
-
-- **One context per server** — `createNileContext` is called once in `createNileServer`. All interfaces share this instance.
-- **Generic Database Support** — To avoid generic leakage into the core engine, the database type `TDB` is only present in `NileContext` and `Resources`. High-level components (Engine, REST) use `unknown`.
-...
-## 8. `getContext`
-
-**Path:** `src/nile/server.ts`
-
-Exported function that retrieves the runtime `NileContext` from anywhere within a request scope. It accepts an optional `TDB` generic for type-safe database access.
-
-```typescript
-import { getContext } from "@nilejs/nile";
-
-// Type-safe access to your database
-const ctx = getContext<MyDatabaseType>();
-
-// Access resources, sessions, etc.
-const db = ctx.resources?.database; // typed as MyDatabaseType
-ctx.resources?.logger;
-ctx.getSession("rest");
-ctx.set("user", { id: "123" });
-```
-
 
 `_store` is a `Map<string, unknown>` exposed as readonly. Use `get`/`set` methods for access.
 
@@ -1484,11 +1398,11 @@ These are set once during `createNileContext` via the `interfaceContext` paramet
 
 ```typescript
 context.resources?.logger;
-context.resources?.database;
+context.resources?.database; // typed as TDB
 context.resources?.cache;
 ```
 
-Extensible via index signature. Passed through from `ServerConfig.resources`.
+Extensible via index signature. Passed through from `ServerConfig.resources`. The `database` field is typed as `TDB` (defaulting to `unknown`).
 
 ## 5. Key Types
 
@@ -1498,7 +1412,7 @@ Global hook that runs before every action. Returns a `Result` — `Err` halts th
 
 ```typescript
 type BeforeActionHandler<T, E> = (params: {
-  nileContext: NileContext;
+  nileContext: NileContext<unknown>;
   action: Action;
   payload: unknown;
 }) => Result<T, E>;
@@ -1510,7 +1424,7 @@ Global hook that runs after every action. Receives the action result and can tra
 
 ```typescript
 type AfterActionHandler<T, E> = (params: {
-  nileContext: NileContext;
+  nileContext: NileContext<unknown>;
   action: Action;
   payload: unknown;
   result: Result<T, E>;
@@ -1536,9 +1450,9 @@ interface NileLogger {
   error: (input: { atFunction: string; message: string; data?: unknown }) => string;
 }
 
-type Resources = {
+type Resources<TDB = unknown> = {
   logger?: NileLogger;
-  database?: unknown;
+  database?: TDB;
   cache?: unknown;
   [key: string]: unknown;
 };
@@ -1549,6 +1463,7 @@ The `logger` field accepts a `NileLogger` — the return type of `createLogger` 
 ## 6. Constraints
 
 - **One context per server** — `createNileContext` is called once in `createNileServer`. All interfaces share this instance.
+- **Generic Database Support** — To avoid generic leakage into the core engine, the database type `TDB` is only present in `NileContext` and `Resources`. High-level components (Engine, REST) use `unknown`.
 - **`onBoot` is fire-and-forget** — It runs in an async IIFE and is not awaited. Errors are caught by `safeTry` and logged to `console.error`.
 - **Runtime default** — If `config.runtime` is omitted, it defaults to `"bun"`. This affects static file serving and future runtime-specific behavior.
 - **No dynamic service injection** — Services are fixed at boot time. Adding services after initialization is not supported.
@@ -1561,16 +1476,18 @@ The `logger` field accepts a `NileLogger` — the return type of `createLogger` 
 
 ## 8. `getContext`
 
-**Path:** `src/nile/server.ts`
+**Path:** `nile/server.ts`
 
-Exported function that retrieves the runtime `NileContext` from anywhere within a request scope. The context is stored in a module-level variable set during `createNileServer` initialization.
+Exported function that retrieves the runtime `NileContext` from anywhere within a request scope. It accepts an optional `TDB` generic for type-safe database access. The context is stored in a module-level variable set during `createNileServer` initialization.
 
 ```typescript
 import { getContext } from "@nilejs/nile";
 
-const ctx = getContext();
+// Type-safe access to your database
+const ctx = getContext<MyDatabaseType>();
 
 // Access resources, sessions, etc.
+const db = ctx.resources?.database; // typed as MyDatabaseType
 ctx.resources?.logger;
 ctx.getSession("rest");
 ctx.set("user", { id: "123" });
@@ -2623,7 +2540,7 @@ url: /nile/guide/internals/logging.md
 # Logging
 
 **Type:** Reference / Specification
-**Path:** `src/logging/`
+**Path:** `logging/`
 
 ## 1. Purpose
 
@@ -2640,7 +2557,7 @@ The logging module provides structured, append-only log persistence for Nile app
 
 - **Size-based rotation** — The module does not implement log rotation by file size. Only time-based chunking is supported.
 - **Log shipping** — No built-in support for sending logs to external services (e.g., Datadog, Elasticsearch). Consumers can build this on top of the query API.
-- **Diagnostics logging** — Internal nile diagnostics (engine, REST, server boot messages) use `createDiagnosticsLog` from `src/utils.ts`, not this module. See section 7.
+- **Diagnostics logging** — Internal nile diagnostics (engine, REST, server boot messages) use `createDiagnosticsLog` from `utils/diagnostics-log.ts`, not this module. See section 7.
 
 ## 2. Architecture
 
@@ -2654,7 +2571,7 @@ The logging module provides structured, append-only log persistence for Nile app
 
 ### 3.1 `createLogger(appName, config?)`
 
-**Path:** `src/logging/create-log.ts`
+**Path:** `logging/create-log.ts`
 
 Factory that returns a logger bound to a specific app name. Optionally accepts chunking config.
 
@@ -2676,7 +2593,7 @@ logger.error({ atFunction: "processOrder", message: "Payment failed", data: { or
 
 ### 3.2 `createLog(log, config?)`
 
-**Path:** `src/logging/logger.ts`
+**Path:** `logging/logger.ts`
 
 Lower-level function that writes a single log entry. Used internally by `createLogger`.
 
@@ -2703,7 +2620,7 @@ const logId = createLog({
 
 ### 3.3 `getLogs(filters?, config?)`
 
-**Path:** `src/logging/logger.ts`
+**Path:** `logging/logger.ts`
 
 Reads and filters log entries from disk. Supports both flat files and chunked directories.
 
@@ -2841,7 +2758,7 @@ These functions are not exported but are critical to `getLogs` performance:
 
 ## 7. Diagnostics Logging (Nile Internals)
 
-Nile's internal modules (server, engine, REST) use a separate diagnostics logging system that is distinct from this module. The `createDiagnosticsLog` utility in `src/utils.ts` provides centralized diagnostic output:
+Nile's internal modules (server, engine, REST) use a separate diagnostics logging system that is distinct from this module. The `createDiagnosticsLog` utility in `utils/diagnostics-log.ts` provides centralized diagnostic output:
 
 ```typescript
 import { createDiagnosticsLog } from "@/utils";
@@ -2863,7 +2780,7 @@ This replaces the previous pattern where `server.ts`, `rest.ts`, and `engine.ts`
 
 ## 8. `handleError` — Userland Error Utility
 
-**Path:** `src/utils/handle-error.ts`
+**Path:** `utils/handle-error.ts`
 
 A utility for application developers that combines error logging and error return in a single call. Infers `atFunction` from the caller stack when not provided.
 
@@ -2936,7 +2853,7 @@ url: /nile/guide/internals/engine.md
 # Service Action Engine
 
 **Type:** Reference / Specification  
-**Path:** `src/engine/`
+**Path:** `engine/`
 
 ## 1. Purpose
 
@@ -2950,7 +2867,7 @@ This engine is designed to sit below the HTTP/RPC transport layer (e.g., Hono), 
 *   **Introspection:** Provide lightweight, zero-latency metadata for available services and actions to enable dynamic discovery.
 *   **Routing:** Provide strict $O(1)$ memory pointer lookups for specific actions based on `serviceName` and `actionName`.
 *   **Execution Pipeline:** Process the full action lifecycle safely, including Global/Action-level Hooks, Payload Validation (Zod), and safe Handler execution.
-*   **Diagnostics:** Emit timing and status information via `createDiagnosticsLog` from `src/utils.ts` when `diagnostics` is enabled. See `docs/internals/logging.md` section 7.
+*   **Diagnostics:** Emit timing and status information via `createDiagnosticsLog` from `utils/diagnostics-log.ts` when `diagnostics` is enabled. See `docs/internals/logging.md` section 7.
 *   **Result Pattern Enforcement:** Ensure all internal engine methods return a `Result<T, E>` from the `slang-ts` library to eliminate `try/catch` requirements in the transport layer.
 
 ### 1.2 Non-Goals
@@ -3093,7 +3010,7 @@ If a handler throws instead of returning a `Result`, `safeTry` catches the excep
 
 ## 7. Key Types
 
-All types below are exported from `src/index.ts` and defined in `src/engine/types.ts`.
+All types below are exported from `index.ts` and defined in `engine/types.ts`.
 
 ### 7.1 `EngineOptions`
 
@@ -3365,7 +3282,7 @@ url: /nile/guide/internals/rest.md
 # REST Interface
 
 **Type:** Reference / Specification
-**Path:** `src/rest/`
+**Path:** `rest/`
 
 ## 1. Purpose
 
@@ -3377,7 +3294,7 @@ The REST interface exposes the Action Engine over HTTP via Hono. It implements a
 - **Intent routing** — Dispatches `explore`, `execute`, and `schema` intents to dedicated handlers
 - **Response mapping** — Converts internal `Result<T, E>` types to the `ExternalResponse` shape at the HTTP boundary
 - **Middleware application** — CORS, rate limiting, and static file serving
-- **Diagnostics** — Emit request routing information via `createDiagnosticsLog` from `src/utils.ts` when `diagnostics` is enabled. See `docs/internals/logging.md` section 7.
+- **Diagnostics** — Emit request routing information via `createDiagnosticsLog` from `utils/diagnostics-log.ts` when `diagnostics` is enabled. See `docs/internals/logging.md` section 7.
 
 ### 1.2 Non-Goals
 
@@ -3489,11 +3406,11 @@ HTTP status codes: `200` for success, `400` for failures and validation errors, 
 
 ### 6.1 CORS
 
-Applied first via `applyCorsConfig` from `src/cors/cors.ts`. See `docs/internals/cors.md`.
+Applied first via `applyCorsConfig` from `cors/cors.ts`. See `docs/internals/cors.md`.
 
 ### 6.2 Rate Limiting
 
-**File:** `src/rest/middleware.ts` — `applyRateLimiting`
+**File:** `rest/middleware.ts` — `applyRateLimiting`
 
 Only applied when `config.rateLimiting.limitingHeader` is set. Uses `hono-rate-limiter`.
 
@@ -3503,7 +3420,7 @@ Only applied when `config.rateLimiting.limitingHeader` is set. Uses `hono-rate-l
 
 ### 6.3 Static File Serving
 
-**File:** `src/rest/middleware.ts` — `applyStaticServing`
+**File:** `rest/middleware.ts` — `applyStaticServing`
 
 Only applied when `config.enableStatic` is `true` and `runtime` is `"bun"`.
 
@@ -3589,7 +3506,7 @@ url: /nile/guide/internals/cors.md
 # CORS Middleware
 
 **Type:** Reference / Specification
-**Path:** `src/cors/`
+**Path:** `cors/`
 
 ## 1. Purpose
 
@@ -3745,648 +3662,6 @@ type CorsResolver = (origin: string, c: Context) => boolean | CorsOptions | unde
 - **Resolver throws** — Caught, logged to `console.error`, origin set to `""` (deny)
 - **Empty `allowedOrigins` with no `cors.defaults.origin`** — Falls through to `"*"` (allow all). This is intentional for development convenience but should be restricted in production.
 - **`enabled: false`** — No CORS middleware is applied. Browsers will block cross-origin requests entirely.
-
-
-
----
-url: /nile/guide/others/architecture.md
----
-
-
-# Dialogue Architecture
-
-This document describes the internal architecture, design decisions, and component interactions of the Dialogue real-time communication library.
-
-## 1. Overview
-
-Dialogue is an event-based realtime communication library built on Socket.IO and Hono, supporting both Bun and Node.js runtimes. The architecture prioritizes simplicity, type safety, and predictable behavior over flexibility.
-
-### 1.1 Core Philosophy
-
-- **Config-first**: All rooms and events defined upfront in one file
-- **Event-centric**: Events are first-class citizens, not just message payloads
-- **Bounded rooms**: Optional `maxSize` for predictable scaling
-- **Same mental model**: Frontend and backend share similar patterns
-- **Extensible**: Designed for future SSE, Web Push, and FCM channels
-
-### 1.2 Technology Stack
-
-- **Bun / Node.js**: Supported JavaScript runtimes (auto-detected)
-- **Socket.IO**: WebSocket abstraction with fallbacks
-- **Hono**: Lightweight HTTP framework
-- **Zod**: Runtime schema validation
-- **slang-ts**: Result pattern utilities (`Ok`, `Err`, `Result`)
-- **@hono/node-server**: Bridges Hono's fetch API to Node.js `http.createServer()` (Node runtime only)
-- **@socket.io/bun-engine**: Socket.IO engine adapter for Bun (Bun runtime only)
-
-## 2. System Architecture
-
-### 2.1 High-Level Component Diagram
-
-```
-+------------------+     WebSocket      +------------------+
-|                  | <----------------> |                  |
-|  DialogueClient  |    Socket.IO       |     Dialogue     |
-|    (Frontend)    |                    |     (Backend)    |
-|                  |                    |                  |
-+------------------+                    +------------------+
-        |                                       |
-        v                                       v
-+------------------+                    +------------------+
-|   RoomContext    |                    |   RoomManager    |
-|   (per room)     |                    |   (coordinator)  |
-+------------------+                    +------------------+
-                                                |
-                                    +-----------+-----------+
-                                    |           |           |
-                                    v           v           v
-                                +-------+   +-------+   +-------+
-                                | Room  |   | Room  |   | Room  |
-                                | chat  |   | orders|   |  ...  |
-                                +-------+   +-------+   +-------+
-```
-
-### 2.2 Component Responsibilities
-
-| Component | Responsibility |
-|-----------|----------------|
-| `Dialogue` | Main API surface, coordinates rooms, triggers events |
-| `RoomManager` | Tracks all rooms and their participants |
-| `Room` | Manages participants, subscriptions, event broadcasting |
-| `ConnectedClient` | Wraps socket with user context and subscriptions |
-| `DialogueClient` | Frontend client factory for connecting and joining rooms |
-| `RoomContext` | Frontend room handle for triggering and listening |
-
-## 3. Backend Architecture
-
-### 3.1 Module Structure
-
-```
-dialogue/
-  types.ts           # Type definitions (interfaces, no implementation)
-  define-event.ts    # Event definition factory with Zod validation
-  room.ts            # Room creation and room manager
-  client-handler.ts  # Connected client wrapper
-  server.ts          # Socket.IO + Hono server setup (runtime-agnostic)
-  create-dialogue.ts # Main factory function
-  index.ts           # Barrel exports
-  adapters/
-    types.ts         # RuntimeAdapter interface, Runtime type
-    bun-adapter.ts   # Bun.serve() + @socket.io/bun-engine
-    node-adapter.ts  # http.createServer() + @hono/node-server
-    index.ts         # detectRuntime() + createRuntimeAdapter()
-```
-
-### 3.2 Initialization Flow
-
-When `createDialogue(config)` is called:
-
-```
-1. createDialogue(config)
-   |
-   +--> Create or use existing Hono app
-   |
-   +--> createRuntimeAdapter(config.runtime)
-   |    |
-   |    +--> detectRuntime() if not specified
-   |    |    (checks globalThis.Bun, falls back to "node")
-   |    |
-   |    +--> Return BunAdapter or NodeAdapter
-   |
-   +--> setupServer(app, config, adapter)
-        |
-        +--> Create Socket.IO server
-        |
-        +--> adapter.bind(io)
-        |    (Bun: BunEngine, Node: deferred to start)
-        |
-        +--> createRoomManager(io)
-        |    |
-        |    +--> For each room in config:
-        |         roomManager.register(id, config)
-        |
-        +--> Set up connection handler
-        |    |
-        |    +--> io.on("connection", ...)
-        |
-        +--> Return { io, roomManager, start, stop }
-   |
-   +--> Return Dialogue instance
-```
-
-### 3.3 Room Manager
-
-The `RoomManager` is the central coordinator for all rooms. It maintains two parallel maps:
-
-```typescript
-const rooms = new Map<string, Room>();
-const roomParticipants = new Map<string, Map<string, ConnectedClient>>();
-```
-
-**Why two maps?**
-
-The `Room` instance is immutable after creation. Participant tracking is handled separately in `roomParticipants` to allow the room manager to enforce capacity limits across all operations.
-
-### 3.4 Event Flow (Server-Side Trigger)
-
-When `dialogue.trigger(roomId, event, data)` is called:
-
-```
-1. dialogue.trigger(roomId, event, data)
-   |
-   +--> roomManager.get(roomId)
-   |
-   +--> room.trigger(event, data, from)
-        |
-        +--> isEventAllowed(event.name, config.events)
-        |
-        +--> validateEventData(eventDef, data)  [Zod validation]
-        |
-        +--> Create EventMessage envelope
-        |    {
-        |      event: "message",
-        |      roomId: "chat",
-        |      data: { text: "Hello" },
-        |      from: "user-123",
-        |      timestamp: 1707750000000
-        |    }
-        |
-        +--> io.to(roomId).emit("dialogue:event", message)
-        |
-        +--> Call all registered event handlers
-```
-
-### 3.5 Event Flow (Client-Triggered)
-
-When a client triggers an event via WebSocket:
-
-```
-1. Client emits "dialogue:trigger" { roomId, event, data }
-   |
-   +--> Server validates roomId and event name
-   |
-   +--> roomManager.get(roomId)
-   |
-   +--> Check if event is allowed in room
-   |
-   +--> room.trigger(eventDef, data, client.userId)
-        |
-        +--> [Same flow as server-side trigger]
-```
-
-## 4. Client Architecture
-
-### 4.1 Module Structure
-
-```
-client/
-  types.ts            # Client-side type definitions
-  dialogue-client.ts  # Main DialogueClient class
-  room-context.ts     # RoomContext factory
-  index.ts            # Barrel exports
-```
-
-### 4.2 Connection Flow
-
-```
-1. createDialogueClient({ url, auth })
-   |
-   +--> Create socket.io-client instance
-   |
-   +--> Connect with auth in handshake
-   |
-   +--> Wait for "dialogue:connected" event
-   |
-   +--> Extract userId from response
-   |
-   +--> Set connected = true
-```
-
-### 4.3 Room Join Flow
-
-```
-1. client.join("chat")
-   |
-   +--> socket.emit("dialogue:join", { roomId: "chat" })
-   |
-   +--> Wait for "dialogue:joined" event
-   |
-   +--> createRoomContext(socket, roomId, roomName)
-   |
-   +--> Return RoomContext
-```
-
-### 4.4 RoomContext Event Handling
-
-The `RoomContext` listens for `dialogue:event` messages and filters by room:
-
-```typescript
-socket.on("dialogue:event", (msg) => {
-  if (msg.roomId !== roomId) return;
-  
-  // Call specific event handlers
-  const handlers = eventHandlers.get(msg.event);
-  if (handlers) {
-    handlers.forEach(h => h(msg));
-  }
-  
-  // Call wildcard handlers
-  anyHandlers.forEach(h => h(msg.event, msg));
-});
-```
-
-## 5. Wire Protocol
-
-### 5.1 Socket.IO Events
-
-All events are prefixed with `dialogue:` to avoid conflicts.
-
-**Client to Server:**
-
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `dialogue:join` | `{ roomId }` | Request to join room |
-| `dialogue:leave` | `{ roomId }` | Request to leave room |
-| `dialogue:subscribe` | `{ roomId, eventName }` | Subscribe to event |
-| `dialogue:subscribeAll` | `{ roomId }` | Subscribe to all events |
-| `dialogue:unsubscribe` | `{ roomId, eventName }` | Unsubscribe from event |
-| `dialogue:trigger` | `{ roomId, event, data }` | Trigger event |
-| `dialogue:listRooms` | (none) | Request room list |
-
-**Server to Client:**
-
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `dialogue:connected` | `{ clientId, userId }` | Connection established |
-| `dialogue:joined` | `{ roomId, roomName }` | Successfully joined room |
-| `dialogue:left` | `{ roomId }` | Successfully left room |
-| `dialogue:event` | `EventMessage` | Event broadcast |
-| `dialogue:rooms` | `RoomInfo[]` | Room list response |
-| `dialogue:error` | `{ code, message }` | Error notification |
-
-### 5.2 EventMessage Envelope
-
-All events are wrapped in a consistent envelope:
-
-```typescript
-interface EventMessage<T> {
-  event: string;      // Event name (e.g., "message")
-  roomId: string;     // Room ID (e.g., "chat")
-  data: T;            // Event payload
-  from: string;       // Sender's userId
-  timestamp: number;  // Unix timestamp in milliseconds
-}
-```
-
-## 6. Design Decisions
-
-### 6.1 Config-First with Dynamic Creation
-
-Dialogue is designed with a **config-first philosophy** while supporting dynamic room creation for flexibility.
-
-#### Recommended Approach (80/20 Rule)
-
-**80% Predefined Rooms** (config-first):
-```typescript
-const dialogue = createDialogue({
-  rooms: [
-    { id: 'lobby', name: 'Main Lobby', events: [...] },
-    { id: 'notifications', name: 'Notifications', events: [...] },
-    { id: 'support', name: 'Support Chat', events: [...] }
-  ]
-});
-```
-
-**Benefits:**
-- Type safety and validation at startup
-- Clear system architecture
-- Predictable resource usage
-- Better documentation
-
-**20% Dynamic Rooms** (runtime creation):
-```typescript
-// User creates a game room
-dialogue.createRoom({
-  id: `game-${gameId}`,
-  name: `Game ${gameId}`,
-  events: gameEvents
-});
-
-// Clean up when done
-dialogue.deleteRoom(`game-${gameId}`);
-```
-
-**Use for:**
-- User-generated content (custom game rooms, DMs)
-- Temporary sessions (video calls, screen shares)
-- Per-entity rooms (document editing, ticket threads)
-
-#### Hybrid Example
-
-```typescript
-// Predefined: System-wide rooms
-const systemRooms = [
-  { id: 'global-chat', name: 'Chat', events: [chatEvent] },
-  { id: 'notifications', name: 'Notifications', events: [notifEvent] }
-];
-
-const dialogue = createDialogue({ rooms: systemRooms });
-
-// Dynamic: User-specific rooms
-app.post('/games', async (c) => {
-  const gameId = nanoid();
-  
-  dialogue.createRoom({
-    id: `game-${gameId}`,
-    name: 'Game Session',
-    events: [moveEvent, scoreEvent],
-    maxSize: 4
-  });
-  
-  return c.json({ gameId });
-});
-```
-
-#### When to Use Each
-
-| Use Case | Approach | Example |
-|----------|----------|---------|
-| System-wide features | Predefined | Notifications, global chat |
-| Known room types | Predefined | Support channels, lobbies |
-| User-generated | Dynamic | Private DMs, custom games |
-| Temporary sessions | Dynamic | Video calls, collaborations |
-| Per-entity rooms | Dynamic | Document editing, tickets |
-
-**Key principle:** If you know the room type at build time, define it in config. If it's created by user actions, create it dynamically.
-
-### 6.2 Why Event-Centric?
-
-**Problem**: Generic "message" events require runtime type checking and are error-prone.
-
-**Solution**: First-class event definitions with optional Zod schemas:
-
-```typescript
-const Message = defineEvent("message", {
-  schema: z.object({
-    text: z.string(),
-    senderId: z.string()
-  })
-});
-```
-
-Benefits:
-
-- Compile-time type inference
-- Runtime validation
-- Self-documenting code
-- IDE autocomplete
-
-### 6.3 Why Bounded Rooms?
-
-**Problem**: Unbounded rooms can grow indefinitely, causing memory issues and performance degradation.
-
-**Solution**: Optional `maxSize` configuration:
-
-```typescript
-rooms: {
-  chat: {
-    name: "Support Chat",
-    maxSize: 50,  // Enforced at join time
-    events: [Message]
-  }
-}
-```
-
-### 6.4 Why Separate RoomManager?
-
-**Problem**: Rooms need to track participants, but participant state must be consistent across the system.
-
-**Solution**: The `RoomManager` owns participant state in a separate map, ensuring:
-
-- Consistent capacity enforcement
-- Single source of truth for participants
-- Clean separation between room definition and runtime state
-
-### 6.5 Why Socket.IO Over Raw WebSockets?
-
-**Advantages**:
-
-- Automatic reconnection
-- Fallback transports (polling)
-- Built-in room abstraction
-- Mature, well-tested library
-- Easy integration with existing infrastructure
-
-**Trade-offs**:
-
-- Larger bundle size
-- Additional protocol overhead
-- Less control over low-level behavior
-
-### 6.6 Why a Runtime Adapter Pattern?
-
-**Problem**: Dialogue was originally hard-coupled to Bun via `Bun.serve()` and `@socket.io/bun-engine`. This prevented usage with Node.js.
-
-**Solution**: A `RuntimeAdapter` interface that abstracts the three runtime-specific touch points:
-
-1. **Engine binding** — Bun needs `@socket.io/bun-engine`, Node uses Socket.IO's built-in `engine.io`
-2. **HTTP server startup** — Bun uses `Bun.serve()`, Node uses `http.createServer()` with `@hono/node-server`
-3. **Server shutdown** — Each runtime has its own cleanup mechanism
-
-```typescript
-interface RuntimeAdapter {
-  readonly runtime: Runtime;
-  bind(io: Server): void;
-  start(options: RuntimeStartOptions): Promise<void>;
-  stop(): Promise<void>;
-}
-```
-
-The adapter is selected automatically via `detectRuntime()` (which checks `globalThis.Bun`) or explicitly via the `runtime` config option. All other Dialogue code (rooms, events, hooks, client handling) is runtime-agnostic.
-
-## 7. Data Flow Diagrams
-
-### 7.1 Client Sends Message
-
-```
-DialogueClient         Socket.IO          Dialogue           Room
-     |                     |                  |                |
-     | trigger("message",  |                  |                |
-     |   { text: "Hi" })   |                  |                |
-     |-------------------->|                  |                |
-     |                     | dialogue:trigger |                |
-     |                     |----------------->|                |
-     |                     |                  | room.trigger() |
-     |                     |                  |--------------->|
-     |                     |                  |                |
-     |                     |                  |  validate()    |
-     |                     |                  |<---------------|
-     |                     |                  |                |
-     |                     |  io.to(roomId)   |                |
-     |                     |     .emit()      |                |
-     |                     |<-----------------|                |
-     |  dialogue:event     |                  |                |
-     |<--------------------|                  |                |
-     |                     |                  |                |
-```
-
-### 7.2 Server Broadcasts Event
-
-```
-API Route              Dialogue           Room           Clients
-     |                    |                |                |
-     | trigger("orders",  |                |                |
-     |   OrderUpdated,    |                |                |
-     |   { status: ... }) |                |                |
-     |------------------->|                |                |
-     |                    | room.trigger() |                |
-     |                    |--------------->|                |
-     |                    |                |                |
-     |                    |                | validate()     |
-     |                    |                |                |
-     |                    |  io.to(roomId) |                |
-     |                    |     .emit()    |                |
-     |                    |--------------->|--------------->|
-     |                    |                |                |
-```
-
-## 8. Security Considerations
-
-### 8.1 Authentication
-
-Authentication is handled via Socket.IO handshake:
-
-```typescript
-const client = createDialogueClient({
-  url: "ws://localhost:8000",
-  auth: { token: "user-jwt-token" }
-});
-```
-
-The server extracts user identity in `extractUserFromSocket()`:
-
-```typescript
-export function extractUserFromSocket(socket: Socket) {
-  const auth = socket.handshake.auth;
-  // Extract userId from token or auth payload
-  // Return { userId, meta }
-}
-```
-
-### 8.2 Event Validation
-
-All events with Zod schemas are validated before broadcasting. Validation returns a `Result<T, string>` using the slang-ts pattern:
-
-```typescript
-const validation = validateEventData(eventDef, data);
-if (validation.isErr) {
-  // Reject invalid data - validation.error contains the error message
-  return;
-}
-// validation.value contains the validated data
-```
-
-### 8.3 Room Access Control
-
-Room access can be controlled in the `onConnect` handler:
-
-```typescript
-onConnect: (client) => {
-  if (client.meta.role === "admin") {
-    client.join("admin-room");
-  }
-}
-```
-
-## 9. Scalability Considerations
-
-### 9.1 Current Limitations
-
-- Single server instance only
-- In-memory participant tracking
-- No persistence layer
-
-### 9.2 Future Scaling Options
-
-**Horizontal Scaling**: Add Redis adapter for multi-instance:
-
-```typescript
-// Future API (not implemented)
-import { createRedisAdapter } from "dialogue/adapters/redis";
-
-const dialogue = createDialogue({
-  adapter: createRedisAdapter({ host: "localhost", port: 6379 }),
-  // ...
-});
-```
-
-**Persistence Layer**: Add event persistence interface:
-
-```typescript
-// Future API (not implemented)
-const dialogue = createDialogue({
-  persistence: {
-    saveEvent: (msg) => db.events.insert(msg),
-    loadEvents: (roomId, limit) => db.events.find({ roomId }).limit(limit)
-  }
-});
-```
-
-## 10. Performance Characteristics
-
-### 10.1 Memory Usage
-
-- Each connected client: ~1-2 KB (socket + metadata)
-- Each room: ~200 bytes + participants
-- Event handlers: ~100 bytes per handler
-
-### 10.2 Message Latency
-
-- Local (same machine): < 1ms
-- Network: RTT + ~1-2ms processing
-
-### 10.3 Throughput
-
-- Depends on Bun/Node event loop
-- Socket.IO overhead: ~5-10% vs raw WebSockets
-- Zod validation: ~0.1ms per event (for typical payloads)
-
-## 11. Extension Points
-
-### 11.1 Custom Authentication
-
-Override `extractUserFromSocket()` for custom auth strategies:
-
-```typescript
-// Verify JWT, check database, etc.
-export function extractUserFromSocket(socket: Socket) {
-  const token = socket.handshake.auth.token;
-  const user = verifyJWT(token);
-  return { userId: user.id, meta: { role: user.role } };
-}
-```
-
-### 11.2 Event Middleware (Future)
-
-Planned middleware pipeline for events:
-
-```typescript
-// Future API (not implemented)
-dialogue.use("chat", (msg, next) => {
-  // Rate limiting, content filtering, etc.
-  if (isSpam(msg)) return;
-  next();
-});
-```
-
-### 11.3 Additional Channels (Future)
-
-Planned support for alternative delivery channels:
-
-- **SSE**: Server-sent events for one-way server to client
-- **Web Push**: Push notifications via FCM/APNS
-- **HTTP Polling**: For environments without WebSocket support
-*This specification reflects the current implementation and is subject to evolution. Contributions and feedback are welcome.*
 
 
 

@@ -1,6 +1,6 @@
 {
   "name": "@nilejs/cli",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "CLI for scaffolding and generating Nile backend projects",
   "type": "module",
   "bin": {

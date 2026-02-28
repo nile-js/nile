@@ -62,7 +62,7 @@ This is the Result pattern. The client never throws exceptions for expected fail
 For full compile-time type checking, generate types using the Nile CLI and pass them as a generic:
 
 ```bash
-nile generate schema --output ./src/generated
+bun run gen schema --output ./src/generated
 ```
 
 ```typescript
