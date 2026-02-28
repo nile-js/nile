@@ -26,17 +26,17 @@ jobs:
           bun-version: latest
 
       - name: Install dependencies
-        working-directory: ./web
+        working-directory: ./packages/web
         run: bun install
 
       - name: Build
-        working-directory: ./web
+        working-directory: ./packages/web
         run: bun run build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: web/doc_build
+          path: packages/web/doc_build
 
   deploy:
     environment:
