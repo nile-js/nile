@@ -9,6 +9,7 @@ import {
 } from "react-icons/io5";
 import { MdSpeed } from "react-icons/md";
 import { codeToHtml } from "shiki";
+import { PiWavesBold } from "react-icons/pi";
 
 const BASE_PATH = "/nile";
 const withBase = (path: string) => `${BASE_PATH}${path}`;
@@ -88,7 +89,7 @@ curl -X POST http://localhost:8000/api/services \\
         <div className="hero-content">
           <h1 className="hero-title">
             <span className="hero-icon">
-              <IoServerSharp />
+              <PiWavesBold />
             </span>
             <span className="highlight">Nile</span>
           </h1>
