@@ -8,6 +8,10 @@
 - [Actions](/nile/guide/basics/actions.md): Actions are the core building blocks of Nile. Each action represents a single operation that can be called via the REST-RPC interface.
 - [Services](/nile/guide/basics/services.md): Services group related actions together. A service is a logical container that organizes your actions under a common namespace.
 - [Context](/nile/guide/basics/context.md): NileContext provides access to request context, session data, and shared resources throughout your application.
+- [Authentication](/nile/guide/basics/auth.md): Nile includes built-in JWT authentication via hono/jwt. Protected actions require a valid JWT token before the handler executes.
+- [File Uploads](/nile/guide/basics/uploads.md): Nile handles multipart form-data uploads through the same single POST endpoint. Files are parsed, validated through a 7-step chain, and delivered to your action handler as a structured payload.
+- [Static File Serving](/nile/guide/basics/file-serving.md): Nile can serve static files from a local directory through the REST interface. This is useful for serving images, documents, or any assets your application needs to expose over HTTP.
+- [Custom Routes](/nile/guide/basics/custom-routes.md): Nile's REST interface is a standard Hono app. After creating your server, you can add custom routes directly on the Hono instance for things Nile doesn't handle through the service/action model — webhooks, OAuth callbacks, health checks, or any traditional HTTP endpoint.
 - [Interacting with Nile](/nile/guide/basics/interacting.md): Nile exposes a single HTTP endpoint for all interactions. All requests are POST requests with a JSON body that specifies the intent, service, action, and payload.
 - [Nile Client](/nile/guide/basics/client.md): The @nilejs/client package is a standalone, type-safe client for interacting with a Nile backend from any JavaScript environment (browser, server, or edge).
 - [Nile Server](/nile/guide/internals/server.md): Type: Reference / Specification
@@ -21,5 +25,8 @@ Path: logging/
 Path: rest/
 - [CORS Middleware](/nile/guide/internals/cors.md): Type: Reference / Specification
 Path: cors/
-- [LLMs Full](/nile/guide/others/llms-full-txt.md): View LLMs Full
+- [FAQ](/nile/guide/others/faq.md): Common questions about building with Nile, with accurate answers that reflect the current state of the framework.
+- [Framework Comparison](/nile/guide/others/framework-comparison.md): Objective comparison based on actual codebase analysis of the Nile project.
 - [LLMs](/nile/guide/others/llms-txt.md): View LLMs.txt
+- [LLMs Full](/nile/guide/others/llms-full-txt.md): View LLMs Full
+- [Roadmap](/nile/guide/roadmap.md): What's coming next for Nile. WebSocket Transport — Real-time bidirectional communication using the same service/action model. Subscribe to action results, push notifications.Streaming Responses — SSE and chunked transfer for long-running actions (AI completions, large dataset exports).Performance Benchmarks — Formal benchmark suite measuring O(1) action dispatch, throughput comparisons against endpoint-based frameworks (Express, Fastify, NestJS), and Bun vs Node runtime performance across real-world workloads. This roadmap reflects current priorities and may change. For the latest status, check the repository issues and discussions.
