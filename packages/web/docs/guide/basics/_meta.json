@@ -3,6 +3,9 @@
   { "type": "file", "name": "services", "label": "Services" },
   { "type": "file", "name": "context", "label": "Context" },
   { "type": "file", "name": "auth", "label": "Authentication" },
+  { "type": "file", "name": "uploads", "label": "File Uploads" },
+  { "type": "file", "name": "file-serving", "label": "Static File Serving" },
+  { "type": "file", "name": "custom-routes", "label": "Custom Routes" },
   { "type": "file", "name": "interacting", "label": "Interacting" },
   { "type": "file", "name": "client", "label": "Client" }
 ]
