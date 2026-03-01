@@ -66,6 +66,7 @@ export function createNileServer(config: ServerConfig): NileServer {
     logger: config.resources?.logger as unknown as Parameters<
       typeof createEngine
     >[0]["logger"],
+    auth: config.auth,
     onBeforeActionHandler: config.onBeforeActionHandler,
     onAfterActionHandler: config.onAfterActionHandler,
   });

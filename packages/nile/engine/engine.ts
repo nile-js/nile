@@ -1,4 +1,6 @@
 import { Err, Ok, type Result } from "slang-ts";
+import { verifyJWT } from "@/auth/jwt-handler";
+import type { AuthConfig, AuthContext } from "@/auth/types";
 import type { NileContext } from "@/nile/types";
 import { createDiagnosticsLog } from "@/utils";
 import {
@@ -14,6 +16,40 @@ import type {
   EngineOptions,
   ServiceSummary,
 } from "./types";
+
+/**
+ * Verify JWT for a protected action. Returns Ok(void) on success or skip,
+ * Err(message) if auth is required but fails.
+ */
+async function authenticateAction(
+  action: Action,
+  auth: AuthConfig | undefined,
+  authContext: AuthContext | undefined,
+  nileContext: NileContext<unknown>,
+  serviceName: string,
+  actionName: string,
+  log: (msg: string) => void
+): Promise<Result<void, string>> {
+  if (!(action.isProtected && auth)) {
+    return Ok(undefined);
+  }
+
+  if (!authContext) {
+    return Err("Authentication required: no auth context provided");
+  }
+
+  const authResult = await verifyJWT(authContext, auth);
+  if (authResult.isErr) {
+    log(`Auth failed for ${serviceName}.${actionName}: ${authResult.error}`);
+    return Err(authResult.error);
+  }
+
+  nileContext.authResult = authResult.value;
+  log(
+    `Auth OK for ${serviceName}.${actionName} (user: ${authResult.value.userId})`
+  );
+  return Ok(undefined);
+}
 
 export function createEngine(options: EngineOptions) {
   const { diagnostics, services, logger } = options;
@@ -32,13 +68,31 @@ export function createEngine(options: EngineOptions) {
 
   // Build stores once on init
   const initStartTime = performance.now();
+  const seenServiceNames = new Set<string>();
 
   for (const service of services) {
+    // Fail fast on duplicate service names
+    if (seenServiceNames.has(service.name)) {
+      throw new Error(
+        `Duplicate service name '${service.name}'. Service names must be unique.`
+      );
+    }
+    seenServiceNames.add(service.name);
+
+    const seenActionNames = new Set<string>();
     const actionNames: string[] = [];
     serviceActionsStore[service.name] = [];
     actionStore[service.name] = {};
 
     for (const action of service.actions) {
+      // Fail fast on duplicate action names within a service
+      if (seenActionNames.has(action.name)) {
+        throw new Error(
+          `Duplicate action name '${action.name}' in service '${service.name}'. Action names must be unique within a service.`
+        );
+      }
+      seenActionNames.add(action.name);
+
       actionNames.push(action.name);
 
       serviceActionsStore[service.name]?.push({
@@ -98,7 +152,8 @@ export function createEngine(options: EngineOptions) {
     serviceName: string,
     actionName: string,
     payload: unknown,
-    nileContext: NileContext<unknown>
+    nileContext: NileContext<unknown>,
+    authContext?: AuthContext
   ): Promise<Result<unknown, string>> => {
     const { onBeforeActionHandler, onAfterActionHandler } = options;
 
@@ -111,6 +166,20 @@ export function createEngine(options: EngineOptions) {
 
     // Reset hook context for this execution
     nileContext.resetHookContext(`${serviceName}.${actionName}`, payload);
+
+    // Step 0: Auth — verify JWT for protected actions
+    const authStep = await authenticateAction(
+      action,
+      options.auth,
+      authContext,
+      nileContext,
+      serviceName,
+      actionName,
+      log
+    );
+    if (authStep.isErr) {
+      return Err(authStep.error);
+    }
 
     // Step 1: Global Before Hook
     const globalBeforeResult = await runGlobalBeforeHook(

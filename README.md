@@ -9,6 +9,8 @@ You define actions, group them into services, and get a predictable API with val
 
 [Full Documentation](https://nile-js.github.io/nile)
 
+> Nile is the result of 12 months of design and development. This repository is a ground-up rewrite — the original codebase lives at [nile-squad/nile](https://github.com/nile-squad/nile) (archived).
+
 ## Quick Start
 
 ```bash

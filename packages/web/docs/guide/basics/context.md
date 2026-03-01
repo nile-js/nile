@@ -132,6 +132,29 @@ export const createUserAction: Action = createAction({
 });
 ```
 
+## Why a Single Context?
+
+`NileContext` is a **server-level singleton by design**. Rather than creating isolated per-request contexts, Nile uses a single shared context as the **source of truth** for the entire runtime. This means every action, hook, and handler operates on the same page — they share the same resources, sessions, and configuration state.
+
+This is intentional for several reasons:
+
+- **Consistency** — All parts of the pipeline (auth, hooks, handlers) see the same context. There is no risk of stale or divergent state between middleware layers.
+- **Simplicity** — One context object is easy to reason about. No context factories, no request-scoped DI containers, no hidden lifecycles.
+- **Composition** — Hooks that reference other actions (via `hooks.before` / `hooks.after`) naturally share state through the same context, enabling clean pipeline composition.
+- **Resource sharing** — Database connections, loggers, and caches are attached once at boot and available everywhere without re-injection.
+
+Per-request data (like auth results) is written to the context at the start of each execution and reset between requests via `resetHookContext`. This gives you request-scoped data within the single-context model.
+
+```typescript
+// Auth result is set per-request, then accessible throughout the pipeline
+handler: (data, context) => {
+  const user = context?.getUser();    // Set during auth step
+  const auth = context?.getAuth();    // Full auth result
+  
+  return Ok({ userId: user?.userId });
+},
+```
+
 ## Server Configuration with Resources
 
 Pass resources when creating the server:

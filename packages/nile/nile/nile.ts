@@ -1,3 +1,4 @@
+import type { AuthResult } from "@/auth/types";
 import type { BaseContext, NileContext, Resources, Sessions } from "./types";
 
 interface CreateNileContextParams<TDB = unknown> {
@@ -47,6 +48,25 @@ export function createNileContext<TDB = unknown>(
 
     setSession(name: keyof Sessions, data: Record<string, unknown>) {
       sessions[name] = data;
+    },
+
+    authResult: undefined,
+
+    getAuth(): AuthResult | undefined {
+      return context.authResult;
+    },
+
+    getUser():
+      | { userId: string; organizationId: string; [key: string]: unknown }
+      | undefined {
+      if (!context.authResult) {
+        return undefined;
+      }
+      return {
+        userId: context.authResult.userId,
+        organizationId: context.authResult.organizationId,
+        ...context.authResult.claims,
+      };
     },
 
     hookContext: {

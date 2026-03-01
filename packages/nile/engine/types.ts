@@ -1,5 +1,6 @@
 import type { Result } from "slang-ts";
 import type z from "zod";
+import type { AuthConfig, AuthContext } from "@/auth/types";
 /**
  * Circular `import type` with @/nile/types is intentional and safe —
  * type imports are erased at compile time and produce no runtime dependency.
@@ -102,6 +103,8 @@ export interface EngineOptions {
     | { info: (msg: string, data?: unknown) => void }
     | import("@/nile/types").NileLogger;
   services: Services;
+  /** JWT auth configuration — when provided, protected actions require valid tokens */
+  auth?: AuthConfig;
   onBeforeActionHandler?: BeforeActionHandler<unknown, unknown>;
   onAfterActionHandler?: AfterActionHandler<unknown, unknown>;
 }
@@ -118,6 +121,7 @@ export interface Engine {
     serviceName: string,
     actionName: string,
     payload: unknown,
-    nileContext: NileContext<unknown>
+    nileContext: NileContext<unknown>,
+    authContext?: AuthContext
   ) => Promise<Result<unknown, string>>;
 }

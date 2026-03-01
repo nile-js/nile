@@ -4,6 +4,22 @@ import { z } from "zod";
 import { createEngine } from "../engine";
 import type { Action, ActionSummary, Service } from "../types";
 
+const PAYMENTS_SERVICE_REGEX = /service 'payments'/;
+
+/** Helper to build a minimal service with given name and action names */
+const buildService = (name: string, actionNames: string[]): Service => ({
+  name,
+  description: `${name} service`,
+  actions: actionNames.map((actionName) => ({
+    name: actionName,
+    description: `${actionName} action`,
+    isProtected: false,
+    handler: () => Ok("ok"),
+    validation: null,
+    accessControl: [],
+  })),
+});
+
 const dummyHandler = () => Ok("dummy");
 
 const mockServices: Service[] = [
@@ -139,5 +155,65 @@ describe("getAction", () => {
   it("should return Err when service does not exist", () => {
     const result = engine.getAction("badService", "login");
     expect(result.isErr).toBe(true);
+  });
+});
+
+describe("Duplicate Detection", () => {
+  it("should throw on duplicate service names", () => {
+    const services = [
+      buildService("users", ["create"]),
+      buildService("users", ["delete"]),
+    ];
+
+    expect(() => createEngine({ services })).toThrow(
+      "Duplicate service name 'users'"
+    );
+  });
+
+  it("should throw on duplicate action names within same service", () => {
+    const services = [buildService("orders", ["create", "create"])];
+
+    expect(() => createEngine({ services })).toThrow(
+      "Duplicate action name 'create' in service 'orders'"
+    );
+  });
+
+  it("should allow same action name across different services", () => {
+    const services = [
+      buildService("users", ["create", "delete"]),
+      buildService("orders", ["create", "delete"]),
+    ];
+
+    expect(() => createEngine({ services })).not.toThrow();
+  });
+
+  it("should allow unique services and actions without throwing", () => {
+    const services = [
+      buildService("auth", ["login", "logout"]),
+      buildService("billing", ["charge", "refund"]),
+    ];
+
+    const engine = createEngine({ services });
+    const result = engine.getServices();
+    expect(result.isOk).toBe(true);
+    if (result.isOk) {
+      expect(result.value.length).toBe(2);
+    }
+  });
+
+  it("should include service name in duplicate action error message", () => {
+    const services = [buildService("payments", ["charge", "refund", "charge"])];
+
+    expect(() => createEngine({ services })).toThrow(PAYMENTS_SERVICE_REGEX);
+  });
+
+  it("should detect first duplicate even with many actions", () => {
+    const services = [
+      buildService("analytics", ["track", "report", "export", "track"]),
+    ];
+
+    expect(() => createEngine({ services })).toThrow(
+      "Duplicate action name 'track' in service 'analytics'"
+    );
   });
 });

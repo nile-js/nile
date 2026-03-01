@@ -18,8 +18,6 @@ The REST interface exposes the Action Engine over HTTP via Hono. It implements a
 ### 1.2 Non-Goals
 
 - **Business logic** — The REST layer does not contain domain logic. It delegates to the engine.
-- **Authentication** — Not yet implemented. Request context (headers, cookies) is available via `NileContext.rest`.
-- **File uploads** — `RestConfig.uploads` is defined in types but not yet implemented.
 
 ## 2. Architecture
 
@@ -141,10 +139,10 @@ Only applied when `config.rateLimiting.limitingHeader` is set. Uses `hono-rate-l
 
 **File:** `rest/middleware.ts` — `applyStaticServing`
 
-Only applied when `config.enableStatic` is `true` and `runtime` is `"bun"`.
+Only applied when `config.enableStatic` is `true`. Supports both `"bun"` and `"node"` runtimes.
 
 - Serves files from `./assets` at `/assets/*`
-- Uses dynamic `import("hono/bun")` to avoid referencing Bun globals at import time
+- Dynamically imports the runtime-specific adapter (`hono/bun` for Bun, `@hono/node-server/serve-static` for Node)
 - The import result is cached after first successful load
 - Import failures are caught by `safeTry` — static serving is silently skipped
 
@@ -205,7 +203,6 @@ Only applied when `config.enableStatic` is `true` and `runtime` is `"bun"`.
 
 - **Single POST endpoint** — All service interactions go through `POST {baseUrl}/services`. No per-action routes.
 - **No streaming** — Responses are JSON only. No SSE or chunked transfer.
-- **Bun-only static serving** — Node.js runtime skips static file serving with a diagnostic log.
 - **Rate limiter requires header** — Without `limitingHeader`, rate limiting is not applied at all.
 
 ## 9. Failure Modes

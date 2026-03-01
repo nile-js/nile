@@ -140,16 +140,46 @@ describe("applyStaticServing - disabled", () => {
   });
 });
 
-describe("applyStaticServing - unsupported runtime", () => {
-  it("should log and skip for node runtime", () => {
+describe("applyStaticServing - node runtime", () => {
+  it("should register middleware at /assets/* and log with runtime", () => {
     const app = new Hono();
     const { log, calls } = makeLogSpy();
 
     applyStaticServing(app, makeConfig({ enableStatic: true }), "node", log);
 
     expect(calls).toHaveLength(1);
-    expect(calls[0]).toContain("not yet supported");
+    expect(calls[0]).toContain("Static file serving enabled");
     expect(calls[0]).toContain("node");
+  });
+
+  it("should fall through to next() when asset file is not found", async () => {
+    const app = new Hono();
+    const { log } = makeLogSpy();
+
+    applyStaticServing(app, makeConfig({ enableStatic: true }), "node", log);
+
+    // Add a fallback route to catch next() calls
+    app.get("/assets/*", (c) => c.json({ fallback: true }));
+
+    const res = await app.request("/assets/nonexistent.png");
+    const json = (await res.json()) as { fallback: boolean };
+
+    expect(res.status).toBe(200);
+    expect(json.fallback).toBe(true);
+  });
+
+  it("should not interfere with non-asset routes", async () => {
+    const app = new Hono();
+    const { log } = makeLogSpy();
+
+    applyStaticServing(app, makeConfig({ enableStatic: true }), "node", log);
+    app.get("/api/data", (c) => c.json({ data: true }));
+
+    const res = await app.request("/api/data");
+    expect(res.status).toBe(200);
+
+    const json = (await res.json()) as { data: boolean };
+    expect(json.data).toBe(true);
   });
 });
 

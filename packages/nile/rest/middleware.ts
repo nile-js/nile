@@ -49,10 +49,16 @@ export function applyRateLimiting(
   );
 }
 
+/** Maps each supported runtime to its Hono serveStatic adapter module path */
+const STATIC_ADAPTER_MODULES: Record<ServerRuntime, string> = {
+  bun: "hono/bun",
+  node: "@hono/node-server/serve-static",
+};
+
 /**
  * Applies static file serving from ./assets at /assets/*.
- * Uses dynamic import to load the runtime-specific serveStatic adapter,
- * avoiding issues with Bun globals in non-Bun environments (e.g. vitest).
+ * Dynamically imports the runtime-specific serveStatic adapter (Bun or Node),
+ * avoiding issues with runtime globals at module-load time (e.g. Bun globals in vitest).
  * Import errors are caught gracefully — static serving is skipped if the adapter fails to load.
  */
 export function applyStaticServing(
@@ -65,12 +71,13 @@ export function applyStaticServing(
     return;
   }
 
-  if (runtime !== "bun") {
-    log(`Static file serving not yet supported for runtime: ${runtime}`);
+  const adapterModule = STATIC_ADAPTER_MODULES[runtime];
+  if (!adapterModule) {
+    log(`Static file serving not supported for runtime: ${runtime}`);
     return;
   }
 
-  // Lazy-load the bun serveStatic adapter to avoid referencing Bun globals at import time
+  // Lazy-load the runtime-specific serveStatic adapter
   let cachedHandler:
     | ((c: never, next: never) => Promise<Response | undefined>)
     | null = null;
@@ -83,7 +90,7 @@ export function applyStaticServing(
 
     if (!cachedHandler) {
       const importResult = await safeTry(async () => {
-        const mod = await import("hono/bun");
+        const mod = await import(adapterModule);
         return mod.serveStatic({
           root: "./assets",
           rewriteRequestPath: (path: string) => path.replace(ASSETS_REGEX, ""),
@@ -91,7 +98,10 @@ export function applyStaticServing(
       });
 
       if (importResult.isErr) {
-        log("Failed to load static file adapter", importResult.error);
+        log(
+          `Failed to load static file adapter for ${runtime}`,
+          importResult.error
+        );
         importFailed = true;
         return next();
       }
@@ -104,5 +114,5 @@ export function applyStaticServing(
     }
   });
 
-  log("Static file serving enabled at /assets/*");
+  log(`Static file serving enabled at /assets/* (runtime: ${runtime})`);
 }

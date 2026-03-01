@@ -211,7 +211,7 @@ The `logger` field accepts a `NileLogger` — the return type of `createLogger` 
 - **One context per server** — `createNileContext` is called once in `createNileServer`. All interfaces share this instance.
 - **Generic Database Support** — To avoid generic leakage into the core engine, the database type `TDB` is only present in `NileContext` and `Resources`. High-level components (Engine, REST) use `unknown`.
 - **`onBoot` is fire-and-forget** — It runs in an async IIFE and is not awaited. Errors are caught by `safeTry` and logged to `console.error`.
-- **Runtime default** — If `config.runtime` is omitted, it defaults to `"bun"`. This affects static file serving and future runtime-specific behavior.
+- **Runtime default** — If `config.runtime` is omitted, it defaults to `"bun"`. This affects static file serving and runtime-specific behavior.
 - **No dynamic service injection** — Services are fixed at boot time. Adding services after initialization is not supported.
 
 ## 7. Failure Modes

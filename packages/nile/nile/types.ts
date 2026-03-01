@@ -1,5 +1,6 @@
 import type { Hono, Context as HonoContext } from "hono";
 import type { Result } from "slang-ts";
+import type { AuthConfig, AuthResult } from "@/auth/types";
 import type { Action, Engine, HookContext, Services } from "@/engine/types";
 import type { RestConfig } from "@/rest/types";
 
@@ -70,6 +71,14 @@ export interface NileContext<TDB = unknown> {
   getSession: (name: keyof Sessions) => Record<string, unknown> | undefined;
   /** Store session data for a specific interface */
   setSession: (name: keyof Sessions, data: Record<string, unknown>) => void;
+  /** Auth result populated after successful JWT verification */
+  authResult?: AuthResult;
+  /** Get the raw auth result after JWT verification */
+  getAuth: () => AuthResult | undefined;
+  /** Get authenticated user identity (userId + organizationId) */
+  getUser: () =>
+    | { userId: string; organizationId: string; [key: string]: unknown }
+    | undefined;
   hookContext: HookContext;
   updateHookState: (key: string, value: unknown) => void;
   addHookLog: (
@@ -104,6 +113,8 @@ export interface ServerConfig {
   /** Print registered services table to console on boot (default: true) */
   logServices?: boolean;
   resources?: Resources<unknown>;
+  /** JWT auth configuration — enables built-in token verification for protected actions */
+  auth?: AuthConfig;
   rest?: RestConfig;
   // websocket and rpc interfaces — types TBD when implemented
   websocket?: Record<string, unknown>;

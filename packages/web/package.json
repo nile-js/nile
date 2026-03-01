@@ -1,7 +1,7 @@
 {
-  "name": "nile",
+  "name": "nile-docs",
   "description": "TypeScript-first, service and actions oriented backend framework",
-  "version": "0.0.5",
+  "version": "0.0.2",
   "private": true,
   "type": "module",
   "scripts": {

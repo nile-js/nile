@@ -1,3 +1,12 @@
+// Auth — lean JWT authentication for protected actions
+export { verifyJWT } from "./auth/jwt-handler";
+export type {
+  AuthConfig,
+  AuthContext,
+  AuthHandler,
+  AuthResult,
+  TokenSource,
+} from "./auth/types";
 // CORS types — origin control, per-route rules, and resolver functions
 export type {
   CorsConfig,
@@ -55,6 +64,16 @@ export type {
 } from "./nile/types";
 // REST types — REST interface and rate limiting configuration
 export type { RateLimitConfig, RestConfig } from "./rest/types";
+export type {
+  FormDataResult,
+  StructuredPayload,
+  UploadAllowlist,
+  UploadLimits,
+  UploadsConfig,
+  UploadValidationResult,
+} from "./rest/uploads";
+// Uploads — multipart form-data parsing and validation
+export { handleFormDataRequest, validateFiles } from "./rest/uploads";
 // Utilities — error handling, diagnostics, and database helpers
 export {
   type CursorPage,

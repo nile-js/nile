@@ -154,7 +154,10 @@ If a handler throws instead of returning a `Result`, `safeTry` catches the excep
 ### 6.2 Failure Modes
 
 *   **Missing Service/Action:** Calling `getServiceActions`, `getAction`, or `executeAction` with an unregistered name will immediately return an `Err(string)` result. The transport layer must handle this by returning a `404 Not Found` or equivalent error to the client.
-*   **Duplicate Actions:** If the `services` array contains duplicate action names within the same service, the last one in the array will silently overwrite the previous one during map construction.
+*   **Duplicate Detection:** The engine throws immediately on boot if it encounters duplicate service names or duplicate action names within the same service. This prevents silent overwrites and catches configuration errors early.
+    - Duplicate service name → `Error: Duplicate service name '<name>'. Service names must be unique.`
+    - Duplicate action name → `Error: Duplicate action name '<name>' in service '<service>'. Action names must be unique within a service.`
+    - The same action name in *different* services is valid and does not throw.
 
 ## 7. Key Types
 

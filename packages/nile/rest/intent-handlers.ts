@@ -1,5 +1,6 @@
 import { Ok, type Result } from "slang-ts";
 import z from "zod";
+import type { AuthContext } from "@/auth/types";
 import type { Engine } from "@/engine/types";
 import type {
   ExternalRequest,
@@ -83,7 +84,8 @@ export function handleExplore(
 export async function handleExecute(
   engine: Engine,
   request: ExternalRequest,
-  nileContext: NileContext<unknown>
+  nileContext: NileContext<unknown>,
+  authContext?: AuthContext
 ): Promise<ExternalResponse> {
   const { service, action, payload } = request;
 
@@ -100,7 +102,8 @@ export async function handleExecute(
     service,
     action,
     payload,
-    nileContext
+    nileContext,
+    authContext
   );
 
   return toExternalResponse(result, `Action '${service}.${action}' executed`);
@@ -226,11 +229,12 @@ export const intentHandlers: Record<
   (
     engine: Engine,
     request: ExternalRequest,
-    nileContext: NileContext<unknown>
+    nileContext: NileContext<unknown>,
+    authContext?: AuthContext
   ) => ExternalResponse | Promise<ExternalResponse>
 > = {
   explore: (engine, request) => handleExplore(engine, request),
-  execute: (engine, request, nileContext) =>
-    handleExecute(engine, request, nileContext),
+  execute: (engine, request, nileContext, authContext) =>
+    handleExecute(engine, request, nileContext, authContext),
   schema: (engine, request) => handleSchema(engine, request),
 };

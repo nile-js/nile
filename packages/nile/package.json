@@ -1,6 +1,6 @@
 {
   "name": "@nilejs/nile",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -43,6 +43,7 @@
     "export": "bun run check && bun run fix && bun run test:run && bun run build"
   },
   "dependencies": {
+    "@hono/node-server": "^1.19.9",
     "hono": "^4.11.9",
     "hono-rate-limiter": "^0.5.3",
     "nanoid": "^5.1.6",

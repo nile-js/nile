@@ -26,7 +26,7 @@ export const services: Services = createServices([
 
 | Option | Type | Description |
 |--------|------|-------------|
-| `name` | `string` | Unique identifier for the service |
+| `name` | `string` | Unique identifier for the service. Duplicate service names throw on boot. |
 | `description` | `string` | Human-readable description |
 | `actions` | `Action[]` | Array of actions belonging to this service |
 | `meta` | `Record<string, unknown>` | Optional metadata for the service |

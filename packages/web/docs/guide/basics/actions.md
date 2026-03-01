@@ -24,7 +24,7 @@ export const myAction: Action = createAction({
 
 | Option | Type | Description |
 |--------|------|-------------|
-| `name` | `string` | Unique identifier for the action |
+| `name` | `string` | Unique identifier for the action. Duplicates within the same service throw on boot. |
 | `description` | `string` | Human-readable description |
 | `validation` | `z.ZodTypeAny \| null` | Optional Zod schema for input validation |
 | `handler` | `ActionHandler` | The function that executes when the action is called |

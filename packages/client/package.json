@@ -1,6 +1,6 @@
 {
   "name": "@nilejs/client",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "type": "module",
   "description": "Standalone, type-safe client for Nile backend framework",
   "main": "./dist/index.cjs",
@@ -18,10 +18,14 @@
   ],
   "scripts": {
     "build": "tsup",
-    "dev": "tsup --watch"
+    "dev": "tsup --watch",
+    "test": "vitest",
+    "test:run": "vitest run"
   },
   "devDependencies": {
+    "tsup": "^8.5.1",
     "typescript": "^5",
-    "tsup": "^8.5.1"
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^4.0.18"
   }
 }
