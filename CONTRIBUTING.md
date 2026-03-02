@@ -1,6 +1,8 @@
 # Contributing to Nile
 
-This document describes how to set up the project locally, the conventions used across the codebase, and the process for submitting contributions.
+Thanks for your interest in contributing to Nile framework, its such a previledge that your here, we all trying to make world a better place.
+
+So below are some of the guidelines on what you need to know to effectively contribute to Nile.
 
 ## Table of Contents
 
@@ -150,6 +152,7 @@ bun run --cwd packages/nile test:run    # single run
 - Use `async/await` instead of done callbacks in async tests.
 - Do not commit `.only` or `.skip` modifiers.
 - Tests must match the implementation. Do not adjust tests to force a pass; fix the implementation.
+- Same aspect do not just change the implementation to fit the tests, its possible the implementation was intentional and the tests are outdated, broken or something, investigate before you change one or the other, open a discussion if not certain.
 
 ---
 
@@ -188,10 +191,11 @@ The following conventions apply to all TypeScript and JavaScript files in this r
 
 ### 8.1 General Principles
 
-- No classes, no OOP patterns. Use functions and functional composition.
+- No classes, no OOP patterns. Use functions, factory functions and functional composition instead.
 - Maximum 400 lines of code per file. Extract into separate files when approaching this limit.
-- One function, one responsibility.
+- One function, one responsibility unless inevitable.
 - Pass dependencies as parameters, not as hard imports (dependency injection).
+- Use named parameters via an options or config or an object, not positional (see AGENTS.md)
 - Use early returns and guard clauses. Avoid nested conditionals.
 - Code should be readable without needing comments to explain what it does.
 
@@ -216,23 +220,7 @@ The following conventions apply to all TypeScript and JavaScript files in this r
 
 ### 8.4 Error Handling
 
-All operations that can fail must use the `safeTry` pattern instead of raw `try/catch` blocks:
-
-```typescript
-export function safeTry<T>(fn: () => T | Promise<T>) {
-  try {
-    const result = fn();
-    if (result instanceof Promise) {
-      return result
-        .then(value => ({ err: null, result: value }))
-        .catch(error => ({ err: error, result: null }));
-    }
-    return { err: null, result };
-  } catch (error) {
-    return { err: error, result: null };
-  }
-}
-```
+All operations that can fail must use the `safeTry` pattern from Slang Ts instead of raw `try/catch` blocks.
 
 - Action handlers must return a `Result` type using `Ok` / `Err` from `slang-ts`.
 - Throw immediately for critical configuration errors (missing dependencies, invalid startup state).
@@ -242,7 +230,7 @@ export function safeTry<T>(fn: () => T | Promise<T>) {
 
 ### 8.5 Module Organization
 
-Group files by domain. Each domain directory contains focused single-responsibility files and an `index.ts` barrel export:
+Group files by domain. Each domain directory contains focused single-responsibility files and an optional `index.ts` barrel export:
 
 ```
 services/
@@ -303,13 +291,9 @@ When adding new internal documentation, follow the format used in `packages/web/
 
 ### Commit messages
 
-Use the imperative mood and a short descriptive subject line:
+Use better-commits cli, install it via npm i -g better-commits
 
-```
-Add rate limiting to REST middleware
-Fix duplicate action name detection in engine
-Update CORS resolver failure behavior docs
-```
+then run better-commits for making a commit, or just do as you see fit but follow conventional commits standard.
 
 Avoid vague messages like "fix stuff" or "update files".
 
