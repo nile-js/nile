@@ -77,14 +77,14 @@ export type BeforeActionHandler<T, E> = (params: {
   nileContext: NileContext<unknown>;
   action: Action;
   payload: unknown;
-}) => Result<T, E>;
+}) => Result<T, E> | Promise<Result<T, E>>;
 
 export type AfterActionHandler<T, E> = (params: {
   nileContext: NileContext<unknown>;
   action: Action;
   payload: unknown;
   result: Result<T, E>;
-}) => Result<T, E>;
+}) => Result<T, E> | Promise<Result<T, E>>;
 
 export type ServerRuntime = "bun" | "node";
 
