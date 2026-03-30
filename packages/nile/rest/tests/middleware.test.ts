@@ -66,7 +66,7 @@ describe("applyRateLimiting - isolated", () => {
     expect(res.status).toBe(200);
   });
 
-  it("should use UNKNOWN_CLIENT_KEY when header is missing", async () => {
+  it("should fall back to IP-based rate limiting when header is missing", async () => {
     const app = new Hono();
     const { log, calls } = makeLogSpy();
 
@@ -84,12 +84,12 @@ describe("applyRateLimiting - isolated", () => {
 
     app.get("/test", (c) => c.json({ ok: true }));
 
-    // Request without the header — should still succeed (graceful fallback)
+    // Request without the header — should still succeed via IP fallback
     const res = await app.request("/test");
     expect(res.status).toBe(200);
 
-    // Should log the missing header warning
-    expect(calls.some((c) => c.includes("missing from request"))).toBe(true);
+    // Should log the IP fallback
+    expect(calls.some((c) => c.includes("falling back to IP"))).toBe(true);
   });
 
   it("should use default window and limit when not specified", () => {
@@ -147,9 +147,10 @@ describe("applyStaticServing - node runtime", () => {
 
     applyStaticServing(app, makeConfig({ enableStatic: true }), "node", log);
 
-    expect(calls).toHaveLength(1);
-    expect(calls[0]).toContain("Static file serving enabled");
-    expect(calls[0]).toContain("node");
+    expect(calls.some((c) => c.includes("Static file serving enabled"))).toBe(
+      true
+    );
+    expect(calls.some((c) => c.includes("node"))).toBe(true);
   });
 
   it("should fall through to next() when asset file is not found", async () => {
@@ -196,8 +197,9 @@ describe("applyStaticServing - bun runtime", () => {
 
     applyStaticServing(app, makeConfig({ enableStatic: true }), "bun", log);
 
-    expect(calls).toHaveLength(1);
-    expect(calls[0]).toContain("Static file serving enabled");
+    expect(calls.some((c) => c.includes("Static file serving enabled"))).toBe(
+      true
+    );
   });
 
   it("should fall through to next() when asset file is not found", async () => {
@@ -248,5 +250,67 @@ describe("applyStaticServing - bun runtime", () => {
 
     const json = (await res.json()) as { data: boolean };
     expect(json.data).toBe(true);
+  });
+
+  it("should auto-create static directory when it does not exist", async () => {
+    const { existsSync, rmSync } = await import("node:fs");
+    const testDir = `./test-static-assets-${Date.now()}`;
+
+    // Ensure it doesn't exist
+    if (existsSync(testDir)) {
+      rmSync(testDir, { recursive: true });
+    }
+
+    const app = new Hono();
+    const { log, calls } = makeLogSpy();
+
+    applyStaticServing(
+      app,
+      makeConfig({ enableStatic: true, staticDir: testDir }),
+      "bun",
+      log
+    );
+
+    expect(existsSync(testDir)).toBe(true);
+    expect(calls.some((c) => c.includes("Created static directory"))).toBe(
+      true
+    );
+
+    // Cleanup
+    rmSync(testDir, { recursive: true });
+  });
+
+  it("should use custom staticDir for serving", () => {
+    const app = new Hono();
+    const { log, calls } = makeLogSpy();
+
+    applyStaticServing(
+      app,
+      makeConfig({ enableStatic: true, staticDir: "./custom-public" }),
+      "bun",
+      log
+    );
+
+    expect(calls.some((c) => c.includes("./custom-public"))).toBe(true);
+
+    // Cleanup auto-created dir
+    const { rmSync } = require("node:fs");
+    rmSync("./custom-public", { recursive: true, force: true });
+  });
+
+  it("should not create directory when enableStatic is false", () => {
+    const { existsSync } = require("node:fs");
+    const testDir = `./should-not-exist-${Date.now()}`;
+    const app = new Hono();
+    const { log } = makeLogSpy();
+
+    applyStaticServing(
+      app,
+      makeConfig({ enableStatic: false, staticDir: testDir }),
+      "bun",
+      log
+    );
+
+    expect(existsSync(testDir)).toBe(false);
   });
 });

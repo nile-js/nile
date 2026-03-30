@@ -1,6 +1,6 @@
 import { Err, Ok, type Result } from "slang-ts";
 import { verifyJWT } from "@/auth/jwt-handler";
-import type { AuthConfig, AuthContext } from "@/auth/types";
+import type { AuthConfig } from "@/auth/types";
 import type { NileContext } from "@/nile/types";
 import { createDiagnosticsLog } from "@/utils";
 import {
@@ -18,13 +18,15 @@ import type {
 } from "./types";
 
 /**
- * Verify JWT for a protected action. Returns Ok(void) on success or skip,
- * Err(message) if auth is required but fails.
+ * Verify JWT for a protected action. Extracts credentials from the per-request
+ * Hono context (via AsyncLocalStorage) and writes the verified identity to the
+ * store via setSession("rest", ...).
+ *
+ * Returns Ok(void) on success or skip, Err(message) if auth is required but fails.
  */
 async function authenticateAction(
   action: Action,
   auth: AuthConfig | undefined,
-  authContext: AuthContext | undefined,
   nileContext: NileContext<unknown>,
   serviceName: string,
   actionName: string,
@@ -34,9 +36,17 @@ async function authenticateAction(
     return Ok(undefined);
   }
 
-  if (!authContext) {
-    return Err("Authentication required: no auth context provided");
+  // Extract auth credentials from the per-request Hono context (via AsyncLocalStorage)
+  const honoCtx = nileContext.get<import("hono").Context>("rest");
+  if (!honoCtx) {
+    return Err("Authentication required: no request context available");
   }
+
+  const { getCookie } = await import("hono/cookie");
+  const authContext = {
+    headers: honoCtx.req.raw.headers,
+    cookies: getCookie(honoCtx),
+  };
 
   const authResult = await verifyJWT(authContext, auth);
   if (authResult.isErr) {
@@ -44,7 +54,13 @@ async function authenticateAction(
     return Err(authResult.error);
   }
 
-  nileContext.authResult = authResult.value;
+  // Write verified identity to the session store — single source of truth
+  nileContext.setSession("rest", {
+    userId: authResult.value.userId,
+    organizationId: authResult.value.organizationId,
+    ...authResult.value.claims,
+  });
+
   log(
     `Auth OK for ${serviceName}.${actionName} (user: ${authResult.value.userId})`
   );
@@ -101,6 +117,7 @@ export function createEngine(options: EngineOptions) {
         isProtected: !!action.isProtected,
         validation: !!action.validation,
         accessControl: action.accessControl || [],
+        visibility: action.visibility,
       });
 
       const serviceActions = actionStore[service.name];
@@ -152,8 +169,7 @@ export function createEngine(options: EngineOptions) {
     serviceName: string,
     actionName: string,
     payload: unknown,
-    nileContext: NileContext<unknown>,
-    authContext?: AuthContext
+    nileContext: NileContext<unknown>
   ): Promise<Result<unknown, string>> => {
     const { onBeforeActionHandler, onAfterActionHandler } = options;
 
@@ -171,7 +187,6 @@ export function createEngine(options: EngineOptions) {
     const authStep = await authenticateAction(
       action,
       options.auth,
-      authContext,
       nileContext,
       serviceName,
       actionName,

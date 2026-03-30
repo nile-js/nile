@@ -40,13 +40,13 @@ const server = createNileServer({
 
 ### 2.1 Initialization Sequence
 
-1. **Validate** — Throws immediately if `config.services` is empty
-2. **Create `NileContext`** — Single instance with `config.resources` attached
-3. **Create Engine** — Passes `services`, `diagnostics`, and global hook handlers
-4. **Log services table** — When `config.logServices` is `true`, prints a `console.table` of registered services (name, description, actions). Always prints — not gated by `diagnostics`
-5. **Create REST app** — Only if `config.rest` is provided. Passes engine, context, `serverName`, and `runtime` (defaults to `"bun"`)
-6. **Print REST endpoint URLs** — When REST is configured, prints `POST http://host:port/baseUrl/services` and optionally `GET http://host:port/status` via `console.log`. Uses `rest.host` (default `"localhost"`) and `rest.port` (default `8000`)
-7. **Run `onBoot`** — Fire-and-forget async IIFE. Failures are logged via `console.error` but do not crash the server
+1. **Validate**: Throws immediately if `config.services` is empty
+2. **Create `NileContext`**: Single instance with `config.resources` attached
+3. **Create Engine**: Passes `services`, `diagnostics`, and global hook handlers
+4. **Log services table**: When `config.logServices` is `true`, prints a `console.table` of registered services (name, description, actions). Always prints, not gated by `diagnostics`
+5. **Create REST app**: Only if `config.rest` is provided. Passes engine, context, `serverName`, and `runtime` (defaults to `"bun"`)
+6. **Print REST endpoint URLs**: When REST is configured, prints `POST http://host:port/baseUrl/services` and optionally `GET http://host:port/status` via `console.log`. Uses `rest.host` (default `"localhost"`) and `rest.port` (default `8000`)
+7. **Run `onBoot`**: Async IIFE that awaits the callback. On failure, logs via diagnostics logger and calls `process.exit(1)` to crash the process. The server must not run in a degraded state after a failed boot sequence
 
 ### 2.2 Return Value (`NileServer`)
 
@@ -55,13 +55,18 @@ const server = createNileServer({
   config: ServerConfig;
   engine: Engine;
   context: NileContext;
-  rest?: { app: Hono; config: RestConfig };
+  rest?: {
+    app: Hono;
+    config: RestConfig;
+    addMiddleware: (path: string, fn: (c: HonoContext, next: () => Promise<void>) => Promise<void | Response>) => void;
+  };
 }
 ```
 
 - `rest` is only present when `config.rest` was provided
 - `engine` provides direct access to `getServices`, `getServiceActions`, `getAction`, `executeAction`
 - `context` is the shared `NileContext` passed to all layers
+- `addMiddleware` registers middleware that runs before the services POST handler. Middleware is executed in registration order via a dynamic runner. A middleware can return a `Response` to short-circuit the request (skipping downstream middleware and the handler).
 
 ## 3. `ServerConfig`
 
@@ -81,14 +86,16 @@ const server = createNileServer({
   onBoot?: {
     fn: (context: NileContext) => Promise<void> | void;
   };
+  forceNewInstance?: boolean;
 }
 ```
 
 - `runtime` lives only on `ServerConfig` and is piped to `createRestApp` as a parameter. It is not duplicated onto `RestConfig`.
 - `services` is required. An empty array throws at initialization.
 - `diagnostics` defaults to `false`. When enabled, internal modules emit diagnostic output through `createDiagnosticsLog`.
-- `logServices` defaults to `true`. Prints a `console.table` of registered services (Service, Description, Actions count). Not gated by `diagnostics` — set `logServices: false` to suppress.
+- `logServices` defaults to `true`. Prints a `console.table` of registered services (Service, Description, Actions count). Not gated by `diagnostics`. Set `logServices: false` to suppress.
 - When REST is configured, endpoint URLs are always printed via `console.log` using `rest.host` (default `"localhost"`) and `rest.port` (default `8000`).
+- `forceNewInstance` defaults to `false`. When `false`, a second `createNileServer` call returns the existing server instance with a warning logged. Set to `true` to explicitly create a new instance (useful in tests).
 
 ## 4. `NileContext`
 
@@ -130,15 +137,33 @@ context.hookContext.log;         // { before: HookLogEntry[], after: HookLogEntr
 
 Mutation methods: `updateHookState`, `addHookLog`, `setHookError`, `setHookOutput`.
 
-### 4.4 Interface Contexts
+### 4.4 Request-Scoped Contexts (AsyncLocalStorage)
+
+Interface-specific data (`rest`, `ws`, `rpc`, `sessions`) is isolated per-request via `AsyncLocalStorage`. Concurrent requests never see each other's state.
 
 ```typescript
-context.rest  // HonoContext (readonly, set at creation)
-context.ws    // WebSocketContext (readonly)
-context.rpc   // RPCContext (readonly)
+// Inside an action handler or middleware during a REST request:
+const rest = context.get<HonoContext>("rest");   // current request's Hono context
+const session = context.getSession("rest");       // current request's session data
+
+// Outside a request scope (e.g., during boot):
+context.get("rest"); // undefined
 ```
 
-These are set once during `createNileContext` via the `interfaceContext` parameter. The REST layer creates a fresh context per request with the Hono context attached.
+The REST layer wraps each incoming request in `runInRequestScope()`, which creates an isolated `RequestStore` for that request's lifetime. All async continuations within the request see the same store.
+
+```typescript
+// How the REST layer scopes each request (internal):
+runInRequestScope({ rest: honoContext, sessions: {} }, async () => {
+  // Everything here (auth, hooks, handlers) reads from this request's store
+  await engine.executeAction(service, action, payload, nileContext);
+});
+```
+
+**Key exports:**
+- `RequestStore`: interface for per-request state (`rest`, `ws`, `rpc`, `sessions`)
+- `runInRequestScope(store, fn)`: runs a callback within an isolated request scope
+- `getRequestStore()`: retrieves the current request's store (undefined outside a request)
 
 ### 4.5 Resources
 
@@ -154,7 +179,7 @@ Extensible via index signature. Passed through from `ServerConfig.resources`. Th
 
 ### 5.1 `BeforeActionHandler`
 
-Global hook that runs before every action. Returns a `Result` — `Err` halts the pipeline.
+Global hook that runs before every action. Returns a `Result`. `Err` halts the pipeline.
 
 ```typescript
 type BeforeActionHandler<T, E> = (params: {
@@ -204,21 +229,23 @@ type Resources<TDB = unknown> = {
 };
 ```
 
-The `logger` field accepts a `NileLogger` — the return type of `createLogger` from the logging module. This enables `handleError` and `createDiagnosticsLog` to log through the same logger instance.
+The `logger` field accepts a `NileLogger`. The return type of `createLogger` from the logging module enables `handleError` and `createDiagnosticsLog` to log through the same logger instance.
 
 ## 6. Constraints
 
-- **One context per server** — `createNileContext` is called once in `createNileServer`. All interfaces share this instance.
-- **Generic Database Support** — To avoid generic leakage into the core engine, the database type `TDB` is only present in `NileContext` and `Resources`. High-level components (Engine, REST) use `unknown`.
-- **`onBoot` is fire-and-forget** — It runs in an async IIFE and is not awaited. Errors are caught by `safeTry` and logged to `console.error`.
-- **Runtime default** — If `config.runtime` is omitted, it defaults to `"bun"`. This affects static file serving and runtime-specific behavior.
-- **No dynamic service injection** — Services are fixed at boot time. Adding services after initialization is not supported.
+- **One context per server**: `createNileContext` is called once in `createNileServer`. All interfaces share this instance.
+- **Generic Database Support**: To avoid generic leakage into the core engine, the database type `TDB` is only present in `NileContext` and `Resources`. High-level components (Engine, REST) use `unknown`.
+- **`onBoot` crashes on failure**: The `onBoot` callback is awaited inside an async IIFE. If it fails, `process.exit(1)` is called. This is intentional. A failed boot means the server cannot operate correctly.
+- **Singleton by default**: A second `createNileServer` call returns the existing instance unless `forceNewInstance: true` is passed. A warning is logged when the cached instance is returned.
+- **Runtime default**: If `config.runtime` is omitted, it defaults to `"bun"`. This affects static file serving and runtime-specific behavior.
+- **No dynamic service injection**: Services are fixed at boot time. Adding services after initialization is not supported.
 
 ## 7. Failure Modes
 
-- **Empty services** — `createNileServer` throws immediately with a descriptive error
-- **`onBoot` crash** — Caught by `safeTry`, logged to `console.error`, does not prevent server from starting
-- **Missing resources** — `resources` is optional. Diagnostics fall back to `console.log` when `resources.logger` is absent (handled by `createDiagnosticsLog`)
+- **Empty services**: `createNileServer` throws immediately with a descriptive error
+- **`onBoot` crash**: Logged via diagnostics logger, then `process.exit(1)`. The server does not start in a degraded state.
+- **Missing resources**: `resources` is optional. Diagnostics fall back to `console.log` when `resources.logger` is absent (handled by `createDiagnosticsLog`)
+- **Double initialization**: Returns cached instance with a warning unless `forceNewInstance: true`
 
 ## 8. `getContext`
 
@@ -254,9 +281,9 @@ const handler = async (data, ctx) => {
 
 ### 8.2 Constraints
 
-- **Must be called after server initialization** — `getContext` throws if called before `createNileServer` has run
-- **Must be called within a request scope** — The context is set once at server boot, not per-request. For per-request isolation, use the context passed to action handlers
+- **Must be called after server initialization**: `getContext` throws if called before `createNileServer` has run
+- **Must be called within a request scope**: The context singleton is set at server boot. Per-request data (interface contexts, sessions) is isolated via AsyncLocalStorage. Use `context.get("rest")` or `context.getSession("rest")` within request handlers
 
 ### 8.3 Failure Modes
 
-- **Called before server boot** — Throws `"getContext: Server not initialized. Call createNileServer first."`
+- **Called before server boot**: Throws `"getContext: Server not initialized. Call createNileServer first."`

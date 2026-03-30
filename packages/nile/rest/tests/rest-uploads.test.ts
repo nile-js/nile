@@ -61,19 +61,25 @@ const baseConfig: RestConfig = {
   allowedOrigins: ["http://localhost:3000"],
   enableStatus: false,
   diagnostics: false,
+  discovery: { enabled: true },
 };
 
 function createTestApp(overrides?: Partial<RestConfig>) {
   const engine = createEngine({ services: mockServices });
   const nileContext = createNileContext();
-  const app = createRestApp({
+  const restApp = createRestApp({
     config: { ...baseConfig, ...overrides },
     engine,
     nileContext,
     serverName: "UploadTestServer",
     runtime: "bun",
   });
-  return { app, engine, nileContext };
+  return {
+    app: restApp.app,
+    addMiddleware: restApp.addMiddleware,
+    engine,
+    nileContext,
+  };
 }
 
 /** Create a File object for testing */

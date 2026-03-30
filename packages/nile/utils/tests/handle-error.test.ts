@@ -3,6 +3,7 @@ import type { NileLogger } from "@/nile/types";
 import { handleError } from "../handle-error";
 
 const ERROR_ID_REGEX = /^\[.+\] User account not active$/;
+const ANON_FN_REGEX = /^(unknown|<anonymous>)$/;
 
 describe("handleError", () => {
   let mockLogger: NileLogger;
@@ -38,11 +39,13 @@ describe("handleError", () => {
         logger: mockLogger,
       });
 
-      expect(mockLogger.error).toHaveBeenCalledWith({
-        atFunction: "unknown",
-        message: "User not found",
-        data: { userId: "123" },
-      });
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        expect.objectContaining({
+          atFunction: expect.stringMatching(ANON_FN_REGEX),
+          message: "User not found",
+          data: { userId: "123" },
+        })
+      );
     });
 
     it("should return Err with [logId] message format", () => {

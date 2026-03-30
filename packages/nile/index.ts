@@ -2,7 +2,6 @@
 export { verifyJWT } from "./auth/jwt-handler";
 export type {
   AuthConfig,
-  AuthContext,
   AuthHandler,
   AuthResult,
   TokenSource,
@@ -10,6 +9,7 @@ export type {
 // CORS types — origin control, per-route rules, and resolver functions
 export type {
   CorsConfig,
+  CorsHelper,
   CorsOptions,
   CorsResolver,
   CorsRouteRule,
@@ -43,12 +43,14 @@ export {
   type LogFilter,
   type LoggerConfig,
 } from "./logging";
+export type { RequestStore } from "./nile/request-scope";
+// Request scope — per-request isolation via AsyncLocalStorage
+export { getRequestStore, runInRequestScope } from "./nile/request-scope";
 // Server factory — the main entry point for developers
 export { createNileServer, getContext } from "./nile/server";
 // Nile types — server config, context, request/response, and lifecycle hooks
 export type {
   AfterActionHandler,
-  BaseContext,
   BeforeActionHandler,
   ExternalRequest,
   ExternalResponse,
@@ -62,8 +64,14 @@ export type {
   Sessions,
   WebSocketContext,
 } from "./nile/types";
+export type { RestApp } from "./rest/rest";
 // REST types — REST interface and rate limiting configuration
-export type { RateLimitConfig, RestConfig } from "./rest/types";
+export type {
+  DiscoveryConfig,
+  MiddlewareEntry,
+  RateLimitConfig,
+  RestConfig,
+} from "./rest/types";
 export type {
   FormDataResult,
   StructuredPayload,
@@ -73,7 +81,11 @@ export type {
   UploadValidationResult,
 } from "./rest/uploads";
 // Uploads — multipart form-data parsing and validation
-export { handleFormDataRequest, validateFiles } from "./rest/uploads";
+export {
+  detectMimeType,
+  handleFormDataRequest,
+  validateFiles,
+} from "./rest/uploads";
 // Utilities — error handling, diagnostics, and database helpers
 export {
   type CursorPage,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createNileContext } from "../nile";
-import type { BaseContext } from "../types";
+import { getRequestStore, runInRequestScope } from "../request-scope";
 
 describe("createNileContext - store (get/set)", () => {
   it("should return undefined for unset keys", () => {
@@ -45,42 +45,116 @@ describe("createNileContext - store (get/set)", () => {
   });
 });
 
-describe("createNileContext - sessions", () => {
-  it("should initialize with empty sessions object", () => {
+describe("createNileContext - sessions (per-request via AsyncLocalStorage)", () => {
+  it("should return undefined for sessions outside a request scope", () => {
     const ctx = createNileContext();
-    expect(ctx.sessions).toBeDefined();
-    expect(ctx.sessions.rest).toBeUndefined();
-    expect(ctx.sessions.ws).toBeUndefined();
-    expect(ctx.sessions.rpc).toBeUndefined();
+    expect(ctx.getSession("rest")).toBeUndefined();
+    expect(ctx.getSession("ws")).toBeUndefined();
+    expect(ctx.getSession("rpc")).toBeUndefined();
   });
 
-  it("should set and get session data per interface", () => {
+  it("should set and get session data within a request scope", async () => {
     const ctx = createNileContext();
     const restSession = { token: "abc123", userId: "u1" };
 
-    ctx.setSession("rest", restSession);
-
-    expect(ctx.getSession("rest")).toEqual(restSession);
-    expect(ctx.getSession("ws")).toBeUndefined();
+    await runInRequestScope({ sessions: {} }, () => {
+      ctx.setSession("rest", restSession);
+      expect(ctx.getSession("rest")).toEqual(restSession);
+      expect(ctx.getSession("ws")).toBeUndefined();
+    });
   });
 
-  it("should isolate sessions between context instances", () => {
-    const ctx1 = createNileContext();
-    const ctx2 = createNileContext();
-
-    ctx1.setSession("rest", { token: "ctx1-token" });
-    ctx2.setSession("rest", { token: "ctx2-token" });
-
-    expect(ctx1.getSession("rest")).toEqual({ token: "ctx1-token" });
-    expect(ctx2.getSession("rest")).toEqual({ token: "ctx2-token" });
-  });
-
-  it("should overwrite session data on repeated set", () => {
+  it("should isolate sessions between concurrent request scopes", async () => {
     const ctx = createNileContext();
-    ctx.setSession("ws", { connId: "old" });
-    ctx.setSession("ws", { connId: "new" });
 
-    expect(ctx.getSession("ws")).toEqual({ connId: "new" });
+    const scope1 = runInRequestScope({ sessions: {} }, async () => {
+      ctx.setSession("rest", { token: "scope1-token" });
+      // Yield to allow scope2 to run
+      await new Promise((r) => setTimeout(r, 10));
+      return ctx.getSession("rest");
+    });
+
+    const scope2 = runInRequestScope({ sessions: {} }, async () => {
+      ctx.setSession("rest", { token: "scope2-token" });
+      await new Promise((r) => setTimeout(r, 10));
+      return ctx.getSession("rest");
+    });
+
+    const [result1, result2] = await Promise.all([scope1, scope2]);
+    expect(result1).toEqual({ token: "scope1-token" });
+    expect(result2).toEqual({ token: "scope2-token" });
+  });
+
+  it("should overwrite session data on repeated set within same scope", async () => {
+    const ctx = createNileContext();
+
+    await runInRequestScope({ sessions: {} }, () => {
+      ctx.setSession("ws", { connId: "old" });
+      ctx.setSession("ws", { connId: "new" });
+      expect(ctx.getSession("ws")).toEqual({ connId: "new" });
+    });
+  });
+});
+
+describe("createNileContext - request-scoped get() for interface contexts", () => {
+  it("should return undefined for rest/ws/rpc outside a request scope", () => {
+    const ctx = createNileContext();
+    expect(ctx.get("rest")).toBeUndefined();
+    expect(ctx.get("ws")).toBeUndefined();
+    expect(ctx.get("rpc")).toBeUndefined();
+  });
+
+  it("should return the rest context from the current request scope", async () => {
+    const ctx = createNileContext();
+    const mockHonoCtx = { req: { raw: { headers: new Headers() } } };
+
+    await runInRequestScope(
+      { rest: mockHonoCtx as unknown, sessions: {} },
+      () => {
+        expect(ctx.get("rest")).toBe(mockHonoCtx);
+        expect(ctx.get("ws")).toBeUndefined();
+        expect(ctx.get("rpc")).toBeUndefined();
+      }
+    );
+  });
+
+  it("should isolate rest contexts between concurrent scopes", async () => {
+    const ctx = createNileContext();
+    const mockCtxA = { req: { id: "A" } };
+    const mockCtxB = { req: { id: "B" } };
+
+    const scopeA = runInRequestScope(
+      { rest: mockCtxA as unknown, sessions: {} },
+      async () => {
+        await new Promise((r) => setTimeout(r, 10));
+        return ctx.get("rest");
+      }
+    );
+
+    const scopeB = runInRequestScope(
+      { rest: mockCtxB as unknown, sessions: {} },
+      async () => {
+        await new Promise((r) => setTimeout(r, 10));
+        return ctx.get("rest");
+      }
+    );
+
+    const [resultA, resultB] = await Promise.all([scopeA, scopeB]);
+    expect(resultA).toBe(mockCtxA);
+    expect(resultB).toBe(mockCtxB);
+  });
+
+  it("should not mix request-scoped keys with global store", () => {
+    const ctx = createNileContext();
+    ctx.set("rest", "global-value");
+
+    // Outside a request scope, get("rest") reads from ALS (undefined)
+    // The global _store has "rest" but get() delegates to ALS for this key
+    expect(ctx.get("rest")).toBeUndefined();
+
+    // Non-scoped keys still work from global store
+    ctx.set("custom", "value");
+    expect(ctx.get("custom")).toBe("value");
   });
 });
 
@@ -180,18 +254,6 @@ describe("createNileContext - params passthrough", () => {
     const ctx = createNileContext();
     expect(ctx.resources).toBeUndefined();
   });
-
-  it("should attach interface context fields when provided", () => {
-    const mockRestCtx = { req: {} };
-    const interfaceContext: BaseContext = {
-      rest: mockRestCtx as BaseContext["rest"],
-    };
-    const ctx = createNileContext({ interfaceContext });
-
-    expect(ctx.rest).toBe(mockRestCtx);
-    expect(ctx.ws).toBeUndefined();
-    expect(ctx.rpc).toBeUndefined();
-  });
 });
 
 describe("createNileContext - isolation", () => {
@@ -213,5 +275,26 @@ describe("createNileContext - isolation", () => {
 
     expect(ctx1.hookContext.state.marker).toBe("ctx1");
     expect(ctx2.hookContext.state.marker).toBeUndefined();
+  });
+});
+
+describe("getRequestStore", () => {
+  it("should return undefined outside a request scope", () => {
+    const store = getRequestStore();
+    expect(store).toBeUndefined();
+  });
+
+  it("should return the current store inside a request scope", async () => {
+    const mockStore = {
+      sessions: {},
+      rest: undefined,
+      ws: undefined,
+      rpc: undefined,
+    };
+
+    await runInRequestScope(mockStore, () => {
+      const store = getRequestStore();
+      expect(store).toBe(mockStore);
+    });
   });
 });

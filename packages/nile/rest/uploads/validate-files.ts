@@ -26,7 +26,9 @@ export function validateFilenameLength(
   files: File[],
   maxLength: number
 ): UploadValidationResult {
-  const tooLong = files.filter((file) => file.name.length > maxLength);
+  const tooLong = files.filter(
+    (file) => file.name != null && file.name.length > maxLength
+  );
   if (tooLong.length === 0) {
     return PASS;
   }
@@ -36,7 +38,7 @@ export function validateFilenameLength(
     message: "file name too long",
     data: {
       error_category: "validation",
-      files: tooLong.map((f) => f.name),
+      files: tooLong.map((f) => f.name ?? "<unnamed>"),
       maxLength,
     },
   };
@@ -54,7 +56,7 @@ export function validateZeroByteFiles(files: File[]): UploadValidationResult {
     message: "empty file not allowed",
     data: {
       error_category: "validation",
-      files: emptyFiles.map((f) => f.name),
+      files: emptyFiles.map((f) => f.name ?? "<unnamed>"),
     },
   };
 }
@@ -76,7 +78,10 @@ export function validateMinFileSize(
       error_category: "validation",
       limit: "minFileSize",
       min: minFileSize,
-      files: tooSmall.map((f) => ({ name: f.name, size: f.size })),
+      files: tooSmall.map((f) => ({
+        name: f.name ?? "<unnamed>",
+        size: f.size,
+      })),
     },
   };
 }
@@ -119,7 +124,10 @@ export function validateFileSize(
       error_category: "validation",
       limit: "maxFileSize",
       max: maxFileSize,
-      files: oversized.map((f) => ({ name: f.name, size: f.size })),
+      files: oversized.map((f) => ({
+        name: f.name ?? "<unnamed>",
+        size: f.size,
+      })),
     },
   };
 }
@@ -153,9 +161,10 @@ export function validateAllowlist(
   allowedExtensions: string[]
 ): UploadValidationResult {
   const rejected = files.filter((file) => {
-    const matchesMime = allowedMimes.includes(file.type);
+    const mimeBase = (file.type.split(";")[0] ?? file.type).trim();
+    const matchesMime = allowedMimes.includes(mimeBase);
     const matchesExt = allowedExtensions.some((ext) =>
-      file.name.toLowerCase().endsWith(ext.toLowerCase())
+      (file.name ?? "").toLowerCase().endsWith(ext.toLowerCase())
     );
     return !(matchesMime && matchesExt);
   });
@@ -169,7 +178,10 @@ export function validateAllowlist(
     message: "file type not allowed",
     data: {
       error_category: "validation",
-      rejected: rejected.map((f) => ({ name: f.name, type: f.type })),
+      rejected: rejected.map((f) => ({
+        name: f.name ?? "<unnamed>",
+        type: f.type,
+      })),
       allowed: { mimeTypes: allowedMimes, extensions: allowedExtensions },
     },
   };

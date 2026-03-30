@@ -7,6 +7,7 @@ import { createNileContext } from "./nile";
 import type { NileContext, NileServer, Resources, ServerConfig } from "./types";
 
 let _nileContext: NileContext | null = null;
+let _nileServer: NileServer | null = null;
 
 /**
  * Retrieves the runtime NileContext.
@@ -39,6 +40,14 @@ export function getContext<TDB = unknown>(): NileContext<TDB> {
  * @returns A NileServer instance containing the engine and (optional) REST app
  */
 export function createNileServer(config: ServerConfig): NileServer {
+  // Return existing instance unless explicitly forced to create new
+  if (_nileServer && !config.forceNewInstance) {
+    console.warn(
+      "[NileServer] createNileServer called again — returning existing instance. Use forceNewInstance: true to override."
+    );
+    return _nileServer;
+  }
+
   if (!config.services?.length) {
     throw new Error(
       "createNileServer requires at least one service in config.services"
@@ -95,7 +104,7 @@ export function createNileServer(config: ServerConfig): NileServer {
 
   // Initialize REST interface if configured
   if (config.rest) {
-    const app = createRestApp({
+    const restApp = createRestApp({
       config: config.rest,
       engine,
       nileContext: nileContext as NileContext<unknown>,
@@ -103,7 +112,11 @@ export function createNileServer(config: ServerConfig): NileServer {
       runtime: config.runtime ?? "bun",
     });
 
-    server.rest = { app, config: config.rest };
+    server.rest = {
+      app: restApp.app,
+      config: config.rest,
+      addMiddleware: restApp.addMiddleware,
+    };
 
     const host = config.rest.host ?? "localhost";
     const port = config.rest.port ?? 8000;
@@ -116,21 +129,20 @@ export function createNileServer(config: ServerConfig): NileServer {
     console.log("");
   }
 
-  // Run onBoot lifecycle hook
+  // Run onBoot lifecycle hook — awaits fn, crashes process on failure
   if (config.onBoot) {
     const { fn } = config.onBoot;
-    // Fire-and-forget with crash safety via async IIFE
-    const _boot = (async () => {
+    (async () => {
       const result = await safeTry(() => fn(nileContext));
       if (result.isErr) {
-        console.error("[NileServer] onBoot failed:", result.error);
+        log(`onBoot failed: ${result.error}`);
+        process.exit(1);
       }
     })();
-    // Intentionally not awaited — boot runs in background
-    _boot;
   }
 
   log(`${config.serverName} server ready`);
 
+  _nileServer = server;
   return server;
 }

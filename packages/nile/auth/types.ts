@@ -3,6 +3,22 @@ import type { Result } from "slang-ts";
 /** Where to extract the JWT token from incoming requests */
 export type TokenSource = "header" | "cookie";
 
+/** Supported JWT signing/verification algorithms (mirrors hono/jwt) */
+export type JwtAlgorithm =
+  | "HS256"
+  | "HS384"
+  | "HS512"
+  | "RS256"
+  | "RS384"
+  | "RS512"
+  | "PS256"
+  | "PS384"
+  | "PS512"
+  | "ES256"
+  | "ES384"
+  | "ES512"
+  | "EdDSA";
+
 /**
  * Server-level auth configuration.
  * Kept intentionally lean — only JWT verification via hono/jwt.
@@ -17,6 +33,8 @@ export interface AuthConfig {
   cookieName?: string;
   /** Header name when method is "header" (default: "authorization") */
   headerName?: string;
+  /** JWT algorithm for token verification (default: "HS256") */
+  algorithm?: JwtAlgorithm;
 }
 
 /** Successful auth result populated on NileContext after verification */

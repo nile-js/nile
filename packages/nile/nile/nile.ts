@@ -1,40 +1,40 @@
-import type { AuthResult } from "@/auth/types";
-import type { BaseContext, NileContext, Resources, Sessions } from "./types";
+import { getRequestStore } from "./request-scope";
+import type { NileContext, Resources, Sessions } from "./types";
+
+/** Keys that are stored per-request via AsyncLocalStorage, not on the global _store */
+const REQUEST_SCOPED_KEYS = new Set(["rest", "ws", "rpc"]);
 
 interface CreateNileContextParams<TDB = unknown> {
-  interfaceContext?: BaseContext;
   resources?: Resources<TDB>;
 }
 
 /**
  * Creates a new Nile context with an internal key-value store.
- * The context carries interface-specific data (REST, WebSocket, RPC),
- * hook execution context, and provides get/set methods for storing arbitrary values.
+ * The context provides get/set methods for arbitrary global values, and
+ * transparently delegates request-scoped reads (rest, ws, rpc, sessions)
+ * to AsyncLocalStorage so concurrent requests never share mutable state.
  *
- * Sessions are instance-scoped — each NileContext owns its own session store,
- * so multiple server instances don't share authentication state.
+ * Hook context lives on the singleton but is reset at the start of each
+ * action execution, so it does not need per-request scoping.
  *
- * @param params - Optional configuration including interface adapters and shared resources
+ * @param params - Optional configuration including shared resources
  * @returns A fully initialized NileContext
  */
 export function createNileContext<TDB = unknown>(
   params?: CreateNileContextParams<TDB>
 ): NileContext<TDB> {
   const store = new Map<string, unknown>();
-  const interfaceContext = params?.interfaceContext;
-
-  /** Instance-scoped session store — not shared across server instances */
-  const sessions: Sessions = {};
 
   const context: NileContext<TDB> = {
-    rest: interfaceContext?.rest,
-    ws: interfaceContext?.ws,
-    rpc: interfaceContext?.rpc,
     resources: params?.resources,
-    sessions,
     _store: store,
 
     get<T = unknown>(key: string): T | undefined {
+      // Request-scoped keys read from AsyncLocalStorage
+      if (REQUEST_SCOPED_KEYS.has(key)) {
+        const reqStore = getRequestStore();
+        return reqStore?.[key as keyof typeof reqStore] as T | undefined;
+      }
       return store.get(key) as T | undefined;
     },
 
@@ -43,30 +43,15 @@ export function createNileContext<TDB = unknown>(
     },
 
     getSession(name: keyof Sessions) {
-      return sessions[name];
+      const reqStore = getRequestStore();
+      return reqStore?.sessions[name];
     },
 
     setSession(name: keyof Sessions, data: Record<string, unknown>) {
-      sessions[name] = data;
-    },
-
-    authResult: undefined,
-
-    getAuth(): AuthResult | undefined {
-      return context.authResult;
-    },
-
-    getUser():
-      | { userId: string; organizationId: string; [key: string]: unknown }
-      | undefined {
-      if (!context.authResult) {
-        return undefined;
+      const reqStore = getRequestStore();
+      if (reqStore) {
+        reqStore.sessions[name] = data;
       }
-      return {
-        userId: context.authResult.userId,
-        organizationId: context.authResult.organizationId,
-        ...context.authResult.claims,
-      };
     },
 
     hookContext: {

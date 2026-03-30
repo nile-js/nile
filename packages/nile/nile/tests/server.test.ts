@@ -24,16 +24,21 @@ const mockServices: Service[] = [
 describe("createNileServer - Initialization", () => {
   it("should throw if no services provided", () => {
     expect(() =>
-      createNileServer({ serverName: "Test", services: [] })
+      createNileServer({
+        serverName: "Test",
+        services: [],
+        forceNewInstance: true,
+      })
     ).toThrow("at least one service");
   });
 
   it("should throw if services is undefined", () => {
     // Type assertion to bypass compile-time check — testing runtime guard
     expect(() =>
-      createNileServer({ serverName: "Test" } as Parameters<
-        typeof createNileServer
-      >[0])
+      createNileServer({
+        serverName: "Test",
+        forceNewInstance: true,
+      } as Parameters<typeof createNileServer>[0])
     ).toThrow("at least one service");
   });
 
@@ -41,6 +46,7 @@ describe("createNileServer - Initialization", () => {
     const server = createNileServer({
       serverName: "Test",
       services: mockServices,
+      forceNewInstance: true,
     });
 
     expect(server.engine).toBeDefined();
@@ -52,6 +58,7 @@ describe("createNileServer - Initialization", () => {
     const server = createNileServer({
       serverName: "Test",
       services: mockServices,
+      forceNewInstance: true,
     });
 
     expect(server.rest).toBeUndefined();
@@ -63,6 +70,7 @@ describe("createNileServer - REST Interface", () => {
     const server = createNileServer({
       serverName: "Test",
       services: mockServices,
+      forceNewInstance: true,
       rest: {
         baseUrl: "/api/v1",
         allowedOrigins: ["*"],
@@ -79,10 +87,12 @@ describe("createNileServer - REST Interface", () => {
     const server = createNileServer({
       serverName: "TestServer",
       services: mockServices,
+      forceNewInstance: true,
       rest: {
         baseUrl: "/api/v1",
         allowedOrigins: ["*"],
         enableStatus: true,
+        discovery: { enabled: true },
       },
     });
 
@@ -141,6 +151,7 @@ describe("createNileServer - onBoot", () => {
     createNileServer({
       serverName: "Test",
       services: mockServices,
+      forceNewInstance: true,
       onBoot: { fn: bootFn },
     });
 
@@ -154,6 +165,7 @@ describe("createNileServer - onBoot", () => {
     createNileServer({
       serverName: "Test",
       services: mockServices,
+      forceNewInstance: true,
       onBoot: {
         fn: (ctx) => {
           receivedContext = ctx;
@@ -168,14 +180,15 @@ describe("createNileServer - onBoot", () => {
     expect(ctx._store).toBeInstanceOf(Map);
   });
 
-  it("should not crash if onBoot throws", async () => {
-    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {
-      // intentional no-op for test
-    });
+  it("should exit process when onBoot fails", async () => {
+    const exitSpy = vi
+      .spyOn(process, "exit")
+      .mockImplementation(() => undefined as never);
 
     createNileServer({
       serverName: "Test",
       services: mockServices,
+      forceNewInstance: true,
       onBoot: {
         fn: () => {
           throw new Error("Boot failure");
@@ -184,9 +197,9 @@ describe("createNileServer - onBoot", () => {
     });
 
     await flushMicrotasks();
-    expect(errorSpy).toHaveBeenCalled();
+    expect(exitSpy).toHaveBeenCalledWith(1);
 
-    errorSpy.mockRestore();
+    exitSpy.mockRestore();
   });
 
   it("should log services table by default", () => {
@@ -200,6 +213,7 @@ describe("createNileServer - onBoot", () => {
     createNileServer({
       serverName: "Test",
       services: mockServices,
+      forceNewInstance: true,
     });
 
     expect(tableSpy).toHaveBeenCalledTimes(1);
@@ -223,12 +237,57 @@ describe("createNileServer - onBoot", () => {
     createNileServer({
       serverName: "Test",
       services: mockServices,
+      forceNewInstance: true,
       logServices: false,
     });
 
     expect(tableSpy).not.toHaveBeenCalled();
 
     tableSpy.mockRestore();
+  });
+});
+
+describe("createNileServer - Instance Management", () => {
+  it("returns existing instance on second call without forceNewInstance", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {
+      // intentional no-op for test
+    });
+
+    const server1 = createNileServer({
+      serverName: "First",
+      services: mockServices,
+      forceNewInstance: true,
+    });
+
+    const server2 = createNileServer({
+      serverName: "Second",
+      services: mockServices,
+    });
+
+    expect(server1).toBe(server2);
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("returning existing instance")
+    );
+    expect(server2.config.serverName).toBe("First");
+
+    warnSpy.mockRestore();
+  });
+
+  it("creates new instance when forceNewInstance is true", () => {
+    const server1 = createNileServer({
+      serverName: "First",
+      services: mockServices,
+      forceNewInstance: true,
+    });
+
+    const server2 = createNileServer({
+      serverName: "Second",
+      services: mockServices,
+      forceNewInstance: true,
+    });
+
+    expect(server1).not.toBe(server2);
+    expect(server2.config.serverName).toBe("Second");
   });
 });
 
@@ -239,6 +298,7 @@ describe("createNileServer - Resources", () => {
     const server = createNileServer({
       serverName: "Test",
       services: mockServices,
+      forceNewInstance: true,
       resources: { logger: mockLogger },
     });
 

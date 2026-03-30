@@ -1,10 +1,10 @@
 # Custom Routes
 
-Nile's REST interface is a standard Hono app. After creating your server, you can add custom routes directly on the Hono instance for things Nile doesn't handle through the service/action model — webhooks, OAuth callbacks, health checks, or any traditional HTTP endpoint.
+Nile's REST interface is a standard Hono app. After creating your server, you can add custom routes directly on the Hono instance for things Nile doesn't handle through the service/action model, such as webhooks, OAuth callbacks, health checks, or any traditional HTTP endpoint.
 
 ## Accessing the Hono App
 
-`createNileServer` returns a `NileServer` object with a `rest.app` property — a regular Hono instance:
+`createNileServer` returns a `NileServer` object with a `rest.app` property. A regular Hono instance:
 
 ```typescript
 import { createNileServer } from "@nilejs/nile";
@@ -121,6 +121,29 @@ server.rest?.app.post("/webhooks/payment", async (c) => {
 });
 ```
 
+### Middleware for the Services Endpoint
+
+To add middleware that runs before Nile's built-in `POST /services` handler, use `addMiddleware`:
+
+```typescript
+server.rest?.addMiddleware("*", async (c, next) => {
+  const start = Date.now();
+  await next();
+  console.log(`Request took ${Date.now() - start}ms`);
+});
+
+// Path-specific middleware
+server.rest?.addMiddleware("/api/v1/services", async (c, next) => {
+  const apiKey = c.req.header("x-api-key");
+  if (!apiKey) {
+    return c.json({ error: "API key required" }, 401); // Short-circuit, returns Response, skips handler
+  }
+  await next();
+});
+```
+
+Middleware registered via `addMiddleware` runs in registration order, before the POST handler processes the intent. Each middleware receives the Hono context and a `next()` function to pass control to the next middleware (or the handler). A middleware can return a `Response` to short-circuit the request. Downstream middleware and the handler will not execute.
+
 ## Adding Middleware
 
 You can also add Hono middleware to the app for custom routes:
@@ -147,10 +170,11 @@ Custom routes registered after `createNileServer` are added after Nile's built-i
 1. CORS middleware
 2. Rate limiting middleware
 3. Static file serving (`/assets/*`)
-4. `POST {baseUrl}/services` (Nile RPC)
-5. `GET /status` (if enabled)
-6. **Your custom routes**
-7. 404 handler
+4. **Registered middleware** (via `addMiddleware`, can short-circuit by returning `Response`)
+5. `POST {baseUrl}/services` (Nile RPC)
+6. `GET /status` (if enabled)
+7. **Your custom routes**
+8. 404 handler
 
 Since Nile's 404 handler catches unmatched routes, register your custom routes **before** exporting the app for serving.
 
@@ -185,7 +209,7 @@ const server = createNileServer({
 
 const app = server.rest?.app;
 
-// Stripe webhook — outside the service/action model
+// Stripe webhook, outside the service/action model
 app?.post("/webhooks/stripe", async (c) => {
   const ctx = getContext();
   const body = await c.req.json();

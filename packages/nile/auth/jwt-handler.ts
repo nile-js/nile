@@ -41,7 +41,7 @@ function extractTokenFromHeader(
     return Err("Authorization header must use Bearer scheme");
   }
 
-  return Ok(authHeader.substring(7));
+  return Ok(authHeader.slice(7));
 }
 
 /** Extract token from cookies by name */
@@ -97,7 +97,11 @@ export async function verifyJWT(
   }
 
   try {
-    const claims = await verify(token, config.secret, "HS256");
+    const claims = await verify(
+      token,
+      config.secret,
+      config.algorithm ?? "HS256"
+    );
 
     if (!claims) {
       return Err("Invalid JWT token");

@@ -6,11 +6,11 @@ Common questions about building with Nile, with accurate answers that reflect th
 
 ## How do I ensure consistent error responses across my API?
 
-Nile has a layered error handling strategy that guarantees every response follows the same shape — no matter what goes wrong.
+Nile has a layered error handling strategy that guarantees every response follows the same shape, no matter what goes wrong.
 
 ### Result Pattern at Function Boundaries
 
-Every action handler returns `Ok(data)` for success or `Err("message")` for failure using the `slang-ts` Result type. This is enforced by the type system — handlers cannot return raw values or throw to signal errors.
+Every action handler returns `Ok(data)` for success or `Err("message")` for failure using the `slang-ts` Result type. This is enforced by the type system. Handlers cannot return raw values or throw to signal errors.
 
 ```typescript
 import { Ok, Err } from "slang-ts";
@@ -76,7 +76,7 @@ export const createOrder: Action = createAction({
 
 ### Crash Safety
 
-Even if a handler throws an unhandled exception, the engine's `safeTry` wrapper catches it and converts it to `Err(error.message)`. The response shape stays consistent — the client never receives a raw stack trace or 500 error.
+Even if a handler throws an unhandled exception, the engine's `safeTry` wrapper catches it and converts it to `Err(error.message)`. The response shape stays consistent. The client never receives a raw stack trace or 500 error.
 
 ### Client Side
 
@@ -97,7 +97,7 @@ if (error) {
 }
 ```
 
-**Summary:** Use `Err("message")` for expected business errors. Use `handleError(...)` for runtime errors that need logging. The framework handles the rest — consistent shapes all the way from handler to client.
+**Summary:** Use `Err("message")` for expected business errors. Use `handleError(...)` for runtime errors that need logging. The framework handles the rest. Consistent shapes all the way from handler to client.
 
 ---
 
@@ -124,27 +124,27 @@ const server = createNileServer({
 
 ### Per-Action Protection
 
-Mark individual actions as protected. The engine verifies the JWT before the handler runs — no auth code in your business logic:
+Mark individual actions as protected. The engine verifies the JWT before the handler runs. No auth code in your business logic:
 
 ```typescript
 import { Ok, Err } from "slang-ts";
 import { createAction, type Action } from "@nilejs/nile";
 
-// Public — no auth required
+// Public, no auth required
 export const listProducts: Action = createAction({
   name: "listProducts",
   description: "List all products",
   handler: () => Ok({ products: [] }),
 });
 
-// Protected — requires valid JWT
+// Protected, requires valid JWT
 export const createProduct: Action = createAction({
   name: "createProduct",
   description: "Create a product",
   isProtected: true,
   handler: (data, context) => {
-    const user = context?.getUser();
-    return Ok({ product: { ...data, createdBy: user?.userId } });
+    const session = context?.getSession("rest");
+    return Ok({ product: { ...data, createdBy: session?.userId } });
   },
 });
 ```
@@ -162,16 +162,16 @@ const server = createNileServer({
   name: "MyApp",
   services: [/* ... */],
   auth: { secret: process.env.JWT_SECRET! },
-  onBeforeActionHandler: async (request, context) => {
-    const user = context.getUser();
-    if (!user) return; // Unprotected action, let it through
+  onBeforeActionHandler: async ({ nileContext, action, payload }) => {
+    const session = nileContext.getSession("rest");
+    if (!session) return Ok(payload); // Unprotected action, let it through
 
-    const requiredRole = request.action.accessControl?.[0];
-    if (requiredRole && user.role !== requiredRole) {
+    const requiredRole = action.accessControl?.[0];
+    if (requiredRole && session.role !== requiredRole) {
       return Err(`Requires role: ${requiredRole}`);
     }
 
-    return Ok(request.payload);
+    return Ok(payload);
   },
 });
 ```
@@ -218,11 +218,11 @@ The request body tells Nile what to do:
 }
 ```
 
-There is no `/tasks/create` route. There is no `GET /tasks/:id`. Every operation — whether it's creating a task, listing users, or checking auth — goes through the same endpoint with a different `intent`, `service`, and `action` combination.
+There is no `/tasks/create` route. There is no `GET /tasks/:id`. Every operation, whether it's creating a task, listing users, or checking auth, goes through the same endpoint with a different `intent`, `service`, and `action` combination.
 
 ### Why This Is Faster
 
-Traditional endpoint-based frameworks match incoming requests against a route table — often a trie or regex-based router. As your API grows, route matching scales with the number of endpoints.
+Traditional endpoint-based frameworks match incoming requests against a route table, often a trie or regex-based router. As your API grows, route matching scales with the number of endpoints.
 
 Nile uses pre-computed O(1) dictionary lookups. The engine builds a nested `Record<serviceName, Record<actionName, Action>>` at boot. Finding the right handler is a two-key object lookup regardless of how many services or actions exist. No route parsing, no regex matching, no middleware stacks per route.
 
@@ -236,7 +236,7 @@ Nile uses pre-computed O(1) dictionary lookups. The engine builds a nested `Reco
 
 ### Built-In Discovery
 
-Unlike endpoint-based APIs that need separate documentation (OpenAPI, Swagger), Nile's `explore` intent provides runtime discovery. Any client can query what services and actions are available, what fields they accept, and whether they require authentication — all through the same endpoint.
+Unlike endpoint-based APIs that need separate documentation (OpenAPI, Swagger), Nile's `explore` intent provides runtime discovery. Any client can query what services and actions are available, what fields they accept, and whether they require authentication. All through the same endpoint.
 
 ```typescript
 // Client-side discovery
@@ -251,7 +251,7 @@ If you're coming from endpoint-based frameworks, the mental shift is:
 - **Action** = operation (replaces individual route handlers)
 - **Intent** = what you want to do (replaces HTTP verbs)
 
-This model scales cleanly. Adding a new operation means adding an action to a service — no route registration, no middleware configuration, no path conflicts.
+This model scales cleanly. Adding a new operation means adding an action to a service. No route registration, no middleware configuration, no path conflicts.
 
 ---
 
@@ -289,7 +289,7 @@ export const processOrder: Action = createAction({
 
 ### Hook Pipelines for Composable Steps
 
-When workflow steps are reusable across actions, define them as separate actions and wire them via hooks. Before hooks run sequentially — each hook's output becomes the next hook's input:
+When workflow steps are reusable across actions, define them as separate actions and wire them via hooks. Before hooks run sequentially. Each hook's output becomes the next hook's input:
 
 ```typescript
 // A validation action reused across multiple services
@@ -382,7 +382,7 @@ services/
 
 ## What if the service-action structure doesn't fit my domain?
 
-It does. The service-action model maps directly to domain-driven design, and every backend operation — regardless of complexity — reduces to "which domain?" and "what operation?".
+It does. The service-action model maps directly to domain-driven design, and every backend operation, regardless of complexity, reduces to "which domain?" and "what operation?".
 
 ### Think in Domains and Operations
 
@@ -417,7 +417,7 @@ export const registerUser: Action = createAction({
   description: "Full user registration flow",
   handler: async (data) => {
     // Calls validation, creates user, sends welcome email
-    // All within one handler — it's just a function
+    // All within one handler, it's just a function
   },
 });
 ```
@@ -429,14 +429,14 @@ Logic that applies across services (logging, authorization, rate limiting, audit
 ```typescript
 const server = createNileServer({
   services: [/* ... */],
-  onBeforeActionHandler: async (request, context) => {
+  onBeforeActionHandler: async ({ nileContext, action, payload }) => {
     // Runs before every action in every service
-    await auditLog(request.service, request.action, context.getUser());
-    return Ok(request.payload);
+    await auditLog(action.name, action, nileContext.getSession("rest"));
+    return Ok(payload);
   },
-  onAfterActionHandler: async (result, context) => {
+  onAfterActionHandler: async ({ nileContext, action, payload, result }) => {
     // Runs after every action in every service
-    trackMetrics(context.hookContext?.actionName, result.isOk);
+    trackMetrics(nileContext.hookContext?.actionName, result.isOk);
     return result;
   },
 });
@@ -476,7 +476,7 @@ Every operation in your system has a clear address: `service.action`. Every piec
 
 GraphQL is powerful but introduces a significant learning curve: query syntax, resolvers, dataloaders, schema stitching, and specialized caching strategies. For teams already productive with request/response patterns, that overhead often isn't justified.
 
-Nile keeps the familiar mental model — send a request, get a response — while eliminating the boilerplate of traditional REST. You don't need to learn a new query language or tooling ecosystem. The `explore` and `schema` intents give you the introspection benefits that make GraphQL attractive, without the complexity tax.
+Nile keeps the familiar mental model. Send a request, get a response. While eliminating the boilerplate of traditional REST. You don't need to learn a new query language or tooling ecosystem. The `explore` and `schema` intents give you the introspection benefits that make GraphQL attractive, without the complexity tax.
 
 If your team is already invested in GraphQL and it's working, keep using it. Nile is for teams that want structured, discoverable APIs without leaving the request/response paradigm.
 
@@ -484,7 +484,7 @@ If your team is already invested in GraphQL and it's working, keep using it. Nil
 
 ## Why not use tRPC for type safety?
 
-tRPC's type safety is excellent, but it requires a monorepo or complex type-sharing setup. If your frontend and backend live in separate repositories — which is common — tRPC's main advantage disappears while the infrastructure complexity remains.
+tRPC's type safety is excellent, but it requires a monorepo or complex type-sharing setup. If your frontend and backend live in separate repositories, which is common, tRPC's main advantage disappears while the infrastructure complexity remains.
 
 Nile's approach is different: the `schema` intent exports Zod validation schemas as JSON Schema over the wire. The `@nilejs/client` provides type-safe invocations when you pass generated types as a generic. You get compile-time checking on service names, action names, and payload shapes without coupling your repositories.
 
@@ -494,7 +494,7 @@ import type { ServicePayloads } from "./generated/types";
 
 const nile = createNileClient<ServicePayloads>({ baseUrl: "/api" });
 
-// Full autocomplete and type checking — no monorepo required
+// Full autocomplete and type checking, no monorepo required
 await nile.invoke({
   service: "tasks",
   action: "create",
@@ -506,11 +506,11 @@ await nile.invoke({
 
 ## Why not stick to pure REST?
 
-Business logic doesn't fit cleanly into HTTP verbs. Operations like `calculateShipping`, `processPayment`, or `generateReport` aren't resource updates — they're actions. Forcing them into PUT/POST/PATCH is artificial and obscures what the operation actually does.
+Business logic doesn't fit cleanly into HTTP verbs. Operations like `calculateShipping`, `processPayment`, or `generateReport` aren't resource updates, they're actions. Forcing them into PUT/POST/PATCH is artificial and obscures what the operation actually does.
 
 Nile makes operations explicit. `service: "shipping", action: "calculate"` is clearer than `POST /shipping/calculations` and wondering whether it creates a resource or just computes a value. Business clarity over HTTP purity.
 
-For simple CRUD where REST mapping is natural, Nile still works — you just name your actions `create`, `get`, `update`, `delete`. The difference is you're not constrained to that model when your domain outgrows it.
+For simple CRUD where REST mapping is natural, Nile still works. You just name your actions `create`, `get`, `update`, `delete`. The difference is you're not constrained to that model when your domain outgrows it.
 
 ---
 
@@ -518,7 +518,7 @@ For simple CRUD where REST mapping is natural, Nile still works — you just nam
 
 Yes, and that's a deliberate trade-off. Nile prioritizes consistent patterns and business clarity over HTTP semantic correctness.
 
-For internal APIs where you control both client and server, the benefits of explicit action-based routing outweigh HTTP-level caching. Application-level caching (Redis, in-memory stores, database query optimization) is more appropriate for complex business operations anyway — most enterprise logic involves multiple data sources and calculations that don't cache well at the HTTP transport layer.
+For internal APIs where you control both client and server, the benefits of explicit action-based routing outweigh HTTP-level caching. Application-level caching (Redis, in-memory stores, database query optimization) is more appropriate for complex business operations anyway. Most enterprise logic involves multiple data sources and calculations that don't cache well at the HTTP transport layer.
 
 The single-endpoint model also simplifies infrastructure: load balancers, API gateways, and proxies only need to handle one route.
 
@@ -541,11 +541,11 @@ Nile borrows RPC's explicit operations and adds REST-like discoverability. The `
 
 ## So is Nile just RPC?
 
-Not exactly. Nile uses RPC-style communication — named operations with typed payloads over a single endpoint — but it's a backend framework, not a protocol.
+Not exactly. Nile uses RPC-style communication, named operations with typed payloads over a single endpoint, but it's a backend framework, not a protocol.
 
 RPC (JSON-RPC, gRPC, etc.) defines how messages are formatted and transported. Nile defines how you **build and organize** your backend. The RPC-like request format is just the transport interface. Behind it sits a full application framework: an execution engine with O(1) routing, a hook pipeline for composable middleware, built-in JWT authentication, Zod validation, context management, session handling, structured logging, and a typed client SDK.
 
-Calling Nile "RPC" is like calling Express "HTTP" — technically accurate at the transport level, but it misses everything the framework does above that layer.
+Calling Nile "RPC" is like calling Express "HTTP". Technically accurate at the transport level, but it misses everything the framework does above that layer.
 
 The better label is **service-action framework**. You define services (domains) and actions (operations). The framework handles everything else: discovery, validation, auth, execution pipelines, error handling, and the consistent response format. The single-POST interface is an implementation detail, not the identity.
 
@@ -553,11 +553,11 @@ The better label is **service-action framework**. You define services (domains) 
 
 ## How do I handle caching?
 
-An action is just an action — whether it reads or writes is entirely up to you. Caching happens at the layers where it makes sense:
+An action is just an action. Whether it reads or writes is entirely up to you. Caching happens at the layers where it makes sense:
 
 **Client-side:** Tools like React Query (TanStack Query) for React, SWR, or a wrapped fetch with caching logic work perfectly. You cache based on the `service + action + payload` combination as your cache key. Browser-level HTTP caching (ETags, Cache-Control) isn't available since everything is POST, but Nile is primarily used in systems like dashboards and internal tools where that rarely matters.
 
-**Server-side:** Cache in your handlers or at the data layer. In-memory caches, Redis, database query optimization — all work the same as any backend:
+**Server-side:** Cache in your handlers or at the data layer. In-memory caches, Redis, database query optimization, all work the same as any backend:
 
 ```typescript
 handler: async (data, context) => {
@@ -571,7 +571,7 @@ handler: async (data, context) => {
 },
 ```
 
-It's a trade-off. You lose automatic browser caching in exchange for a simpler, consistent API surface. For the use cases Nile targets — business logic, dashboards, internal tools, multi-step workflows — application-level caching is more appropriate and more controllable anyway.
+It's a trade-off. You lose automatic browser caching in exchange for a simpler, consistent API surface. For the use cases Nile targets, business logic, dashboards, internal tools, multi-step workflows, application-level caching is more appropriate and more controllable anyway.
 
 ### Do you differentiate between read and mutate actions?
 
@@ -579,7 +579,7 @@ No. Nile does not distinguish between read and write operations at the protocol 
 
 Splitting reads into `GET` with query params and mutations into `POST` would enable HTTP-level caching and CDN compatibility, but it would also mean two different request formats, two different parsing paths, and payload limitations from URL length constraints for complex query shapes. The single-POST model keeps the protocol uniform and the implementation simple.
 
-If HTTP-level caching is critical to your use case (e.g., a public content API behind a CDN), Nile may not be the right tool — see [When should I NOT use Nile?](#when-should-i-not-use-nile).
+If HTTP-level caching is critical to your use case (e.g., a public content API behind a CDN), Nile may not be the right tool. See [When should I NOT use Nile?](#when-should-i-not-use-nile).
 
 ---
 
@@ -589,10 +589,10 @@ At the application level, which is where idempotency should live anyway. HTTP ve
 
 Practical approaches:
 
-- **Idempotency keys** in the payload — clients send a unique key, the server deduplicates
-- **Database constraints** — unique indexes prevent duplicate resource creation
-- **Action + resource ID** — the combination of `service.action` and the target resource naturally identifies the operation
-- **Conditional checks** in handlers — check current state before applying changes
+- **Idempotency keys** in the payload, clients send a unique key, the server deduplicates
+- **Database constraints**, unique indexes prevent duplicate resource creation
+- **Action + resource ID**, the combination of `service.action` and the target resource naturally identifies the operation
+- **Conditional checks** in handlers, check current state before applying changes
 
 ```typescript
 handler: async (data, context) => {
@@ -617,7 +617,7 @@ rest: { baseUrl: "/api/v1" } // v1
 rest: { baseUrl: "/api/v2" } // v2
 ```
 
-**Action evolution** — add new actions, deprecate old ones:
+**Action evolution**, add new actions, deprecate old ones:
 ```typescript
 // Keep the old action working
 createAction({ name: "createUser", ... });
@@ -625,11 +625,11 @@ createAction({ name: "createUser", ... });
 createAction({ name: "createUserV2", ... });
 ```
 
-**Payload evolution** — add optional fields, maintain backward compatibility. Since payloads are validated with Zod, you can use `.optional()` and `.default()` to evolve schemas without breaking existing clients.
+**Payload evolution**, add optional fields, maintain backward compatibility. Since payloads are validated with Zod, you can use `.optional()` and `.default()` to evolve schemas without breaking existing clients.
 
-**Service splitting** — break large services into focused ones as your domain grows. The `explore` intent lets clients discover what's available, so renaming or splitting services is transparent.
+**Service splitting**, break large services into focused ones as your domain grows. The `explore` intent lets clients discover what's available, so renaming or splitting services is transparent.
 
-The action-based model actually makes versioning easier than endpoint-based APIs — adding a new action never conflicts with existing ones, and the `schema` intent always reflects the current state.
+The action-based model actually makes versioning easier than endpoint-based APIs. Adding a new action never conflicts with existing ones, and the `schema` intent always reflects the current state.
 
 ---
 
@@ -637,7 +637,7 @@ The action-based model actually makes versioning easier than endpoint-based APIs
 
 The consistent request/response format simplifies testing significantly.
 
-**Unit testing actions** — handlers are plain functions that take data and return Results:
+**Unit testing actions**, handlers are plain functions that take data and return Results:
 
 ```typescript
 import { describe, it, expect } from "vitest";
@@ -656,7 +656,7 @@ describe("createTask", () => {
 });
 ```
 
-**Integration testing** — one endpoint to mock, standardized responses:
+**Integration testing**, one endpoint to mock, standardized responses:
 
 ```typescript
 const response = await app.request("/api/services", {
@@ -674,7 +674,7 @@ const json = await response.json();
 expect(json.status).toBe(true);
 ```
 
-**Client testing** — mock the single endpoint and test all service interactions:
+**Client testing**, mock the single endpoint and test all service interactions:
 
 ```typescript
 const nile = createNileClient({ baseUrl: "http://mock/api" });
@@ -693,16 +693,16 @@ No route table to replicate, no verb-specific mocks, no middleware stacking per 
 
 Nile runs on **Bun** and **Node.js**. The HTTP layer is built on [Hono](https://hono.dev), which supports both runtimes natively.
 
-- **Bun** — recommended for development and production. Fastest startup, native TypeScript support, built-in test runner.
-- **Node.js** — fully supported via `@hono/node-server`. Use this when deploying to environments that don't support Bun.
+- **Bun**, recommended for development and production. Fastest startup, native TypeScript support, built-in test runner.
+- **Node.js**, fully supported via `@hono/node-server`. Use this when deploying to environments that don't support Bun.
 
-Runtime-specific features (like static file serving) are handled via dynamic adapter imports — the same code works on both runtimes without configuration changes.
+Runtime-specific features (like static file serving) are handled via dynamic adapter imports. The same code works on both runtimes without configuration changes.
 
 ---
 
 ## What databases work with Nile?
 
-Nile is database-agnostic. The framework doesn't prescribe a database or ORM — you pass your database instance as a resource and access it via context:
+Nile is database-agnostic. The framework doesn't prescribe a database or ORM. You pass your database instance as a resource and access it via context:
 
 ```typescript
 const server = createNileServer({
@@ -713,7 +713,7 @@ const server = createNileServer({
 });
 ```
 
-The built-in `createModel` utility provides a typed CRUD model factory for [Drizzle ORM](https://orm.drizzle.team), but this is optional. You can use any database client or ORM — just pass it through resources and access it in your handlers.
+The built-in `createModel` utility provides a typed CRUD model factory for [Drizzle ORM](https://orm.drizzle.team), but this is optional. You can use any database client or ORM. Just pass it through resources and access it in your handlers.
 
 ---
 
@@ -741,11 +741,11 @@ See the upload configuration in your server's `RestConfig` for validation option
 
 Nile is not the right fit for every project:
 
-- **Public APIs where REST conventions are expected** — if your API consumers expect standard REST verbs and resource-based URLs, Nile's single-endpoint model will confuse them
-- **Simple CRUD apps** — if your entire backend is basic resource operations with no business logic, a REST framework with auto-generated routes is faster to set up
-- **Teams deeply invested in GraphQL** — if GraphQL is working and the team knows it, switching adds friction with no clear gain
-- **Performance-critical APIs that rely on HTTP caching** — CDN-level caching with ETags and Cache-Control headers doesn't apply to a single POST endpoint
-- **Cross-organization APIs** — when API consumers are external teams with their own tooling expectations, standard REST or GraphQL is the safer choice
+- **Public APIs where REST conventions are expected**, if your API consumers expect standard REST verbs and resource-based URLs, Nile's single-endpoint model will confuse them
+- **Simple CRUD apps**, if your entire backend is basic resource operations with no business logic, a REST framework with auto-generated routes is faster to set up
+- **Teams deeply invested in GraphQL**, if GraphQL is working and the team knows it, switching adds friction with no clear gain
+- **Performance-critical APIs that rely on HTTP caching**, CDN-level caching with ETags and Cache-Control headers doesn't apply to a single POST endpoint
+- **Cross-organization APIs**, when API consumers are external teams with their own tooling expectations, standard REST or GraphQL is the safer choice
 
 Nile excels at internal APIs, complex business logic, multi-service architectures, and teams that want structured, discoverable backends without boilerplate.
 
@@ -755,11 +755,11 @@ Nile excels at internal APIs, complex business logic, multi-service architecture
 
 Gradual migration works best:
 
-1. **Start new features with Nile** — new services and actions are built in Nile from day one
-2. **Wrap existing endpoints** — create Nile actions that proxy to your existing REST handlers during transition
-3. **Migrate high-change services first** — services with frequent updates benefit most from the action model
-4. **Keep stable CRUD services as-is** — if it works and rarely changes, there's no urgency to migrate
-5. **Use an API gateway** — route `/api/v2/services` to Nile and legacy routes to the old server during transition
+1. **Start new features with Nile**, new services and actions are built in Nile from day one
+2. **Wrap existing endpoints**, create Nile actions that proxy to your existing REST handlers during transition
+3. **Migrate high-change services first**, services with frequent updates benefit most from the action model
+4. **Keep stable CRUD services as-is**, if it works and rarely changes, there's no urgency to migrate
+5. **Use an API gateway**, route `/api/v2/services` to Nile and legacy routes to the old server during transition
 
 The action-based model doesn't require an all-or-nothing switch. You can run Nile alongside existing infrastructure and migrate incrementally.
 
@@ -790,23 +790,23 @@ Most developers are productive within an hour because they're already thinking i
 
 ## How is Nile different from MCP (Model Context Protocol)?
 
-Nile is a backend framework. MCP is a protocol for connecting AI models to tools. They emerged around the same time from different starting points and landed on similar-ish patterns — named operations, structured payloads, discovery — but they solve different problems.
+Nile is a backend framework. MCP is a protocol for connecting AI models to tools. They emerged around the same time from different starting points and landed on similar-ish patterns, named operations, structured payloads, discovery, but they solve different problems.
 
 ### The Core Difference
 
 Nile builds your backend. It's your API, your business logic, your auth, your validation, your hooks pipeline. Whether you ever expose it to AI is entirely up to you.
 
-MCP defines how an AI model calls external tools during a conversation. It's a communication protocol, not a framework — it doesn't handle auth, validation pipelines, database access, error logging, or any of the things a real backend needs.
+MCP defines how an AI model calls external tools during a conversation. It's a communication protocol, not a framework. It doesn't handle auth, validation pipelines, database access, error logging, or any of the things a real backend needs.
 
 ### Why the Similarity?
 
-Both Nile and MCP converged on the same structural insight: named operations with typed inputs are more expressive than verb-based routing. In Nile this is `service.action` with Zod schemas. In MCP this is tool definitions with JSON Schema parameters. The pattern is the same because the underlying idea — explicit operations over implicit conventions — is just a good idea.
+Both Nile and MCP converged on the same structural insight: named operations with typed inputs are more expressive than verb-based routing. In Nile this is `service.action` with Zod schemas. In MCP this is tool definitions with JSON Schema parameters. The pattern is the same because the underlying idea, explicit operations over implicit conventions, is just a good idea.
 
 ### AI Integration Without MCP
 
-Here's the practical point: if you build your backend with Nile, you already have everything an AI agent needs to interact with it. Every action has a name, a description, and a typed schema. The `explore` intent returns what's available. The `schema` intent returns the exact input shapes. An AI model can discover your API, understand what each operation does, and call it — all through the same endpoint your frontend uses.
+Here's the practical point: if you build your backend with Nile, you already have everything an AI agent needs to interact with it. Every action has a name, a description, and a typed schema. The `explore` intent returns what's available. The `schema` intent returns the exact input shapes. An AI model can discover your API, understand what each operation does, and call it. All through the same endpoint your frontend uses.
 
-You don't need MCP as a middleman. Your Nile backend *is* the tool interface. When you want to expose actions to AI, you just point the model at your API — the metadata is already there.
+You don't need MCP as a middleman. Your Nile backend *is* the tool interface. When you want to expose actions to AI, you just point the model at your API. The metadata is already there.
 
 ```typescript
 // This action is simultaneously:
@@ -832,11 +832,11 @@ An AI model reading this action's schema from the `explore` or `schema` intent g
 
 ### When You'd Use Both
 
-If you're building in an ecosystem that requires MCP specifically (e.g., Claude desktop integrations, or tools that only speak MCP), you could write a thin MCP server that proxies to your Nile backend. The mapping is almost 1:1 — action names become tool names, Zod schemas become JSON Schema parameters. But that's an integration choice, not a requirement.
+If you're building in an ecosystem that requires MCP specifically (e.g., Claude desktop integrations, or tools that only speak MCP), you could write a thin MCP server that proxies to your Nile backend. The mapping is almost 1:1, action names become tool names, Zod schemas become JSON Schema parameters. But that's an integration choice, not a requirement.
 
 ### Vibe Coding Ready
 
-Nile is indexed on [Context7](https://context7.com/nile-js/nile), an MCP server that feeds up-to-date library documentation directly into AI coding assistants. This means any AI tool with Context7 MCP support (Cursor, Windsurf, Copilot, Claude Code, etc.) can pull Nile's full documentation — services, actions, hooks, auth, uploads, client SDK — into context while generating code.
+Nile is indexed on [Context7](https://context7.com/nile-js/nile), an MCP server that feeds up-to-date library documentation directly into AI coding assistants. This means any AI tool with Context7 MCP support (Cursor, Windsurf, Copilot, Claude Code, etc.) can pull Nile's full documentation, services, actions, hooks, auth, uploads, client SDK, into context while generating code.
 
 You don't need to paste docs or explain the framework to your AI. It already knows Nile.
 

@@ -51,7 +51,7 @@ describe("buildDefaultCorsOptions", () => {
     // origin is a function when using dynamic resolution
     expect(typeof opts.origin).toBe("function");
     const originFn = opts.origin as (origin: string) => string;
-    expect(originFn("https://example.com")).toBe("*");
+    expect(originFn("https://example.com")).toBe("");
   });
 
   it("should allow listed origin and reject unlisted", () => {
@@ -115,12 +115,12 @@ describe("applyCorsConfig - disabled", () => {
 // --- applyCorsConfig - global CORS ---
 
 describe("applyCorsConfig - global CORS", () => {
-  it("should add CORS headers with wildcard when no allowedOrigins", async () => {
+  it("should not add CORS headers when no allowedOrigins", async () => {
     const app = makeApp(makeConfig({ allowedOrigins: [] }));
 
     const res = await postWithOrigin(app, "/api/test", "https://any.com");
 
-    expect(res.headers.get("Access-Control-Allow-Origin")).toBe("*");
+    expect(res.headers.get("Access-Control-Allow-Origin")).toBeNull();
   });
 
   it("should reflect allowed origin when listed in allowedOrigins", async () => {
@@ -202,7 +202,15 @@ describe("applyCorsConfig - route-specific rules", () => {
   });
 
   it("should apply resolver-based CORS rules without crashing", async () => {
-    const resolverFn = vi.fn(() => true as boolean | undefined);
+    const resolverFn = vi.fn(
+      (
+        _origin: string,
+        _c: unknown,
+        cors: { allowOrigin: (o: string) => void }
+      ) => {
+        cors.allowOrigin(_origin);
+      }
+    );
     const config = makeConfig({
       cors: {
         addCors: [
@@ -235,14 +243,18 @@ describe("applyCorsConfig - route-specific rules", () => {
 
 // --- evaluateResolver behavior (tested via integration) ---
 
-describe("evaluateResolver - via integration", () => {
+describe("CorsHelper resolver - via integration", () => {
   /**
    * evaluateResolver is internal but we can test its behavior through
    * resolver-based CORS rules by using a standalone Hono app WITHOUT
    * the global catch-all — testing the resolver outcomes in isolation.
    */
   const makeResolverOnlyApp = (
-    resolver: (origin: string, c: unknown) => boolean | object | undefined
+    resolver: (
+      origin: string,
+      c: unknown,
+      cors: import("../types").CorsHelper
+    ) => void
   ) => {
     const app = new Hono();
     const config = makeConfig({
@@ -258,8 +270,10 @@ describe("evaluateResolver - via integration", () => {
     return app;
   };
 
-  it("resolver returning true should set origin to request origin", async () => {
-    const app = makeResolverOnlyApp(() => true);
+  it("resolver calling allowOrigin should set origin to request origin", async () => {
+    const app = makeResolverOnlyApp((origin, _c, cors) => {
+      cors.allowOrigin(origin);
+    });
 
     const res = await postWithOrigin(app, "/api/test", "https://allowed.com");
     // Global catch-all (wildcard) also fires, so we get "*"
@@ -267,8 +281,10 @@ describe("evaluateResolver - via integration", () => {
     expect(res.headers.get("Access-Control-Allow-Origin")).toBeDefined();
   });
 
-  it("resolver returning false should deny with empty origin", async () => {
-    const app = makeResolverOnlyApp(() => false);
+  it("resolver calling deny should deny with empty origin", async () => {
+    const app = makeResolverOnlyApp((_origin, _c, cors) => {
+      cors.deny();
+    });
 
     const res = await postWithOrigin(app, "/api/test", "https://evil.com");
     // Route middleware sets origin="", global catch-all overwrites to "*"
@@ -276,11 +292,11 @@ describe("evaluateResolver - via integration", () => {
     expect(res.headers.get("Access-Control-Allow-Origin")).toBeDefined();
   });
 
-  it("resolver returning custom options should merge them", async () => {
-    const app = makeResolverOnlyApp(() => ({
-      origin: "https://custom.com",
-      maxAge: 9999,
-    }));
+  it("resolver using helpers should apply custom settings", async () => {
+    const app = makeResolverOnlyApp((_origin, _c, cors) => {
+      cors.allowOrigin("https://custom.com");
+      cors.setMaxAge(9999);
+    });
 
     const res = await preflight(app, "/api/test", "https://custom.com");
     expect(res.status).toBeLessThan(500);
@@ -291,7 +307,7 @@ describe("evaluateResolver - via integration", () => {
       // intentional no-op: suppress console.error in test output
     });
 
-    const app = makeResolverOnlyApp(() => {
+    const app = makeResolverOnlyApp((_origin, _c, _cors) => {
       throw new Error("resolver crashed");
     });
 
@@ -305,8 +321,10 @@ describe("evaluateResolver - via integration", () => {
     errorSpy.mockRestore();
   });
 
-  it("resolver returning undefined should fall back to defaults", async () => {
-    const app = makeResolverOnlyApp(() => undefined);
+  it("resolver calling nothing should fall back to defaults", async () => {
+    const app = makeResolverOnlyApp((_origin, _c, _cors) => {
+      // Call nothing — defaults should apply
+    });
 
     const res = await postWithOrigin(app, "/api/test", "https://any.com");
     expect(res.status).toBe(200);

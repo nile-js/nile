@@ -6,9 +6,9 @@ type LogInput = Omit<Log, "appName">;
  * Creates a logger instance bound to a specific app name.
  * Optionally accepts a LoggerConfig for time-based file chunking.
  * @param appName - The application name (determines log file/directory)
- * @param config - Optional config for chunking (monthly, daily, weekly)
+ * @param config - Config for chunking and mode
  */
-export const createLogger = (appName: string, config?: LoggerConfig) => {
+export const createLogger = (appName: string, config: LoggerConfig) => {
   return {
     info: (input: LogInput) =>
       newLog({ ...input, appName, level: "info" }, config),

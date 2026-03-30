@@ -41,15 +41,38 @@ export interface CorsOptions {
 }
 
 /**
- * CORS resolver function that determines CORS behavior per request
- * - Return `true` to allow the origin with default options
- * - Return `false` to reject the request
- * - Return a CorsOptions object to override options for this request
+ * Helper object passed to CORS resolvers — pre-loaded with server defaults.
+ * Call methods to override specific settings. If nothing is called, defaults apply.
+ */
+export interface CorsHelper {
+  /** Allow this specific origin */
+  allowOrigin: (origin: string) => void;
+  /** Deny the request (no CORS headers sent) */
+  deny: () => void;
+  /** Add headers on top of defaults (appends, doesn't replace) */
+  addHeaders: (headers: string[]) => void;
+  /** Override allowed headers entirely */
+  setHeaders: (headers: string[]) => void;
+  /** Override allowed methods */
+  setMethods: (methods: string[]) => void;
+  /** Set credentials flag */
+  setCredentials: (value: boolean) => void;
+  /** Set preflight cache max age in seconds */
+  setMaxAge: (seconds: number) => void;
+  /** Set exposed headers */
+  setExposeHeaders: (headers: string[]) => void;
+}
+
+/**
+ * CORS resolver function that uses helpers to configure CORS per-request.
+ * The helper is pre-loaded with server defaults — only call what you need to override.
+ * If nothing is called, defaults apply (allow). Call cors.deny() to reject.
  */
 export type CorsResolver = (
   origin: string,
-  c: Context
-) => boolean | CorsOptions | undefined;
+  c: Context,
+  cors: CorsHelper
+) => void;
 
 /**
  * Per-route CORS configuration

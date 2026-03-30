@@ -94,6 +94,26 @@ describe("verifyJWT - Token Extraction from Header", () => {
       expect(result.value.userId).toBe("user-1");
     }
   });
+
+  it("should verify JWT with custom algorithm (HS512)", async () => {
+    const token = await sign(
+      { userId: "user-512", organizationId: "org-512" },
+      TEST_SECRET,
+      "HS512"
+    );
+
+    const config: AuthConfig = {
+      secret: TEST_SECRET,
+      algorithm: "HS512",
+    };
+
+    const result = await verifyJWT(withBearerToken(token), config);
+
+    expect(result.isOk).toBe(true);
+    if (result.isOk) {
+      expect(result.value.userId).toBe("user-512");
+    }
+  });
 });
 
 describe("verifyJWT - Token Extraction from Cookie", () => {

@@ -1,6 +1,5 @@
 import { Ok, type Result } from "slang-ts";
 import z from "zod";
-import type { AuthContext } from "@/auth/types";
 import type { Engine } from "@/engine/types";
 import type {
   ExternalRequest,
@@ -51,10 +50,12 @@ export function handleExplore(
   }
 
   if (action === "*") {
-    return toExternalResponse(
-      engine.getServiceActions(service),
-      `Actions for '${service}'`
-    );
+    const result = engine.getServiceActions(service);
+    if (result.isErr) {
+      return toExternalResponse(result, "");
+    }
+    const visible = result.value.filter((a) => a.visibility?.rest !== false);
+    return toExternalResponse(Ok(visible), `Actions for '${service}'`);
   }
 
   const actionResult = engine.getAction(service, action);
@@ -63,6 +64,14 @@ export function handleExplore(
   }
 
   const act = actionResult.value;
+  if (act.visibility?.rest === false) {
+    return {
+      status: false,
+      message: `Action '${action}' not found in service '${service}'`,
+      data: {},
+    };
+  }
+
   return toExternalResponse(
     Ok({
       name: act.name,
@@ -84,8 +93,7 @@ export function handleExplore(
 export async function handleExecute(
   engine: Engine,
   request: ExternalRequest,
-  nileContext: NileContext<unknown>,
-  authContext?: AuthContext
+  nileContext: NileContext<unknown>
 ): Promise<ExternalResponse> {
   const { service, action, payload } = request;
 
@@ -102,8 +110,7 @@ export async function handleExecute(
     service,
     action,
     payload,
-    nileContext,
-    authContext
+    nileContext
   );
 
   return toExternalResponse(result, `Action '${service}.${action}' executed`);
@@ -163,6 +170,14 @@ export function handleSchema(
     return toExternalResponse(actionResult, "");
   }
 
+  if (actionResult.value.visibility?.rest === false) {
+    return {
+      status: false,
+      message: `Action '${action}' not found in service '${service}'`,
+      data: {},
+    };
+  }
+
   const schema = extractActionSchema(actionResult.value);
   return toExternalResponse(
     Ok({ [action]: schema }),
@@ -183,6 +198,10 @@ function buildServiceSchemas(
   for (const actionName of actionNames) {
     const actionResult = engine.getAction(serviceName, actionName);
     if (actionResult.isErr) {
+      continue;
+    }
+    // Skip actions hidden from REST discovery
+    if (actionResult.value.visibility?.rest === false) {
       continue;
     }
     schemas[actionName] = extractActionSchema(actionResult.value);
@@ -229,12 +248,11 @@ export const intentHandlers: Record<
   (
     engine: Engine,
     request: ExternalRequest,
-    nileContext: NileContext<unknown>,
-    authContext?: AuthContext
+    nileContext: NileContext<unknown>
   ) => ExternalResponse | Promise<ExternalResponse>
 > = {
   explore: (engine, request) => handleExplore(engine, request),
-  execute: (engine, request, nileContext, authContext) =>
-    handleExecute(engine, request, nileContext, authContext),
+  execute: (engine, request, nileContext) =>
+    handleExecute(engine, request, nileContext),
   schema: (engine, request) => handleSchema(engine, request),
 };

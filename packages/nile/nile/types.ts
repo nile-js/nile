@@ -1,6 +1,6 @@
 import type { Hono, Context as HonoContext } from "hono";
 import type { Result } from "slang-ts";
-import type { AuthConfig, AuthResult } from "@/auth/types";
+import type { AuthConfig } from "@/auth/types";
 import type { Action, Engine, HookContext, Services } from "@/engine/types";
 import type { RestConfig } from "@/rest/types";
 
@@ -13,18 +13,6 @@ export interface WebSocketContext {
 
 export interface RPCContext {
   [key: string]: unknown;
-}
-
-export interface BaseContext {
-  rest?: HonoContext;
-  ws?: WebSocketContext;
-  rpc?: RPCContext;
-}
-
-export interface Sessions {
-  rest?: Record<string, unknown>;
-  ws?: Record<string, unknown>;
-  rpc?: Record<string, unknown>;
 }
 
 export interface Sessions {
@@ -59,26 +47,21 @@ export interface Resources<TDB = unknown> {
 }
 
 export interface NileContext<TDB = unknown> {
-  readonly rest?: HonoContext;
-  readonly ws?: WebSocketContext;
-  readonly rpc?: RPCContext;
-  sessions: Sessions;
+  /** Global key-value store — intentionally shared across requests */
   readonly _store: Readonly<Map<string, unknown>>;
+  /**
+   * Retrieves a value by key.
+   * For request-scoped keys ("rest", "ws", "rpc") reads from AsyncLocalStorage.
+   * For all other keys reads from the global _store.
+   */
   readonly get: <T = unknown>(key: string) => T | undefined;
+  /** Writes a value to the global key-value store */
   readonly set: <T = unknown>(key: string, value: T) => void;
   readonly resources?: Resources<TDB>;
-  /** Retrieve session data for a specific interface */
+  /** Retrieve session data for a specific interface — reads from per-request scope */
   getSession: (name: keyof Sessions) => Record<string, unknown> | undefined;
-  /** Store session data for a specific interface */
+  /** Store session data for a specific interface — writes to per-request scope */
   setSession: (name: keyof Sessions, data: Record<string, unknown>) => void;
-  /** Auth result populated after successful JWT verification */
-  authResult?: AuthResult;
-  /** Get the raw auth result after JWT verification */
-  getAuth: () => AuthResult | undefined;
-  /** Get authenticated user identity (userId + organizationId) */
-  getUser: () =>
-    | { userId: string; organizationId: string; [key: string]: unknown }
-    | undefined;
   hookContext: HookContext;
   updateHookState: (key: string, value: unknown) => void;
   addHookLog: (
@@ -112,6 +95,8 @@ export interface ServerConfig {
   diagnostics?: boolean;
   /** Print registered services table to console on boot (default: true) */
   logServices?: boolean;
+  /** Force creating a new server instance even if one already exists (default: false) */
+  forceNewInstance?: boolean;
   resources?: Resources<unknown>;
   /** JWT auth configuration — enables built-in token verification for protected actions */
   auth?: AuthConfig;
@@ -143,5 +128,16 @@ export interface NileServer {
   config: ServerConfig;
   engine: Engine;
   context: NileContext<unknown>;
-  rest?: { app: Hono; config: RestConfig };
+  rest?: {
+    app: Hono;
+    config: RestConfig;
+    /** Register middleware that runs before Nile's services POST handler */
+    addMiddleware: (
+      path: string,
+      fn: (
+        c: HonoContext,
+        next: () => Promise<void>
+      ) => Promise<undefined | Response>
+    ) => void;
+  };
 }

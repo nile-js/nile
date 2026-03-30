@@ -9,21 +9,21 @@ The CORS module configures Cross-Origin Resource Sharing middleware on the Hono 
 
 ### 1.1 Responsibilities
 
-- **Default CORS derivation** — Build sensible defaults from `RestConfig.allowedOrigins`
-- **Global middleware** — Apply a catch-all CORS handler to all routes
-- **Route-specific rules** — Apply per-path overrides or resolver-based CORS before the global handler
-- **Security boundary** — Deny access (empty origin) when resolvers throw errors
+- **Default CORS derivation**: Build sensible defaults from `RestConfig.allowedOrigins`
+- **Global middleware**: Apply a catch-all CORS handler to all routes
+- **Route-specific rules**: Apply per-path overrides or resolver-based CORS before the global handler
+- **Security boundary**: Deny access (empty origin) when resolvers throw errors
 
 ### 1.2 Non-Goals
 
-- **Authentication** — CORS is a browser security mechanism, not an auth layer
-- **Request blocking** — CORS headers influence browser behavior but do not block server-side requests
+- **Authentication**: CORS is a browser security mechanism, not an auth layer
+- **Request blocking**: CORS headers influence browser behavior but do not block server-side requests
 
 ## 2. Architecture
 
 | File | LOC | Responsibility |
 |------|-----|----------------|
-| `cors.ts` | 140 | `buildDefaultCorsOptions`, `applyCorsConfig`, route rule application, resolver evaluation |
+| `cors.ts` | 150 | `buildDefaultCorsOptions`, `applyCorsConfig`, `createCorsHelper`, route rule application |
 | `types.ts` | 94 | `CorsOptions`, `CorsResolver`, `CorsRouteRule`, `CorsConfig` |
 
 `applyCorsConfig` accepts `RestConfig` directly (not `ServerConfig`).
@@ -34,8 +34,8 @@ The CORS module configures Cross-Origin Resource Sharing middleware on the Hono 
 
 `CorsConfig.enabled` controls whether CORS middleware is applied:
 
-- `true` or `"default"` (default) — CORS middleware is active
-- `false` — No CORS middleware is applied, no CORS headers are set
+- `true` or `"default"` (default): CORS middleware is active
+- `false`: No CORS middleware is applied, no CORS headers are set
 
 ### 3.2 Default Options
 
@@ -53,8 +53,8 @@ The CORS module configures Cross-Origin Resource Sharing middleware on the Hono 
 ```
 
 Origin resolution when no `cors.defaults.origin` is specified:
-- If `allowedOrigins` has entries — request origin is checked against the list, rejected origins get `""`
-- If `allowedOrigins` is empty — returns `"*"` (allow all)
+- If `allowedOrigins` has entries: request origin is checked against the list, rejected origins get `""`
+- If `allowedOrigins` is empty, the origin defaults to `""` (deny). This is intentional, open access must be explicitly configured.
 
 All defaults can be overridden via `cors.defaults`.
 
@@ -76,33 +76,53 @@ Each rule targets a specific path and can use either static options or a dynamic
 }
 ```
 
-Or with a resolver:
+Or with a resolver (helper pattern):
 
 ```typescript
 {
   path: "/api/partners/*",
-  resolver: (origin, c) => {
-    if (partnerOrigins.includes(origin)) return true;
-    return false;
+  resolver: (origin, c, cors) => {
+    if (partnerOrigins.includes(origin)) {
+      cors.allowOrigin(origin);
+    } else {
+      cors.deny();
+    }
   }
 }
 ```
 
 If both `options` and `resolver` are present, `resolver` takes precedence.
 
-## 5. Resolver Behavior
+## 5. Resolver Behavior (Helper Pattern)
 
-A `CorsResolver` function receives the request origin and Hono context, and returns:
+Resolvers receive a `CorsHelper` object pre-loaded with the server's default CORS options. Instead of returning values, the resolver calls setter methods on the helper to override specific settings. If nothing is called, defaults apply.
 
-| Return value | Behavior |
-|-------------|----------|
-| `true` | Allow origin with default options |
-| `false` | Deny (origin set to `""`) |
-| `CorsOptions` object | Merge with defaults and use |
-| `undefined` | Use default options |
-| **throws** | **Deny** (origin set to `""`) |
+```typescript
+// Allow a partner origin with extra headers
+resolver: (origin, c, cors) => {
+  if (partnerOrigins.includes(origin)) {
+    cors.allowOrigin(origin);
+    cors.addHeaders(["X-Partner-Id"]);
+  } else {
+    cors.deny();
+  }
+}
+```
 
-The deny-on-error behavior is a security decision: resolver failures never fall through to allow.
+### Helper Methods
+
+| Method | Effect |
+|--------|--------|
+| `cors.allowOrigin(origin)` | Allow the specific origin |
+| `cors.deny()` | Deny the request (empty origin, no CORS headers) |
+| `cors.addHeaders(headers)` | Append to the default allowed headers |
+| `cors.setHeaders(headers)` | Replace allowed headers entirely |
+| `cors.setMethods(methods)` | Override allowed methods |
+| `cors.setCredentials(value)` | Set the `credentials` flag |
+| `cors.setMaxAge(seconds)` | Set preflight cache duration |
+| `cors.setExposeHeaders(headers)` | Set exposed headers |
+
+If the resolver throws, the request is **denied** (origin set to `""`). Resolver failures never fall through to allow, this is a security decision.
 
 ## 6. Key Types
 
@@ -131,13 +151,32 @@ The deny-on-error behavior is a security decision: resolver failures never fall 
 
 Compatible with Hono's `cors()` middleware parameter shape.
 
-### 6.3 `CorsResolver`
+### 6.3 `CorsHelper`
 
 ```typescript
-type CorsResolver = (origin: string, c: Context) => boolean | CorsOptions | undefined;
+interface CorsHelper {
+  allowOrigin: (origin: string) => void;
+  deny: () => void;
+  addHeaders: (headers: string[]) => void;
+  setHeaders: (headers: string[]) => void;
+  setMethods: (methods: string[]) => void;
+  setCredentials: (value: boolean) => void;
+  setMaxAge: (seconds: number) => void;
+  setExposeHeaders: (headers: string[]) => void;
+}
 ```
 
-### 6.4 `CorsRouteRule`
+Pre-loaded with server defaults. Call methods to override; if nothing is called, defaults apply.
+
+### 6.4 `CorsResolver`
+
+```typescript
+type CorsResolver = (origin: string, c: Context, cors: CorsHelper) => void;
+```
+
+Receives the helper as the third parameter. No return value; uses setter methods instead.
+
+### 6.5 `CorsRouteRule`
 
 ```typescript
 {
@@ -149,11 +188,11 @@ type CorsResolver = (origin: string, c: Context) => boolean | CorsOptions | unde
 
 ## 7. Constraints
 
-- **Hono middleware ordering** — The global `app.use("*", cors(...))` also fires on routes that have route-specific rules. In practice this means the global handler may overwrite route-specific headers. This is known Hono behavior.
-- **No preflight caching per-route** — `maxAge` is set globally. Route-specific `maxAge` overrides are applied but browser caching behavior may vary.
+- **Hono middleware ordering**: The global `app.use("*", cors(...))` also fires on routes that have route-specific rules. In practice this means the global handler may overwrite route-specific headers. This is known Hono behavior.
+- **No preflight caching per-route**: `maxAge` is set globally. Route-specific `maxAge` overrides are applied but browser caching behavior may vary.
 
 ## 8. Failure Modes
 
-- **Resolver throws** — Caught, logged to `console.error`, origin set to `""` (deny)
-- **Empty `allowedOrigins` with no `cors.defaults.origin`** — Falls through to `"*"` (allow all). This is intentional for development convenience but should be restricted in production.
-- **`enabled: false`** — No CORS middleware is applied. Browsers will block cross-origin requests entirely.
+- **Resolver throws**: Caught, logged to `console.error`, origin set to `""` (deny)
+- **`enabled: false`**: No CORS middleware is applied. Browsers will block cross-origin requests entirely.
+- **Empty `allowedOrigins` with no `cors.defaults.origin`**: Origin defaults to `""` (deny). Open access must be explicitly configured via an allowed list or `"*"`.`

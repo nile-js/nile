@@ -42,29 +42,15 @@
 - `/customers` page components go in `components/customers/`. Use `useMemo`, `useCallback`, `React.memo` for expensive operations
 - Build complex UIs from small, focused components
 
-## Essential Utility
+## Essential Utilities
 
-```ts
-export function safeTry<T>(fn: () => T | Promise<T>) {
-  try {
-    const result = fn();
-    if (result instanceof Promise) {
-      return result
-        .then(value => ({ err: null, result: value }))
-        .catch(error => ({ err: error, result: null }));
-    }
-    return { err: null, result };
-  } catch (error) {
-    return { err: error, result: null };
-  }
-}
-```
+Use libraires like slang-ts (safe try utility and result pattern), z-fetch/fetch (fetching) and regist (regex) where needed, use context7 mcp to learn about how each works and use them effectively, usually they are already installed and used and you can also see thier source code in node modules to understand how they work and use them effectively, also you can ask me for more context on how to use them if needed. 
 
 - I am always the one to start servers, not you, you ask me!
 - Am also one to approve any db related commands
 - Use project package manager not npm
 - Always first copy files to /backup if your to make changes more than 10 lines
-- And for files where a backup is needed, also create an accompanying intent.md which documents the purpose and scope of the changes that you intent to make and also include my orignal intent as well.
+- And for files where a backup is needed, there and then before starting task also create an accompanying intent.md which documents the purpose and scope of the changes that you intent to make and also include my orignal intent as well.
 - Always approach things systematically, step by step, use a todo if you should also always understand things from flow, not just the individual parts, trace an implementation before you make any assumptions.
 - Not all changes need creating new stuff all together or full replacing, first try to work with what is in place and then if not viable first suggest before full redo.
 - Always read files before making changes or ask user if they had changed anything since your last edit where such case makes sense.
@@ -98,5 +84,9 @@ Always examine existing codebase patterns before implementing new solutions - us
 - Never use git without my supervision, always ask me before any git commands.
 - Avoid using any, and unknown types, usually types are already defined in the codebase or you can use generics and some typescript utilities, also pattern prefered is domain/module-name.ts and domain/types.ts for types, and then index.ts for barrel files, so always check those places before adding new types or any types at all.
 - Unless you can do much better, always try to work with existing code and patterns, don't just add new stuff or change things without first trying to work with what is already there, and if you think you need to change or add something first suggest before doing it, ideally your code style and taste should match mine.
+- I always edit or check the .env files myself, no point you should read or edit them by any means or tools.
+- All env variables should be accessed through the config module, and you should never access process.env directly in the codebase, so if you need to add any new env variables, first suggest and get approval, and then I will add them to the config module and also to the .env file myself if needed.
+- You can always use agent-browser cli to see frontend stuff and know where to fix, you can install it if not present with pnpm i -g agent-browser but usually I already have it installed and you can use agent-browser -h to learn how its actually used.
+- Check available mcps like context7 mcp, tools and agents that are set up and use them where needed, they are there to help you and make your work easier, so use them effectively, also you can ask me for more context on how to use them if needed.
 
 Always remember these rules before working on any new tasks.

@@ -1,3 +1,4 @@
+export { detectMimeType } from "./detect-mime";
 export {
   collectFiles,
   detectMixedKeys,

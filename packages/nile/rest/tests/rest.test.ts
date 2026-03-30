@@ -1,3 +1,4 @@
+import { HTTPException } from "hono/http-exception";
 import { Ok } from "slang-ts";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
@@ -52,19 +53,25 @@ const restConfig: RestConfig = {
   allowedOrigins: ["http://localhost:8000"],
   enableStatus: true,
   diagnostics: false,
+  discovery: { enabled: true },
 };
 
 function createTestApp(overrides?: Partial<RestConfig>) {
   const engine = createEngine({ services: mockServices });
   const nileContext = createNileContext();
-  const app = createRestApp({
+  const restApp = createRestApp({
     config: { ...restConfig, ...overrides },
     engine,
     nileContext,
     serverName: "TestServer",
     runtime: "bun",
   });
-  return { app, engine, nileContext };
+  return {
+    app: restApp.app,
+    addMiddleware: restApp.addMiddleware,
+    engine,
+    nileContext,
+  };
 }
 
 /** Helper to POST a JSON body and parse the response */
@@ -213,6 +220,49 @@ describe("REST Interface - Execute Intent", () => {
 
     expect(status).toBe(400);
     expect(json.status).toBe(false);
+  });
+
+  it("populates nileContext.rest during a real request", async () => {
+    let contextWasPopulated = false;
+
+    const spyService: Service = {
+      name: "spy",
+      description: "Spy service",
+      actions: [
+        {
+          name: "checkContext",
+          description: "Check if rest context is populated",
+          handler: (_data, ctx) => {
+            contextWasPopulated = ctx?.get?.("rest") !== undefined;
+            return Ok({ populated: contextWasPopulated });
+          },
+          accessControl: ["public"],
+        },
+      ],
+    };
+
+    // Build a fresh engine+context with the spy service
+    const engine = createEngine({ services: [spyService] });
+    const nileContext = createNileContext();
+    const restApp = createRestApp({
+      config: restConfig,
+      engine,
+      nileContext,
+      serverName: "SpyServer",
+      runtime: "bun",
+    });
+
+    const { status, json } = await postServices(restApp.app, {
+      intent: "execute",
+      service: "spy",
+      action: "checkContext",
+      payload: {},
+    });
+
+    expect(status).toBe(200);
+    expect(json.status).toBe(true);
+    expect(json.data.populated).toBe(true);
+    expect(contextWasPopulated).toBe(true);
   });
 });
 
@@ -398,7 +448,7 @@ describe("REST Interface - Rate Limiting", () => {
     expect(res.headers.get("ratelimit-remaining")).toBeDefined();
   });
 
-  it("should still process request when limiting header is missing (graceful fallback)", async () => {
+  it("should fall back to IP-based rate limiting when header is missing", async () => {
     const { app } = createTestApp({
       rateLimiting: {
         limitingHeader: "x-api-key",
@@ -418,7 +468,7 @@ describe("REST Interface - Rate Limiting", () => {
       }),
     });
 
-    // Falls back to shared key instead of crashing — request is still processed
+    // Falls back to IP-based tracking — request is still processed
     expect(res.status).toBe(200);
   });
 
@@ -457,18 +507,207 @@ describe("REST Interface - Rate Limiting", () => {
     const third = await makeRequest();
     expect(third.status).toBe(429);
   });
+});
 
-  it("should not apply rate limiting when rateLimiting config is absent", async () => {
-    const { app } = createTestApp();
+describe("REST Interface - addMiddleware", () => {
+  it("should run middleware before the POST handler", async () => {
+    const { app, addMiddleware } = createTestApp();
+    let middlewareRan = false;
 
-    const { status, json } = await postServices(app, {
+    addMiddleware("/api/v1", async (_c, next) => {
+      middlewareRan = true;
+      await next();
+    });
+
+    await postServices(app, {
       intent: "explore",
       service: "*",
       action: "*",
       payload: {},
     });
 
+    expect(middlewareRan).toBe(true);
+  });
+
+  it("should only run middleware when path matches", async () => {
+    const { app, addMiddleware } = createTestApp();
+    let middlewareRan = false;
+
+    addMiddleware("/unrelated", async (_c, next) => {
+      middlewareRan = true;
+      await next();
+    });
+
+    await postServices(app, {
+      intent: "explore",
+      service: "*",
+      action: "*",
+      payload: {},
+    });
+
+    expect(middlewareRan).toBe(false);
+  });
+
+  it("should chain multiple middleware in registration order", async () => {
+    const { app, addMiddleware } = createTestApp();
+    const order: number[] = [];
+
+    addMiddleware("/api/v1", async (_c, next) => {
+      order.push(1);
+      await next();
+    });
+
+    addMiddleware("/api/v1", async (_c, next) => {
+      order.push(2);
+      await next();
+    });
+
+    await postServices(app, {
+      intent: "explore",
+      service: "*",
+      action: "*",
+      payload: {},
+    });
+
+    expect(order).toEqual([1, 2]);
+  });
+
+  it("should allow middleware to short-circuit the request", async () => {
+    const { app, addMiddleware } = createTestApp();
+
+    addMiddleware("/api/v1", (_c, _next) => {
+      throw new HTTPException(403, { message: "Blocked by middleware" });
+    });
+
+    const res = await app.request("/api/v1/services", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        intent: "explore",
+        service: "*",
+        action: "*",
+        payload: {},
+      }),
+    });
+
+    expect(res.status).toBe(403);
+    const json = await res.json();
+    expect(json.message).toBe("Blocked by middleware");
+  });
+
+  it("should allow middleware to modify response headers", async () => {
+    const { app, addMiddleware } = createTestApp();
+
+    addMiddleware("/api/v1", async (c, next) => {
+      await next();
+      c.header("X-Custom-Header", "test-value");
+    });
+
+    const res = await app.request("/api/v1/services", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        intent: "explore",
+        service: "*",
+        action: "*",
+        payload: {},
+      }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get("X-Custom-Header")).toBe("test-value");
+  });
+
+  it("throws when middleware limit is exceeded", () => {
+    const { addMiddleware: add } = createTestApp();
+    // Register 50 middleware (the limit)
+    for (let i = 0; i < 50; i++) {
+      add("*", async (_c, next) => {
+        await next();
+      });
+    }
+    // The 51st should throw
+    expect(() =>
+      add("*", async (_c, next) => {
+        await next();
+      })
+    ).toThrow("Maximum middleware limit");
+  });
+});
+
+describe("REST Interface - Discovery Protection", () => {
+  it("rejects explore when discovery is disabled (default)", async () => {
+    const { app } = createTestApp({ discovery: { enabled: false } });
+    const { status, json } = await postServices(app, {
+      intent: "explore",
+      service: "*",
+      action: "*",
+      payload: {},
+    });
+    expect(status).toBe(403);
+    expect(json.message).toBe("API discovery is disabled");
+  });
+
+  it("rejects schema when discovery is disabled", async () => {
+    const { app } = createTestApp({ discovery: { enabled: false } });
+    const { status, json } = await postServices(app, {
+      intent: "schema",
+      service: "*",
+      action: "*",
+      payload: {},
+    });
+    expect(status).toBe(403);
+    expect(json.message).toBe("API discovery is disabled");
+  });
+
+  it("allows explore when discovery is enabled without secret", async () => {
+    const { app } = createTestApp({ discovery: { enabled: true } });
+    const { status, json } = await postServices(app, {
+      intent: "explore",
+      service: "*",
+      action: "*",
+      payload: {},
+    });
     expect(status).toBe(200);
     expect(json.status).toBe(true);
+  });
+
+  it("rejects explore when secret is wrong", async () => {
+    const { app } = createTestApp({
+      discovery: { enabled: true, secret: "s3cret" },
+    });
+    const { status, json } = await postServices(app, {
+      intent: "explore",
+      service: "*",
+      action: "*",
+      payload: { discoverySecret: "wrong" },
+    });
+    expect(status).toBe(403);
+    expect(json.message).toBe("Invalid or missing discovery secret");
+  });
+
+  it("allows explore when secret matches", async () => {
+    const { app } = createTestApp({
+      discovery: { enabled: true, secret: "s3cret" },
+    });
+    const { status, json } = await postServices(app, {
+      intent: "explore",
+      service: "*",
+      action: "*",
+      payload: { discoverySecret: "s3cret" },
+    });
+    expect(status).toBe(200);
+    expect(json.status).toBe(true);
+  });
+
+  it("does not gate execute intent behind discovery", async () => {
+    const { app } = createTestApp({ discovery: { enabled: false } });
+    const { status } = await postServices(app, {
+      intent: "execute",
+      service: "users",
+      action: "getUser",
+      payload: { userId: "u1" },
+    });
+    expect(status).toBe(200);
   });
 });

@@ -10,6 +10,8 @@ import {
   resolveLogPath,
 } from "./index";
 
+const testMode: LoggerConfig = { mode: "prod" };
+
 const logDir = join(process.cwd(), "logs");
 const testAppName = "test-app";
 const logFile = join(logDir, `${testAppName}.log`);
@@ -47,13 +49,16 @@ afterAll(() => {
 
 describe("Logger - createLog (flat mode)", () => {
   it("should write a log entry to file", () => {
-    const log_id = createLog({
-      appName: testAppName,
-      atFunction: "testFunction",
-      message: "This is a test log",
-      data: { example: true },
-      level: "info",
-    });
+    const log_id = createLog(
+      {
+        appName: testAppName,
+        atFunction: "testFunction",
+        message: "This is a test log",
+        data: { example: true },
+        level: "info",
+      },
+      testMode
+    );
 
     expect(typeof log_id).toBe("string");
     expect(log_id.length).toBeGreaterThan(0);
@@ -72,7 +77,7 @@ describe("Logger - createLog (flat mode)", () => {
 
 describe("Logger - createLogger instance (flat mode)", () => {
   it("should write an info log using instance", () => {
-    const logger = createLogger(testAppName);
+    const logger = createLogger(testAppName, testMode);
     const log_id = logger.info({
       atFunction: "instanceFunction",
       message: "Logged from instance",
@@ -136,6 +141,16 @@ describe("resolveLogPath", () => {
     expect(path.startsWith(join(logDir, chunkedApp))).toBe(true);
     expect(path).toMatch(WEEKLY_CHUNK_PATTERN);
   });
+
+  it("sanitizes path traversal in appName", () => {
+    const path1 = resolveLogPath("../../etc/passwd");
+    expect(path1).not.toContain("..");
+    expect(path1).toContain("etc-passwd");
+
+    const path2 = resolveLogPath("app/name");
+    expect(path2).not.toContain("/app/");
+    expect(path2).toContain("app-name");
+  });
 });
 
 // --- formatChunkName ---
@@ -167,7 +182,7 @@ describe("formatChunkName", () => {
 // --- Chunked file writing ---
 
 describe("Logger - createLog (chunked mode)", () => {
-  const monthlyConfig: LoggerConfig = { chunking: "monthly" };
+  const monthlyConfig: LoggerConfig = { mode: "prod", chunking: "monthly" };
 
   it("should write log to chunked directory with monthly config", () => {
     const log_id = createLog(
@@ -198,7 +213,7 @@ describe("Logger - createLog (chunked mode)", () => {
   });
 
   it("should write multiple logs to same chunk file", () => {
-    const dailyConfig: LoggerConfig = { chunking: "daily" };
+    const dailyConfig: LoggerConfig = { mode: "prod", chunking: "daily" };
 
     createLog(
       {
@@ -233,7 +248,10 @@ describe("Logger - createLog (chunked mode)", () => {
 
 describe("Logger - createLogger instance (chunked mode)", () => {
   it("should accept config and write to chunked files", () => {
-    const logger = createLogger(chunkedApp, { chunking: "weekly" });
+    const logger = createLogger(chunkedApp, {
+      mode: "prod",
+      chunking: "weekly",
+    });
 
     const log_id = logger.error({
       atFunction: "weeklyLogger",
@@ -299,12 +317,15 @@ describe("getLogs (flat mode)", () => {
   });
 
   it("should filter by log_id", () => {
-    const log_id = createLog({
-      appName: testAppName,
-      atFunction: "filterTest",
-      message: "Findable log",
-      level: "info",
-    });
+    const log_id = createLog(
+      {
+        appName: testAppName,
+        atFunction: "filterTest",
+        message: "Findable log",
+        level: "info",
+      },
+      testMode
+    );
 
     const logs = getLogs({ appName: testAppName, log_id });
     expect(logs.length).toBe(1);

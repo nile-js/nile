@@ -9,54 +9,57 @@ The logging module provides structured, append-only log persistence for Nile app
 
 ### 1.1 Responsibilities
 
-- **Log creation** — Write structured NDJSON records to disk (production/test) or stdout (dev/agentic mode)
-- **File chunking** — Optionally split log files into time-based chunks (monthly, daily, weekly) organized in per-app directories
-- **Log retrieval** — Query logs with filters (appName, log_id, level, date range) with smart chunk selection to avoid scanning irrelevant files
-- **Factory API** — `createLogger(appName, config?)` returns a bound logger with `.info()`, `.warn()`, `.error()` methods
+- **Log creation**: Write structured NDJSON records to disk (production/test) or stdout (dev/agentic mode)
+- **File chunking**: Optionally split log files into time-based chunks (monthly, daily, weekly) organized in per-app directories
+- **Log retrieval**: Query logs with filters (appName, log_id, level, date range) with smart chunk selection to avoid scanning irrelevant files
+- **Factory API**: `createLogger(appName, config?)` returns a bound logger with `.info()`, `.warn()`, `.error()` methods
 
 ### 1.2 Non-Goals
 
-- **Size-based rotation** — The module does not implement log rotation by file size. Only time-based chunking is supported.
-- **Log shipping** — No built-in support for sending logs to external services (e.g., Datadog, Elasticsearch). Consumers can build this on top of the query API.
-- **Diagnostics logging** — Internal nile diagnostics (engine, REST, server boot messages) use `createDiagnosticsLog` from `utils/diagnostics-log.ts`, not this module. See section 7.
+- **Size-based rotation**: The module does not implement log rotation by file size. Only time-based chunking is supported.
+- **Log shipping**: No built-in support for sending logs to external services (e.g., Datadog, Elasticsearch). Consumers can build this on top of the query API.
+- **Diagnostics logging**: Internal nile diagnostics (engine, REST, server boot messages) use `createDiagnosticsLog` from `utils/diagnostics-log.ts`, not this module. See section 7.
 
 ## 2. Architecture
 
 | File | Responsibility |
 |------|----------------|
 | `logger.ts` | Core logic: `createLog`, `getLogs`, `resolveLogPath`, `formatChunkName`, chunk helpers, types |
-| `create-log.ts` | `createLogger` factory — returns a bound logger with level methods |
+| `create-log.ts` | `createLogger` factory. Returns a bound logger with level methods. |
 | `index.ts` | Barrel exports for the public API |
 
 ## 3. Public API
 
-### 3.1 `createLogger(appName, config?)`
+### 3.1 `createLogger(appName, config)`
 
 **Path:** `logging/create-log.ts`
 
-Factory that returns a logger bound to a specific app name. Optionally accepts chunking config.
+Factory that returns a logger bound to a specific app name. Requires a `LoggerConfig` with `mode` and optional `chunking`.
 
 ```typescript
 import { createLogger } from "@/logging";
 
-// Flat mode (backwards compatible) — writes to logs/my-app.log
-const logger = createLogger("my-app");
+// Flat mode: writes to logs/my-app.log
+const logger = createLogger("my-app", { mode: "prod" });
 
-// With monthly chunking — writes to logs/my-app/2026-02.log
-const logger = createLogger("my-app", { chunking: "monthly" });
+// With monthly chunking: writes to logs/my-app/2026-02.log
+const logger = createLogger("my-app", { mode: "prod", chunking: "monthly" });
+
+// Dev mode: prints to console
+const logger = createLogger("my-app", { mode: "dev" });
 
 logger.info({ atFunction: "handleRequest", message: "Request received", data: { path: "/api" } });
 logger.warn({ atFunction: "validateInput", message: "Missing field" });
 logger.error({ atFunction: "processOrder", message: "Payment failed", data: { orderId: "123" } });
 ```
 
-**Returns:** `{ info, warn, error }` — each method takes a `LogInput` (same as `Log` minus `appName`).
+**Returns:** `{ info, warn, error }`. Each method takes a `LogInput` (same as `Log` minus `appName`).
 
-### 3.2 `createLog(log, config?)`
+### 3.2 `createLog(log, config)`
 
 **Path:** `logging/logger.ts`
 
-Lower-level function that writes a single log entry. Used internally by `createLogger`.
+Lower-level function that writes a single log entry. Used internally by `createLogger`. Requires a `LoggerConfig` (with `mode`).
 
 ```typescript
 import { createLog } from "@/logging";
@@ -67,15 +70,15 @@ const logId = createLog({
   message: "Server started",
   level: "info",
   data: { port: 8000 },
-}, { chunking: "daily" });
+}, { mode: "prod", chunking: "daily" });
 ```
 
-**Behavior by MODE:**
-- `prod` / `NODE_ENV=test` — Writes NDJSON to the resolved log file path. Test mode uses `appendFileSync` for deterministic reads; prod uses pino async transport.
-- `agentic` — Returns the log record as a JSON string (no file I/O).
-- Any other value — Prints to `console.log` and returns `"dev-mode, see your dev console!"`.
+**Behavior by `config.mode`:**
+- `"prod"`: Writes NDJSON to the resolved log file path. In test environments (`NODE_ENV=test`), uses `appendFileSync` for deterministic reads; otherwise uses pino async transport.
+- `"agentic"`: Returns the log record as a JSON string (no file I/O).
+- `"dev"`: Prints to `console.log` and returns `"dev-mode, see your dev console!"`.
 
-**Returns:** The generated `log_id` (nanoid, 6 chars), or JSON string in agentic mode.
+**Returns:** The generated `log_id` (nanoid, 6 chars) or JSON string in agentic mode.
 
 **Throws:** If `log.appName` is missing.
 
@@ -99,14 +102,14 @@ const errors = getLogs(
 ```
 
 **Filters (`LogFilter`):**
-- `appName` — Filter by app name (required for chunked mode to locate the directory)
-- `log_id` — Filter by specific log ID
-- `level` — Filter by `"info"`, `"warn"`, or `"error"`
-- `from` / `to` — Date range filter (inclusive)
+- `appName`: Filter by app name (required for chunked mode to locate the directory)
+- `log_id`: Filter by specific log ID
+- `level`: Filter by `"info"`, `"warn"`, or `"error"`
+- `from` / `to`: Date range filter (inclusive)
 
 **Smart chunk selection:** When chunking is enabled and date filters are provided, `getLogs` computes the date range of each chunk file and skips files that fall entirely outside the requested range. This avoids reading and parsing irrelevant files.
 
-**Returns:** `Log[]` — array of matching log entries.
+**Returns:** `Log[]`, an array of matching log entries.
 
 ### 3.4 `resolveLogPath(appName, config?)`
 
@@ -150,9 +153,9 @@ formatChunkName(new Date("2026-02-15"), "weekly");   // "2026-W07"
 }
 ```
 
-The `level` field is used both in the TypeScript interface and in the serialized NDJSON records. Previously this was `type` in the interface and `level` in the JSON — this mismatch has been normalized.
+The `level` field is used both in the TypeScript interface and in the serialized NDJSON records. Previously this was `type` in the interface and `level` in the JSON. This mismatch has been normalized.
 
-### 4.2 `LoggerConfig`
+### 4.2 `LogReaderConfig`
 
 ```typescript
 {
@@ -160,10 +163,30 @@ The `level` field is used both in the TypeScript interface and in the serialized
 }
 ```
 
-- `"none"` (default) — Single flat file per app: `logs/{appName}.log`
-- `"monthly"` — `logs/{appName}/YYYY-MM.log`
-- `"daily"` — `logs/{appName}/YYYY-MM-DD.log`
-- `"weekly"` — `logs/{appName}/YYYY-WNN.log` (ISO 8601 week number)
+Used by `getLogs` and `resolveLogPath`, read-only operations that don't need a mode.
+
+- `"none"` (default): Single flat file per app: `logs/{appName}.log`
+- `"monthly"`: `logs/{appName}/YYYY-MM.log`
+- `"daily"`: `logs/{appName}/YYYY-MM-DD.log`
+- `"weekly"`: `logs/{appName}/YYYY-WNN.log` (ISO 8601 week number)
+
+### 4.2b `LoggerConfig`
+
+```typescript
+interface LoggerConfig extends LogReaderConfig {
+  mode: "prod" | "dev" | "agentic";
+}
+```
+
+Extends `LogReaderConfig` with a required `mode` field. Used by `createLog` and `createLogger`.
+
+| Mode | Behavior |
+|------|----------|
+| `"prod"` | Writes NDJSON to disk via pino async transport. |
+| `"dev"` | Prints to `console.log` for local development. |
+| `"agentic"` | Returns the log record as a JSON string (no file I/O). |
+
+In test environments (`NODE_ENV=test`), `"prod"` mode uses `appendFileSync` for deterministic reads.
 
 ### 4.3 `LogFilter`
 
@@ -209,13 +232,13 @@ Each file contains NDJSON records identical in format to flat mode. The only dif
 
 These functions are not exported but are critical to `getLogs` performance:
 
-- `resolveLogFiles(filters, chunking)` — Determines which files to read. For flat mode, returns the single file. For chunked mode, scans the app directory and filters by date relevance.
-- `isChunkRelevant(filename, chunking, filters)` — Checks if a chunk file's date range overlaps with the filter's `from`/`to` range.
-- `getChunkDateRange(chunkName, chunking)` — Parses a chunk filename into start/end date boundaries.
-- `readAndParseLogFiles(files)` — Reads NDJSON from multiple files into a single array, skipping malformed lines.
-- `applyLogFilters(logs, filters)` — Applies `appName`, `log_id`, `level`, and time range filters.
-- `getISOWeekNumber(date)` — ISO 8601 week number calculation.
-- `getDateFromISOWeek(year, week)` — Returns the Monday of a given ISO week.
+- `resolveLogFiles(filters, chunking)`: Determines which files to read. For flat mode, returns the single file. For chunked mode, scans the app directory and filters by date relevance.
+- `isChunkRelevant(filename, chunking, filters)`: Checks if a chunk file's date range overlaps with the filter's `from`/`to` range.
+- `getChunkDateRange(chunkName, chunking)`: Parses a chunk filename into start/end date boundaries.
+- `readAndParseLogFiles(files)`: Reads NDJSON from multiple files into a single array, skipping malformed lines.
+- `applyLogFilters(logs, filters)`: Applies `appName`, `log_id`, `level`, and time range filters.
+- `getISOWeekNumber(date)`: ISO 8601 week number calculation.
+- `getDateFromISOWeek(year, week)`: Returns the Monday of a given ISO week.
 
 ## 7. Diagnostics Logging (Nile Internals)
 
@@ -239,7 +262,7 @@ log("Initialized in 2ms. Loaded 3 services.");
 
 This replaces the previous pattern where `server.ts`, `rest.ts`, and `engine.ts` each defined their own inline `log()` closures.
 
-## 8. `handleError` — Userland Error Utility
+## 8. `handleError`: Userland Error Utility
 
 **Path:** `utils/handle-error.ts`
 
@@ -255,7 +278,7 @@ return handleError({
   logger: log,
 });
 
-// Without explicit logger — uses getContext().resources.logger
+// Without explicit logger: uses getContext().resources.logger
 return handleError({
   message: "User not found",
   data: { userId: data.id },
@@ -266,8 +289,8 @@ return handleError({
 
 1. **Logger resolution:** Uses explicit `logger` param if provided, otherwise calls `getContext()` and uses `ctx.resources.logger`. If neither is available, throws.
 2. **atFunction inference:** Parses `new Error().stack` to extract the caller function name. Falls back to `"unknown"` if parsing fails. Override via the `atFunction` param.
-3. **Logging:** Calls `logger.error({ atFunction, message, data })` — receives a `log_id` back
-4. **Return:** Returns `Err("[log_id] message")` — error ID first, then user-facing message
+3. **Logging:** Calls `logger.error({ atFunction, message, data })` and receives a `log_id` back
+4. **Return:** Returns `Err("[log_id] message")`. Error ID first, then user-facing message.
 
 ### 8.2 Interface
 
@@ -282,25 +305,24 @@ interface HandleErrorParams {
 
 ### 8.3 Constraints
 
-- **Logger required** — Throws if no explicit logger and no `resources.logger` on the context
-- **Stack parsing** — Relies on `Error().stack` which may behave differently across runtimes. Override `atFunction` when the inferred name is unhelpful (e.g., arrow functions, callbacks)
+- **Logger required**: Throws if no explicit logger and no `resources.logger` on the context
+- **Stack parsing**: Relies on `Error().stack` which may behave differently across runtimes. Override `atFunction` when the inferred name is unhelpful (e.g., arrow functions, callbacks)
 
 ### 8.4 Failure Modes
 
-- **No logger available** — Throws `"handleError: No logger available. Provide a logger param or set resources.logger on server config."`
+- **No logger available**: Throws `"handleError: No logger available. Provide a logger param or set resources.logger on server config."`
 
-## 8. Constraints
+## 9. Constraints
 
-- **MODE required** — `createLog` throws if `process.env.MODE` is not set (lazy-evaluated on first log call, not at import time)
-- **appName required** — `createLog` throws if `log.appName` is missing
-- **Chunked getLogs requires appName** — Without `appName`, chunked mode returns an empty array (no directory to scan)
-- **No concurrent write safety** — In test mode, uses `appendFileSync`. In production, pino handles buffering. No file-level locking is implemented.
-- **Pino transport per call** — In production, `createLog` creates a new pino transport for each log entry. Callers writing many logs should use `createLogger` and consider caching.
+- **`mode` required**: `LoggerConfig.mode` is a required parameter on `createLog` and `createLogger`. The mode is passed explicitly, no environment variable detection.
+- **appName required**: `createLog` throws if `log.appName` is missing
+- **Chunked getLogs requires appName**: Without `appName`, chunked mode returns an empty array (no directory to scan)
+- **No concurrent write safety**: In test mode, uses `appendFileSync`. In production, pino handles buffering. No file-level locking is implemented.
+- **Pino transport per call**: In production, `createLog` creates a new pino transport for each log entry. Callers writing many logs should use `createLogger` and consider caching.
 
-## 9. Failure Modes
+## 10. Failure Modes
 
-- **Missing MODE** — Throws `"Missing MODE environment variable"` on first `createLog` call
-- **Missing appName** — Throws immediately with the stringified log object for debugging
-- **Malformed log lines** — `getLogs` silently skips lines that fail `JSON.parse` (NDJSON tolerance)
-- **Missing log directory** — Created automatically on first write (`mkdirSync` with `{ recursive: true }`)
-- **Unparseable chunk filenames** — `isChunkRelevant` returns `true` (includes the file to be safe rather than silently dropping data)
+- **Missing appName**: Throws immediately with the stringified log object for debugging
+- **Malformed log lines**: `getLogs` silently skips lines that fail `JSON.parse` (NDJSON tolerance)
+- **Missing log directory**: Created automatically on first write (`mkdirSync` with `{ recursive: true }`)
+- **Unparseable chunk filenames**: `isChunkRelevant` returns `true` (includes the file to be safe rather than silently dropping data)

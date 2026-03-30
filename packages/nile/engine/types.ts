@@ -1,6 +1,6 @@
 import type { Result } from "slang-ts";
 import type z from "zod";
-import type { AuthConfig, AuthContext } from "@/auth/types";
+import type { AuthConfig } from "@/auth/types";
 /**
  * Circular `import type` with @/nile/types is intentional and safe —
  * type imports are erased at compile time and produce no runtime dependency.
@@ -94,6 +94,7 @@ export interface ActionSummary {
   isProtected: boolean;
   validation: boolean;
   accessControl: string[];
+  visibility?: { rest?: boolean; rpc?: boolean };
 }
 
 export interface EngineOptions {
@@ -121,7 +122,6 @@ export interface Engine {
     serviceName: string,
     actionName: string,
     payload: unknown,
-    nileContext: NileContext<unknown>,
-    authContext?: AuthContext
+    nileContext: NileContext<unknown>
   ) => Promise<Result<unknown, string>>;
 }

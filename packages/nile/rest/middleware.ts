@@ -1,3 +1,4 @@
+import { existsSync, mkdirSync } from "node:fs";
 import type { Hono } from "hono";
 import { rateLimiter } from "hono-rate-limiter";
 import { safeTry } from "slang-ts";
@@ -7,12 +8,11 @@ import type { RestConfig } from "./types";
 const ASSETS_REGEX = /^\/assets\//;
 const DEFAULT_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 const DEFAULT_RATE_LIMIT_MAX = 100;
-const UNKNOWN_CLIENT_KEY = "__unknown_client__";
 
 /**
  * Applies rate limiting middleware when a limiting header is configured.
  * Extracts the client key from the configured request header for per-client tracking.
- * Falls back to a shared key when the header is missing (graceful degradation).
+ * Falls back to IP-based rate limiting when the configured header is absent.
  */
 export function applyRateLimiting(
   app: Hono,
@@ -32,13 +32,18 @@ export function applyRateLimiting(
       standardHeaders: rateLimiting.standardHeaders ?? true,
       keyGenerator: (c) => {
         const key = c.req.header(rateLimiting.limitingHeader);
-        if (!key) {
-          log(
-            `Rate limiting header '${rateLimiting.limitingHeader}' missing from request`
-          );
-          return UNKNOWN_CLIENT_KEY;
+        if (key) {
+          return key;
         }
-        return key;
+        // Fall back to IP-based rate limiting when the configured header is absent
+        const ip =
+          c.req.header("x-forwarded-for") ??
+          c.req.header("x-real-ip") ??
+          "unknown-client";
+        log(
+          `Rate limiting header '${rateLimiting.limitingHeader}' missing — falling back to IP: ${ip}`
+        );
+        return ip;
       },
       store: rateLimiting.store ?? undefined,
     })
@@ -56,7 +61,8 @@ const STATIC_ADAPTER_MODULES: Record<ServerRuntime, string> = {
 };
 
 /**
- * Applies static file serving from ./assets at /assets/*.
+ * Applies static file serving at /assets/*.
+ * The root directory defaults to "./assets" and is created automatically if missing.
  * Dynamically imports the runtime-specific serveStatic adapter (Bun or Node),
  * avoiding issues with runtime globals at module-load time (e.g. Bun globals in vitest).
  * Import errors are caught gracefully — static serving is skipped if the adapter fails to load.
@@ -77,6 +83,14 @@ export function applyStaticServing(
     return;
   }
 
+  const staticDir = config.staticDir ?? "./assets";
+
+  // Auto-create the static directory if it doesn't exist
+  if (!existsSync(staticDir)) {
+    mkdirSync(staticDir, { recursive: true });
+    log(`Created static directory: ${staticDir}`);
+  }
+
   // Lazy-load the runtime-specific serveStatic adapter
   let cachedHandler:
     | ((c: never, next: never) => Promise<Response | undefined>)
@@ -92,7 +106,7 @@ export function applyStaticServing(
       const importResult = await safeTry(async () => {
         const mod = await import(adapterModule);
         return mod.serveStatic({
-          root: "./assets",
+          root: staticDir,
           rewriteRequestPath: (path: string) => path.replace(ASSETS_REGEX, ""),
         });
       });
@@ -114,5 +128,7 @@ export function applyStaticServing(
     }
   });
 
-  log(`Static file serving enabled at /assets/* (runtime: ${runtime})`);
+  log(
+    `Static file serving enabled at /assets/* from ${staticDir} (runtime: ${runtime})`
+  );
 }

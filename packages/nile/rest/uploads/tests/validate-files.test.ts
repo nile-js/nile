@@ -67,6 +67,15 @@ describe("validateFilenameLength", () => {
     expect(result.status).toBe(false);
     expect(result.data?.files).toEqual([long1, long2]);
   });
+
+  it("passes files with undefined name through to later validators", () => {
+    const file = new File([], "") as File;
+    Object.defineProperty(file, "name", { value: undefined });
+    const result = validateFilenameLength([file], 20);
+    // Files with undefined name are not "too long" — they pass through
+    // to the zero-byte or other validators that handle missing names
+    expect(result.status).toBe(true);
+  });
 });
 
 // --- validateZeroByteFiles ---
@@ -99,6 +108,14 @@ describe("validateZeroByteFiles", () => {
     const result = validateZeroByteFiles(files);
     expect(result.status).toBe(false);
     expect(result.data?.files).toEqual(["empty1.txt", "empty2.txt"]);
+  });
+
+  it("handles zero-byte files with undefined name", () => {
+    const file = new File([], "") as File;
+    Object.defineProperty(file, "name", { value: undefined });
+    const result = validateZeroByteFiles([file]);
+    expect(result.status).toBe(false);
+    expect(result.data?.files).toEqual(["<unnamed>"]);
   });
 });
 
@@ -270,12 +287,25 @@ describe("validateAllowlist", () => {
     expect(result.status).toBe(false);
     expect(result.message).toBe("file type not allowed");
     expect(result.data?.rejected).toEqual([
-      { name: "file.png", type: "text/plain" },
+      { name: "file.png", type: expect.stringContaining("text/plain") },
     ]);
     expect(result.data?.allowed).toEqual({
       mimeTypes: mimes,
       extensions: exts,
     });
+  });
+
+  it("passes when MIME type matches despite charset suffix", () => {
+    // Bun appends ;charset=utf-8 to text MIME types
+    const files = [
+      createTestFile("readme.txt", 100, "text/plain;charset=utf-8"),
+    ];
+    const result = validateAllowlist(
+      files,
+      ["text/plain", "image/png"],
+      [".txt", ".png"]
+    );
+    expect(result.status).toBe(true);
   });
 
   it("fails when extension does not match", () => {
@@ -297,6 +327,14 @@ describe("validateAllowlist", () => {
     const files = [createTestFile("PHOTO.PNG", 100, "image/png")];
     const result = validateAllowlist(files, mimes, exts);
     expect(result).toEqual({ status: true });
+  });
+
+  it("handles files with undefined name without crashing", () => {
+    const file = new File([new Uint8Array(100)], "") as File;
+    Object.defineProperty(file, "name", { value: undefined });
+    const result = validateAllowlist([file], ["image/png"], [".png"]);
+    expect(result.status).toBe(false);
+    expect(result.data?.rejected?.[0]?.name).toBe("<unnamed>");
   });
 });
 

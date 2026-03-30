@@ -32,13 +32,10 @@ const context = getContext();
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `rest` | `HonoContext \| undefined` | Hono request context (when called via HTTP) |
-| `ws` | `WebSocketContext \| undefined` | WebSocket context (when called via WS) |
-| `rpc` | `RPCContext \| undefined` | RPC context (when called via RPC) |
-| `sessions` | `Sessions` | Session data per interface (`rest`, `ws`, `rpc`) |
-| `resources` | `Resources \| undefined` | Shared resources (logger, database, cache) |
-| `get` / `set` | `(key: string) => T` | General-purpose key-value store |
-| `getSession` / `setSession` | `(name: keyof Sessions, ...) => ...` | Session access per interface |
+| `resources` | `Resources | undefined` | Shared resources (logger, database, cache), server-level |
+| `get` / `set` | `(key: string) => T` | General-purpose key-value store. `"rest"`, `"ws"`, `"rpc"` are request-scoped via AsyncLocalStorage |
+| `getSession` / `setSession` | `(name: keyof Sessions, ...) => ...` | Session access per interface, request-scoped |
+| `hookContext` | `HookContext` | Lifecycle state for the current action execution |
 
 ## Accessing Resources
 
@@ -134,24 +131,27 @@ export const createUserAction: Action = createAction({
 
 ## Why a Single Context?
 
-`NileContext` is a **server-level singleton by design**. Rather than creating isolated per-request contexts, Nile uses a single shared context as the **source of truth** for the entire runtime. This means every action, hook, and handler operates on the same page — they share the same resources, sessions, and configuration state.
+`NileContext` is a **server-level singleton**. One instance is shared across all interfaces. But per-request data is **isolated via AsyncLocalStorage**, so concurrent requests never interfere with each other.
 
-This is intentional for several reasons:
+The design splits into two layers:
 
-- **Consistency** — All parts of the pipeline (auth, hooks, handlers) see the same context. There is no risk of stale or divergent state between middleware layers.
-- **Simplicity** — One context object is easy to reason about. No context factories, no request-scoped DI containers, no hidden lifecycles.
-- **Composition** — Hooks that reference other actions (via `hooks.before` / `hooks.after`) naturally share state through the same context, enabling clean pipeline composition.
-- **Resource sharing** — Database connections, loggers, and caches are attached once at boot and available everywhere without re-injection.
+- **Server-level (shared):** `resources` (logger, database, cache) and the general-purpose `_store` map are shared across all requests. Set once at boot, available everywhere.
+- **Request-level (isolated):** Interface contexts (`rest`, `ws`, `rpc`) and `sessions` are scoped per-request via `AsyncLocalStorage`. Each request gets its own `RequestStore`. Concurrent requests never see each other's Hono context or session data.
 
-Per-request data (like auth results) is written to the context at the start of each execution and reset between requests via `resetHookContext`. This gives you request-scoped data within the single-context model.
+This is intentional:
+
+- **No race conditions.** Two simultaneous REST requests won't overwrite each other's session or Hono context
+- **Simplicity.** One context object, no request-scoped DI containers. Per-request isolation is handled transparently
+- **Composition.** Hooks that reference other actions share the same request scope through AsyncLocalStorage continuations
+- **Resource sharing.** Database connections, loggers, and caches are attached once at boot and available everywhere
 
 ```typescript
-// Auth result is set per-request, then accessible throughout the pipeline
+// Per-request session data, isolated via AsyncLocalStorage
 handler: (data, context) => {
-  const user = context?.getUser();    // Set during auth step
-  const auth = context?.getAuth();    // Full auth result
+  const session = context?.getSession("rest");  // This request's session only
+  // { userId: "usr_123", organizationId: "org_456", role: "admin", ... }
   
-  return Ok({ userId: user?.userId });
+  return Ok({ userId: session?.userId });
 },
 ```
 
@@ -164,7 +164,7 @@ Pass resources when creating the server:
 import { createNileServer, createLogger } from "@nilejs/nile";
 import { services } from "./services";
 
-const logger = createLogger("my-api", { chunking: "monthly" });
+const logger = createLogger("my-api", { mode: "prod", chunking: "monthly" });
 
 const server = createNileServer({
   serverName: "my-app",

@@ -1,10 +1,13 @@
+import type { Context as HonoContext } from "hono";
+import { Hono } from "hono";
 import { sign } from "hono/jwt";
 import { Ok } from "slang-ts";
 import { describe, expect, it, vi } from "vitest";
 import { createEngine } from "../../engine/engine";
 import type { Service } from "../../engine/types";
 import { createNileContext } from "../../nile/nile";
-import type { AuthConfig, AuthContext } from "../types";
+import { runInRequestScope } from "../../nile/request-scope";
+import type { AuthConfig } from "../types";
 
 const TEST_SECRET = "integration-test-secret";
 
@@ -15,11 +18,36 @@ function createToken(claims: Record<string, unknown>): Promise<string> {
   return sign(claims, TEST_SECRET, "HS256");
 }
 
-/** Build an AuthContext with Authorization header */
-function withBearer(token: string): AuthContext {
-  const headers = new Headers();
-  headers.set("authorization", `Bearer ${token}`);
-  return { headers };
+/**
+ * Captures a real Hono Context via a mini Hono app. Returns the captured
+ * context for use in runInRequestScope.
+ */
+async function captureHonoContext(token?: string): Promise<HonoContext> {
+  const app = new Hono();
+  let captured: HonoContext | null = null;
+
+  app.post("/capture", (c) => {
+    captured = c;
+    return c.json({ ok: true });
+  });
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (token) {
+    headers.authorization = `Bearer ${token}`;
+  }
+
+  await app.request("/capture", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({}),
+  });
+
+  if (!captured) {
+    throw new Error("Failed to capture Hono context");
+  }
+  return captured;
 }
 
 /** Services with both protected and unprotected actions */
@@ -34,10 +62,10 @@ function createTestServices(): Service[] {
           description: "Get user profile (protected)",
           isProtected: true,
           handler: (_data, context) => {
-            const auth = context?.getAuth?.();
+            const session = context?.getSession("rest");
             return Ok({
               profile: "data",
-              authenticatedUser: auth?.userId ?? null,
+              authenticatedUser: session?.userId ?? null,
             });
           },
           accessControl: ["user"],
@@ -61,18 +89,16 @@ describe("Auth Integration - Protected Actions", () => {
       userId: "user-123",
       organizationId: "org-456",
     });
+    const honoCtx = await captureHonoContext(token);
 
     const engine = createEngine({
       services: createTestServices(),
       auth: authConfig,
     });
 
-    const result = await engine.executeAction(
-      "users",
-      "getProfile",
-      {},
-      nileContext,
-      withBearer(token)
+    const result = await runInRequestScope(
+      { rest: honoCtx, sessions: {} },
+      () => engine.executeAction("users", "getProfile", {}, nileContext)
     );
 
     expect(result.isOk).toBe(true);
@@ -82,33 +108,32 @@ describe("Auth Integration - Protected Actions", () => {
     }
   });
 
-  it("should populate authResult on nileContext after successful auth", async () => {
+  it("should populate session on nileContext after successful auth", async () => {
     const nileContext = createNileContext();
     const token = await createToken({
       userId: "ctx-user",
       organizationId: "ctx-org",
     });
+    const honoCtx = await captureHonoContext(token);
 
     const engine = createEngine({
       services: createTestServices(),
       auth: authConfig,
     });
 
-    await engine.executeAction(
-      "users",
-      "getProfile",
-      {},
-      nileContext,
-      withBearer(token)
-    );
+    await runInRequestScope({ rest: honoCtx, sessions: {} }, async () => {
+      await engine.executeAction("users", "getProfile", {}, nileContext);
 
-    expect(nileContext.authResult).toBeDefined();
-    expect(nileContext.authResult?.userId).toBe("ctx-user");
-    expect(nileContext.authResult?.organizationId).toBe("ctx-org");
+      const session = nileContext.getSession("rest");
+      expect(session).toBeDefined();
+      expect(session?.userId).toBe("ctx-user");
+      expect(session?.organizationId).toBe("ctx-org");
+    });
   });
 
-  it("should reject protected action when no authContext is provided", async () => {
+  it("should reject protected action when no rest context is set", async () => {
     const nileContext = createNileContext();
+    // No runInRequestScope — get("rest") returns undefined
     const engine = createEngine({
       services: createTestServices(),
       auth: authConfig,
@@ -119,28 +144,26 @@ describe("Auth Integration - Protected Actions", () => {
       "getProfile",
       {},
       nileContext
-      // no authContext
     );
 
     expect(result.isErr).toBe(true);
     if (result.isErr) {
-      expect(result.error).toContain("no auth context provided");
+      expect(result.error).toContain("no request context available");
     }
   });
 
   it("should reject protected action with invalid JWT", async () => {
     const nileContext = createNileContext();
+    const honoCtx = await captureHonoContext("invalid-token");
+
     const engine = createEngine({
       services: createTestServices(),
       auth: authConfig,
     });
 
-    const result = await engine.executeAction(
-      "users",
-      "getProfile",
-      {},
-      nileContext,
-      withBearer("invalid-token")
+    const result = await runInRequestScope(
+      { rest: honoCtx, sessions: {} },
+      () => engine.executeAction("users", "getProfile", {}, nileContext)
     );
 
     expect(result.isErr).toBe(true);
@@ -156,18 +179,16 @@ describe("Auth Integration - Protected Actions", () => {
       "wrong-secret",
       "HS256"
     );
+    const honoCtx = await captureHonoContext(wrongToken);
 
     const engine = createEngine({
       services: createTestServices(),
       auth: authConfig,
     });
 
-    const result = await engine.executeAction(
-      "users",
-      "getProfile",
-      {},
-      nileContext,
-      withBearer(wrongToken)
+    const result = await runInRequestScope(
+      { rest: honoCtx, sessions: {} },
+      () => engine.executeAction("users", "getProfile", {}, nileContext)
     );
 
     expect(result.isErr).toBe(true);
@@ -190,7 +211,6 @@ describe("Auth Integration - Unprotected Actions", () => {
       "listPublic",
       {},
       nileContext
-      // no authContext needed
     );
 
     expect(result.isOk).toBe(true);
@@ -200,19 +220,18 @@ describe("Auth Integration - Unprotected Actions", () => {
     }
   });
 
-  it("should allow unprotected action even with invalid auth provided", async () => {
+  it("should allow unprotected action even with invalid auth context", async () => {
     const nileContext = createNileContext();
+    const honoCtx = await captureHonoContext("garbage-token");
+
     const engine = createEngine({
       services: createTestServices(),
       auth: authConfig,
     });
 
-    const result = await engine.executeAction(
-      "users",
-      "listPublic",
-      {},
-      nileContext,
-      withBearer("garbage-token")
+    const result = await runInRequestScope(
+      { rest: honoCtx, sessions: {} },
+      () => engine.executeAction("users", "listPublic", {}, nileContext)
     );
 
     expect(result.isOk).toBe(true);
@@ -242,6 +261,7 @@ describe("Auth Integration - No Auth Config", () => {
 describe("Auth Integration - Auth Runs Before Global Hooks", () => {
   it("should reject auth before global before hook runs", async () => {
     const nileContext = createNileContext();
+    // No request scope — auth will fail for protected action
     const globalBeforeHook = vi.fn().mockReturnValue(Ok(true));
 
     const engine = createEngine({
@@ -255,7 +275,6 @@ describe("Auth Integration - Auth Runs Before Global Hooks", () => {
       "getProfile",
       {},
       nileContext
-      // no authContext — should fail at auth step
     );
 
     expect(result.isErr).toBe(true);
@@ -269,6 +288,7 @@ describe("Auth Integration - Auth Runs Before Global Hooks", () => {
       userId: "user-1",
       organizationId: "org-1",
     });
+    const honoCtx = await captureHonoContext(token);
     const globalBeforeHook = vi.fn().mockReturnValue(Ok(true));
 
     const engine = createEngine({
@@ -277,20 +297,16 @@ describe("Auth Integration - Auth Runs Before Global Hooks", () => {
       onBeforeActionHandler: globalBeforeHook,
     });
 
-    await engine.executeAction(
-      "users",
-      "getProfile",
-      {},
-      nileContext,
-      withBearer(token)
+    await runInRequestScope({ rest: honoCtx, sessions: {} }, () =>
+      engine.executeAction("users", "getProfile", {}, nileContext)
     );
 
     expect(globalBeforeHook).toHaveBeenCalled();
   });
 });
 
-describe("Auth Integration - Context Accessors", () => {
-  it("should make getAuth() available with auth data", async () => {
+describe("Auth Integration - Session Accessors", () => {
+  it("should make getSession('rest') available with auth data after verification", async () => {
     const nileContext = createNileContext();
     const token = await createToken({
       userId: "accessor-user",
@@ -305,16 +321,14 @@ describe("Auth Integration - Context Accessors", () => {
         actions: [
           {
             name: "checkAuth",
-            description: "Check auth accessors",
+            description: "Check session after auth",
             isProtected: true,
             handler: (_data, context) => {
-              const auth = context?.getAuth?.();
-              const user = context?.getUser?.();
+              const session = context?.getSession("rest");
               return Ok({
-                authUserId: auth?.userId,
-                authOrgId: auth?.organizationId,
-                authClaims: auth?.claims,
-                userResult: user,
+                userId: session?.userId,
+                organizationId: session?.organizationId,
+                role: session?.role,
               });
             },
             accessControl: ["user"],
@@ -323,32 +337,25 @@ describe("Auth Integration - Context Accessors", () => {
       },
     ];
 
+    const honoCtx = await captureHonoContext(token);
     const engine = createEngine({ services, auth: authConfig });
-    const result = await engine.executeAction(
-      "test",
-      "checkAuth",
-      {},
-      nileContext,
-      withBearer(token)
+
+    const result = await runInRequestScope(
+      { rest: honoCtx, sessions: {} },
+      () => engine.executeAction("test", "checkAuth", {}, nileContext)
     );
 
     expect(result.isOk).toBe(true);
     if (result.isOk) {
       const value = result.value as Record<string, unknown>;
-      expect(value.authUserId).toBe("accessor-user");
-      expect(value.authOrgId).toBe("accessor-org");
-      expect((value.authClaims as Record<string, unknown>).role).toBe("admin");
-      const user = value.userResult as Record<string, unknown>;
-      expect(user.userId).toBe("accessor-user");
-      expect(user.organizationId).toBe("accessor-org");
-      expect(user.role).toBe("admin");
+      expect(value.userId).toBe("accessor-user");
+      expect(value.organizationId).toBe("accessor-org");
+      expect(value.role).toBe("admin");
     }
   });
 
-  it("should return null from getAuth() when no auth occurred", () => {
+  it("should return undefined from getSession when no request scope active", () => {
     const nileContext = createNileContext();
-
-    expect(nileContext.getAuth()).toBeUndefined();
-    expect(nileContext.getUser()).toBeUndefined();
+    expect(nileContext.getSession("rest")).toBeUndefined();
   });
 });

@@ -6,5 +6,6 @@ export {
   type Log,
   type LogFilter,
   type LoggerConfig,
+  type LogReaderConfig,
   resolveLogPath,
 } from "./logger";

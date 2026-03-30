@@ -119,6 +119,7 @@ const server = createNileServer({
   rest: {
     baseUrl: "/api",
     port: 8000,
+    allowedOrigins: ["http://localhost:3000"],
   },
 });
 

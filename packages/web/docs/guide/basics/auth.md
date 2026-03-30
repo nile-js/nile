@@ -10,7 +10,7 @@ Pass an `auth` object to your server config:
 import { createNileServer } from "@nilejs/nile";
 
 const server = createNileServer({
-  name: "MyApp",
+  serverName: "MyApp",
   services: [/* ... */],
   auth: {
     secret: process.env.JWT_SECRET!,
@@ -31,6 +31,26 @@ const server = createNileServer({
 | `method` | `"header" \| "cookie"` | `"header"` | Where to look for the token |
 | `headerName` | `string` | `"authorization"` | Header name (when method is `"header"`) |
 | `cookieName` | `string` | `"auth_token"` | Cookie name (when method is `"cookie"`) |
+| `algorithm` | `JwtAlgorithm` | `"HS256"` | JWT signing algorithm for token verification |
+
+### Supported JWT Algorithms
+
+The `algorithm` option accepts any algorithm supported by `hono/jwt`:
+
+| Family | Algorithms |
+|--------|------------|
+| HMAC | `HS256`, `HS384`, `HS512` |
+| RSA | `RS256`, `RS384`, `RS512` |
+| RSA-PSS | `PS256`, `PS384`, `PS512` |
+| ECDSA | `ES256`, `ES384`, `ES512` |
+| EdDSA | `EdDSA` |
+
+```typescript
+auth: {
+  secret: process.env.JWT_SECRET!,
+  algorithm: "RS256", // Use RSA-256 instead of default HMAC-256
+}
+```
 
 ## Protecting Actions
 
@@ -45,12 +65,12 @@ export const getProfile: Action = createAction({
   description: "Get the current user's profile",
   isProtected: true,
   handler: (data, context) => {
-    const user = context?.getUser();
-    if (!user) return Err("Not authenticated");
+    const session = context?.getSession("rest");
+    if (!session) return Err("Not authenticated");
 
     return Ok({
-      userId: user.userId,
-      organizationId: user.organizationId,
+      userId: session.userId,
+      organizationId: session.organizationId,
     });
   },
 });
@@ -61,26 +81,22 @@ When `isProtected` is `true` and `auth` is configured on the server:
 1. The engine extracts the JWT from the request (header or cookie)
 2. Verifies the token signature using `hono/jwt`
 3. Extracts `userId` and `organizationId` from the claims
-4. Populates `context.authResult` before the handler runs
+4. Stores auth data in the session via `setSession("rest", { userId, organizationId, ...claims })`
 5. If verification fails, the action returns an error without executing
 
 Actions without `isProtected` (or with `isProtected: false`) skip auth entirely.
 
 ## Accessing Auth Data
 
-Inside any handler or hook, use the context accessors:
+Inside any handler or hook, use `getSession("rest")` to access auth data:
 
 ```typescript
-// Full auth result (userId, organizationId, raw claims)
-const auth = context?.getAuth();
-// { userId: "usr_123", organizationId: "org_456", claims: { ... } }
-
-// Convenience: user object with claims spread
-const user = context?.getUser();
+// Auth session data (userId, organizationId, JWT claims)
+const session = context?.getSession("rest");
 // { userId: "usr_123", organizationId: "org_456", role: "admin", ... }
 ```
 
-Both return `undefined` when no authentication occurred (e.g., unprotected actions).
+Returns `undefined` when no authentication occurred (e.g., unprotected actions).
 
 ## JWT Claims Mapping
 
@@ -91,7 +107,7 @@ The JWT handler extracts identity fields from standard and common claim names:
 | `userId` | `userId`, `id`, `sub` |
 | `organizationId` | `organizationId`, `organization_id`, `orgId` |
 
-All other claims are preserved in the `claims` object and spread into `getUser()`.
+All other claims are preserved in the session object.
 
 ## Token Sources
 
@@ -125,22 +141,21 @@ For auth logic beyond JWT (RBAC, API keys, OAuth sessions), use `onBeforeActionH
 
 ```typescript
 const server = createNileServer({
-  name: "MyApp",
+  serverName: "MyApp",
   services: [/* ... */],
   auth: { secret: process.env.JWT_SECRET! },
-  onBeforeActionHandler: async (request, context) => {
-    const user = context.getUser();
-    if (!user) return; // Let the engine's built-in auth handle it
+  onBeforeActionHandler: async ({ nileContext, action, payload }) => {
+    const session = nileContext.getSession("rest");
+    if (!session) return Ok(payload); // Unprotected action, let it through
 
     // Custom RBAC check
-    const action = request.action;
     const requiredRole = action.accessControl?.[0];
 
-    if (requiredRole && user.role !== requiredRole) {
+    if (requiredRole && session.role !== requiredRole) {
       return Err(`Requires role: ${requiredRole}`);
     }
 
-    return Ok(request.payload);
+    return Ok(payload);
   },
 });
 ```
@@ -154,25 +169,25 @@ import { createNileServer, createAction, type Action } from "@nilejs/nile";
 import { Ok, Err } from "slang-ts";
 import z from "zod";
 
-// Public action — no auth required
+// Public action, no auth required
 const listItems: Action = createAction({
   name: "listItems",
   description: "List all items",
   handler: () => Ok({ items: [] }),
 });
 
-// Protected action — requires valid JWT
+// Protected action, requires valid JWT
 const createItem: Action = createAction({
   name: "createItem",
   description: "Create a new item",
   isProtected: true,
   validation: z.object({ title: z.string().min(1) }),
   handler: (data, context) => {
-    const user = context?.getUser();
+    const session = context?.getSession("rest");
     return Ok({
       id: crypto.randomUUID(),
       title: data.title,
-      createdBy: user?.userId,
+      createdBy: session?.userId,
     });
   },
 });

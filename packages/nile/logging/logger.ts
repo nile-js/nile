@@ -18,19 +18,16 @@ export interface Log {
   log_id?: string;
 }
 
-/** Configuration for log file chunking behavior */
-export interface LoggerConfig {
-  /** Time-based chunking strategy. Default: 'none' (single file per app) */
+/** Configuration for reading logs — only needs chunking strategy */
+export interface LogReaderConfig {
   chunking?: "monthly" | "daily" | "weekly" | "none";
 }
 
-// Lazy evaluation of MODE - only check when logging is actually used
-const getMode = () => {
-  if (!process.env.MODE) {
-    throw new Error("Missing MODE environment variable");
-  }
-  return process.env.MODE;
-};
+/** Configuration for log file chunking behavior and runtime mode */
+export interface LoggerConfig extends LogReaderConfig {
+  /** Runtime mode — controls how logs are output */
+  mode: "prod" | "dev" | "agentic";
+}
 
 const logDir = join(process.cwd(), "logs");
 
@@ -43,6 +40,13 @@ const MONTHLY_PATTERN = /^(\d{4})-(\d{2})$/;
 const DAILY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 const WEEKLY_PATTERN = /^(\d{4})-W(\d{2})$/;
 
+/** Strips path separators and traversal sequences from appName to prevent directory escape */
+const sanitizeAppName = (appName: string): string =>
+  appName
+    .replace(/[/\\]/g, "-")
+    .replace(/\.\./g, "")
+    .replace(/^-+|-+$/g, "");
+
 /**
  * Resolves the correct log file path based on app name and chunking config.
  * - 'none' (default): logs/{appName}.log (backwards compatible)
@@ -50,14 +54,18 @@ const WEEKLY_PATTERN = /^(\d{4})-W(\d{2})$/;
  * - 'daily': logs/{appName}/YYYY-MM-DD.log
  * - 'weekly': logs/{appName}/YYYY-WNN.log (ISO week number)
  */
-export function resolveLogPath(appName: string, config?: LoggerConfig): string {
+export function resolveLogPath(
+  appName: string,
+  config?: LogReaderConfig
+): string {
+  const safe = sanitizeAppName(appName);
   const chunking = config?.chunking ?? "none";
 
   if (chunking === "none") {
-    return join(logDir, `${appName}.log`);
+    return join(logDir, `${safe}.log`);
   }
 
-  const appDir = join(logDir, appName);
+  const appDir = join(logDir, safe);
   if (!existsSync(appDir)) {
     mkdirSync(appDir, { recursive: true });
   }
@@ -108,7 +116,7 @@ function getISOWeekNumber(date: Date): number {
  * Creates a pino logger instance that writes to the resolved log file path.
  * Each call creates a fresh pino transport — callers should cache if needed.
  */
-function createLoggerForApp(appName: string, config?: LoggerConfig): Logger {
+function createLoggerForApp(appName: string, config?: LogReaderConfig): Logger {
   const logFile = resolveLogPath(appName, config);
 
   const transport = pino.transport({
@@ -142,11 +150,11 @@ function createLoggerForApp(appName: string, config?: LoggerConfig): Logger {
  * Creates a new log entry with the provided log information.
  * Supports optional chunking config to split logs into time-based files.
  * @param log - The log object containing the log details
- * @param config - Optional logger config for chunking behavior
+ * @param config - Logger config for chunking behavior and mode
  * @returns The generated log ID (or JSON string in agentic mode)
  * @throws {Error} If appName is missing in the log object
  */
-export const createLog = (log: Log, config?: LoggerConfig) => {
+export const createLog = (log: Log, config: LoggerConfig) => {
   if (!log.appName) {
     throw new Error(`Missing appName in log: ${JSON.stringify(log)}`);
   }
@@ -164,7 +172,7 @@ export const createLog = (log: Log, config?: LoggerConfig) => {
     time: new Date().toISOString(),
   };
 
-  const mode = getMode();
+  const mode = config.mode;
 
   if (mode === "prod" || process.env.NODE_ENV === "test") {
     const logFile = resolveLogPath(log.appName, config);
@@ -210,7 +218,7 @@ export interface LogFilter {
  */
 export const getLogs = (
   filters: LogFilter = {},
-  config?: LoggerConfig
+  config?: LogReaderConfig
 ): Log[] => {
   const chunking = config?.chunking ?? "none";
 

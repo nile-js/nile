@@ -1,7 +1,7 @@
-import type { Context, Hono } from "hono";
+import type { Hono } from "hono";
 import { cors } from "hono/cors";
 import type { RestConfig } from "@/rest/types";
-import type { CorsConfig, CorsOptions } from "./types";
+import type { CorsConfig, CorsHelper, CorsOptions } from "./types";
 
 /**
  * Build default CORS options from REST config
@@ -11,7 +11,8 @@ export const buildDefaultCorsOptions = (config: RestConfig): CorsOptions => {
     if (config.allowedOrigins.length > 0) {
       return config.allowedOrigins.includes(reqOrigin ?? "") ? reqOrigin : "";
     }
-    return "*";
+    // No origins configured — deny by default (empty string = no CORS headers)
+    return "";
   };
 
   return {
@@ -30,6 +31,57 @@ export const buildDefaultCorsOptions = (config: RestConfig): CorsOptions => {
     maxAge: config.cors?.defaults?.maxAge ?? 600,
   };
 };
+
+/**
+ * Creates a CorsHelper instance pre-loaded with default options.
+ * Methods mutate internal state. After the resolver runs, call `toOptions()` to get the final CorsOptions.
+ */
+function createCorsHelper(
+  defaults: CorsOptions
+): CorsHelper & { toOptions: () => CorsOptions } {
+  const state: CorsOptions = { ...defaults };
+  // Clone arrays to avoid mutating the defaults object
+  if (Array.isArray(defaults.allowHeaders)) {
+    state.allowHeaders = [...defaults.allowHeaders];
+  }
+  if (Array.isArray(defaults.allowMethods)) {
+    state.allowMethods = [...defaults.allowMethods];
+  }
+  if (Array.isArray(defaults.exposeHeaders)) {
+    state.exposeHeaders = [...defaults.exposeHeaders];
+  }
+
+  return {
+    allowOrigin: (origin: string) => {
+      state.origin = origin;
+    },
+    deny: () => {
+      state.origin = "";
+    },
+    addHeaders: (headers: string[]) => {
+      const current = Array.isArray(state.allowHeaders)
+        ? state.allowHeaders
+        : [];
+      state.allowHeaders = [...current, ...headers];
+    },
+    setHeaders: (headers: string[]) => {
+      state.allowHeaders = headers;
+    },
+    setMethods: (methods: string[]) => {
+      state.allowMethods = methods;
+    },
+    setCredentials: (value: boolean) => {
+      state.credentials = value;
+    },
+    setMaxAge: (seconds: number) => {
+      state.maxAge = seconds;
+    },
+    setExposeHeaders: (headers: string[]) => {
+      state.exposeHeaders = headers;
+    },
+    toOptions: () => state,
+  };
+}
 
 /**
  * Apply CORS configuration to a Hono app based on RestConfig
@@ -69,7 +121,8 @@ const applyRouteCorsRule = (
 };
 
 /**
- * Apply resolver-based CORS for a specific path
+ * Apply resolver-based CORS for a specific path.
+ * Creates a CorsHelper pre-loaded with defaults and passes it to the resolver.
  */
 const applyResolverBasedCors = (
   app: Hono,
@@ -83,7 +136,17 @@ const applyResolverBasedCors = (
 
   app.use(path, (c, next) => {
     const reqOrigin = c.req.header("origin") ?? "";
-    const corsOpts = evaluateResolver(resolver, reqOrigin, c, defaultOpts);
+    const helper = createCorsHelper(defaultOpts);
+
+    try {
+      resolver(reqOrigin, c, helper);
+    } catch (error) {
+      // Security: deny on resolver failure — never fall through to allow
+      console.error("CORS resolver error:", error);
+      helper.deny();
+    }
+
+    const corsOpts = helper.toOptions();
     return cors(corsOpts as Parameters<typeof cors>[0])(c, next);
   });
 };
@@ -101,40 +164,4 @@ const applyStaticCors = (
     path,
     cors({ ...defaultOpts, ...options } as Parameters<typeof cors>[0])
   );
-};
-
-/**
- * Evaluate CORS resolver and return appropriate options
- */
-const evaluateResolver = (
-  resolver: NonNullable<CorsConfig["addCors"]>[number]["resolver"],
-  origin: string,
-  c: Context,
-  defaultOpts: CorsOptions
-): CorsOptions => {
-  if (!resolver) {
-    return defaultOpts;
-  }
-
-  try {
-    const result = resolver(origin, c);
-
-    if (result === true) {
-      return { ...defaultOpts, origin: origin || "*" };
-    }
-
-    if (result === false) {
-      return { ...defaultOpts, origin: "" };
-    }
-
-    if (result && typeof result === "object") {
-      return { ...defaultOpts, ...result };
-    }
-
-    return defaultOpts;
-  } catch (error) {
-    // Security: deny on resolver failure — never fall through to allow
-    console.error("CORS resolver error:", error);
-    return { ...defaultOpts, origin: "" };
-  }
 };

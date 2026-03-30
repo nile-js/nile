@@ -1,6 +1,6 @@
 {
   "name": "@nilejs/nile",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -14,7 +14,9 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "docs",
+    "SKILL.md"
   ],
   "repository": "git@github.com:nile-js/nile.git",
   "author": "Hussein Kizz",
@@ -40,7 +42,8 @@
     "test": "bunx vitest",
     "test:run": "bunx vitest run",
     "build": "tsup",
-    "export": "bun run check && bun run fix && bun run test:run && bun run build"
+    "copy-docs": "bash scripts/copy-docs.sh",
+    "export": "bun run check && bun run fix && bun run test:run && bun run build && bun run copy-docs"
   },
   "dependencies": {
     "@hono/node-server": "^1.19.9",

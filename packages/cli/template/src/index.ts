@@ -4,12 +4,12 @@ import { safeTry } from "slang-ts";
 import { db } from "@/db/client";
 import { services } from "@/services/services.config";
 
-const logger = createLogger("{{projectName}}", { chunking: "monthly" });
+const logger = createLogger("{{projectName}}", {
+  mode: "dev",
+  chunking: "monthly",
+});
 
-/**
- * Push schema to PGLite on boot.
- * Creates the tasks table if it doesn't exist.
- */
+/** Push schema to PGLite on boot */
 const pushSchema = async () => {
   const result = await safeTry(() =>
     db.execute(sql`
@@ -39,29 +39,32 @@ const server = createNileServer({
     port: 8000,
     allowedOrigins: ["http://localhost:8000"],
     enableStatus: true,
+    discovery: { enabled: true },
   },
   onBoot: {
-    fn: async () => {
+    fn: async (ctx) => {
       await pushSchema();
-      logger.info({
+      ctx.resources?.logger?.info({
         atFunction: "onBoot",
-        message: "{{projectName}} booted — PGLite schema ready",
+        message: "{{projectName}} booted - PGLite schema ready",
       });
     },
   },
 });
 
+// Register custom middleware (runs before all service requests)
+server.rest?.addMiddleware("/api", async (c, next) => {
+  const start = performance.now();
+  await next();
+  const ms = (performance.now() - start).toFixed(1);
+  logger.info({
+    atFunction: "requestLog",
+    message: `${c.req.method} ${c.req.path} - ${ms}ms`,
+  });
+});
+
 if (server.rest) {
   const port = server.config.rest?.port ?? 8000;
-  const { fetch } = server.rest.app;
-
-  Bun.serve({ port, fetch });
-
-  console.log(`\n{{projectName}} listening on http://localhost:${port}`);
-  console.log("\nTry it:");
-  console.log(`  curl -X POST http://localhost:${port}/api/services \\`);
-  console.log(`    -H "Content-Type: application/json" \\`);
-  console.log(
-    `    -d '{"intent":"explore","service":"*","action":"*","payload":{}}'`
-  );
+  Bun.serve({ port, fetch: server.rest.app.fetch });
+  console.log(`\n{{projectName}} listening on http://localhost:${port}\n`);
 }

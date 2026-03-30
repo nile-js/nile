@@ -1,10 +1,11 @@
 import type { Context } from "hono";
 import { Hono } from "hono";
-import { getCookie } from "hono/cookie";
+import { HTTPException } from "hono/http-exception";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
 import z from "zod";
-import type { AuthContext } from "@/auth/types";
 import { applyCorsConfig } from "@/cors/cors";
 import type { Engine } from "@/engine/types";
+import { runInRequestScope } from "@/nile/request-scope";
 import type {
   ExternalRequest,
   ExternalResponse,
@@ -14,7 +15,7 @@ import type {
 import { createDiagnosticsLog } from "@/utils";
 import { intentHandlers } from "./intent-handlers";
 import { applyRateLimiting, applyStaticServing } from "./middleware";
-import type { RestConfig } from "./types";
+import type { MiddlewareEntry, RestConfig } from "./types";
 import { enforceActionContentType, handleFormDataRequest } from "./uploads";
 
 // --- Zod schema for incoming requests ---
@@ -45,7 +46,6 @@ async function handleFormDataPath(
   config: RestConfig,
   engine: Engine,
   nileContext: NileContext<unknown>,
-  authContext: AuthContext,
   log: (msg: string) => void
 ) {
   // Extract RPC routing fields from the form data first pass
@@ -97,7 +97,7 @@ async function handleFormDataPath(
           message: contentTypeCheck.message ?? "Unsupported content type",
           data: contentTypeCheck.data ?? {},
         } satisfies ExternalResponse,
-        contentTypeCheck.statusCode ?? 415
+        (contentTypeCheck.statusCode ?? 415) as ContentfulStatusCode
       );
     }
   }
@@ -116,7 +116,7 @@ async function handleFormDataPath(
         message: uploadResult.message ?? "Upload validation failed",
         data: uploadResult.errorData ?? {},
       } satisfies ExternalResponse,
-      uploadResult.statusCode ?? 400
+      (uploadResult.statusCode ?? 400) as ContentfulStatusCode
     );
   }
 
@@ -130,12 +130,7 @@ async function handleFormDataPath(
 
   const handler = intentHandlers[request.intent];
   // biome-ignore lint/suspicious/noExplicitAny: internal dispatch
-  const response = await (handler as any)(
-    engine,
-    request,
-    nileContext,
-    authContext
-  );
+  const response = await (handler as any)(engine, request, nileContext);
 
   const statusCode = response.status ? 200 : 400;
   return c.json(response, statusCode);
@@ -151,14 +146,24 @@ interface CreateRestAppParams {
   runtime: ServerRuntime;
 }
 
+/** Return type of createRestApp — the Hono app plus the middleware registration API */
+export interface RestApp {
+  app: Hono;
+  /** Register middleware that runs before Nile's services POST handler */
+  addMiddleware: (path: string, fn: MiddlewareEntry["fn"]) => void;
+}
+
 /**
  * Creates the Hono REST app with a single POST endpoint for all service interactions
  * and an optional GET /status health check.
  *
+ * Middleware registered via addMiddleware runs before the services POST handler
+ * through a dynamic runner registered first in the Hono dispatch chain.
+ *
  * All service communication flows through POST {baseUrl}/services using
  * the intent field to discriminate between explore, execute, and schema operations.
  */
-export function createRestApp(params: CreateRestAppParams): Hono {
+export function createRestApp(params: CreateRestAppParams): RestApp {
   const { config, engine, nileContext, serverName, runtime } = params;
   const app = new Hono();
 
@@ -178,72 +183,114 @@ export function createRestApp(params: CreateRestAppParams): Hono {
   // Apply static file serving based on runtime
   applyStaticServing(app, config, runtime, log);
 
+  // --- Dynamic middleware registry ---
+  // Registered BEFORE the POST handler so user middleware always runs first
+  const middlewareRegistry: MiddlewareEntry[] = [];
+
+  app.use("*", async (c, next) => {
+    const requestPath = c.req.path;
+    const matching = middlewareRegistry.filter((entry) =>
+      requestPath.startsWith(entry.path)
+    );
+
+    // Chain matching middleware sequentially, then hand off to the next Hono handler
+    let index = 0;
+    const runNext = async (): Promise<void> => {
+      if (index < matching.length) {
+        const entry = matching[index++];
+        const result = await entry?.fn(c, runNext);
+        if (result instanceof Response) {
+          // Middleware short-circuited the request
+          return;
+        }
+      } else {
+        await next();
+      }
+    };
+
+    await runNext();
+  });
+
   // Single POST endpoint for all service interactions
   const servicesPath = `${config.baseUrl}/services`;
 
-  app.post(servicesPath, async (c) => {
-    const contentType = c.req.header("content-type") ?? "";
-    const isFormData = contentType.includes("multipart/form-data");
+  app.post(servicesPath, (c) => {
+    // Each request gets its own isolated scope, concurrent requests never share mutable state
+    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: single POST handler handles discovery, form-data, JSON, middleware, and intent dispatch
+    return runInRequestScope({ rest: c, sessions: {} }, async () => {
+      const contentType = c.req.header("content-type") ?? "";
+      const isFormData = contentType.includes("multipart/form-data");
 
-    // Build auth context from the incoming HTTP request
-    const authContext: AuthContext = {
-      headers: c.req.raw.headers,
-      cookies: getCookie(c),
-    };
+      // --- Form-data path (multipart uploads) ---
+      if (isFormData) {
+        return handleFormDataPath(c, config, engine, nileContext, log);
+      }
 
-    // --- Form-data path (multipart uploads) ---
-    if (isFormData) {
-      return handleFormDataPath(
-        c,
-        config,
-        engine,
-        nileContext,
-        authContext,
-        log
-      );
-    }
+      // --- JSON path (standard RPC) ---
+      const body = await c.req.json().catch(() => null);
 
-    // --- JSON path (standard RPC) ---
-    const body = await c.req.json().catch(() => null);
+      if (!body) {
+        return c.json(
+          {
+            status: false,
+            message: "Invalid or missing JSON body",
+            data: {},
+          } satisfies ExternalResponse,
+          400
+        );
+      }
 
-    if (!body) {
-      return c.json(
-        {
-          status: false,
-          message: "Invalid or missing JSON body",
-          data: {},
-        } satisfies ExternalResponse,
-        400
-      );
-    }
+      const parsed = externalRequestSchema.safeParse(body);
+      if (!parsed.success) {
+        return c.json(
+          {
+            status: false,
+            message: "Invalid request format",
+            data: { errors: parsed.error.issues },
+          } satisfies ExternalResponse,
+          400
+        );
+      }
 
-    const parsed = externalRequestSchema.safeParse(body);
-    if (!parsed.success) {
-      return c.json(
-        {
-          status: false,
-          message: "Invalid request format",
-          data: { errors: parsed.error.issues },
-        } satisfies ExternalResponse,
-        400
-      );
-    }
+      const request = parsed.data as ExternalRequest;
 
-    const request = parsed.data as ExternalRequest;
+      log(`${request.intent} -> ${request.service}.${request.action}`);
 
-    log(`${request.intent} -> ${request.service}.${request.action}`);
+      // Gate explore/schema intents behind discovery config
+      if (request.intent === "explore" || request.intent === "schema") {
+        if (!config.discovery?.enabled) {
+          return c.json(
+            {
+              status: false,
+              message: "API discovery is disabled",
+              data: {},
+            } satisfies ExternalResponse,
+            403
+          );
+        }
 
-    const handler = intentHandlers[request.intent];
-    // biome-ignore lint/suspicious/noExplicitAny: internal dispatch
-    const response = await (handler as any)(
-      engine,
-      request,
-      nileContext,
-      authContext
-    );
+        if (
+          config.discovery.secret &&
+          request.payload?.discoverySecret !== config.discovery.secret
+        ) {
+          return c.json(
+            {
+              status: false,
+              message: "Invalid or missing discovery secret",
+              data: {},
+            } satisfies ExternalResponse,
+            403
+          );
+        }
+      }
 
-    const statusCode = response.status ? 200 : 400;
-    return c.json(response, statusCode);
+      const handler = intentHandlers[request.intent];
+      // biome-ignore lint/suspicious/noExplicitAny: internal dispatch
+      const response = await (handler as any)(engine, request, nileContext);
+
+      const statusCode = response.status ? 200 : 400;
+      return c.json(response, statusCode);
+    });
   });
 
   // Health check endpoint
@@ -269,7 +316,43 @@ export function createRestApp(params: CreateRestAppParams): Hono {
     );
   });
 
+  // Global error handler — prevents stack trace leaks to clients
+  app.onError((err, c) => {
+    if (err instanceof HTTPException) {
+      return c.json(
+        {
+          status: false,
+          message: err.message,
+          data: {},
+        } satisfies ExternalResponse,
+        err.status
+      );
+    }
+
+    log(`Unhandled error: ${err.message}`, err.stack);
+    return c.json(
+      {
+        status: false,
+        message: "Internal server error",
+        data: {},
+      } satisfies ExternalResponse,
+      500
+    );
+  });
+
   log(`REST interface ready at ${servicesPath}`);
 
-  return app;
+  const MAX_MIDDLEWARE = 50;
+
+  /** Register middleware that runs before Nile's services POST handler */
+  const addMiddleware = (path: string, fn: MiddlewareEntry["fn"]) => {
+    if (middlewareRegistry.length >= MAX_MIDDLEWARE) {
+      throw new Error(
+        `Maximum middleware limit (${MAX_MIDDLEWARE}) reached. Cannot register more middleware.`
+      );
+    }
+    middlewareRegistry.push({ path, fn });
+  };
+
+  return { app, addMiddleware };
 }
