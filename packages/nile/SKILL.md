@@ -159,7 +159,7 @@ Key `ServerConfig` fields:
 - `diagnostics` -- enable verbose engine logging
 - `logServices` -- print services table on boot (default: true)
 - `forceNewInstance` -- override singleton behavior
-- `onBoot` -- async lifecycle hook that runs after initialization; `process.exit(1)` on failure
+- `onBoot` -- async lifecycle hook that runs after initialization; must return `Ok(null)` or `Err('message')`; `process.exit(1)` on failure or timeout
 - `onBeforeActionHandler` / `onAfterActionHandler` -- global hooks for all actions
 
 ### Context, Store, and Sessions

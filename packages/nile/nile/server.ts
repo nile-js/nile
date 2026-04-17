@@ -121,7 +121,7 @@ export async function createNileServer(
     try {
       await Promise.race([boot(), timeout]);
       const ms = (performance.now() - bootStart).toFixed(1);
-      log(`Booted in ${ms}ms`);
+      console.log(`Booted in ${ms}ms`);
     } catch (error) {
       log(`Fatal: ${error}`);
       process.exit(1);
