@@ -141,8 +141,10 @@ describe("createNileServer - REST Interface", () => {
   });
 });
 
-/** Flush microtask queue so fire-and-forget async IIFE in onBoot completes */
+/** Flush microtask queue so fire-and-forget async boot completes */
 const flushMicrotasks = () => new Promise((r) => setTimeout(r, 10));
+const bootedInPattern = /Booted in \d+\.\d+ms/;
+const timedOutPattern = /timed out after 50ms/;
 
 describe("createNileServer - onBoot", () => {
   it("should run onBoot callback", async () => {
@@ -180,6 +182,55 @@ describe("createNileServer - onBoot", () => {
     expect(ctx._store).toBeInstanceOf(Map);
   });
 
+  it("should set booted and rest only after boot completes", async () => {
+    const server = createNileServer({
+      serverName: "Test",
+      services: mockServices,
+      forceNewInstance: true,
+      rest: { baseUrl: "/api", allowedOrigins: ["*"], enableStatus: false },
+      onBoot: {
+        fn: async () => {
+          await new Promise((r) => setTimeout(r, 5));
+        },
+      },
+    });
+
+    // Before boot completes
+    expect(server.booted).toBe(false);
+    expect(server.rest).toBeUndefined();
+
+    await flushMicrotasks();
+
+    // After boot completes
+    expect(server.booted).toBe(true);
+    expect(server.rest).toBeDefined();
+  });
+
+  it("should log boot timing after success", async () => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {
+      // intentional no-op for test
+    });
+
+    createNileServer({
+      serverName: "Test",
+      services: mockServices,
+      forceNewInstance: true,
+      diagnostics: true,
+      onBoot: {
+        fn: () => {
+          /* intentional no-op */
+        },
+      },
+    });
+
+    await flushMicrotasks();
+
+    const allLogs = logSpy.mock.calls.flat().join(" ");
+    expect(allLogs).toMatch(bootedInPattern);
+
+    logSpy.mockRestore();
+  });
+
   it("should exit process when onBoot fails", async () => {
     const exitSpy = vi
       .spyOn(process, "exit")
@@ -200,6 +251,37 @@ describe("createNileServer - onBoot", () => {
     expect(exitSpy).toHaveBeenCalledWith(1);
 
     exitSpy.mockRestore();
+  });
+
+  it("should exit process when onBoot times out", async () => {
+    const exitSpy = vi
+      .spyOn(process, "exit")
+      .mockImplementation(() => undefined as never);
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {
+      // intentional no-op for test
+    });
+
+    createNileServer({
+      serverName: "Test",
+      services: mockServices,
+      forceNewInstance: true,
+      diagnostics: true,
+      onBoot: {
+        fn: async () => {
+          await new Promise((r) => setTimeout(r, 500));
+        },
+        maxWaitTime: 50,
+      },
+    });
+
+    await new Promise((r) => setTimeout(r, 100));
+    expect(exitSpy).toHaveBeenCalledWith(1);
+
+    const allLogs = logSpy.mock.calls.flat().join(" ");
+    expect(allLogs).toMatch(timedOutPattern);
+
+    exitSpy.mockRestore();
+    logSpy.mockRestore();
   });
 
   it("should log services table by default", () => {

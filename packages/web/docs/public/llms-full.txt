@@ -2,7 +2,6 @@
 url: /nile/guide/start/getting-started.md
 ---
 
-
 # Getting Started with Nile
 
 Nile is a functional-first, type-safe backend framework built on Hono. It works with **Bun**, **Node.js**, and **Deno**, uses Zod for validation, and returns Results from all action handlers using the `Ok` / `Err` pattern from `slang-ts`.
@@ -188,10 +187,10 @@ my-api/
 
 ## 4. Next Steps
 
-- Learn about [Actions](/guide/basics/actions) and [Services](/guide/basics/services)
-- Explore the [Context](/guide/basics/context) for accessing resources like databases
-- Set up a [database layer with model files](/guide/internals/db) for structured data access
-- See [Server Configuration](/guide/internals/server) for more options
+* Learn about [Actions](/nile/guide/basics/actions.md) and [Services](/nile/guide/basics/services.md)
+* Explore the [Context](/nile/guide/basics/context.md) for accessing resources like databases
+* Set up a [database layer with model files](/nile/guide/internals/db.md) for structured data access
+* See [Server Configuration](/nile/guide/internals/server.md) for more options
 
 *This documentation reflects the current implementation and is subject to evolution.*
 
@@ -646,15 +645,15 @@ export const createUserAction: Action = createAction({
 
 The design splits into two layers:
 
-- **Server-level (shared):** `resources` (logger, database, cache) and the general-purpose `_store` map are shared across all requests. Set once at boot, available everywhere.
-- **Request-level (isolated):** Interface contexts (`rest`, `ws`, `rpc`) and `sessions` are scoped per-request via `AsyncLocalStorage`. Each request gets its own `RequestStore`. Concurrent requests never see each other's Hono context or session data.
+* **Server-level (shared):** `resources` (logger, database, cache) and the general-purpose `_store` map are shared across all requests. Set once at boot, available everywhere.
+* **Request-level (isolated):** Interface contexts (`rest`, `ws`, `rpc`) and `sessions` are scoped per-request via `AsyncLocalStorage`. Each request gets its own `RequestStore`. Concurrent requests never see each other's Hono context or session data.
 
 This is intentional:
 
-- **No race conditions.** Two simultaneous REST requests won't overwrite each other's session or Hono context
-- **Simplicity.** One context object, no request-scoped DI containers. Per-request isolation is handled transparently
-- **Composition.** Hooks that reference other actions share the same request scope through AsyncLocalStorage continuations
-- **Resource sharing.** Database connections, loggers, and caches are attached once at boot and available everywhere
+* **No race conditions.** Two simultaneous REST requests won't overwrite each other's session or Hono context
+* **Simplicity.** One context object, no request-scoped DI containers. Per-request isolation is handled transparently
+* **Composition.** Hooks that reference other actions share the same request scope through AsyncLocalStorage continuations
+* **Resource sharing.** Database connections, loggers, and caches are attached once at boot and available everywhere
 
 ```typescript
 // Per-request session data, isolated via AsyncLocalStorage
@@ -1500,7 +1499,7 @@ const { error, data } = await nile.invoke({
 });
 ```
 
-See the [Client](/guide/basics/client) guide for the full API reference.
+See the [Client](/nile/guide/basics/client.md) guide for the full API reference.
 
 ## The Single Endpoint
 
@@ -1509,6 +1508,7 @@ POST {baseUrl}/services
 ```
 
 The default base URL is `/api`, so the full endpoint is typically:
+
 ```
 POST /api/services
 ```
@@ -1551,6 +1551,7 @@ curl -X POST http://localhost:8000/api/services \
 ```
 
 **Response:**
+
 ```json
 {
   "status": true,
@@ -1583,6 +1584,7 @@ curl -X POST http://localhost:8000/api/services \
 ```
 
 **Response:**
+
 ```json
 {
   "status": true,
@@ -1617,6 +1619,7 @@ curl -X POST http://localhost:8000/api/services \
 ```
 
 **Response:**
+
 ```json
 {
   "status": true,
@@ -1661,6 +1664,7 @@ curl -X POST http://localhost:8000/api/services \
 ```
 
 **Response:**
+
 ```json
 {
   "status": true,
@@ -1697,6 +1701,7 @@ curl -X POST http://localhost:8000/api/services \
 ```
 
 **Response:**
+
 ```json
 {
   "status": true,
@@ -1748,6 +1753,7 @@ curl -X POST http://localhost:8000/api/services \
 ```
 
 **Response:**
+
 ```json
 {
   "status": true,
@@ -1787,6 +1793,7 @@ curl -X POST http://localhost:8000/api/services \
 ```
 
 **Response:**
+
 ```json
 {
   "status": true,
@@ -1820,6 +1827,7 @@ All responses follow a consistent structure:
 ```
 
 **Success response:**
+
 ```json
 {
   "status": true,
@@ -1829,6 +1837,7 @@ All responses follow a consistent structure:
 ```
 
 **Error response:**
+
 ```json
 {
   "status": false,
@@ -2066,16 +2075,16 @@ The Nile Server module provides the top-level factory for bootstrapping a Nile a
 
 ### 1.1 Responsibilities
 
-- **Bootstrapping:** Create and connect the Action Engine, `NileContext`, and REST interface from a single `ServerConfig`
-- **Context ownership:** Create a single `NileContext` instance shared across all interfaces
-- **Context access:** Export `getContext()` to retrieve the runtime context from anywhere within a request scope
-- **Lifecycle:** Execute `onBoot` hooks after initialization with crash safety
-- **Diagnostics:** Route diagnostic output through `createDiagnosticsLog` from `utils/diagnostics-log.ts`, which checks `resources.logger` first and falls back to `console.log`. See `docs/internals/logging.md` section 7.
+* **Bootstrapping:** Create and connect the Action Engine, `NileContext`, and REST interface from a single `ServerConfig`
+* **Context ownership:** Create a single `NileContext` instance shared across all interfaces
+* **Context access:** Export `getContext()` to retrieve the runtime context from anywhere within a request scope
+* **Lifecycle:** Execute `onBoot` hooks after initialization with crash safety
+* **Diagnostics:** Route diagnostic output through `createDiagnosticsLog` from `utils/diagnostics-log.ts`, which checks `resources.logger` first and falls back to `console.log`. See `docs/internals/logging.md` section 7.
 
 ### 1.2 Non-Goals
 
-- **Transport logic:** The server module does not handle HTTP routing, CORS, or request parsing. That is the REST layer's responsibility.
-- **Engine internals:** The server does not manage action execution or hook pipelines. It delegates to the engine.
+* **Transport logic:** The server module does not handle HTTP routing, CORS, or request parsing. That is the REST layer's responsibility.
+* **Engine internals:** The server does not manage action execution or hook pipelines. It delegates to the engine.
 
 ## 2. `createNileServer`
 
@@ -2101,9 +2110,9 @@ const server = createNileServer({
 2. **Create `NileContext`**: Single instance with `config.resources` attached
 3. **Create Engine**: Passes `services`, `diagnostics`, and global hook handlers
 4. **Log services table**: When `config.logServices` is `true`, prints a `console.table` of registered services (name, description, actions). Always prints, not gated by `diagnostics`
-5. **Create REST app**: Only if `config.rest` is provided. Passes engine, context, `serverName`, and `runtime` (defaults to `"bun"`)
-6. **Print REST endpoint URLs**: When REST is configured, prints `POST http://host:port/baseUrl/services` and optionally `GET http://host:port/status` via `console.log`. Uses `rest.host` (default `"localhost"`) and `rest.port` (default `8000`)
-7. **Run `onBoot`**: Async IIFE that awaits the callback. On failure, logs via diagnostics logger and calls `process.exit(1)` to crash the process. The server must not run in a degraded state after a failed boot sequence
+5. **Run `onBoot`**: If configured, runs the boot callback inside a `Promise.race` with a configurable timeout (`maxWaitTime`, default 10s). On success, logs `Booted in Xms` and sets `server.booted = true`. On failure or timeout, logs via diagnostics logger and calls `process.exit(1)`. REST setup and the "server ready" message only execute after boot succeeds
+6. **Create REST app**: Only if `config.rest` is provided and boot succeeded. Passes engine, context, `serverName`, and `runtime` (defaults to `"bun"`)
+7. **Print REST endpoint URLs**: When REST is configured, prints `POST http://host:port/baseUrl/services` and optionally `GET http://host:port/status` via `console.log`. Uses `rest.host` (default `"localhost"`) and `rest.port` (default `8000`)
 
 ### 2.2 Return Value (`NileServer`)
 
@@ -2112,6 +2121,7 @@ const server = createNileServer({
   config: ServerConfig;
   engine: Engine;
   context: NileContext;
+  booted: boolean;
   rest?: {
     app: Hono;
     config: RestConfig;
@@ -2120,10 +2130,11 @@ const server = createNileServer({
 }
 ```
 
-- `rest` is only present when `config.rest` was provided
-- `engine` provides direct access to `getServices`, `getServiceActions`, `getAction`, `executeAction`
-- `context` is the shared `NileContext` passed to all layers
-- `addMiddleware` registers middleware that runs before the services POST handler. Middleware is executed in registration order via a dynamic runner. A middleware can return a `Response` to short-circuit the request (skipping downstream middleware and the handler).
+* `booted` is `false` when `onBoot` is configured and boot is still running, `true` after boot succeeds or when no `onBoot` is configured
+* `rest` is only present when `config.rest` was provided **and** boot has completed successfully
+* `engine` provides direct access to `getServices`, `getServiceActions`, `getAction`, `executeAction`
+* `context` is the shared `NileContext` passed to all layers
+* `addMiddleware` registers middleware that runs before the services POST handler. Middleware is executed in registration order via a dynamic runner. A middleware can return a `Response` to short-circuit the request (skipping downstream middleware and the handler).
 
 ## 3. `ServerConfig`
 
@@ -2142,17 +2153,18 @@ const server = createNileServer({
   onAfterActionHandler?: AfterActionHandler<unknown, unknown>;
   onBoot?: {
     fn: (context: NileContext) => Promise<void> | void;
+    maxWaitTime?: number;               // default: 10000 (10s)
   };
   forceNewInstance?: boolean;
 }
 ```
 
-- `runtime` lives only on `ServerConfig` and is piped to `createRestApp` as a parameter. It is not duplicated onto `RestConfig`.
-- `services` is required. An empty array throws at initialization.
-- `diagnostics` defaults to `false`. When enabled, internal modules emit diagnostic output through `createDiagnosticsLog`.
-- `logServices` defaults to `true`. Prints a `console.table` of registered services (Service, Description, Actions count). Not gated by `diagnostics`. Set `logServices: false` to suppress.
-- When REST is configured, endpoint URLs are always printed via `console.log` using `rest.host` (default `"localhost"`) and `rest.port` (default `8000`).
-- `forceNewInstance` defaults to `false`. When `false`, a second `createNileServer` call returns the existing server instance with a warning logged. Set to `true` to explicitly create a new instance (useful in tests).
+* `runtime` lives only on `ServerConfig` and is piped to `createRestApp` as a parameter. It is not duplicated onto `RestConfig`.
+* `services` is required. An empty array throws at initialization.
+* `diagnostics` defaults to `false`. When enabled, internal modules emit diagnostic output through `createDiagnosticsLog`.
+* `logServices` defaults to `true`. Prints a `console.table` of registered services (Service, Description, Actions count). Not gated by `diagnostics`. Set `logServices: false` to suppress.
+* When REST is configured, endpoint URLs are always printed via `console.log` using `rest.host` (default `"localhost"`) and `rest.port` (default `8000`).
+* `forceNewInstance` defaults to `false`. When `false`, a second `createNileServer` call returns the existing server instance with a warning logged. Set to `true` to explicitly create a new instance (useful in tests).
 
 ## 4. `NileContext`
 
@@ -2218,9 +2230,10 @@ runInRequestScope({ rest: honoContext, sessions: {} }, async () => {
 ```
 
 **Key exports:**
-- `RequestStore`: interface for per-request state (`rest`, `ws`, `rpc`, `sessions`)
-- `runInRequestScope(store, fn)`: runs a callback within an isolated request scope
-- `getRequestStore()`: retrieves the current request's store (undefined outside a request)
+
+* `RequestStore`: interface for per-request state (`rest`, `ws`, `rpc`, `sessions`)
+* `runInRequestScope(store, fn)`: runs a callback within an isolated request scope
+* `getRequestStore()`: retrieves the current request's store (undefined outside a request)
 
 ### 4.5 Resources
 
@@ -2290,19 +2303,19 @@ The `logger` field accepts a `NileLogger`. The return type of `createLogger` fro
 
 ## 6. Constraints
 
-- **One context per server**: `createNileContext` is called once in `createNileServer`. All interfaces share this instance.
-- **Generic Database Support**: To avoid generic leakage into the core engine, the database type `TDB` is only present in `NileContext` and `Resources`. High-level components (Engine, REST) use `unknown`.
-- **`onBoot` crashes on failure**: The `onBoot` callback is awaited inside an async IIFE. If it fails, `process.exit(1)` is called. This is intentional. A failed boot means the server cannot operate correctly.
-- **Singleton by default**: A second `createNileServer` call returns the existing instance unless `forceNewInstance: true` is passed. A warning is logged when the cached instance is returned.
-- **Runtime default**: If `config.runtime` is omitted, it defaults to `"bun"`. This affects static file serving and runtime-specific behavior.
-- **No dynamic service injection**: Services are fixed at boot time. Adding services after initialization is not supported.
+* **One context per server**: `createNileContext` is called once in `createNileServer`. All interfaces share this instance.
+* **Generic Database Support**: To avoid generic leakage into the core engine, the database type `TDB` is only present in `NileContext` and `Resources`. High-level components (Engine, REST) use `unknown`.
+* **`onBoot` crashes on failure**: The `onBoot` callback runs inside a `Promise.race` with a configurable timeout (`maxWaitTime`, default 10s). If it fails or times out, `process.exit(1)` is called. REST setup and the "server ready" message only execute after boot succeeds. This ensures the server never accepts requests before initialization is complete.
+* **Singleton by default**: A second `createNileServer` call returns the existing instance unless `forceNewInstance: true` is passed. A warning is logged when the cached instance is returned.
+* **Runtime default**: If `config.runtime` is omitted, it defaults to `"bun"`. This affects static file serving and runtime-specific behavior.
+* **No dynamic service injection**: Services are fixed at boot time. Adding services after initialization is not supported.
 
 ## 7. Failure Modes
 
-- **Empty services**: `createNileServer` throws immediately with a descriptive error
-- **`onBoot` crash**: Logged via diagnostics logger, then `process.exit(1)`. The server does not start in a degraded state.
-- **Missing resources**: `resources` is optional. Diagnostics fall back to `console.log` when `resources.logger` is absent (handled by `createDiagnosticsLog`)
-- **Double initialization**: Returns cached instance with a warning unless `forceNewInstance: true`
+* **Empty services**: `createNileServer` throws immediately with a descriptive error
+* **`onBoot` crash or timeout**: Logged via diagnostics logger, then `process.exit(1)`. The server does not start in a degraded state. If `maxWaitTime` is exceeded, the error message includes the configured timeout value.
+* **Missing resources**: `resources` is optional. Diagnostics fall back to `console.log` when `resources.logger` is absent (handled by `createDiagnosticsLog`)
+* **Double initialization**: Returns cached instance with a warning unless `forceNewInstance: true`
 
 ## 8. `getContext`
 
@@ -2338,12 +2351,12 @@ const handler = async (data, ctx) => {
 
 ### 8.2 Constraints
 
-- **Must be called after server initialization**: `getContext` throws if called before `createNileServer` has run
-- **Must be called within a request scope**: The context singleton is set at server boot. Per-request data (interface contexts, sessions) is isolated via AsyncLocalStorage. Use `context.get("rest")` or `context.getSession("rest")` within request handlers
+* **Must be called after server initialization**: `getContext` throws if called before `createNileServer` has run
+* **Must be called within a request scope**: The context singleton is set at server boot. Per-request data (interface contexts, sessions) is isolated via AsyncLocalStorage. Use `context.get("rest")` or `context.getSession("rest")` within request handlers
 
 ### 8.3 Failure Modes
 
-- **Called before server boot**: Throws `"getContext: Server not initialized. Call createNileServer first."`
+* **Called before server boot**: Throws `"getContext: Server not initialized. Call createNileServer first."`
 
 
 
@@ -2359,8 +2372,8 @@ Provides utilities for integrating with Drizzle ORM, including schema generation
 
 ## Constraints
 
-- Requires `drizzle-orm` and `drizzle-zod` as peer dependencies.
-- Intended for use with Drizzle-compatible databases (PostgreSQL, SQLite, etc.).
+* Requires `drizzle-orm` and `drizzle-zod` as peer dependencies.
+* Intended for use with Drizzle-compatible databases (PostgreSQL, SQLite, etc.).
 
 ## 1. Folder Organization
 
@@ -2443,13 +2456,13 @@ Model files are the core pattern for database operations in Nile. Each model fil
 
 ### Key Principles
 
-- **One model file per table** — `models/tasks.ts` handles all task operations
-- **All model functions return `Result<T, string>`** — using `Ok()` for success and `handleError()` for failures
-- **Null checks belong in model files** — not in action handlers. If a row is not found, the model returns `handleError(...)`, not the handler.
-- **Use `safeTry` from `slang-ts`** for all database calls — check `result.isOk` / `result.isErr` and access `result.value` / `result.error`
-- **Use `handleError` from `@nilejs/nile`** for all error returns — this logs the error and returns an `Err` with a traceable log ID
-- **Use `getZodSchema`** for input validation before writes
-- **Accept `dbx` parameter** for transaction support via `DBX<typeof db>`
+* **One model file per table** — `models/tasks.ts` handles all task operations
+* **All model functions return `Result<T, string>`** — using `Ok()` for success and `handleError()` for failures
+* **Null checks belong in model files** — not in action handlers. If a row is not found, the model returns `handleError(...)`, not the handler.
+* **Use `safeTry` from `slang-ts`** for all database calls — check `result.isOk` / `result.isErr` and access `result.value` / `result.error`
+* **Use `handleError` from `@nilejs/nile`** for all error returns — this logs the error and returns an `Err` with a traceable log ID
+* **Use `getZodSchema`** for input validation before writes
+* **Accept `dbx` parameter** for transaction support via `DBX<typeof db>`
 
 ### Full Model File Example
 
@@ -2705,10 +2718,10 @@ Always returns an `Err` variant. Compatible with any `Result<T, E>` union, so mo
 
 ### Why handleError Instead of Err()
 
-- **Traceability** — every error gets a unique `log_id` for log correlation
-- **Automatic logging** — errors are logged at the error site, not somewhere upstream
-- **Context-aware** — resolves the logger from the Nile context without explicit imports
-- **Consistent** — all errors follow the same `[logId] message` format
+* **Traceability** — every error gets a unique `log_id` for log correlation
+* **Automatic logging** — errors are logged at the error site, not somewhere upstream
+* **Context-aware** — resolves the logger from the Nile context without explicit imports
+* **Consistent** — all errors follow the same `[logId] message` format
 
 ## 4. Key Types
 
@@ -2807,9 +2820,10 @@ const result = await createTaskTx({ task: data, dbx: db });
 ```
 
 **Behavior:**
-- Wraps the function call inside `dbx.transaction(tx => fn({ ...params, dbx: tx }))`
-- If the inner function returns `Err`, the transaction wrapper throws to trigger rollback
-- The thrown error is caught and the original `Err` is returned to the caller
+
+* Wraps the function call inside `dbx.transaction(tx => fn({ ...params, dbx: tx }))`
+* If the inner function returns `Err`, the transaction wrapper throws to trigger rollback
+* The thrown error is caught and the original `Err` is returned to the caller
 
 ## 6. Putting It All Together
 
@@ -2853,9 +2867,9 @@ Action handlers never touch the database directly. They call model functions, wh
 
 ## 7. Failure Modes
 
-- **`getZodSchema`** — throws if passed a relation schema instead of a table schema
-- **`createTransactionVariant`** — throws when the wrapped function returns `Err` (intentional, triggers rollback)
-- **`handleError`** — throws if no logger is available (neither explicit nor on context)
+* **`getZodSchema`** — throws if passed a relation schema instead of a table schema
+* **`createTransactionVariant`** — throws when the wrapped function returns `Err` (intentional, triggers rollback)
+* **`handleError`** — throws if no logger is available (neither explicit nor on context)
 
 
 
@@ -2962,9 +2976,9 @@ await model.findPaginated({ limit: 20, cursor: 'abc', cursorColumn: 'id' });
 
 Returns `ModelOperations<TSelect, TInsert, TDB>` where type parameters are inferred from the Drizzle table:
 
-- `TSelect` — row type from select queries (`table.$inferSelect`)
-- `TInsert` — data type for inserts (`table.$inferInsert`)
-- `TDB` — database type for transaction support
+* `TSelect` — row type from select queries (`table.$inferSelect`)
+* `TInsert` — data type for inserts (`table.$inferInsert`)
+* `TDB` — database type for transaction support
 
 All async methods return `Result<T, string>` from `slang-ts`.
 
@@ -3051,6 +3065,7 @@ interface OffsetPaginationOptions {
 ```
 
 Returns:
+
 ```typescript
 interface OffsetPage<T> {
   items: T[];
@@ -3074,6 +3089,7 @@ interface CursorPaginationOptions {
 ```
 
 Returns:
+
 ```typescript
 interface CursorPage<T> {
   items: T[];
@@ -3184,6 +3200,7 @@ create/update → schemas.insert/update.safeParse(data)
 ### Error Handling
 
 All errors go through `handleError`:
+
 1. Resolves logger from explicit param or Nile context
 2. Logs with `atFunction` attribution (e.g. `task.create`)
 3. Returns `Err("[logId] message")` with traceable log ID
@@ -3191,6 +3208,7 @@ All errors go through `handleError`:
 ### Auto-Ordering
 
 `findAll` and offset `findPaginated` auto-detect timestamp columns:
+
 1. Checks for `created_at` on the table
 2. Falls back to `createdAt`
 3. No ordering applied if neither exists
@@ -3352,14 +3370,14 @@ export const services: Services = createServices([
 
 The `createModel` + `createServices` pattern covers standard CRUD. Go custom when you need:
 
-- **Complex queries**: Joins, aggregations, CTEs — use `model.table` escape hatch with raw Drizzle
-- **Multi-model operations**: Actions that span multiple models or have complex business logic
-- **Non-CRUD actions**: Search, bulk operations, file processing — write a custom handler
-- **Custom hooks**: Before/after hooks that modify data or enforce business rules — use the [hooks system](/guide/basics/actions)
+* **Complex queries**: Joins, aggregations, CTEs — use `model.table` escape hatch with raw Drizzle
+* **Multi-model operations**: Actions that span multiple models or have complex business logic
+* **Non-CRUD actions**: Search, bulk operations, file processing — write a custom handler
+* **Custom hooks**: Before/after hooks that modify data or enforce business rules — use the [hooks system](/nile/guide/basics/actions.md)
 
 ## vs Manual Model Files
 
-`createModel` replaces the manual model pattern documented in the [Database Overview](./index). Use it for standard CRUD. For custom queries, complex joins, or non-standard patterns, write manual model functions using `safeTry` + `handleError` directly and use the `table` escape hatch.
+`createModel` replaces the manual model pattern documented in the [Database Overview](/nile/guide/internals/db/index.md). Use it for standard CRUD. For custom queries, complex joins, or non-standard patterns, write manual model functions using `safeTry` + `handleError` directly and use the `table` escape hatch.
 
 
 
@@ -3378,16 +3396,16 @@ The logging module provides structured, append-only log persistence for Nile app
 
 ### 1.1 Responsibilities
 
-- **Log creation**: Write structured NDJSON records to disk (production/test) or stdout (dev/agentic mode)
-- **File chunking**: Optionally split log files into time-based chunks (monthly, daily, weekly) organized in per-app directories
-- **Log retrieval**: Query logs with filters (appName, log_id, level, date range) with smart chunk selection to avoid scanning irrelevant files
-- **Factory API**: `createLogger(appName, config?)` returns a bound logger with `.info()`, `.warn()`, `.error()` methods
+* **Log creation**: Write structured NDJSON records to disk (production/test) or stdout (dev/agentic mode)
+* **File chunking**: Optionally split log files into time-based chunks (monthly, daily, weekly) organized in per-app directories
+* **Log retrieval**: Query logs with filters (appName, log\_id, level, date range) with smart chunk selection to avoid scanning irrelevant files
+* **Factory API**: `createLogger(appName, config?)` returns a bound logger with `.info()`, `.warn()`, `.error()` methods
 
 ### 1.2 Non-Goals
 
-- **Size-based rotation**: The module does not implement log rotation by file size. Only time-based chunking is supported.
-- **Log shipping**: No built-in support for sending logs to external services (e.g., Datadog, Elasticsearch). Consumers can build this on top of the query API.
-- **Diagnostics logging**: Internal nile diagnostics (engine, REST, server boot messages) use `createDiagnosticsLog` from `utils/diagnostics-log.ts`, not this module. See section 7.
+* **Size-based rotation**: The module does not implement log rotation by file size. Only time-based chunking is supported.
+* **Log shipping**: No built-in support for sending logs to external services (e.g., Datadog, Elasticsearch). Consumers can build this on top of the query API.
+* **Diagnostics logging**: Internal nile diagnostics (engine, REST, server boot messages) use `createDiagnosticsLog` from `utils/diagnostics-log.ts`, not this module. See section 7.
 
 ## 2. Architecture
 
@@ -3443,9 +3461,10 @@ const logId = createLog({
 ```
 
 **Behavior by `config.mode`:**
-- `"prod"`: Writes NDJSON to the resolved log file path. In test environments (`NODE_ENV=test`), uses `appendFileSync` for deterministic reads; otherwise uses pino async transport.
-- `"agentic"`: Returns the log record as a JSON string (no file I/O).
-- `"dev"`: Prints to `console.log` and returns `"dev-mode, see your dev console!"`.
+
+* `"prod"`: Writes NDJSON to the resolved log file path. In test environments (`NODE_ENV=test`), uses `appendFileSync` for deterministic reads; otherwise uses pino async transport.
+* `"agentic"`: Returns the log record as a JSON string (no file I/O).
+* `"dev"`: Prints to `console.log` and returns `"dev-mode, see your dev console!"`.
 
 **Returns:** The generated `log_id` (nanoid, 6 chars) or JSON string in agentic mode.
 
@@ -3471,10 +3490,11 @@ const errors = getLogs(
 ```
 
 **Filters (`LogFilter`):**
-- `appName`: Filter by app name (required for chunked mode to locate the directory)
-- `log_id`: Filter by specific log ID
-- `level`: Filter by `"info"`, `"warn"`, or `"error"`
-- `from` / `to`: Date range filter (inclusive)
+
+* `appName`: Filter by app name (required for chunked mode to locate the directory)
+* `log_id`: Filter by specific log ID
+* `level`: Filter by `"info"`, `"warn"`, or `"error"`
+* `from` / `to`: Date range filter (inclusive)
 
 **Smart chunk selection:** When chunking is enabled and date filters are provided, `getLogs` computes the date range of each chunk file and skips files that fall entirely outside the requested range. This avoids reading and parsing irrelevant files.
 
@@ -3534,10 +3554,10 @@ The `level` field is used both in the TypeScript interface and in the serialized
 
 Used by `getLogs` and `resolveLogPath`, read-only operations that don't need a mode.
 
-- `"none"` (default): Single flat file per app: `logs/{appName}.log`
-- `"monthly"`: `logs/{appName}/YYYY-MM.log`
-- `"daily"`: `logs/{appName}/YYYY-MM-DD.log`
-- `"weekly"`: `logs/{appName}/YYYY-WNN.log` (ISO 8601 week number)
+* `"none"` (default): Single flat file per app: `logs/{appName}.log`
+* `"monthly"`: `logs/{appName}/YYYY-MM.log`
+* `"daily"`: `logs/{appName}/YYYY-MM-DD.log`
+* `"weekly"`: `logs/{appName}/YYYY-WNN.log` (ISO 8601 week number)
 
 ### 4.2b `LoggerConfig`
 
@@ -3601,13 +3621,13 @@ Each file contains NDJSON records identical in format to flat mode. The only dif
 
 These functions are not exported but are critical to `getLogs` performance:
 
-- `resolveLogFiles(filters, chunking)`: Determines which files to read. For flat mode, returns the single file. For chunked mode, scans the app directory and filters by date relevance.
-- `isChunkRelevant(filename, chunking, filters)`: Checks if a chunk file's date range overlaps with the filter's `from`/`to` range.
-- `getChunkDateRange(chunkName, chunking)`: Parses a chunk filename into start/end date boundaries.
-- `readAndParseLogFiles(files)`: Reads NDJSON from multiple files into a single array, skipping malformed lines.
-- `applyLogFilters(logs, filters)`: Applies `appName`, `log_id`, `level`, and time range filters.
-- `getISOWeekNumber(date)`: ISO 8601 week number calculation.
-- `getDateFromISOWeek(year, week)`: Returns the Monday of a given ISO week.
+* `resolveLogFiles(filters, chunking)`: Determines which files to read. For flat mode, returns the single file. For chunked mode, scans the app directory and filters by date relevance.
+* `isChunkRelevant(filename, chunking, filters)`: Checks if a chunk file's date range overlaps with the filter's `from`/`to` range.
+* `getChunkDateRange(chunkName, chunking)`: Parses a chunk filename into start/end date boundaries.
+* `readAndParseLogFiles(files)`: Reads NDJSON from multiple files into a single array, skipping malformed lines.
+* `applyLogFilters(logs, filters)`: Applies `appName`, `log_id`, `level`, and time range filters.
+* `getISOWeekNumber(date)`: ISO 8601 week number calculation.
+* `getDateFromISOWeek(year, week)`: Returns the Monday of a given ISO week.
 
 ## 7. Diagnostics Logging (Nile Internals)
 
@@ -3625,9 +3645,10 @@ log("Initialized in 2ms. Loaded 3 services.");
 ```
 
 **Behavior:**
-- When `diagnostics` is `false` (or absent), returns a no-op function
-- When `diagnostics` is `true`, checks `resources.logger` first, falls back to `console.log`
-- The prefix (e.g. `"Engine"`) is automatically prepended as `[Engine]`
+
+* When `diagnostics` is `false` (or absent), returns a no-op function
+* When `diagnostics` is `true`, checks `resources.logger` first, falls back to `console.log`
+* The prefix (e.g. `"Engine"`) is automatically prepended as `[Engine]`
 
 This replaces the previous pattern where `server.ts`, `rest.ts`, and `engine.ts` each defined their own inline `log()` closures.
 
@@ -3674,27 +3695,27 @@ interface HandleErrorParams {
 
 ### 8.3 Constraints
 
-- **Logger required**: Throws if no explicit logger and no `resources.logger` on the context
-- **Stack parsing**: Relies on `Error().stack` which may behave differently across runtimes. Override `atFunction` when the inferred name is unhelpful (e.g., arrow functions, callbacks)
+* **Logger required**: Throws if no explicit logger and no `resources.logger` on the context
+* **Stack parsing**: Relies on `Error().stack` which may behave differently across runtimes. Override `atFunction` when the inferred name is unhelpful (e.g., arrow functions, callbacks)
 
 ### 8.4 Failure Modes
 
-- **No logger available**: Throws `"handleError: No logger available. Provide a logger param or set resources.logger on server config."`
+* **No logger available**: Throws `"handleError: No logger available. Provide a logger param or set resources.logger on server config."`
 
 ## 9. Constraints
 
-- **`mode` required**: `LoggerConfig.mode` is a required parameter on `createLog` and `createLogger`. The mode is passed explicitly, no environment variable detection.
-- **appName required**: `createLog` throws if `log.appName` is missing
-- **Chunked getLogs requires appName**: Without `appName`, chunked mode returns an empty array (no directory to scan)
-- **No concurrent write safety**: In test mode, uses `appendFileSync`. In production, pino handles buffering. No file-level locking is implemented.
-- **Pino transport per call**: In production, `createLog` creates a new pino transport for each log entry. Callers writing many logs should use `createLogger` and consider caching.
+* **`mode` required**: `LoggerConfig.mode` is a required parameter on `createLog` and `createLogger`. The mode is passed explicitly, no environment variable detection.
+* **appName required**: `createLog` throws if `log.appName` is missing
+* **Chunked getLogs requires appName**: Without `appName`, chunked mode returns an empty array (no directory to scan)
+* **No concurrent write safety**: In test mode, uses `appendFileSync`. In production, pino handles buffering. No file-level locking is implemented.
+* **Pino transport per call**: In production, `createLog` creates a new pino transport for each log entry. Callers writing many logs should use `createLogger` and consider caching.
 
 ## 10. Failure Modes
 
-- **Missing appName**: Throws immediately with the stringified log object for debugging
-- **Malformed log lines**: `getLogs` silently skips lines that fail `JSON.parse` (NDJSON tolerance)
-- **Missing log directory**: Created automatically on first write (`mkdirSync` with `{ recursive: true }`)
-- **Unparseable chunk filenames**: `isChunkRelevant` returns `true` (includes the file to be safe rather than silently dropping data)
+* **Missing appName**: Throws immediately with the stringified log object for debugging
+* **Malformed log lines**: `getLogs` silently skips lines that fail `JSON.parse` (NDJSON tolerance)
+* **Missing log directory**: Created automatically on first write (`mkdirSync` with `{ recursive: true }`)
+* **Unparseable chunk filenames**: `isChunkRelevant` returns `true` (includes the file to be safe rather than silently dropping data)
 
 
 
@@ -3704,35 +3725,35 @@ url: /nile/guide/internals/engine.md
 
 # Service Action Engine
 
-**Type:** Reference / Specification  
+**Type:** Reference / Specification\
 **Path:** `engine/`
 
 ## 1. Purpose
 
-The Service Action Engine provides a high-performance, $O(1)$ routing and introspection layer for business operations, and a unified execution pipeline. It maps a flat array of domain-specific `Services` (and their nested `Actions`) into pre-computed memory structures upon initialization. 
+The Service Action Engine provides a high-performance, $O(1)$ routing and introspection layer for business operations, and a unified execution pipeline. It maps a flat array of domain-specific `Services` (and their nested `Actions`) into pre-computed memory structures upon initialization.
 
 This engine is designed to sit below the HTTP/RPC transport layer (e.g., Hono), decoupling the knowledge of available actions from the transport mechanism used to invoke them.
 
 ### 1.1 Responsibilities
 
-*   **Initialization:** Parse the `services` array exactly once on boot.
-*   **Introspection:** Provide lightweight, zero-latency metadata for available services and actions to enable dynamic discovery.
-*   **Routing:** Provide strict $O(1)$ memory pointer lookups for specific actions based on `serviceName` and `actionName`.
-*   **Execution Pipeline:** Process the full action lifecycle safely, including Global/Action-level Hooks, Payload Validation (Zod), and safe Handler execution.
-*   **Diagnostics:** Emit timing and status information via `createDiagnosticsLog` from `utils/diagnostics-log.ts` when `diagnostics` is enabled. See `docs/internals/logging.md` section 7.
-*   **Result Pattern Enforcement:** Ensure all internal engine methods return a `Result<T, E>` from the `slang-ts` library to eliminate `try/catch` requirements in the transport layer.
+* **Initialization:** Parse the `services` array exactly once on boot.
+* **Introspection:** Provide lightweight, zero-latency metadata for available services and actions to enable dynamic discovery.
+* **Routing:** Provide strict $O(1)$ memory pointer lookups for specific actions based on `serviceName` and `actionName`.
+* **Execution Pipeline:** Process the full action lifecycle safely, including Global/Action-level Hooks, Payload Validation (Zod), and safe Handler execution.
+* **Diagnostics:** Emit timing and status information via `createDiagnosticsLog` from `utils/diagnostics-log.ts` when `diagnostics` is enabled. See `docs/internals/logging.md` section 7.
+* **Result Pattern Enforcement:** Ensure all internal engine methods return a `Result<T, E>` from the `slang-ts` library to eliminate `try/catch` requirements in the transport layer.
 
 ### 1.2 Non-Goals
 
-*   **HTTP Routing:** The engine has no concept of HTTP methods, headers, or paths.
+* **HTTP Routing:** The engine has no concept of HTTP methods, headers, or paths.
 
 ## 2. Architecture and Data Structures
 
 To achieve guaranteed $O(1)$ lookups and prevent latency spikes, the engine pre-computes three internal data structures during `createEngine`:
 
-1.  `serviceSummaries`: An array of `ServiceSummary` objects used for fast enumeration of all available services.
-2.  `serviceActionsStore`: A dictionary mapping a `serviceName` to an array of lightweight `ActionSummary` objects. This avoids sending bulky schema/handler definitions during introspection.
-3.  `actionStore`: A nested dictionary (`Record<serviceName, Record<actionName, Action>>`) that holds the exact memory pointers to the full `Action` objects for execution routing.
+1. `serviceSummaries`: An array of `ServiceSummary` objects used for fast enumeration of all available services.
+2. `serviceActionsStore`: A dictionary mapping a `serviceName` to an array of lightweight `ActionSummary` objects. This avoids sending bulky schema/handler definitions during introspection.
+3. `actionStore`: A nested dictionary (`Record<serviceName, Record<actionName, Action>>`) that holds the exact memory pointers to the full `Action` objects for execution routing.
 
 The engine execution pipeline helpers are extracted into `pipeline.ts` to keep the code modular and under the 400 LOC limit.
 
@@ -3813,9 +3834,9 @@ When `executeAction` is called, the following steps run in sequence:
 
 ### 4.1 Hook Failure Behavior
 
-- Each `HookDefinition` has an `isCritical: boolean` flag
-- `isCritical: true` — if the hook returns `Err` or throws, the pipeline halts immediately
-- `isCritical: false` — failure is logged but execution continues with the previous value
+* Each `HookDefinition` has an `isCritical: boolean` flag
+* `isCritical: true` — if the hook returns `Err` or throws, the pipeline halts immediately
+* `isCritical: false` — failure is logged but execution continues with the previous value
 
 ### 4.2 Pipeline Response Mode
 
@@ -3840,10 +3861,11 @@ Ok({
 All handler and hook invocations in `pipeline.ts` are wrapped in `safeTry` from `slang-ts`. This prevents uncaught exceptions from crashing the process.
 
 Protected call sites:
-- `runHook` — action-level before/after hook handlers
-- `runHandler` — main action handler
-- `runGlobalBeforeHook` — global before hook
-- `runGlobalAfterHook` — global after hook
+
+* `runHook` — action-level before/after hook handlers
+* `runHandler` — main action handler
+* `runGlobalBeforeHook` — global before hook
+* `runGlobalAfterHook` — global after hook
 
 If a handler throws instead of returning a `Result`, `safeTry` catches the exception and returns `Err(error.message)`. The pipeline then handles it identically to a handler-returned `Err`.
 
@@ -3851,17 +3873,17 @@ If a handler throws instead of returning a `Result`, `safeTry` catches the excep
 
 ### 6.1 Constraints
 
-*   **Memory Bound:** Because the engine loads all `services` and their dependencies (Zod schemas, DB models via imports) into memory upfront, it is designed for persistent, long-running server environments (e.g., standard Node.js/Bun containers), not aggressive cold-start environments.
-*   **Immutability:** The initialized stores (`actionStore`, etc.) are closed over in the factory function and cannot be modified at runtime. Dynamic injection of actions post-boot is not supported.
-*   **File Size:** The core `engine.ts` must remain under 400 LOC, relying on `pipeline.ts` for pipeline steps.
+* **Memory Bound:** Because the engine loads all `services` and their dependencies (Zod schemas, DB models via imports) into memory upfront, it is designed for persistent, long-running server environments (e.g., standard Node.js/Bun containers), not aggressive cold-start environments.
+* **Immutability:** The initialized stores (`actionStore`, etc.) are closed over in the factory function and cannot be modified at runtime. Dynamic injection of actions post-boot is not supported.
+* **File Size:** The core `engine.ts` must remain under 400 LOC, relying on `pipeline.ts` for pipeline steps.
 
 ### 6.2 Failure Modes
 
-*   **Missing Service/Action:** Calling `getServiceActions`, `getAction`, or `executeAction` with an unregistered name will immediately return an `Err(string)` result. The transport layer must handle this by returning a `404 Not Found` or equivalent error to the client.
-*   **Duplicate Detection:** The engine throws immediately on boot if it encounters duplicate service names or duplicate action names within the same service. This prevents silent overwrites and catches configuration errors early.
-    - Duplicate service name → `Error: Duplicate service name '<name>'. Service names must be unique.`
-    - Duplicate action name → `Error: Duplicate action name '<name>' in service '<service>'. Action names must be unique within a service.`
-    - The same action name in *different* services is valid and does not throw.
+* **Missing Service/Action:** Calling `getServiceActions`, `getAction`, or `executeAction` with an unregistered name will immediately return an `Err(string)` result. The transport layer must handle this by returning a `404 Not Found` or equivalent error to the client.
+* **Duplicate Detection:** The engine throws immediately on boot if it encounters duplicate service names or duplicate action names within the same service. This prevents silent overwrites and catches configuration errors early.
+  * Duplicate service name → `Error: Duplicate service name '<name>'. Service names must be unique.`
+  * Duplicate action name → `Error: Duplicate action name '<name>' in service '<service>'. Action names must be unique within a service.`
+  * The same action name in *different* services is valid and does not throw.
 
 ## 7. Key Types
 
@@ -3900,8 +3922,8 @@ Tracks the full lifecycle state of a single action execution. Attached to `NileC
 }
 ```
 
-- `state` — mutable key-value store for hooks to share data within a single execution
-- `log` — accumulated `HookLogEntry` records from before/after hook phases
+* `state` — mutable key-value store for hooks to share data within a single execution
+* `log` — accumulated `HookLogEntry` records from before/after hook phases
 
 ### 7.3 `HookLogEntry`
 
@@ -4008,7 +4030,7 @@ export const allServices = createServices([
 
 For larger applications, organize actions one-per-file in domain folders. Define all services in a single `services.config.ts` file that imports the actions and exports the services array. No barrel (`index.ts`) file per service folder is needed.
 
-Keep database code in a separate `db/` directory — schema definitions, client setup, and model files that encapsulate all data access logic. See [Database Utilities](/guide/internals/db) for the full model file pattern.
+Keep database code in a separate `db/` directory — schema definitions, client setup, and model files that encapsulate all data access logic. See [Database Utilities](/nile/guide/internals/db.md) for the full model file pattern.
 
 ```
 src/
@@ -4130,6 +4152,7 @@ export const authService = createService({
 ```
 
 
+
 ---
 url: /nile/guide/internals/rest.md
 ---
@@ -4145,15 +4168,15 @@ The REST interface exposes the Action Engine over HTTP via Hono. It implements a
 
 ### 1.1 Responsibilities
 
-- **Request validation**: Validates incoming JSON against a Zod schema before processing
-- **Intent routing**: Dispatches `explore`, `execute`, and `schema` intents to dedicated handlers
-- **Response mapping**: Converts internal `Result<T, E>` types to the `ExternalResponse` shape at the HTTP boundary
-- **Middleware application**: CORS, rate limiting, and static file serving
-- **Diagnostics**: Emit request routing information via `createDiagnosticsLog` from `utils/diagnostics-log.ts` when `diagnostics` is enabled. See `docs/internals/logging.md` section 7.
+* **Request validation**: Validates incoming JSON against a Zod schema before processing
+* **Intent routing**: Dispatches `explore`, `execute`, and `schema` intents to dedicated handlers
+* **Response mapping**: Converts internal `Result<T, E>` types to the `ExternalResponse` shape at the HTTP boundary
+* **Middleware application**: CORS, rate limiting, and static file serving
+* **Diagnostics**: Emit request routing information via `createDiagnosticsLog` from `utils/diagnostics-log.ts` when `diagnostics` is enabled. See `docs/internals/logging.md` section 7.
 
 ### 1.2 Non-Goals
 
-- **Business logic**: The REST layer does not contain domain logic. It delegates to the engine.
+* **Business logic**: The REST layer does not contain domain logic. It delegates to the engine.
 
 ## 2. Architecture
 
@@ -4187,6 +4210,7 @@ The body is validated against a Zod schema. Invalid JSON or missing fields retur
 Health check endpoint. Only registered when `config.enableStatus` is `true`.
 
 Returns:
+
 ```json
 { "status": true, "message": "{serverName} is running", "data": {} }
 ```
@@ -4194,6 +4218,7 @@ Returns:
 ### 3.3 404 Handler
 
 All unmatched routes return:
+
 ```json
 {
   "status": false,
@@ -4206,8 +4231,8 @@ All unmatched routes return:
 
 All unhandled errors are caught by a global `app.onError` handler:
 
-- **`HTTPException`**: Returns the exception's status code and message in the standard `ExternalResponse` shape. This allows middleware (rate limiter, user middleware) to throw intentional HTTP errors that pass through cleanly.
-- **Unknown errors**: Returns a generic `500 Internal Server Error`. The real error message and stack trace are logged via diagnostics but never exposed to the client.
+* **`HTTPException`**: Returns the exception's status code and message in the standard `ExternalResponse` shape. This allows middleware (rate limiter, user middleware) to throw intentional HTTP errors that pass through cleanly.
+* **Unknown errors**: Returns a generic `500 Internal Server Error`. The real error message and stack trace are logged via diagnostics but never exposed to the client.
 
 ```json
 {
@@ -4229,11 +4254,13 @@ The `explore` and `schema` intents can be gated via `RestConfig.discovery`:
 ```
 
 When `discovery.enabled` is `false` (the default), `explore` and `schema` requests return `403`:
+
 ```json
 { "status": false, "message": "API discovery is disabled", "data": {} }
 ```
 
 When `discovery.secret` is set, the request's `payload.discoverySecret` must match. Mismatches return `403`:
+
 ```json
 { "status": false, "message": "Invalid or missing discovery secret", "data": {} }
 ```
@@ -4241,6 +4268,7 @@ When `discovery.secret` is set, the request's `payload.discoverySecret` must mat
 #### Visibility Filtering
 
 Actions can declare a `visibility` field:
+
 ```typescript
 visibility?: { rest?: boolean; rpc?: boolean }
 ```
@@ -4295,8 +4323,9 @@ All responses use the `ExternalResponse` shape:
 ```
 
 The `toExternalResponse` function handles the `Result` to `ExternalResponse` mapping:
-- `Ok(value)`: if value is a plain object, it becomes `data` directly. Arrays and primitives are wrapped as `{ result: value }`.
-- `Err(message)`: `status: false`, message is the error string, `data` is empty.
+
+* `Ok(value)`: if value is a plain object, it becomes `data` directly. Arrays and primitives are wrapped as `{ result: value }`.
+* `Err(message)`: `status: false`, message is the error string, `data` is empty.
 
 HTTP status codes: `200` for success, `400` for failures and validation errors, `404` for unmatched routes, `500` for unhandled errors (via `app.onError`). `HTTPException` errors pass through with their own status code.
 
@@ -4312,10 +4341,10 @@ Applied first via `applyCorsConfig` from `cors/cors.ts`. See `docs/internals/cor
 
 Only applied when `config.rateLimiting.limitingHeader` is set. Uses `hono-rate-limiter`.
 
-- Client key is extracted from the configured request header
-- If the header is missing, falls back to IP-based identification: `x-forwarded-for` → `x-real-ip` → `"unknown-client"`
-- The fallback is logged via diagnostics so operators can see when the configured header is absent
-- Defaults: 100 requests per 15-minute window
+* Client key is extracted from the configured request header
+* If the header is missing, falls back to IP-based identification: `x-forwarded-for` → `x-real-ip` → `"unknown-client"`
+* The fallback is logged via diagnostics so operators can see when the configured header is absent
+* Defaults: 100 requests per 15-minute window
 
 ### 6.3 Static File Serving
 
@@ -4323,11 +4352,11 @@ Only applied when `config.rateLimiting.limitingHeader` is set. Uses `hono-rate-l
 
 Only applied when `config.enableStatic` is `true`. Supports both `"bun"` and `"node"` runtimes.
 
-- Serves files from the configured `staticDir` (default: `"./assets"`) at `/assets/*`
-- **Auto-creates the directory** if it doesn't exist (`mkdirSync` with `recursive: true`)
-- Dynamically imports the runtime-specific adapter (`hono/bun` for Bun, `@hono/node-server/serve-static` for Node)
-- The import result is cached after first successful load
-- Import failures are caught by `safeTry`. Static serving is silently skipped
+* Serves files from the configured `staticDir` (default: `"./assets"`) at `/assets/*`
+* **Auto-creates the directory** if it doesn't exist (`mkdirSync` with `recursive: true`)
+* Dynamically imports the runtime-specific adapter (`hono/bun` for Bun, `@hono/node-server/serve-static` for Node)
+* The import result is cached after first successful load
+* Import failures are caught by `safeTry`. Static serving is silently skipped
 
 ```typescript
 rest: {
@@ -4445,17 +4474,17 @@ This is a standalone utility. It is NOT auto-wired into the validation chain. Ca
 
 ## 8. Constraints
 
-- **Single POST endpoint**: All service interactions go through `POST {baseUrl}/services`. No per-action routes.
-- **No streaming**: Responses are JSON only. No SSE or chunked transfer.
-- **Rate limiter requires header config**: Without `rateLimiting.limitingHeader` in config, rate limiting is not applied at all. When configured but the header is absent from a request, the limiter falls back to IP-based identification.
+* **Single POST endpoint**: All service interactions go through `POST {baseUrl}/services`. No per-action routes.
+* **No streaming**: Responses are JSON only. No SSE or chunked transfer.
+* **Rate limiter requires header config**: Without `rateLimiting.limitingHeader` in config, rate limiting is not applied at all. When configured but the header is absent from a request, the limiter falls back to IP-based identification.
 
 ## 9. Failure Modes
 
-- **Invalid JSON body**: Returns `400` with "Invalid or missing JSON body"
-- **Schema validation failure**: Returns `400` with Zod issue details in `data.errors`
-- **Wildcard in execute**: Returns `400` with descriptive message
-- **Missing service/action**: Engine returns `Err`, mapped to `400` via `toExternalResponse`
-- **Handler crash**: Caught by `safeTry` in the engine pipeline, returned as `Err`
+* **Invalid JSON body**: Returns `400` with "Invalid or missing JSON body"
+* **Schema validation failure**: Returns `400` with Zod issue details in `data.errors`
+* **Wildcard in execute**: Returns `400` with descriptive message
+* **Missing service/action**: Engine returns `Err`, mapped to `400` via `toExternalResponse`
+* **Handler crash**: Caught by `safeTry` in the engine pipeline, returned as `Err`
 
 
 
@@ -4474,15 +4503,15 @@ The CORS module configures Cross-Origin Resource Sharing middleware on the Hono 
 
 ### 1.1 Responsibilities
 
-- **Default CORS derivation**: Build sensible defaults from `RestConfig.allowedOrigins`
-- **Global middleware**: Apply a catch-all CORS handler to all routes
-- **Route-specific rules**: Apply per-path overrides or resolver-based CORS before the global handler
-- **Security boundary**: Deny access (empty origin) when resolvers throw errors
+* **Default CORS derivation**: Build sensible defaults from `RestConfig.allowedOrigins`
+* **Global middleware**: Apply a catch-all CORS handler to all routes
+* **Route-specific rules**: Apply per-path overrides or resolver-based CORS before the global handler
+* **Security boundary**: Deny access (empty origin) when resolvers throw errors
 
 ### 1.2 Non-Goals
 
-- **Authentication**: CORS is a browser security mechanism, not an auth layer
-- **Request blocking**: CORS headers influence browser behavior but do not block server-side requests
+* **Authentication**: CORS is a browser security mechanism, not an auth layer
+* **Request blocking**: CORS headers influence browser behavior but do not block server-side requests
 
 ## 2. Architecture
 
@@ -4499,8 +4528,8 @@ The CORS module configures Cross-Origin Resource Sharing middleware on the Hono 
 
 `CorsConfig.enabled` controls whether CORS middleware is applied:
 
-- `true` or `"default"` (default): CORS middleware is active
-- `false`: No CORS middleware is applied, no CORS headers are set
+* `true` or `"default"` (default): CORS middleware is active
+* `false`: No CORS middleware is applied, no CORS headers are set
 
 ### 3.2 Default Options
 
@@ -4518,8 +4547,9 @@ The CORS module configures Cross-Origin Resource Sharing middleware on the Hono 
 ```
 
 Origin resolution when no `cors.defaults.origin` is specified:
-- If `allowedOrigins` has entries: request origin is checked against the list, rejected origins get `""`
-- If `allowedOrigins` is empty, the origin defaults to `""` (deny). This is intentional, open access must be explicitly configured.
+
+* If `allowedOrigins` has entries: request origin is checked against the list, rejected origins get `""`
+* If `allowedOrigins` is empty, the origin defaults to `""` (deny). This is intentional, open access must be explicitly configured.
 
 All defaults can be overridden via `cors.defaults`.
 
@@ -4653,14 +4683,14 @@ Receives the helper as the third parameter. No return value; uses setter methods
 
 ## 7. Constraints
 
-- **Hono middleware ordering**: The global `app.use("*", cors(...))` also fires on routes that have route-specific rules. In practice this means the global handler may overwrite route-specific headers. This is known Hono behavior.
-- **No preflight caching per-route**: `maxAge` is set globally. Route-specific `maxAge` overrides are applied but browser caching behavior may vary.
+* **Hono middleware ordering**: The global `app.use("*", cors(...))` also fires on routes that have route-specific rules. In practice this means the global handler may overwrite route-specific headers. This is known Hono behavior.
+* **No preflight caching per-route**: `maxAge` is set globally. Route-specific `maxAge` overrides are applied but browser caching behavior may vary.
 
 ## 8. Failure Modes
 
-- **Resolver throws**: Caught, logged to `console.error`, origin set to `""` (deny)
-- **`enabled: false`**: No CORS middleware is applied. Browsers will block cross-origin requests entirely.
-- **Empty `allowedOrigins` with no `cors.defaults.origin`**: Origin defaults to `""` (deny). Open access must be explicitly configured via an allowed list or `"*"`.`
+* **Resolver throws**: Caught, logged to `console.error`, origin set to `""` (deny)
+* **`enabled: false`**: No CORS middleware is applied. Browsers will block cross-origin requests entirely.
+* **Empty `allowedOrigins` with no `cors.defaults.origin`**: Origin defaults to `""` (deny). Open access must be explicitly configured via an allowed list or `"*"`.\`
 
 
 
@@ -4672,7 +4702,7 @@ url: /nile/guide/others/faq.md
 
 Common questions about building with Nile, with accurate answers that reflect the current state of the framework.
 
----
+***
 
 ## How do I ensure consistent error responses across my API?
 
@@ -4769,7 +4799,7 @@ if (error) {
 
 **Summary:** Use `Err("message")` for expected business errors. Use `handleError(...)` for runtime errors that need logging. The framework handles the rest. Consistent shapes all the way from handler to client.
 
----
+***
 
 ## How do I handle authentication and authorization across multiple services?
 
@@ -4861,9 +4891,9 @@ export const deleteUser: Action = createAction({
 });
 ```
 
-See the full [Authentication guide](/guide/basics/auth) for token sources, JWT claims mapping, and cookie-based auth.
+See the full [Authentication guide](/nile/guide/basics/auth.md) for token sources, JWT claims mapping, and cookie-based auth.
 
----
+***
 
 ## How does Nile handle API routing?
 
@@ -4917,13 +4947,14 @@ const { data: services } = await nile.explore({ service: "*", action: "*" });
 ### Embrace the Model
 
 If you're coming from endpoint-based frameworks, the mental shift is:
-- **Service** = domain grouping (replaces route prefixes like `/users`, `/tasks`)
-- **Action** = operation (replaces individual route handlers)
-- **Intent** = what you want to do (replaces HTTP verbs)
+
+* **Service** = domain grouping (replaces route prefixes like `/users`, `/tasks`)
+* **Action** = operation (replaces individual route handlers)
+* **Intent** = what you want to do (replaces HTTP verbs)
 
 This model scales cleanly. Adding a new operation means adding an action to a service. No route registration, no middleware configuration, no path conflicts.
 
----
+***
 
 ## How do I handle complex, multi-step workflows?
 
@@ -5048,7 +5079,7 @@ services/
     send-confirmation.ts # order confirmation email
 ```
 
----
+***
 
 ## What if the service-action structure doesn't fit my domain?
 
@@ -5140,7 +5171,7 @@ The service-action structure forces clean domain separation. You cannot create a
 
 Every operation in your system has a clear address: `service.action`. Every piece of business logic has a defined home. This makes the codebase navigable, testable, and composable by default.
 
----
+***
 
 ## Why not use GraphQL instead?
 
@@ -5150,7 +5181,7 @@ Nile keeps the familiar mental model. Send a request, get a response. While elim
 
 If your team is already invested in GraphQL and it's working, keep using it. Nile is for teams that want structured, discoverable APIs without leaving the request/response paradigm.
 
----
+***
 
 ## Why not use tRPC for type safety?
 
@@ -5172,7 +5203,7 @@ await nile.invoke({
 });
 ```
 
----
+***
 
 ## Why not stick to pure REST?
 
@@ -5182,7 +5213,7 @@ Nile makes operations explicit. `service: "shipping", action: "calculate"` is cl
 
 For simple CRUD where REST mapping is natural, Nile still works. You just name your actions `create`, `get`, `update`, `delete`. The difference is you're not constrained to that model when your domain outgrows it.
 
----
+***
 
 ## Doesn't using POST for everything violate HTTP semantics?
 
@@ -5192,7 +5223,7 @@ For internal APIs where you control both client and server, the benefits of expl
 
 The single-endpoint model also simplifies infrastructure: load balancers, API gateways, and proxies only need to handle one route.
 
----
+***
 
 ## How does Nile compare to JSON-RPC and traditional REST?
 
@@ -5207,7 +5238,7 @@ The single-endpoint model also simplifies infrastructure: load balancers, API ga
 
 Nile borrows RPC's explicit operations and adds REST-like discoverability. The `explore` intent replaces the need for external API documentation, and `schema` provides machine-readable type information that JSON-RPC doesn't offer.
 
----
+***
 
 ## So is Nile just RPC?
 
@@ -5219,7 +5250,7 @@ Calling Nile "RPC" is like calling Express "HTTP". Technically accurate at the t
 
 The better label is **service-action framework**. You define services (domains) and actions (operations). The framework handles everything else: discovery, validation, auth, execution pipelines, error handling, and the consistent response format. The single-POST interface is an implementation detail, not the identity.
 
----
+***
 
 ## How do I handle caching?
 
@@ -5251,7 +5282,7 @@ Splitting reads into `GET` with query params and mutations into `POST` would ena
 
 If HTTP-level caching is critical to your use case (e.g., a public content API behind a CDN), Nile may not be the right tool. See [When should I NOT use Nile?](#when-should-i-not-use-nile).
 
----
+***
 
 ## How do I handle idempotency without PUT/DELETE?
 
@@ -5259,10 +5290,10 @@ At the application level, which is where idempotency should live anyway. HTTP ve
 
 Practical approaches:
 
-- **Idempotency keys** in the payload, clients send a unique key, the server deduplicates
-- **Database constraints**, unique indexes prevent duplicate resource creation
-- **Action + resource ID**, the combination of `service.action` and the target resource naturally identifies the operation
-- **Conditional checks** in handlers, check current state before applying changes
+* **Idempotency keys** in the payload, clients send a unique key, the server deduplicates
+* **Database constraints**, unique indexes prevent duplicate resource creation
+* **Action + resource ID**, the combination of `service.action` and the target resource naturally identifies the operation
+* **Conditional checks** in handlers, check current state before applying changes
 
 ```typescript
 handler: async (data, context) => {
@@ -5275,19 +5306,21 @@ handler: async (data, context) => {
 },
 ```
 
----
+***
 
 ## How do I version my API?
 
 Multiple strategies, all straightforward with the action model:
 
 **URL versioning** for major breaking changes:
+
 ```typescript
 rest: { baseUrl: "/api/v1" } // v1
 rest: { baseUrl: "/api/v2" } // v2
 ```
 
 **Action evolution**, add new actions, deprecate old ones:
+
 ```typescript
 // Keep the old action working
 createAction({ name: "createUser", ... });
@@ -5301,7 +5334,7 @@ createAction({ name: "createUserV2", ... });
 
 The action-based model actually makes versioning easier than endpoint-based APIs. Adding a new action never conflicts with existing ones, and the `schema` intent always reflects the current state.
 
----
+***
 
 ## How does testing work?
 
@@ -5357,18 +5390,18 @@ const { error, data } = await nile.invoke({
 
 No route table to replicate, no verb-specific mocks, no middleware stacking per test.
 
----
+***
 
 ## What runtimes does Nile support?
 
 Nile runs on **Bun** and **Node.js**. The HTTP layer is built on [Hono](https://hono.dev), which supports both runtimes natively.
 
-- **Bun**, recommended for development and production. Fastest startup, native TypeScript support, built-in test runner.
-- **Node.js**, fully supported via `@hono/node-server`. Use this when deploying to environments that don't support Bun.
+* **Bun**, recommended for development and production. Fastest startup, native TypeScript support, built-in test runner.
+* **Node.js**, fully supported via `@hono/node-server`. Use this when deploying to environments that don't support Bun.
 
 Runtime-specific features (like static file serving) are handled via dynamic adapter imports. The same code works on both runtimes without configuration changes.
 
----
+***
 
 ## What databases work with Nile?
 
@@ -5385,7 +5418,7 @@ const server = createNileServer({
 
 The built-in `createModel` utility provides a typed CRUD model factory for [Drizzle ORM](https://orm.drizzle.team), but this is optional. You can use any database client or ORM. Just pass it through resources and access it in your handlers.
 
----
+***
 
 ## Does Nile support file uploads?
 
@@ -5405,21 +5438,21 @@ const { error, data } = await nile.upload({
 
 See the upload configuration in your server's `RestConfig` for validation options.
 
----
+***
 
 ## When should I NOT use Nile?
 
 Nile is not the right fit for every project:
 
-- **Public APIs where REST conventions are expected**, if your API consumers expect standard REST verbs and resource-based URLs, Nile's single-endpoint model will confuse them
-- **Simple CRUD apps**, if your entire backend is basic resource operations with no business logic, a REST framework with auto-generated routes is faster to set up
-- **Teams deeply invested in GraphQL**, if GraphQL is working and the team knows it, switching adds friction with no clear gain
-- **Performance-critical APIs that rely on HTTP caching**, CDN-level caching with ETags and Cache-Control headers doesn't apply to a single POST endpoint
-- **Cross-organization APIs**, when API consumers are external teams with their own tooling expectations, standard REST or GraphQL is the safer choice
+* **Public APIs where REST conventions are expected**, if your API consumers expect standard REST verbs and resource-based URLs, Nile's single-endpoint model will confuse them
+* **Simple CRUD apps**, if your entire backend is basic resource operations with no business logic, a REST framework with auto-generated routes is faster to set up
+* **Teams deeply invested in GraphQL**, if GraphQL is working and the team knows it, switching adds friction with no clear gain
+* **Performance-critical APIs that rely on HTTP caching**, CDN-level caching with ETags and Cache-Control headers doesn't apply to a single POST endpoint
+* **Cross-organization APIs**, when API consumers are external teams with their own tooling expectations, standard REST or GraphQL is the safer choice
 
 Nile excels at internal APIs, complex business logic, multi-service architectures, and teams that want structured, discoverable backends without boilerplate.
 
----
+***
 
 ## How do I migrate from an existing REST API?
 
@@ -5433,15 +5466,15 @@ Gradual migration works best:
 
 The action-based model doesn't require an all-or-nothing switch. You can run Nile alongside existing infrastructure and migrate incrementally.
 
----
+***
 
 ## How steep is the learning curve?
 
 Minimal. If you can write a function that takes input and returns output, you can write a Nile action. The core concepts are:
 
-- **Service** = a named group of related operations
-- **Action** = a function with a name, optional validation, and a handler
-- **Intent** = what you want to do (execute, explore, schema)
+* **Service** = a named group of related operations
+* **Action** = a function with a name, optional validation, and a handler
+* **Intent** = what you want to do (execute, explore, schema)
 
 That's it. No decorators, no class hierarchies, no dependency injection containers, no module systems to learn. Define actions as functions, group them into services, start the server.
 
@@ -5456,7 +5489,7 @@ export const hello = createAction({
 
 Most developers are productive within an hour because they're already thinking in terms of functions and operations. The framework just gives that mental model a consistent structure.
 
----
+***
 
 ## How is Nile different from MCP (Model Context Protocol)?
 
@@ -5522,7 +5555,7 @@ url: /nile/guide/others/framework-comparison.md
 
 > Objective comparison based on actual codebase analysis of the Nile project.
 
----
+***
 
 ## What Nile IS
 
@@ -5534,14 +5567,14 @@ The architecture emerged around the same time as Anthropic's MCP (Model Context 
 
 Key architectural choices:
 
-- **Functional, factory-based** — no classes, no decorators, no DI containers
-- **Result pattern everywhere** — `Ok(data)` / `Err(message)`, no try/catch
-- **Service -> Action hierarchy** — services group actions; actions are plain objects with `name`, `handler`, optional `validation` (Zod), optional `hooks`
-- **AI-agent ready by default** — every action with a Zod schema auto-exports JSON Schema via the `schema` intent. No adapter layer, no MCP server, no separate tool definitions to maintain
-- **Honest trade-offs** — no HTTP verb semantics means no browser-level caching. Nile targets dashboards, internal tools, and business logic APIs where application-level caching is more appropriate
-- **Monorepo**: `@nilejs/nile` (core), `@nilejs/client` (zero-dep typed client), `@nilejs/cli` (scaffolding/codegen)
+* **Functional, factory-based** — no classes, no decorators, no DI containers
+* **Result pattern everywhere** — `Ok(data)` / `Err(message)`, no try/catch
+* **Service -> Action hierarchy** — services group actions; actions are plain objects with `name`, `handler`, optional `validation` (Zod), optional `hooks`
+* **AI-agent ready by default** — every action with a Zod schema auto-exports JSON Schema via the `schema` intent. No adapter layer, no MCP server, no separate tool definitions to maintain
+* **Honest trade-offs** — no HTTP verb semantics means no browser-level caching. Nile targets dashboards, internal tools, and business logic APIs where application-level caching is more appropriate
+* **Monorepo**: `@nilejs/nile` (core), `@nilejs/client` (zero-dep typed client), `@nilejs/cli` (scaffolding/codegen)
 
----
+***
 
 ## Comparison Table
 
@@ -5568,7 +5601,7 @@ Key architectural choices:
 | **Runtime** | Bun + Node.js (via @hono/node-server) | Node.js, edge runtimes | Any (runtime-agnostic) | Bun only | Node.js (Express/Fastify) |
 | **Maturity** | Early stage — core solid (auth, uploads, hooks, validation, client), WebSocket and streaming not yet implemented | Mature, widely adopted | Very mature, industry standard | Growing rapidly | Very mature, enterprise-proven |
 
----
+***
 
 ## Nile's Unique Strengths
 
@@ -5586,18 +5619,18 @@ Key architectural choices:
 
 7. **Honest Trade-offs** — Nile is upfront about what it doesn't do: no HTTP verb semantics, no browser-level caching, no per-endpoint route matching. These are deliberate design decisions, not missing features. The framework targets dashboards, internal tools, business logic APIs, and AI integration — use cases where these trade-offs are strengths.
 
----
+***
 
 ## Current Gaps
 
-- **WebSocket/RPC transports** — placeholder types only, not yet implemented
-- **Streaming** — no SSE, WebSocket, or chunked transfer support
-- **Actions immutable after boot** — no dynamic registration of services/actions at runtime
-- **Handler data** typed as `Record<string, unknown>` — requires manual casting inside handlers (Zod validates shape, but the handler signature doesn't reflect it)
-- **No HTTP-level caching** — single POST endpoint means no ETags, Cache-Control, or CDN-friendly GET routes. Application-level caching required.
-- **No read/write action distinction** — all actions go through POST regardless of intent. No GET-with-query-params path for read operations
+* **WebSocket/RPC transports** — placeholder types only, not yet implemented
+* **Streaming** — no SSE, WebSocket, or chunked transfer support
+* **Actions immutable after boot** — no dynamic registration of services/actions at runtime
+* **Handler data** typed as `Record<string, unknown>` — requires manual casting inside handlers (Zod validates shape, but the handler signature doesn't reflect it)
+* **No HTTP-level caching** — single POST endpoint means no ETags, Cache-Control, or CDN-friendly GET routes. Application-level caching required.
+* **No read/write action distinction** — all actions go through POST regardless of intent. No GET-with-query-params path for read operations
 
----
+***
 
 ## When to Choose What
 
@@ -5613,7 +5646,7 @@ Key architectural choices:
 | Small teams wanting minimal boilerplate + DB utilities | **Nile** | `createAction` -> `createService` -> done. Optional `createModel` for Drizzle CRUD |
 | Separate frontend/backend repos with type safety | **Nile** | Schema-driven client types without monorepo coupling |
 
----
+***
 
 ## Verdict
 
@@ -5624,10 +5657,11 @@ The core is solid: JWT auth, file uploads, Zod validation, hook pipelines, O(1) 
 The honest gaps are WebSocket support and streaming — both planned but not implemented. The single-POST model means no HTTP-level caching, which rules Nile out for public CDN-cached APIs. Handler data typing (`Record<string, unknown>`) requires manual casting despite Zod validation.
 
 The competitive positioning is clear:
-- tRPC owns monorepo type inference. Nile offers type safety without the monorepo requirement.
-- GraphQL owns complex data graphs. Nile targets operational APIs, not query-heavy data fetching.
-- Elysia owns raw Bun performance. Nile's O(1) routing is fast but doesn't compete on benchmark territory.
-- NestJS owns enterprise patterns. Nile trades OOP structure for functional simplicity.
+
+* tRPC owns monorepo type inference. Nile offers type safety without the monorepo requirement.
+* GraphQL owns complex data graphs. Nile targets operational APIs, not query-heavy data fetching.
+* Elysia owns raw Bun performance. Nile's O(1) routing is fast but doesn't compete on benchmark territory.
+* NestJS owns enterprise patterns. Nile trades OOP structure for functional simplicity.
 
 Where Nile stands alone is the AI integration story. A Nile backend is a complete tool interface out of the box — discoverable, typed, invocable — without MCP, without OpenAPI generation, without any additional layer. As AI-agent integration becomes standard for backend services, this is a genuine structural advantage that the other frameworks would need bolted on.
 
@@ -5636,7 +5670,6 @@ Where Nile stands alone is the AI integration story. A Nile backend is a complet
 ---
 url: /nile/guide/others/llms-txt.md
 ---
-
 
 # LLMs.txt
 
@@ -5654,7 +5687,6 @@ This means your AI assistant already knows how to work with Nile — services, a
 url: /nile/guide/others/llms-full-txt.md
 ---
 
-
 # LLMs Full
 
 [View LLMs Full](/llms-full.txt)
@@ -5669,13 +5701,13 @@ url: /nile/guide/roadmap.md
 
 What's coming next for Nile.
 
----
+***
 
-- **WebSocket Transport** — Real-time bidirectional communication using the same service/action model. Subscribe to action results, push notifications.
-- **Streaming Responses** — SSE and chunked transfer for long-running actions (AI completions, large dataset exports).
-- **Performance Benchmarks** — Formal benchmark suite measuring O(1) action dispatch, throughput comparisons against endpoint-based frameworks (Express, Fastify, NestJS), and Bun vs Node runtime performance across real-world workloads.
+* **WebSocket Transport** — Real-time bidirectional communication using the same service/action model. Subscribe to action results, push notifications.
+* **Streaming Responses** — SSE and chunked transfer for long-running actions (AI completions, large dataset exports).
+* **Performance Benchmarks** — Formal benchmark suite measuring O(1) action dispatch, throughput comparisons against endpoint-based frameworks (Express, Fastify, NestJS), and Bun vs Node runtime performance across real-world workloads.
 
----
+***
 
 *This roadmap reflects current priorities and may change. For the latest status, check the repository issues and discussions.*
 
@@ -5684,6 +5716,7 @@ What's coming next for Nile.
 ---
 url: /nile/index.md
 ---
+
 
 
 

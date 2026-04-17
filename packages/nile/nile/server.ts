@@ -95,53 +95,78 @@ export function createNileServer(config: ServerConfig): NileServer {
     }
   }
 
-  // Build the server object incrementally
+  // Build the server object
   const server: NileServer = {
     config,
     engine,
+    booted: false,
     context: nileContext as NileContext<unknown>,
   };
 
-  // Initialize REST interface if configured
-  if (config.rest) {
-    const restApp = createRestApp({
-      config: config.rest,
-      engine,
-      nileContext: nileContext as NileContext<unknown>,
-      serverName: config.serverName,
-      runtime: config.runtime ?? "bun",
-    });
+  /** Runs after boot succeeds — spins up REST and logs ready */
+  const afterBoot = () => {
+    if (config.rest) {
+      const restApp = createRestApp({
+        config: config.rest,
+        engine,
+        nileContext: nileContext as NileContext<unknown>,
+        serverName: config.serverName,
+        runtime: config.runtime ?? "bun",
+      });
 
-    server.rest = {
-      app: restApp.app,
-      config: config.rest,
-      addMiddleware: restApp.addMiddleware,
-    };
+      server.rest = {
+        app: restApp.app,
+        config: config.rest,
+        addMiddleware: restApp.addMiddleware,
+      };
 
-    const host = config.rest.host ?? "localhost";
-    const port = config.rest.port ?? 8000;
-    const base = `http://${host}:${port}`;
+      const host = config.rest.host ?? "localhost";
+      const port = config.rest.port ?? 8000;
+      const base = `http://${host}:${port}`;
 
-    console.log(`\n  POST ${base}${config.rest.baseUrl}/services`);
-    if (config.rest.enableStatus) {
-      console.log(`  GET  ${base}/status`);
+      console.log(`\n  POST ${base}${config.rest.baseUrl}/services`);
+      if (config.rest.enableStatus) {
+        console.log(`  GET  ${base}/status`);
+      }
+      console.log("");
     }
-    console.log("");
-  }
 
-  // Run onBoot lifecycle hook — awaits fn, crashes process on failure
+    log(`${config.serverName} server ready`);
+  };
+
   if (config.onBoot) {
-    const { fn } = config.onBoot;
-    (async () => {
+    const { fn, maxWaitTime = 10_000 } = config.onBoot;
+    const bootStart = performance.now();
+
+    const boot = async () => {
       const result = await safeTry(() => fn(nileContext));
       if (result.isErr) {
-        log(`onBoot failed: ${result.error}`);
-        process.exit(1);
+        throw new Error(`onBoot failed: ${result.error}`);
       }
-    })();
-  }
+    };
 
-  log(`${config.serverName} server ready`);
+    const timeout = new Promise<never>((_, reject) => {
+      setTimeout(
+        () => reject(new Error(`onBoot timed out after ${maxWaitTime}ms`)),
+        maxWaitTime
+      );
+    });
+
+    Promise.race([boot(), timeout])
+      .then(() => {
+        const ms = (performance.now() - bootStart).toFixed(1);
+        log(`Booted in ${ms}ms`);
+        server.booted = true;
+        afterBoot();
+      })
+      .catch((error) => {
+        log(`Fatal: ${error}`);
+        process.exit(1);
+      });
+  } else {
+    server.booted = true;
+    afterBoot();
+  }
 
   _nileServer = server;
   return server;

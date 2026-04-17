@@ -44,9 +44,9 @@ const server = createNileServer({
 2. **Create `NileContext`**: Single instance with `config.resources` attached
 3. **Create Engine**: Passes `services`, `diagnostics`, and global hook handlers
 4. **Log services table**: When `config.logServices` is `true`, prints a `console.table` of registered services (name, description, actions). Always prints, not gated by `diagnostics`
-5. **Create REST app**: Only if `config.rest` is provided. Passes engine, context, `serverName`, and `runtime` (defaults to `"bun"`)
-6. **Print REST endpoint URLs**: When REST is configured, prints `POST http://host:port/baseUrl/services` and optionally `GET http://host:port/status` via `console.log`. Uses `rest.host` (default `"localhost"`) and `rest.port` (default `8000`)
-7. **Run `onBoot`**: Async IIFE that awaits the callback. On failure, logs via diagnostics logger and calls `process.exit(1)` to crash the process. The server must not run in a degraded state after a failed boot sequence
+5. **Run `onBoot`**: If configured, runs the boot callback inside a `Promise.race` with a configurable timeout (`maxWaitTime`, default 10s). On success, logs `Booted in Xms` and sets `server.booted = true`. On failure or timeout, logs via diagnostics logger and calls `process.exit(1)`. REST setup and the "server ready" message only execute after boot succeeds
+6. **Create REST app**: Only if `config.rest` is provided and boot succeeded. Passes engine, context, `serverName`, and `runtime` (defaults to `"bun"`)
+7. **Print REST endpoint URLs**: When REST is configured, prints `POST http://host:port/baseUrl/services` and optionally `GET http://host:port/status` via `console.log`. Uses `rest.host` (default `"localhost"`) and `rest.port` (default `8000`)
 
 ### 2.2 Return Value (`NileServer`)
 
@@ -55,6 +55,7 @@ const server = createNileServer({
   config: ServerConfig;
   engine: Engine;
   context: NileContext;
+  booted: boolean;
   rest?: {
     app: Hono;
     config: RestConfig;
@@ -63,7 +64,8 @@ const server = createNileServer({
 }
 ```
 
-- `rest` is only present when `config.rest` was provided
+- `booted` is `false` when `onBoot` is configured and boot is still running, `true` after boot succeeds or when no `onBoot` is configured
+- `rest` is only present when `config.rest` was provided **and** boot has completed successfully
 - `engine` provides direct access to `getServices`, `getServiceActions`, `getAction`, `executeAction`
 - `context` is the shared `NileContext` passed to all layers
 - `addMiddleware` registers middleware that runs before the services POST handler. Middleware is executed in registration order via a dynamic runner. A middleware can return a `Response` to short-circuit the request (skipping downstream middleware and the handler).
@@ -85,6 +87,7 @@ const server = createNileServer({
   onAfterActionHandler?: AfterActionHandler<unknown, unknown>;
   onBoot?: {
     fn: (context: NileContext) => Promise<void> | void;
+    maxWaitTime?: number;               // default: 10000 (10s)
   };
   forceNewInstance?: boolean;
 }
@@ -235,7 +238,7 @@ The `logger` field accepts a `NileLogger`. The return type of `createLogger` fro
 
 - **One context per server**: `createNileContext` is called once in `createNileServer`. All interfaces share this instance.
 - **Generic Database Support**: To avoid generic leakage into the core engine, the database type `TDB` is only present in `NileContext` and `Resources`. High-level components (Engine, REST) use `unknown`.
-- **`onBoot` crashes on failure**: The `onBoot` callback is awaited inside an async IIFE. If it fails, `process.exit(1)` is called. This is intentional. A failed boot means the server cannot operate correctly.
+- **`onBoot` crashes on failure**: The `onBoot` callback runs inside a `Promise.race` with a configurable timeout (`maxWaitTime`, default 10s). If it fails or times out, `process.exit(1)` is called. REST setup and the "server ready" message only execute after boot succeeds. This ensures the server never accepts requests before initialization is complete.
 - **Singleton by default**: A second `createNileServer` call returns the existing instance unless `forceNewInstance: true` is passed. A warning is logged when the cached instance is returned.
 - **Runtime default**: If `config.runtime` is omitted, it defaults to `"bun"`. This affects static file serving and runtime-specific behavior.
 - **No dynamic service injection**: Services are fixed at boot time. Adding services after initialization is not supported.
@@ -243,7 +246,7 @@ The `logger` field accepts a `NileLogger`. The return type of `createLogger` fro
 ## 7. Failure Modes
 
 - **Empty services**: `createNileServer` throws immediately with a descriptive error
-- **`onBoot` crash**: Logged via diagnostics logger, then `process.exit(1)`. The server does not start in a degraded state.
+- **`onBoot` crash or timeout**: Logged via diagnostics logger, then `process.exit(1)`. The server does not start in a degraded state. If `maxWaitTime` is exceeded, the error message includes the configured timeout value.
 - **Missing resources**: `resources` is optional. Diagnostics fall back to `console.log` when `resources.logger` is absent (handled by `createDiagnosticsLog`)
 - **Double initialization**: Returns cached instance with a warning unless `forceNewInstance: true`
 

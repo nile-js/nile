@@ -14,17 +14,13 @@
 - [Custom Routes](/nile/guide/basics/custom-routes.md): Nile's REST interface is a standard Hono app. After creating your server, you can add custom routes directly on the Hono instance for things Nile doesn't handle through the service/action model, such as webhooks, OAuth callbacks, health checks, or any traditional HTTP endpoint.
 - [Interacting with Nile](/nile/guide/basics/interacting.md): Nile exposes a single HTTP endpoint for all interactions. All requests are POST requests with a JSON body that specifies the intent, service, action, and payload.
 - [Nile Client](/nile/guide/basics/client.md): The @nilejs/client package is a standalone, type-safe client for interacting with a Nile backend from any JavaScript environment (browser, server, or edge).
-- [Nile Server](/nile/guide/internals/server.md): Type: Reference / Specification
-Path: nile/
+- [Nile Server](/nile/guide/internals/server.md): Type: Reference / Specification Path: nile/
 - [Database Utilities](/nile/guide/internals/db/index.md)
 - [createModel](/nile/guide/internals/db/create-model.md): CRUD model factory for Drizzle tables. Replaces repetitive safeTry + handleError + null-check boilerplate with a single function call.
-- [Logging](/nile/guide/internals/logging.md): Type: Reference / Specification
-Path: logging/
+- [Logging](/nile/guide/internals/logging.md): Type: Reference / Specification Path: logging/
 - [Service Action Engine](/nile/guide/internals/engine.md): Type: Reference / SpecificationPath: engine/
-- [REST Interface](/nile/guide/internals/rest.md): Type: Reference / Specification
-Path: rest/
-- [CORS Middleware](/nile/guide/internals/cors.md): Type: Reference / Specification
-Path: cors/
+- [REST Interface](/nile/guide/internals/rest.md): Type: Reference / Specification Path: rest/
+- [CORS Middleware](/nile/guide/internals/cors.md): Type: Reference / Specification Path: cors/
 - [FAQ](/nile/guide/others/faq.md): Common questions about building with Nile, with accurate answers that reflect the current state of the framework.
 - [Framework Comparison](/nile/guide/others/framework-comparison.md): Objective comparison based on actual codebase analysis of the Nile project.
 - [LLMs](/nile/guide/others/llms-txt.md): View LLMs.txt

@@ -108,6 +108,8 @@ export interface ServerConfig {
   onAfterActionHandler?: AfterActionHandler<unknown, unknown>;
   onBoot?: {
     fn: (context: NileContext<unknown>) => Promise<void> | void;
+    /** Max time in ms to wait for boot before crashing (default: 10000) */
+    maxWaitTime?: number;
   };
 }
 
@@ -128,6 +130,7 @@ export interface NileServer {
   config: ServerConfig;
   engine: Engine;
   context: NileContext<unknown>;
+  booted: boolean;
   rest?: {
     app: Hono;
     config: RestConfig;
