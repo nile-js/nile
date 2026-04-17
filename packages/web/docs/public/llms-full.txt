@@ -2110,7 +2110,7 @@ const server = await createNileServer({
 2. **Create `NileContext`**: Single instance with `config.resources` attached
 3. **Create Engine**: Passes `services`, `diagnostics`, and global hook handlers
 4. **Log services table**: When `config.logServices` is `true`, prints a `console.table` of registered services (name, description, actions). Always prints, not gated by `diagnostics`
-5. **Run `onBoot`**: If configured, awaits the boot callback inside a `Promise.race` with a configurable timeout (`maxWaitTime`, default 10s). On success, logs `Booted in Xms`. On failure or timeout, logs via diagnostics logger and calls `process.exit(1)`. The function does not return until boot completes
+5. **Run `onBoot`**: If configured, awaits the boot callback inside a `Promise.race` with a configurable timeout (`maxWaitTime`, default 10s). On success, logs `Booted in Xms`. On failure or timeout, logs via diagnostics logger and calls `process.exit(1)`. The function does not return until boot completes. Boot timing is always visible via `console.log`
 6. **Create REST app**: Only if `config.rest` is provided. Passes engine, context, `serverName`, and `runtime` (defaults to `"bun"`)
 7. **Print REST endpoint URLs**: When REST is configured, prints `POST http://host:port/baseUrl/services` and optionally `GET http://host:port/status` via `console.log`. Uses `rest.host` (default `"localhost"`) and `rest.port` (default `8000`)
 
