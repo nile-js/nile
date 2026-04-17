@@ -107,7 +107,9 @@ export interface ServerConfig {
   onBeforeActionHandler?: BeforeActionHandler<unknown, unknown>;
   onAfterActionHandler?: AfterActionHandler<unknown, unknown>;
   onBoot?: {
-    fn: (context: NileContext<unknown>) => Promise<void> | void;
+    fn: (
+      context: NileContext<unknown>
+    ) => Promise<Result<null, string>> | Result<null, string>;
     /** Max time in ms to wait for boot before crashing (default: 10000) */
     maxWaitTime?: number;
   };

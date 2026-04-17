@@ -1,4 +1,4 @@
-import { Ok } from "slang-ts";
+import { Err, Ok } from "slang-ts";
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import type { Service } from "../../engine/types";
@@ -146,7 +146,7 @@ describe("createNileServer - REST Interface", () => {
 
 describe("createNileServer - onBoot", () => {
   it("should run onBoot callback", async () => {
-    const bootFn = vi.fn();
+    const bootFn = vi.fn().mockReturnValue(Ok(null));
 
     await createNileServer({
       serverName: "Test",
@@ -168,6 +168,7 @@ describe("createNileServer - onBoot", () => {
       onBoot: {
         fn: (ctx) => {
           receivedContext = ctx;
+          return Ok(null);
         },
       },
     });
@@ -187,6 +188,7 @@ describe("createNileServer - onBoot", () => {
       onBoot: {
         fn: async () => {
           await new Promise((r) => setTimeout(r, 5));
+          return Ok(null);
         },
       },
     });
@@ -205,9 +207,7 @@ describe("createNileServer - onBoot", () => {
       forceNewInstance: true,
       diagnostics: true,
       onBoot: {
-        fn: () => {
-          /* intentional no-op */
-        },
+        fn: () => Ok(null),
       },
     });
 
@@ -227,9 +227,7 @@ describe("createNileServer - onBoot", () => {
       services: mockServices,
       forceNewInstance: true,
       onBoot: {
-        fn: () => {
-          throw new Error("Boot failure");
-        },
+        fn: () => Err("Boot failure"),
       },
     });
 
@@ -254,6 +252,7 @@ describe("createNileServer - onBoot", () => {
       onBoot: {
         fn: async () => {
           await new Promise((r) => setTimeout(r, 500));
+          return Ok(null);
         },
         maxWaitTime: 50,
       },

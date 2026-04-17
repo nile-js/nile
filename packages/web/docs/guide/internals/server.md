@@ -84,7 +84,7 @@ const server = await createNileServer({
   onBeforeActionHandler?: BeforeActionHandler<unknown, unknown>;
   onAfterActionHandler?: AfterActionHandler<unknown, unknown>;
   onBoot?: {
-    fn: (context: NileContext) => Promise<void> | void;
+    fn: (context: NileContext) => Promise<Result<null, string>> | Result<null, string>;
     maxWaitTime?: number;               // default: 10000 (10s)
   };
   forceNewInstance?: boolean;

@@ -167,7 +167,7 @@ export async function createNileServer(
     elapsed >= 1000
       ? `${(elapsed / 1000).toFixed(1)}s`
       : `${elapsed.toFixed(1)}ms`;
-  log(`${config.serverName} server ready in ${readyTime}`);
+  console.log(`\n${config.serverName} server ready in ${readyTime}`);
 
   _nileServer = server;
   return server;

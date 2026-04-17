@@ -1,6 +1,6 @@
 import { createLogger, createNileServer } from "@nilejs/nile";
 import { sql } from "drizzle-orm";
-import { safeTry } from "slang-ts";
+import { Err, Ok, safeTry } from "slang-ts";
 import { db } from "@/db/client";
 import { services } from "@/services/services.config";
 
@@ -48,6 +48,7 @@ const server = await createNileServer({
         atFunction: "onBoot",
         message: "{{projectName}} booted - PGLite schema ready",
       });
+      return Ok(null);
     },
   },
 });
