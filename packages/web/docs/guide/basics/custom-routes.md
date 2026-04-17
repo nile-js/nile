@@ -9,7 +9,7 @@ Nile's REST interface is a standard Hono app. After creating your server, you ca
 ```typescript
 import { createNileServer } from "@nilejs/nile";
 
-const server = createNileServer({
+const server = await createNileServer({
   name: "MyApp",
   services: [/* ... */],
   rest: {
@@ -88,7 +88,7 @@ Access the shared `NileContext` from custom routes using `getContext`:
 ```typescript
 import { createNileServer, getContext } from "@nilejs/nile";
 
-const server = createNileServer({
+const server = await createNileServer({
   name: "MyApp",
   services: [/* ... */],
   resources: { database: db, logger },
@@ -184,7 +184,7 @@ Since Nile's 404 handler catches unmatched routes, register your custom routes *
 import { createNileServer, getContext } from "@nilejs/nile";
 import { Ok } from "slang-ts";
 
-const server = createNileServer({
+const server = await createNileServer({
   name: "PaymentService",
   services: [
     {

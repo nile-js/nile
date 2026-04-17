@@ -130,7 +130,6 @@ export interface NileServer {
   config: ServerConfig;
   engine: Engine;
   context: NileContext<unknown>;
-  booted: boolean;
   rest?: {
     app: Hono;
     config: RestConfig;

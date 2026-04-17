@@ -166,7 +166,7 @@ import { services } from "./services";
 
 const logger = createLogger("my-api", { mode: "prod", chunking: "monthly" });
 
-const server = createNileServer({
+const server = await createNileServer({
   serverName: "my-app",
   services,
   resources: {

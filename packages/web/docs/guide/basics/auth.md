@@ -9,7 +9,7 @@ Pass an `auth` object to your server config:
 ```typescript
 import { createNileServer } from "@nilejs/nile";
 
-const server = createNileServer({
+const server = await createNileServer({
   serverName: "MyApp",
   services: [/* ... */],
   auth: {
@@ -140,7 +140,7 @@ auth: {
 For auth logic beyond JWT (RBAC, API keys, OAuth sessions), use `onBeforeActionHandler` as a middleware gate:
 
 ```typescript
-const server = createNileServer({
+const server = await createNileServer({
   serverName: "MyApp",
   services: [/* ... */],
   auth: { secret: process.env.JWT_SECRET! },
@@ -192,7 +192,7 @@ const createItem: Action = createAction({
   },
 });
 
-const server = createNileServer({
+const server = await createNileServer({
   name: "ItemService",
   services: [
     {

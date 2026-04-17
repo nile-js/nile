@@ -123,7 +123,7 @@ export const services: Services = createServices([
 import { createNileServer } from "@nilejs/nile";
 import { services } from "./services/todos";
 
-const server = createNileServer({
+const server = await createNileServer({
   serverName: "my-app",
   services,
   rest: {

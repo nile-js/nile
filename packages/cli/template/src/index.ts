@@ -29,7 +29,7 @@ const pushSchema = async () => {
   }
 };
 
-const server = createNileServer({
+const server = await createNileServer({
   serverName: "{{projectName}}",
   services,
   resources: { logger, database: db },

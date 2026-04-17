@@ -21,29 +21,32 @@ const mockServices: Service[] = [
   },
 ];
 
+const bootedInPattern = /Booted in \d+\.\d+ms/;
+const timedOutPattern = /timed out after 50ms/;
+
 describe("createNileServer - Initialization", () => {
-  it("should throw if no services provided", () => {
-    expect(() =>
+  it("should throw if no services provided", async () => {
+    await expect(
       createNileServer({
         serverName: "Test",
         services: [],
         forceNewInstance: true,
       })
-    ).toThrow("at least one service");
+    ).rejects.toThrow("at least one service");
   });
 
-  it("should throw if services is undefined", () => {
+  it("should throw if services is undefined", async () => {
     // Type assertion to bypass compile-time check — testing runtime guard
-    expect(() =>
+    await expect(
       createNileServer({
         serverName: "Test",
         forceNewInstance: true,
       } as Parameters<typeof createNileServer>[0])
-    ).toThrow("at least one service");
+    ).rejects.toThrow("at least one service");
   });
 
-  it("should return a NileServer with engine and context", () => {
-    const server = createNileServer({
+  it("should return a NileServer with engine and context", async () => {
+    const server = await createNileServer({
       serverName: "Test",
       services: mockServices,
       forceNewInstance: true,
@@ -54,8 +57,8 @@ describe("createNileServer - Initialization", () => {
     expect(server.config.serverName).toBe("Test");
   });
 
-  it("should not have rest property when rest config is absent", () => {
-    const server = createNileServer({
+  it("should not have rest property when rest config is absent", async () => {
+    const server = await createNileServer({
       serverName: "Test",
       services: mockServices,
       forceNewInstance: true,
@@ -66,8 +69,8 @@ describe("createNileServer - Initialization", () => {
 });
 
 describe("createNileServer - REST Interface", () => {
-  it("should create rest.app when rest config is provided", () => {
-    const server = createNileServer({
+  it("should create rest.app when rest config is provided", async () => {
+    const server = await createNileServer({
       serverName: "Test",
       services: mockServices,
       forceNewInstance: true,
@@ -84,7 +87,7 @@ describe("createNileServer - REST Interface", () => {
   });
 
   it("should serve requests through the rest app", async () => {
-    const server = createNileServer({
+    const server = await createNileServer({
       serverName: "TestServer",
       services: mockServices,
       forceNewInstance: true,
@@ -141,30 +144,24 @@ describe("createNileServer - REST Interface", () => {
   });
 });
 
-/** Flush microtask queue so fire-and-forget async boot completes */
-const flushMicrotasks = () => new Promise((r) => setTimeout(r, 10));
-const bootedInPattern = /Booted in \d+\.\d+ms/;
-const timedOutPattern = /timed out after 50ms/;
-
 describe("createNileServer - onBoot", () => {
   it("should run onBoot callback", async () => {
     const bootFn = vi.fn();
 
-    createNileServer({
+    await createNileServer({
       serverName: "Test",
       services: mockServices,
       forceNewInstance: true,
       onBoot: { fn: bootFn },
     });
 
-    await flushMicrotasks();
     expect(bootFn).toHaveBeenCalledTimes(1);
   });
 
   it("should pass nileContext to onBoot callback", async () => {
     let receivedContext: unknown = null;
 
-    createNileServer({
+    await createNileServer({
       serverName: "Test",
       services: mockServices,
       forceNewInstance: true,
@@ -175,15 +172,14 @@ describe("createNileServer - onBoot", () => {
       },
     });
 
-    await flushMicrotasks();
     expect(receivedContext).not.toBeNull();
 
     const ctx = receivedContext as { _store: Map<string, unknown> };
     expect(ctx._store).toBeInstanceOf(Map);
   });
 
-  it("should set booted and rest only after boot completes", async () => {
-    const server = createNileServer({
+  it("should have rest defined after boot completes", async () => {
+    const server = await createNileServer({
       serverName: "Test",
       services: mockServices,
       forceNewInstance: true,
@@ -195,14 +191,6 @@ describe("createNileServer - onBoot", () => {
       },
     });
 
-    // Before boot completes
-    expect(server.booted).toBe(false);
-    expect(server.rest).toBeUndefined();
-
-    await flushMicrotasks();
-
-    // After boot completes
-    expect(server.booted).toBe(true);
     expect(server.rest).toBeDefined();
   });
 
@@ -211,7 +199,7 @@ describe("createNileServer - onBoot", () => {
       // intentional no-op for test
     });
 
-    createNileServer({
+    await createNileServer({
       serverName: "Test",
       services: mockServices,
       forceNewInstance: true,
@@ -222,8 +210,6 @@ describe("createNileServer - onBoot", () => {
         },
       },
     });
-
-    await flushMicrotasks();
 
     const allLogs = logSpy.mock.calls.flat().join(" ");
     expect(allLogs).toMatch(bootedInPattern);
@@ -236,7 +222,7 @@ describe("createNileServer - onBoot", () => {
       .spyOn(process, "exit")
       .mockImplementation(() => undefined as never);
 
-    createNileServer({
+    await createNileServer({
       serverName: "Test",
       services: mockServices,
       forceNewInstance: true,
@@ -247,7 +233,6 @@ describe("createNileServer - onBoot", () => {
       },
     });
 
-    await flushMicrotasks();
     expect(exitSpy).toHaveBeenCalledWith(1);
 
     exitSpy.mockRestore();
@@ -261,7 +246,7 @@ describe("createNileServer - onBoot", () => {
       // intentional no-op for test
     });
 
-    createNileServer({
+    await createNileServer({
       serverName: "Test",
       services: mockServices,
       forceNewInstance: true,
@@ -274,7 +259,6 @@ describe("createNileServer - onBoot", () => {
       },
     });
 
-    await new Promise((r) => setTimeout(r, 100));
     expect(exitSpy).toHaveBeenCalledWith(1);
 
     const allLogs = logSpy.mock.calls.flat().join(" ");
@@ -284,7 +268,7 @@ describe("createNileServer - onBoot", () => {
     logSpy.mockRestore();
   });
 
-  it("should log services table by default", () => {
+  it("should log services table by default", async () => {
     const tableSpy = vi.spyOn(console, "table").mockImplementation(() => {
       // intentional no-op for test
     });
@@ -292,7 +276,7 @@ describe("createNileServer - onBoot", () => {
       // suppress REST endpoint URL output
     });
 
-    createNileServer({
+    await createNileServer({
       serverName: "Test",
       services: mockServices,
       forceNewInstance: true,
@@ -311,12 +295,12 @@ describe("createNileServer - onBoot", () => {
     logSpy.mockRestore();
   });
 
-  it("should not log services table when logServices is false", () => {
+  it("should not log services table when logServices is false", async () => {
     const tableSpy = vi.spyOn(console, "table").mockImplementation(() => {
       // intentional no-op for test
     });
 
-    createNileServer({
+    await createNileServer({
       serverName: "Test",
       services: mockServices,
       forceNewInstance: true,
@@ -330,18 +314,18 @@ describe("createNileServer - onBoot", () => {
 });
 
 describe("createNileServer - Instance Management", () => {
-  it("returns existing instance on second call without forceNewInstance", () => {
+  it("returns existing instance on second call without forceNewInstance", async () => {
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {
       // intentional no-op for test
     });
 
-    const server1 = createNileServer({
+    const server1 = await createNileServer({
       serverName: "First",
       services: mockServices,
       forceNewInstance: true,
     });
 
-    const server2 = createNileServer({
+    const server2 = await createNileServer({
       serverName: "Second",
       services: mockServices,
     });
@@ -355,14 +339,14 @@ describe("createNileServer - Instance Management", () => {
     warnSpy.mockRestore();
   });
 
-  it("creates new instance when forceNewInstance is true", () => {
-    const server1 = createNileServer({
+  it("creates new instance when forceNewInstance is true", async () => {
+    const server1 = await createNileServer({
       serverName: "First",
       services: mockServices,
       forceNewInstance: true,
     });
 
-    const server2 = createNileServer({
+    const server2 = await createNileServer({
       serverName: "Second",
       services: mockServices,
       forceNewInstance: true,
@@ -374,10 +358,10 @@ describe("createNileServer - Instance Management", () => {
 });
 
 describe("createNileServer - Resources", () => {
-  it("should attach resources to the shared context", () => {
+  it("should attach resources to the shared context", async () => {
     const mockLogger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
 
-    const server = createNileServer({
+    const server = await createNileServer({
       serverName: "Test",
       services: mockServices,
       forceNewInstance: true,

@@ -121,7 +121,7 @@ export const services: Services = [
 
 ### Server
 
-`createNileServer` is the main entry point. It is synchronous and returns a `NileServer` instance. It is a singleton -- calling it twice returns the same instance (with a warning) unless `forceNewInstance: true` is set.
+`createNileServer` is the main entry point. It is async and returns a `NileServer` instance. It is a singleton -- calling it twice returns the same instance (with a warning) unless `forceNewInstance: true` is set.
 
 ```typescript
 import { createNileServer } from "@nilejs/nile";
@@ -131,7 +131,7 @@ import { createLogger } from "@nilejs/nile";
 
 const logger = createLogger("my-app", { mode: "dev" });
 
-const server = createNileServer({
+const server = await createNileServer({
   serverName: "my-app",
   services,
   resources: { database: db, logger },
@@ -214,7 +214,7 @@ Reading `ctx.get("rest")` also returns the request-scoped Hono context (not the 
 Nile provides built-in JWT verification via `hono/jwt`. Configure it on the server:
 
 ```typescript
-const server = createNileServer({
+const server = await createNileServer({
   serverName: "my-app",
   services,
   auth: {
@@ -287,7 +287,7 @@ const findUser = async (id: string) => {
 CORS is configured through `allowedOrigins` on `RestConfig` and optional fine-grained control via `cors`:
 
 ```typescript
-const server = createNileServer({
+const server = await createNileServer({
   serverName: "my-app",
   services,
   rest: {
@@ -371,7 +371,7 @@ Mode behavior:
 Pass the logger as a resource so it is available everywhere via `getContext().resources.logger`:
 
 ```typescript
-const server = createNileServer({
+const server = await createNileServer({
   serverName: "my-app",
   services,
   resources: { logger },
@@ -384,7 +384,7 @@ const server = createNileServer({
 Discovery controls whether `explore` and `schema` intents are available. It is **disabled by default**.
 
 ```typescript
-const server = createNileServer({
+const server = await createNileServer({
   serverName: "my-app",
   services,
   rest: {
@@ -442,7 +442,7 @@ createAction({
 });
 
 // Global hooks on server config
-createNileServer({
+await createNileServer({
   services,
   onBeforeActionHandler: ({ nileContext, action, payload }) => {
     // Auth checks, logging, rate limiting, etc.
@@ -565,7 +565,7 @@ import { redis } from "./cache/client";
 
 const logger = createLogger("my-app", { mode: "dev" });
 
-const server = createNileServer({
+const server = await createNileServer({
   serverName: "my-app",
   services,
   resources: {

@@ -7,7 +7,7 @@ Nile can serve static files from a local directory through the REST interface. T
 Enable static file serving with `enableStatic` and specify your server runtime:
 
 ```typescript
-const server = createNileServer({
+const server = await createNileServer({
   name: "MyApp",
   runtime: "bun", // or "node"
   services: [/* ... */],

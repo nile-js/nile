@@ -7,7 +7,7 @@ Nile handles multipart form-data uploads through the same single POST endpoint. 
 Enable uploads in your REST config:
 
 ```typescript
-const server = createNileServer({
+const server = await createNileServer({
   name: "MyApp",
   services: [/* ... */],
   rest: {

@@ -112,7 +112,7 @@ Configure JWT verification once at the server level. Every service and action in
 ```typescript
 import { createNileServer } from "@nilejs/nile";
 
-const server = createNileServer({
+const server = await createNileServer({
   name: "MyApp",
   services: [/* ... */],
   auth: {
@@ -158,7 +158,7 @@ For role-based access control or custom authorization logic, use `onBeforeAction
 ```typescript
 import { Ok, Err } from "slang-ts";
 
-const server = createNileServer({
+const server = await createNileServer({
   name: "MyApp",
   services: [/* ... */],
   auth: { secret: process.env.JWT_SECRET! },
@@ -427,7 +427,7 @@ export const registerUser: Action = createAction({
 Logic that applies across services (logging, authorization, rate limiting, audit trails) goes in global hooks:
 
 ```typescript
-const server = createNileServer({
+const server = await createNileServer({
   services: [/* ... */],
   onBeforeActionHandler: async ({ nileContext, action, payload }) => {
     // Runs before every action in every service
@@ -705,7 +705,7 @@ Runtime-specific features (like static file serving) are handled via dynamic ada
 Nile is database-agnostic. The framework doesn't prescribe a database or ORM. You pass your database instance as a resource and access it via context:
 
 ```typescript
-const server = createNileServer({
+const server = await createNileServer({
   services: [/* ... */],
   resources: {
     database: myDrizzleInstance, // or Prisma, Kysely, raw pg, etc.

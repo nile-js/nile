@@ -113,7 +113,7 @@ export const services: Services = [
 import { createNileServer } from "@nilejs/nile";
 import { services } from "./services/config";
 
-const server = createNileServer({
+const server = await createNileServer({
   serverName: "my-app",
   services,
   rest: {
@@ -318,7 +318,7 @@ When `isCritical` is `true`, a hook failure stops the pipeline. When `false`, fa
 **Global hooks** run on every action. Define them in your server config:
 
 ```typescript
-const server = createNileServer({
+const server = await createNileServer({
   serverName: "my-app",
   services,
   onBeforeActionHandler: ({ nileContext, action, payload }) => {

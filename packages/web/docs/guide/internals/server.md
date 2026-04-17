@@ -27,7 +27,7 @@ The Nile Server module provides the top-level factory for bootstrapping a Nile a
 ```typescript
 import { createNileServer } from "@nilejs/nile";
 
-const server = createNileServer({
+const server = await createNileServer({
   serverName: "my-app",
   services: [/* ... */],
   rest: {
@@ -44,8 +44,8 @@ const server = createNileServer({
 2. **Create `NileContext`**: Single instance with `config.resources` attached
 3. **Create Engine**: Passes `services`, `diagnostics`, and global hook handlers
 4. **Log services table**: When `config.logServices` is `true`, prints a `console.table` of registered services (name, description, actions). Always prints, not gated by `diagnostics`
-5. **Run `onBoot`**: If configured, runs the boot callback inside a `Promise.race` with a configurable timeout (`maxWaitTime`, default 10s). On success, logs `Booted in Xms` and sets `server.booted = true`. On failure or timeout, logs via diagnostics logger and calls `process.exit(1)`. REST setup and the "server ready" message only execute after boot succeeds
-6. **Create REST app**: Only if `config.rest` is provided and boot succeeded. Passes engine, context, `serverName`, and `runtime` (defaults to `"bun"`)
+5. **Run `onBoot`**: If configured, awaits the boot callback inside a `Promise.race` with a configurable timeout (`maxWaitTime`, default 10s). On success, logs `Booted in Xms`. On failure or timeout, logs via diagnostics logger and calls `process.exit(1)`. The function does not return until boot completes
+6. **Create REST app**: Only if `config.rest` is provided. Passes engine, context, `serverName`, and `runtime` (defaults to `"bun"`)
 7. **Print REST endpoint URLs**: When REST is configured, prints `POST http://host:port/baseUrl/services` and optionally `GET http://host:port/status` via `console.log`. Uses `rest.host` (default `"localhost"`) and `rest.port` (default `8000`)
 
 ### 2.2 Return Value (`NileServer`)
@@ -55,7 +55,6 @@ const server = createNileServer({
   config: ServerConfig;
   engine: Engine;
   context: NileContext;
-  booted: boolean;
   rest?: {
     app: Hono;
     config: RestConfig;
@@ -64,8 +63,7 @@ const server = createNileServer({
 }
 ```
 
-- `booted` is `false` when `onBoot` is configured and boot is still running, `true` after boot succeeds or when no `onBoot` is configured
-- `rest` is only present when `config.rest` was provided **and** boot has completed successfully
+- `rest` is only present when `config.rest` was provided
 - `engine` provides direct access to `getServices`, `getServiceActions`, `getAction`, `executeAction`
 - `context` is the shared `NileContext` passed to all layers
 - `addMiddleware` registers middleware that runs before the services POST handler. Middleware is executed in registration order via a dynamic runner. A middleware can return a `Response` to short-circuit the request (skipping downstream middleware and the handler).
@@ -238,7 +236,8 @@ The `logger` field accepts a `NileLogger`. The return type of `createLogger` fro
 
 - **One context per server**: `createNileContext` is called once in `createNileServer`. All interfaces share this instance.
 - **Generic Database Support**: To avoid generic leakage into the core engine, the database type `TDB` is only present in `NileContext` and `Resources`. High-level components (Engine, REST) use `unknown`.
-- **`onBoot` crashes on failure**: The `onBoot` callback runs inside a `Promise.race` with a configurable timeout (`maxWaitTime`, default 10s). If it fails or times out, `process.exit(1)` is called. REST setup and the "server ready" message only execute after boot succeeds. This ensures the server never accepts requests before initialization is complete.
+- **`createNileServer` is async**: The function returns a `Promise<NileServer>`. Use `await` or `.then()`. Requires ES modules (top-level await) or wrapping in an async function.
+- **`onBoot` crashes on failure**: The `onBoot` callback is awaited inside a `Promise.race` with a configurable timeout (`maxWaitTime`, default 10s). If it fails or times out, `process.exit(1)` is called. The server never returns in a degraded state.
 - **Singleton by default**: A second `createNileServer` call returns the existing instance unless `forceNewInstance: true` is passed. A warning is logged when the cached instance is returned.
 - **Runtime default**: If `config.runtime` is omitted, it defaults to `"bun"`. This affects static file serving and runtime-specific behavior.
 - **No dynamic service injection**: Services are fixed at boot time. Adding services after initialization is not supported.
