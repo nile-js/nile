@@ -47,7 +47,7 @@ export type ActionHandler<T = unknown, E = string> = (
   context?: NileContext<unknown>
 ) => Result<T, E> | Promise<Result<T, E>>;
 
-export interface Action {
+export interface Action<T = unknown, E = string> {
   name: string;
   description: string;
   isProtected?: boolean;
@@ -59,7 +59,7 @@ export interface Action {
     contentType: "multipart/form-data" | "application/json" | "other";
     uploadMode?: "flat" | "structured";
   };
-  handler: ActionHandler;
+  handler: ActionHandler<T, E>;
   validation?: z.ZodTypeAny | null;
   hooks?: {
     before?: HookDefinition[];
@@ -70,7 +70,7 @@ export interface Action {
   meta?: Record<string, unknown>; // Generic metadata for any purpose, caching, rate limiting, etc.)
 }
 
-export type Actions = Action[];
+export type Actions = Action<unknown>[];
 
 export interface Service {
   name: string;
