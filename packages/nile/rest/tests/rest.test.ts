@@ -103,9 +103,9 @@ describe("REST Interface - Explore Intent", () => {
 
     expect(status).toBe(200);
     expect(json.status).toBe(true);
-    expect(Array.isArray(json.data.result)).toBe(true);
+    expect(Array.isArray(json.data.services)).toBe(true);
 
-    const services = json.data.result as Array<{ name: string }>;
+    const services = json.data.services as Array<{ name: string }>;
     expect(services.length).toBe(2);
     expect(services[0]?.name).toBe("users");
     expect(services[1]?.name).toBe("logs");
@@ -122,7 +122,7 @@ describe("REST Interface - Explore Intent", () => {
     expect(status).toBe(200);
     expect(json.status).toBe(true);
 
-    const actions = json.data.result as Array<{ name: string }>;
+    const actions = json.data.actions as Array<{ name: string }>;
     expect(actions.length).toBe(2);
     expect(actions[0]?.name).toBe("createUser");
   });

@@ -43,7 +43,7 @@ export interface HookContext {
 }
 
 export type ActionHandler<T = unknown, E = string> = (
-  data: Record<string, unknown>,
+  data: T,
   context?: NileContext<unknown>
 ) => Result<T, E> | Promise<Result<T, E>>;
 

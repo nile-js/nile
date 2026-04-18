@@ -110,19 +110,21 @@ curl -X POST http://localhost:8000/api/services \
 {
   "status": true,
   "message": "Available services",
-  "data": [
-    {
-      "name": "tasks",
-      "description": "Task management operations",
-      "meta": { "version": "1.0.0" },
-      "actions": ["create", "list", "get", "update", "delete"]
-    },
-    {
-      "name": "auth",
-      "description": "Authentication service",
-      "actions": ["login", "logout", "register"]
-    }
-  ]
+  "data": {
+    "services": [
+      {
+        "name": "tasks",
+        "description": "Task management operations",
+        "meta": { "version": "1.0.0" },
+        "actions": ["create", "list", "get", "update", "delete"]
+      },
+      {
+        "name": "auth",
+        "description": "Authentication service",
+        "actions": ["login", "logout", "register"]
+      }
+    ]
+  }
 }
 ```
 
@@ -144,29 +146,31 @@ curl -X POST http://localhost:8000/api/services \
 {
   "status": true,
   "message": "Actions for 'tasks'",
-  "data": [
-    {
-      "name": "create",
-      "description": "Create a new task",
-      "isProtected": false,
-      "validation": true,
-      "accessControl": []
-    },
-    {
-      "name": "list",
-      "description": "List all tasks",
-      "isProtected": false,
-      "validation": false,
-      "accessControl": []
-    },
-    {
-      "name": "get",
-      "description": "Get a task by ID",
-      "isProtected": true,
-      "validation": true,
-      "accessControl": []
-    }
-  ]
+  "data": {
+    "actions": [
+      {
+        "name": "create",
+        "description": "Create a new task",
+        "isProtected": false,
+        "validation": true,
+        "accessControl": []
+      },
+      {
+        "name": "list",
+        "description": "List all tasks",
+        "isProtected": false,
+        "validation": false,
+        "accessControl": []
+      },
+      {
+        "name": "get",
+        "description": "Get a task by ID",
+        "isProtected": true,
+        "validation": true,
+        "accessControl": []
+      }
+    ]
+  }
 }
 ```
 

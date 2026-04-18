@@ -187,8 +187,8 @@ describe("REST Form-Data Path - Routing Extraction", () => {
 
     expect(res.status).toBe(200);
     expect(json.status).toBe(true);
-    const result = json.data.result as Array<{ name: string }>;
-    expect(result.length).toBe(2);
+    const services = json.data.services as Array<{ name: string }>;
+    expect(services.length).toBe(2);
   });
 
   it("should support schema intent via form-data", async () => {

@@ -11,6 +11,28 @@ export interface ClientResult<T = Record<string, unknown>> {
   data: T | null;
 }
 
+/** Explore response for service listing (service: "*", action: "*") */
+export interface ExploreServicesResponse {
+  services: Array<{
+    name: string;
+    description: string;
+    meta?: Record<string, unknown>;
+    actions: string[];
+  }>;
+}
+
+/** Explore response for action listing (service: "name", action: "*") */
+export interface ExploreActionsResponse {
+  actions: Array<{
+    name: string;
+    description: string;
+    isProtected: boolean;
+    validation: boolean;
+    accessControl: string[];
+    visibility?: { rest?: boolean; rpc?: boolean };
+  }>;
+}
+
 /** Nile intent payload structure */
 export interface NileIntentParams<T = Record<string, unknown>> {
   service: string;
@@ -80,7 +102,9 @@ export interface NileClient<
   ) => Promise<ClientResult>;
 
   /** Discover services/actions (supports "*" wildcard) */
-  explore: (params: DiscoveryParams) => Promise<ClientResult>;
+  explore: <T = ExploreServicesResponse | ExploreActionsResponse>(
+    params: DiscoveryParams
+  ) => Promise<ClientResult<T>>;
 
   /** Get action schemas as JSON Schema (supports "*" wildcard) */
   schema: (params: DiscoveryParams) => Promise<ClientResult>;

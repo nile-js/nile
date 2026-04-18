@@ -240,7 +240,7 @@ Unlike endpoint-based APIs that need separate documentation (OpenAPI, Swagger), 
 
 ```typescript
 // Client-side discovery
-const { data: services } = await nile.explore({ service: "*", action: "*" });
+const { data: { services } } = await nile.explore({ service: "*", action: "*" });
 // Returns all services with their actions, descriptions, and metadata
 ```
 

@@ -91,13 +91,13 @@ Use `explore` to discover available services and actions at runtime:
 
 ```typescript
 // List all services
-const { data: services } = await nile.explore({
+const { data: { services } } = await nile.explore({
   service: "*",
   action: "*",
 });
 
 // List actions in a specific service
-const { data: actions } = await nile.explore({
+const { data: { actions } } = await nile.explore({
   service: "tasks",
   action: "*",
 });

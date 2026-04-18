@@ -46,7 +46,14 @@ export function handleExplore(
   const { service, action } = request;
 
   if (service === "*") {
-    return toExternalResponse(engine.getServices(), "Available services");
+    const servicesResult = engine.getServices();
+    if (servicesResult.isErr) {
+      return toExternalResponse(servicesResult, "");
+    }
+    return toExternalResponse(
+      Ok({ services: servicesResult.value }),
+      "Available services"
+    );
   }
 
   if (action === "*") {
@@ -55,7 +62,10 @@ export function handleExplore(
       return toExternalResponse(result, "");
     }
     const visible = result.value.filter((a) => a.visibility?.rest !== false);
-    return toExternalResponse(Ok(visible), `Actions for '${service}'`);
+    return toExternalResponse(
+      Ok({ actions: visible }),
+      `Actions for '${service}'`
+    );
   }
 
   const actionResult = engine.getAction(service, action);
