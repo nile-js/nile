@@ -35,3 +35,35 @@
 .rp-codeblock__content :where(pre) {
   margin: 0 !important;
 }
+
+/* Force code blocks to use consistent dark background in both modes */
+.rp-codeblock__content {
+  background-color: #0d0d0d !important;
+}
+
+.rp-codeblock__content pre {
+  background-color: #0d0d0d !important;
+}
+
+.rp-codeblock__content code {
+  background-color: #0d0d0d !important;
+}
+
+/* Code block wrapper/header */
+.rp-codeblock {
+  background-color: #0d0d0d !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.rp-codeblock__header {
+  background-color: #080808 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.rp-codeblock__header span {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.rp-codeblock__header button {
+  color: rgba(255, 255, 255, 0.6) !important;
+}

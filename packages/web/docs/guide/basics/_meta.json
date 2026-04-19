@@ -7,5 +7,6 @@
   { "type": "file", "name": "file-serving", "label": "Static File Serving" },
   { "type": "file", "name": "custom-routes", "label": "Custom Routes" },
   { "type": "file", "name": "interacting", "label": "Interacting" },
-  { "type": "file", "name": "client", "label": "Client" }
+  { "type": "file", "name": "client", "label": "Client Side" },
+  { "type": "file", "name": "type-system", "label": "Type System" }
 ]

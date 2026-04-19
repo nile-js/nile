@@ -9,7 +9,7 @@ export default defineConfig({
   description:
     "TypeScript-first, service and actions oriented backend framework",
   icon: "/rspress-icon.png",
-  logoText: "🌊 Nile",
+  logoText: "🌊 Nile Js",
   plugins: [
     pluginLlms({
       exclude: ({ page }) => {

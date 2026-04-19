@@ -1,14 +1,14 @@
 {
   "name": "nile-docs",
   "description": "TypeScript-first, service and actions oriented backend framework",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "rspress build",
+    "build": "bun run scripts/generate-home-code.ts && rspress build",
     "postbuild": "cp doc_build/llms.txt doc_build/llms-full.txt docs/public/",
     "check": "biome check --write",
-    "dev": "rspress dev",
+    "dev": "bun run scripts/generate-home-code.ts && rspress dev",
     "format": "biome format --write",
     "preview": "rspress preview"
   },

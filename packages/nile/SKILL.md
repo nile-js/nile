@@ -8,7 +8,7 @@ license: MIT
 
 This skill provides context for AI coding agents working with the Nile backend framework (`@nilejs/nile`).
 
-- GitHub: https://github.com/nile-squad/nile
+- GitHub: https://github.com/nile-js/nile
 - Docs: https://nile-js.github.io/nile
 - NPM: https://www.npmjs.com/package/@nilejs/nile
 
@@ -63,28 +63,31 @@ Always use `safeTry` instead of try/catch blocks. It returns a Result that can b
 
 ### Actions
 
-Actions are the fundamental unit of work. Each action is a plain function that takes validated data and returns a Result.
+Actions are the fundamental unit of work. Each action is a plain function that takes validated data and returns a Result. Actions are generic and preserve type safety:
 
 ```typescript
 import { Ok } from "slang-ts";
 import z from "zod";
-import { createAction, type Action } from "@nilejs/nile";
+import { createAction, type ActionHandler } from "@nilejs/nile";
 
 const createTaskSchema = z.object({
   title: z.string().min(1, "Title is required"),
   status: z.enum(["pending", "in-progress", "done"]).default("pending"),
 });
 
-const createTaskHandler = (data: Record<string, unknown>) => {
+type CreateTaskPayload = z.infer<typeof createTaskSchema>;
+
+// data is typed as CreateTaskPayload
+const createTaskHandler: ActionHandler<CreateTaskPayload> = (data) => {
   const task = {
     id: crypto.randomUUID(),
-    title: data.title as string,
-    status: (data.status as string) ?? "pending",
+    title: data.title,
+    status: data.status,
   };
   return Ok({ task });
 };
 
-export const createTaskAction: Action = createAction({
+export const createTaskAction = createAction({
   name: "create",
   description: "Create a new task",
   validation: createTaskSchema,
@@ -106,17 +109,14 @@ Actions support several options:
 Services group related actions. They are plain arrays of objects -- no classes.
 
 ```typescript
-import { type Services } from "@nilejs/nile";
+import { createService, type Service } from "@nilejs/nile";
 import { createTaskAction } from "./tasks/create";
-import { listTasksAction } from "./tasks/list";
 
-export const services: Services = [
-  {
-    name: "tasks",
-    description: "Task management",
-    actions: [createTaskAction, listTasksAction],
-  },
-];
+export const tasksService = createService({
+  name: "tasks",
+  description: "Task management",
+  actions: [createTaskAction],
+});
 ```
 
 ### Server
@@ -231,7 +231,7 @@ const server = await createNileServer({
 Mark actions as protected -- the engine verifies the JWT before the handler runs:
 
 ```typescript
-export const deleteTaskAction: Action = createAction({
+export const deleteTaskAction = createAction({
   name: "delete",
   description: "Delete a task",
   isProtected: true,  // requires valid JWT
@@ -512,8 +512,8 @@ export const taskModel = createModel(tasks, { name: "task" });
 import { Ok, Err } from "slang-ts";
 import { taskModel } from "../../db/models/tasks";
 
-const createTaskHandler = async (data: Record<string, unknown>) => {
-  const result = await taskModel.create({ data: { title: data.title as string } });
+const createTaskHandler = async (data: CreateTaskPayload) => {
+  const result = await taskModel.create({ data: { title: data.title } });
   if (result.isErr) return Err(result.error);
   return Ok({ task: result.value });
 };
@@ -525,7 +525,7 @@ const listTasksHandler = async () => {
   return Ok(page.value);  // { items, total, hasMore }
 };
 
-const listWithCursor = async (data: Record<string, unknown>) => {
+const listWithCursor = async (data: { cursor?: string }) => {
   // Cursor pagination
   const page = await taskModel.findPaginated({
     limit: 20,
@@ -586,6 +586,70 @@ const stripe = ctx.resources?.stripe;
 
 The `Resources` interface extends with `[key: string]: unknown`, so any dependency can be attached.
 
+### Type System
+
+Nile's type system provides compile-time safety for action payloads, handler parameters, and client responses:
+
+- `ActionHandler<T, E>` -- handler receives `data: T`, returns `Result<T, E>`
+- `Action<T, E>` -- the action config carries generics through registration
+- `createAction<T, E>()` -- returns `Action<T, E>`, preserving type inference
+- Type safety enforced at action definition and client invocation
+- Runtime validation via Zod bridges at collection and engine boundaries
+
+The `Actions` type uses `Action<any, any>[]` at the collection boundary to support heterogeneous action types (different T per action). This is necessary because TypeScript lacks existential types.
+
+### Explore and Schema Responses
+
+The `explore` intent returns structured responses:
+
+- `service: "*", action: "*"` returns `{ services: [...] }`
+- `service: "name", action: "*"` returns `{ actions: [...] }`
+- `service: "name", action: "name"` returns action metadata
+
+The `schema` intent returns JSON Schema for action validation.
+
+### CLI and Client
+
+Nile provides `@nilejs/cli` for scaffolding and `@nilejs/client` for invoking actions:
+
+```bash
+# Scaffold a new project
+npx @nilejs/cli new my-app
+
+# Generate types from schemas
+npx @nilejs/cli generate schema
+```
+
+```typescript
+import { createNileClient } from "@nilejs/client";
+
+const nile = createNileClient({
+  baseUrl: "/api",
+  credentials: "include",
+});
+
+// Invoke an action
+const { error, data } = await nile.invoke({
+  service: "tasks",
+  action: "create",
+  payload: { title: "Buy milk" },
+});
+```
+
+The client works with any JavaScript environment: React, Vue, Svelte, vanilla JS, server-side rendering, etc.
+
+### Deployment
+
+Nile runs anywhere Bun or Node.js can run. The CLI template includes Docker support:
+
+- `Dockerfile` -- production-ready container
+- `docker-compose.yml` -- with PostgreSQL
+- `docker-compose.dev.yml` -- with PGLite for development
+
+Nile is designed for stateful backends, long-running servers with high availability. It is not optimized for serverless functions.
+
+Nile uses Drizzle ORM, which supports any database Drizzle supports: PostgreSQL, MySQL, SQLite, Cloudflare D1, and more.
+
 ## Code Style Rules
 
 When writing code for a Nile project:
@@ -606,7 +670,7 @@ When writing code for a Nile project:
 | Category | Exports |
 |----------|---------|
 | Server | `createNileServer`, `getContext`, `NileServer`, `ServerConfig` |
-| Engine | `createAction`, `createActions`, `createService`, `createServices`, `Action`, `Service`, `Services` |
+| Engine | `createAction`, `createActions`, `createService`, `createServices`, `Action`, `Service`, `Services`, `ActionHandler` |
 | Auth | `verifyJWT`, `AuthConfig`, `AuthResult`, `TokenSource` |
 | CORS | `CorsConfig`, `CorsHelper`, `CorsOptions`, `CorsResolver`, `CorsRouteRule` |
 | Logging | `createLog`, `createLogger`, `getLogs`, `LoggerConfig` |

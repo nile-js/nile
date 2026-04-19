@@ -3,5 +3,20 @@
     "type": "file",
     "name": "getting-started",
     "label": "Getting Started"
+  },
+  {
+    "type": "file",
+    "name": "from-rest",
+    "label": "From REST to Nile"
+  },
+  {
+    "type": "file",
+    "name": "migration",
+    "label": "Migration Guide"
+  },
+  {
+    "type": "file",
+    "name": "deploy",
+    "label": "Deployment"
   }
 ]

@@ -40,7 +40,7 @@ import type { Result } from "slang-ts";
 import type { NileContext } from "@nilejs/nile";
 
 type ActionHandler<T = unknown, E = string> = (
-  data: Record<string, unknown>,
+  data: T,
   context?: NileContext<unknown>
 ) => Result<T, E> | Promise<Result<T, E>>;
 ```

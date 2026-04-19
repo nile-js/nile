@@ -8,6 +8,9 @@
     "rules": {
       "performance": {
         "noBarrelFile": "off"
+      },
+      "suspicious": {
+        "noExplicitAny": "warn"
       }
     }
   }

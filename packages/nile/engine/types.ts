@@ -70,7 +70,13 @@ export interface Action<T = unknown, E = string> {
   meta?: Record<string, unknown>; // Generic metadata for any purpose, caching, rate limiting, etc.)
 }
 
-export type Actions = Action<unknown>[];
+/**
+ * Heterogeneous collection of actions with varying T types.
+ * Uses `any` at the collection boundary since TypeScript lacks existential types.
+ * Individual actions retain full type safety via `createAction<T>()`.
+ */
+// biome-ignore lint/suspicious/noExplicitAny: Collection boundary for heterogeneous action types
+export type Actions = Action<any, any>[];
 
 export interface Service {
   name: string;
@@ -117,7 +123,7 @@ export interface Engine {
   getAction: (
     serviceName: string,
     actionName: string
-  ) => Result<Action, string>;
+  ) => Result<Action<any, any>, string>;
   executeAction: (
     serviceName: string,
     actionName: string,

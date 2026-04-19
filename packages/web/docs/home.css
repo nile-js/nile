@@ -3,6 +3,15 @@
   margin: 0 auto;
   padding: 2rem 1rem;
   overflow-x: hidden;
+  position: relative;
+}
+
+/* Top Spotlight Background */
+.spotlight-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
 }
 
 /* Hero Section */
@@ -125,16 +134,11 @@
   position: relative;
   max-width: 800px;
   margin: 0 auto;
-  background-color: rgba(0, 0, 0, 0.3);
+  background-color: #0d0d0d;
   border: 1px solid var(--rp-c-divider);
   border-radius: 12px;
   padding: 0;
   overflow: hidden;
-}
-
-/* Light mode variant for code wrapper */
-html:not(.dark) .code-wrapper {
-  background-color: rgba(0, 0, 0, 0.05);
 }
 
 .code-block {
@@ -191,12 +195,15 @@ html:not(.dark) .code-wrapper {
 .features-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: auto auto;
   gap: 1.5rem;
   margin-top: 2rem;
   max-width: 1200px;
   margin-left: auto;
   margin-right: auto;
+}
+
+.features-grid + .features-grid {
+  margin-top: 1.5rem;
 }
 
 .feature {
@@ -219,11 +226,9 @@ html:not(.dark) .code-wrapper {
 /* Bento grid spans */
 .feature-large {
   grid-column: span 2;
-  grid-row: span 1;
 }
 
 .feature-tall {
-  grid-column: span 1;
   grid-row: span 2;
   min-height: 300px;
 }
@@ -248,6 +253,22 @@ html:not(.dark) .code-wrapper {
   color: var(--rp-c-text-2);
   line-height: 1.6;
   margin: 0;
+}
+
+/* Community link cards */
+.community-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.community-link:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+  border-color: var(--rp-c-brand);
+}
+
+.community-link h3 {
+  color: var(--rp-c-brand);
 }
 
 /* Quick Start Section */

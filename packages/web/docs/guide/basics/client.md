@@ -1,6 +1,8 @@
-# Nile Client
+# Client Side
 
 The `@nilejs/client` package is a standalone, type-safe client for interacting with a Nile backend from any JavaScript environment (browser, server, or edge).
+
+Nile does not dictate which frontend you use. The client works with React, Vue, Svelte, Solid, vanilla JavaScript, or any framework that can make HTTP requests. The patterns shown here use React examples, but the core `invoke`, `explore`, and `schema` methods work the same way everywhere.
 
 ## Installation
 
@@ -57,23 +59,171 @@ Every method returns a `ClientResult`:
 
 This is the Result pattern. The client never throws exceptions for expected failures. Network errors, timeouts, and server validation errors are all returned in the `error` field.
 
-## Type-Safe Payloads
+## Usage Patterns
 
-For full compile-time type checking, generate types using the Nile CLI and pass them as a generic:
+### Basic JavaScript / TypeScript
+
+The simplest pattern — just call invoke and handle the result:
+
+```typescript
+// Simple async/await usage
+async function createTask(title: string) {
+  const { error, data } = await nile.invoke({
+    service: "tasks",
+    action: "create",
+    payload: { title },
+  });
+
+  if (error) {
+    return { success: false, error };
+  }
+
+  return { success: true, data: data?.task };
+}
+
+// Call from anywhere
+const result = await createTask("My new task");
+```
+
+### With React Query / TanStack Query
+
+Wrap the invoke call in a query hook for caching, refetching, and loading states:
+
+```typescript
+import { useQuery, useMutation } from "@tanstack/react-query";
+
+/**
+ * Fetch a list of tasks with automatic caching.
+ * Uses the query key for invalidation and refetching.
+ */
+export function useTasks() {
+  return useQuery({
+    queryKey: ["tasks"],
+    queryFn: async () => {
+      const { error, data } = await nile.invoke({
+        service: "tasks",
+        action: "list",
+        payload: {},
+      });
+
+      if (error) throw new Error(error);
+      return data?.tasks ?? [];
+    },
+  });
+}
+
+/**
+ * Create a task with mutation.
+ * Automatically invalidates the tasks cache on success.
+ */
+export function useCreateTask() {
+  return useMutation({
+    mutationFn: async (title: string) => {
+      const { error, data } = await nile.invoke({
+        service: "tasks",
+        action: "create",
+        payload: { title },
+      });
+
+      if (error) throw new Error(error);
+      return data?.task;
+    },
+    onSuccess: () => {
+      // QueryClient.invalidateQueries({ queryKey: ["tasks"] });
+    },
+  });
+}
+
+// Usage in a component
+function TaskList() {
+  const { data: tasks, isLoading, error } = useTasks();
+  const createTask = useCreateTask();
+
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+
+  return (
+    <ul>
+      {tasks?.map((task) => (
+        <li key={task.id}>{task.title}</li>
+      ))}
+    </ul>
+  );
+}
+```
+
+### With Server-Side Rendering (Next.js, Remix, etc.)
+
+Use the client on the server with the same pattern. Just ensure the base URL points to your backend:
+
+```typescript
+import { createNileClient } from "@nilejs/client";
+
+// Server-side client with absolute URL
+const serverNile = createNileClient({
+  baseUrl: process.env.NILE_API_URL,
+});
+
+/**
+ * Fetch data during server-side rendering or in API routes.
+ * No credentials needed for server-to-server communication.
+ */
+export async function getUserProfile(userId: string) {
+  const { error, data } = await serverNile.invoke({
+    service: "users",
+    action: "get-profile",
+    payload: { userId },
+  });
+
+  if (error) {
+    throw new Error(`Failed to fetch profile: ${error}`);
+  }
+
+  return data?.profile;
+}
+```
+
+### With React Server Components
+
+```typescript
+/**
+ * Direct call inside a Server Component.
+ * No client-side JavaScript shipped for this data fetch.
+ */
+export default async function DashboardPage() {
+  const { data } = await nile.invoke({
+    service: "dashboard",
+    action: "get-stats",
+    payload: {},
+  });
+
+  return (
+    <div>
+      <h1>Dashboard</h1>
+      <pre>{JSON.stringify(data, null, 2)}</pre>
+    </div>
+  );
+}
+```
+
+### Type-Safe Payloads with Generated Types
+
+For full compile-time type checking, generate types using the Nile CLI:
 
 ```bash
-bun run gen schema --output ./src/generated
+npx @nilejs/cli generate schema --output ./src/generated
 ```
 
 ```typescript
 import { createNileClient } from "@nilejs/client";
 import type { ServicePayloads } from "./generated/types";
 
+// Pass your generated types as a generic
 const nile = createNileClient<ServicePayloads>({
   baseUrl: "/api",
 });
 
-// TypeScript now enforces valid service names, action names, and payload shapes
+// TypeScript enforces valid service names, action names, and payload shapes
 await nile.invoke({
   service: "tasks",     // autocomplete from your actual services
   action: "create",     // autocomplete from actions in "tasks"
@@ -82,8 +232,6 @@ await nile.invoke({
   },
 });
 ```
-
-If you pass an invalid service, action, or payload shape, TypeScript will catch it at compile time.
 
 ## Discovery
 

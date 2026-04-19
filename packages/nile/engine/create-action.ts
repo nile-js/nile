@@ -25,9 +25,11 @@ export function createAction<T = unknown, E = string>(
 /**
  * Typed identity for defining multiple actions with full type inference.
  * No runtime overhead — returns the config array as-is.
+ *
+ * Uses `any` at the collection boundary to support heterogeneous action types.
+ * Individual actions retain full type safety via `createAction<T>()`.
  */
-export function createActions<T = unknown, E = string>(
-  configs: Action<T, E>[]
-): Action<T, E>[] {
+// biome-ignore lint/suspicious/noExplicitAny: Collection boundary for heterogeneous action types
+export function createActions(configs: Action<any, any>[]): Action<any, any>[] {
   return configs;
 }

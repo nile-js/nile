@@ -75,13 +75,13 @@ export interface NileContext<TDB = unknown> {
 
 export type BeforeActionHandler<T, E> = (params: {
   nileContext: NileContext<unknown>;
-  action: Action;
+  action: Action<any, any>;
   payload: unknown;
 }) => Result<T, E> | Promise<Result<T, E>>;
 
 export type AfterActionHandler<T, E> = (params: {
   nileContext: NileContext<unknown>;
-  action: Action;
+  action: Action<any, any>;
   payload: unknown;
   result: Result<T, E>;
 }) => Result<T, E> | Promise<Result<T, E>>;

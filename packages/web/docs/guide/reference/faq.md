@@ -197,7 +197,7 @@ See the full [Authentication guide](/guide/basics/auth) for token sources, JWT c
 
 ## How does Nile handle API routing?
 
-Nile does **not** generate REST endpoints from your service definitions. This is a fundamental architectural difference from frameworks like Express, Fastify, or NestJS.
+Nile does **not** generate individual REST endpoints from your service definitions. This is a fundamental architectural difference from frameworks like Express, Fastify, or NestJS.
 
 ### Single Endpoint, Intent-Based Routing
 
@@ -220,11 +220,33 @@ The request body tells Nile what to do:
 
 There is no `/tasks/create` route. There is no `GET /tasks/:id`. Every operation, whether it's creating a task, listing users, or checking auth, goes through the same endpoint with a different `intent`, `service`, and `action` combination.
 
-### Why This Is Faster
+### How the Engine Resolves Actions
 
-Traditional endpoint-based frameworks match incoming requests against a route table, often a trie or regex-based router. As your API grows, route matching scales with the number of endpoints.
+At boot, Nile builds a nested dictionary from your service definitions:
 
-Nile uses pre-computed O(1) dictionary lookups. The engine builds a nested `Record<serviceName, Record<actionName, Action>>` at boot. Finding the right handler is a two-key object lookup regardless of how many services or actions exist. No route parsing, no regex matching, no middleware stacks per route.
+```
+Record<serviceName, Record<actionName, Action>>
+```
+
+When a request arrives, the engine performs a two-key object lookup:
+
+1. Look up `services[request.service]` — finds the service
+2. Look up `service.actions[request.action]` — finds the action
+3. Execute `action.handler(payload, context)` through the pipeline
+
+This is O(1) regardless of how many services or actions exist. No route parsing, no regex matching, no middleware stacks per route.
+
+### Naming Conventions
+
+Service and action names directly determine how they are addressed:
+
+| Convention | Example | Notes |
+|-----------|---------|-------|
+| Service names | `users`, `orders`, `payments` | Lowercase, kebab-case for multi-word: `api-keys` |
+| Action names | `create`, `list`, `getUser` | Verb or verb-noun pattern |
+| Full address | `orders.create`, `api-keys.revoke` | `service.action` format |
+
+Names are used for discovery (`explore` intent), logging, and error messages. They do not map to URL paths — the URL is always `{baseUrl}/services`.
 
 ### Three Intents
 
@@ -382,7 +404,7 @@ services/
 
 ## What if the service-action structure doesn't fit my domain?
 
-It does. The service-action model maps directly to domain-driven design, and every backend operation, regardless of complexity, reduces to "which domain?" and "what operation?".
+The service-action model maps to domain-driven design, but there are cases where the fit feels awkward. Here are strategies for handling those scenarios.
 
 ### Think in Domains and Operations
 
@@ -399,9 +421,9 @@ If you find yourself fighting the structure, you're likely thinking in terms of 
 
 Every HTTP endpoint you would normally create maps to a service + action pair.
 
-### Coarse and Fine-Grained Actions
+### Strategy: Coarse-Grained Actions for Complex Workflows
 
-Actions can be as granular or as broad as your domain requires. A simple CRUD operation and a complex multi-step workflow are both just actions:
+When a domain operation spans multiple steps that would traditionally be separate endpoints, model it as a single coarse-grained action:
 
 ```typescript
 // Fine-grained: single responsibility
@@ -422,7 +444,7 @@ export const registerUser: Action = createAction({
 });
 ```
 
-### Cross-Cutting Concerns
+### Strategy: Cross-Cutting Concerns via Global Hooks
 
 Logic that applies across services (logging, authorization, rate limiting, audit trails) goes in global hooks:
 
@@ -442,7 +464,7 @@ const server = await createNileServer({
 });
 ```
 
-### Cross-Service Composition via Hooks
+### Strategy: Cross-Service Composition via Hooks
 
 An action in one service can reference actions in another via hooks, without tight coupling:
 
@@ -463,6 +485,46 @@ export const createOrder: Action = createAction({
 ```
 
 The services remain independent. The composition is declared at the action level, not embedded in business logic.
+
+### Strategy: Custom Routes for Non-Standard Endpoints
+
+When you need endpoints that don't fit the service-action model (webhooks, health checks, file serving), use [custom routes](/guide/basics/custom-routes). Nile's REST layer is built on Hono, so you can register additional routes alongside the `/services` endpoint:
+
+```typescript
+const server = await createNileServer({
+  services: [/* ... */],
+  rest: {
+    baseUrl: "/api",
+  },
+});
+
+// Register a custom webhook endpoint
+server.rest?.app.post("/webhooks/stripe", async (c) => {
+  const payload = await c.req.json();
+  // Handle Stripe webhook directly
+  return c.json({ received: true });
+});
+```
+
+This lets you handle external integrations, streaming responses, or any HTTP pattern that doesn't map to `POST /services`.
+
+### Strategy: Shared Utility Modules
+
+When logic doesn't belong in any single service but is needed across multiple actions, extract it into shared utility modules. Nile doesn't force all code into actions — actions are the entry points, not the only place logic lives:
+
+```
+src/
+├── services/
+│   ├── orders/
+│   └── payments/
+├── utils/
+│   ├── currency.ts      // Shared formatting logic
+│   └── tax-calculator.ts // Shared business logic
+└── models/
+    └── db.ts
+```
+
+Actions import from utilities. Utilities have no dependency on Nile.
 
 ### The Constraint Is the Strength
 
