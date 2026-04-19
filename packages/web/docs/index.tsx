@@ -174,7 +174,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="features">
+      <section className="features why-care">
         <h2 className="features-title">Why You Should Care</h2>
         <div className="features-grid">
           <div className="feature feature-large">
@@ -300,7 +300,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="features">
+      <section className="features ecosystem">
         <h2 className="features-title">Ecosystem</h2>
         <div className="features-grid">
           <a

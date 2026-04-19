@@ -182,7 +182,28 @@
 /* Features Section - Bento Grid */
 .features {
   padding: 4rem 0;
-  background-color: var(--rp-c-bg);
+}
+
+.features.why-care {
+  padding: 4rem 4rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  background: transparent;
+}
+
+.features.ecosystem {
+  padding: 4rem 4rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  background: transparent;
+}
+
+/* Responsive side padding */
+@media (max-width: 768px) {
+  .features.why-care,
+  .features.ecosystem {
+    padding: 3rem 1.5rem;
+  }
 }
 
 .features-title {
