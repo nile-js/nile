@@ -21,27 +21,27 @@ The generated project includes a tasks service, PGLite database, Drizzle ORM, an
 
 ### Manual install
 
-:::tabs
+import { Tab, Tabs } from '@rspress/core/dist/theme';
 
-@tab Bun
+<Tabs>
+  <Tab label="Bun">
+    ```bash
+    bun add @nilejs/nile zod slang-ts
+    ```
+  </Tab>
 
-```bash
-bun add @nilejs/nile zod slang-ts
-```
+  <Tab label="npm">
+    ```bash
+    npm install @nilejs/nile zod slang-ts
+    ```
+  </Tab>
 
-@tab npm
-
-```bash
-npm install @nilejs/nile zod slang-ts
-```
-
-@tab pnpm
-
-```bash
-pnpm add @nilejs/nile zod slang-ts
-```
-
-:::
+  <Tab label="pnpm">
+    ```bash
+    pnpm add @nilejs/nile zod slang-ts
+    ```
+  </Tab>
+</Tabs>
 
 ## 2. Quick Start
 
@@ -197,6 +197,622 @@ my-api/
 
 
 ---
+url: /nile/guide/start/from-rest.md
+---
+
+# From REST to Nile
+
+**Type:** Concept
+
+This document explains the design decisions behind Nile and guides the transition from endpoint-based thinking to the service-action model.
+
+## 1. The Problem with Endpoint-Based APIs
+
+Traditional REST APIs organize code around HTTP verbs and URL paths. A typical backend has:
+
+* Route definitions scattered across files
+* Middleware stacks configured per route or globally
+* HTTP verbs (GET, POST, PUT, DELETE) dictating operation semantics
+* Separate documentation (OpenAPI, Swagger) to describe what endpoints exist
+* Manual validation logic in each handler
+
+As the API grows, these patterns create maintenance overhead. Adding a new operation requires: defining a route, choosing an HTTP verb, configuring middleware, writing validation, and updating documentation.
+
+## 2. Nile's Solution: Intent-Based Routing
+
+Nile replaces the endpoint model with a single POST endpoint and an intent field in the request body.
+
+### 2.1 Why a Single Endpoint
+
+All requests go to `POST {baseUrl}/services`. The request body contains:
+
+```json
+{
+  "intent": "execute",
+  "service": "orders",
+  "action": "create",
+  "payload": { "items": [{ "productId": "p1", "quantity": 2 }] }
+}
+```
+
+This design exists for three reasons:
+
+* **Simplified routing**: No route table to maintain. The engine builds a dictionary at boot and performs O(1) lookups.
+* **Unified interface**: Every operation uses the same request and response shape. Clients do not need different handling for different endpoints.
+* **Built-in discovery**: The `explore` intent returns all available services and actions. No separate documentation is required.
+
+### 2.2 Why No HTTP Verbs
+
+HTTP verbs encode operation semantics: GET for reading, POST for creating, PUT for updating, DELETE for removing. This works well for CRUD but breaks down for real business operations.
+
+Consider these operations:
+
+* Refund an order
+* Approve a KYC submission
+* Send a notification
+* Calculate tax
+
+None of these map cleanly to HTTP verbs. They are not "create" or "update" in the REST sense. They are domain operations. Nile treats them all the same way: an action within a service.
+
+The intent field replaces HTTP verbs:
+
+* `execute` runs business logic
+* `explore` discovers available operations
+* `schema` retrieves validation schemas
+
+### 2.3 Why Service and Action
+
+A **service** is a bounded context. It groups related operations: `orders`, `payments`, `users`.
+
+An **action** is a single operation within that context: `create`, `refund`, `getStatus`.
+
+This model maps to how developers think about their domain. You do not think "I need a POST endpoint at /orders/:id/refund". You think "I need to refund an order". The service-action model captures that directly.
+
+## 3. Mental Model Translation
+
+The following table maps REST concepts to their Nile equivalents:
+
+| REST Concept | Nile Equivalent | Notes |
+|---|---|---|
+| Route prefix (`/users`) | Service name (`users`) | Domain grouping |
+| Route handler (`GET /users/:id`) | Action (`getUser`) | Single operation |
+| HTTP verb (GET, POST, PUT, DELETE) | Intent (`execute`) | What you want to do |
+| Route parameters (`:id`) | Payload fields (`{ "id": "..." }`) | Input data |
+| Middleware per route | Hooks (`before`, `after`) | Pre and post processing |
+| Global middleware | Global hooks (`onBeforeActionHandler`) | Cross-cutting concerns |
+| OpenAPI / Swagger docs | `explore` and `schema` intents | Runtime discovery |
+| Request validation | Zod schema on action | Runtime type checking |
+
+## 4. What Nile Does Not Do
+
+Nile is not a general-purpose HTTP framework. It makes deliberate trade-offs:
+
+* **No individual routes**: All service interactions go through `POST {baseUrl}/services`. Custom routes are possible for non-service endpoints (webhooks, health checks) but are not the primary interface.
+* **No HTTP verb semantics**: GET, POST, PUT, DELETE are not used. The intent field determines behavior.
+* **No streaming or SSE through the service layer**: These require custom routes on the underlying Hono app.
+* **No per-action middleware**: Hooks provide pre and post processing, but they follow the pipeline model, not Express-style middleware chains.
+
+These are intentional constraints. They reduce complexity and enforce consistency.
+
+## 5. What You Gain
+
+* **Consistent response shape**: Every response follows `{ status, message, data }`. Clients handle one format.
+* **Consistent error handling**: Every error returns the same shape. No special cases for different endpoints.
+* **Built-in discovery**: Any client can query what operations exist at runtime.
+* **Type safety**: `createAction<T>` enforces payload types at compile time. Zod validates at runtime.
+* **Composable operations**: Hooks allow cross-service composition without tight coupling.
+* **Simplified client code**: One endpoint, one request format, one response format.
+
+## 6. What You Give Up
+
+* **HTTP caching semantics**: GET caching does not apply. Cache headers must be managed explicitly.
+* **Browser-native behavior**: Forms and links cannot target Nile actions directly. All interaction requires JavaScript or an HTTP client.
+* **REST tooling**: Tools that expect standard REST endpoints (Postman collections, API gateways) need adaptation.
+* **Fine-grained route control**: You cannot assign different middleware to different actions. Hooks are the extension point.
+
+## 7. When to Use Nile
+
+Nile fits when:
+
+* You want structured, discoverable APIs without OpenAPI maintenance
+* Your frontend and backend are in separate repositories
+* Your domain has clear bounded contexts with named operations
+* You value consistency over HTTP semantics
+
+Nile does not fit when:
+
+* You need streaming responses or Server-Sent Events through your primary API
+* Your API is consumed by browsers without JavaScript
+* You are deeply invested in REST tooling and conventions
+* Your operations map cleanly to CRUD and HTTP verbs
+
+
+
+---
+url: /nile/guide/start/migration.md
+---
+
+# Migrating to Nile
+
+**Type:** Guide
+
+This document provides a step-by-step process for migrating an existing REST API to Nile. The migration is a restructuring exercise, not a rewrite.
+
+## 1. Prerequisites
+
+* Your existing backend separates business logic from the routing layer
+* You have a working understanding of Nile's service-action model
+* You can run both the old and new servers side by side during migration
+
+If your business logic is tightly coupled to your routing layer, extract it first. This is a standard refactoring step that most production backends have already done.
+
+## 2. Migration Strategy
+
+Migrate one service at a time. Do not rewrite the entire backend at once. Run the old and new servers in parallel, routing traffic gradually.
+
+## 3. Step One: Map Existing Endpoints to Services and Actions
+
+List all existing endpoints and group them by domain:
+
+| Existing Endpoint | Service | Action |
+|---|---|---|
+| `POST /users` | `users` | `create` |
+| `GET /users/:id` | `users` | `get` |
+| `PUT /users/:id` | `users` | `update` |
+| `DELETE /users/:id` | `users` | `delete` |
+| `POST /orders/:id/refund` | `orders` | `refund` |
+| `GET /orders/:id/status` | `orders` | `getStatus` |
+
+Each row becomes one Nile action. The service groups related actions.
+
+## 4. Step Two: Extract Business Logic into Action Handlers
+
+For each endpoint, move the handler logic into a Nile action. The business logic does not change. Only the wrapper changes.
+
+### Before (Express-style)
+
+```typescript
+// routes/users.ts
+router.post("/users", async (req, res) => {
+  const { name, email } = req.body;
+  if (!name) return res.status(400).json({ error: "Name is required" });
+
+  const user = await createUser({ name, email });
+  res.json({ user });
+});
+```
+
+### After (Nile)
+
+```typescript
+// services/users/create.ts
+import { Ok, Err } from "slang-ts";
+import { createAction } from "@nilejs/nile";
+import { z } from "zod";
+
+const createSchema = z.object({
+  name: z.string().min(1),
+  email: z.string().email(),
+});
+
+export const createUserAction = createAction({
+  name: "create",
+  description: "Create a new user",
+  validation: createSchema,
+  handler: async (data) => {
+    const user = await createUser(data);
+    return Ok({ user });
+  },
+});
+```
+
+The business logic (`createUser`) is unchanged. The wrapper changes from Express route handler to Nile action handler. The error handling changes from `res.status(400)` to `Err()`. Validation moves from manual checks to Zod.
+
+## 5. Step Three: Adopt the Result Pattern
+
+Replace `throw` and `res.status()` with `Ok()` and `Err()`. This is the most significant code change in the migration.
+
+### Before
+
+```typescript
+router.post("/orders/:id/refund", async (req, res) => {
+  try {
+    const order = await getOrder(req.params.id);
+    if (!order) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+    if (order.status !== "paid") {
+      return res.status(400).json({ error: "Order is not paid" });
+    }
+    const refund = await processRefund(order);
+    res.json({ refund });
+  } catch (error) {
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+```
+
+### After
+
+```typescript
+// services/orders/refund.ts
+import { Ok, Err } from "slang-ts";
+import { createAction, handleError } from "@nilejs/nile";
+import { z } from "zod";
+
+const refundSchema = z.object({
+  orderId: z.string(),
+  reason: z.string().optional(),
+});
+
+export const refundOrderAction = createAction({
+  name: "refund",
+  description: "Refund a paid order",
+  validation: refundSchema,
+  handler: async (data) => {
+    const order = await getOrder(data.orderId);
+    if (!order) return Err("Order not found");
+    if (order.status !== "paid") return Err("Order is not paid");
+
+    const refund = await processRefund(order);
+    return Ok({ refund });
+  },
+});
+```
+
+The logic is identical. The error signaling changes from HTTP status codes to `Err()` returns. Nile maps these to consistent HTTP responses automatically.
+
+## 6. Step Four: Replace Middleware with Hooks
+
+Global middleware becomes global hooks. Per-route middleware becomes action hooks.
+
+### Before (Express middleware)
+
+```typescript
+// Global auth middleware
+app.use(authenticate);
+
+// Per-route logging
+router.post("/orders", logRequest, createOrderHandler);
+```
+
+### After (Nile hooks)
+
+```typescript
+const server = await createNileServer({
+  services: [/* ... */],
+  auth: {
+    secret: process.env.JWT_SECRET,
+    tokenSource: "header",
+  },
+  onBeforeActionHandler: async ({ nileContext, action, payload }) => {
+    await auditLog(action.name, nileContext.getSession("rest"));
+    return Ok(payload);
+  },
+});
+```
+
+Authentication is configured once at the server level. Cross-cutting concerns like logging go in `onBeforeActionHandler`. Per-action pre-processing uses the `hooks.before` array on individual actions.
+
+## 7. Step Five: Update the Client
+
+Replace endpoint-specific client calls with Nile client invocations.
+
+### Before
+
+```typescript
+const response = await fetch("/api/users", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ name: "Alice", email: "alice@example.com" }),
+});
+const data = await response.json();
+```
+
+### After
+
+```typescript
+const { error, data } = await nile.invoke({
+  service: "users",
+  action: "create",
+  payload: { name: "Alice", email: "alice@example.com" },
+});
+```
+
+The response shape changes from whatever your old API returned to `{ status, message, data }`. Update your frontend to handle this format.
+
+## 8. Step Six: Migrate Incrementally
+
+Run both servers during the transition. Route traffic one service at a time:
+
+1. Migrate the `users` service. Point `/api/users` traffic to Nile.
+2. Verify all user operations work correctly.
+3. Migrate the `orders` service. Point `/api/orders` traffic to Nile.
+4. Repeat for each service.
+5. Remove the old server once all services are migrated.
+
+Use a reverse proxy or API gateway to route traffic based on the service path. This allows rollback at any step.
+
+## 9. What Does Not Change
+
+* **Database layer**: Your models, queries, and migrations remain unchanged.
+* **Business logic**: The core logic inside your handlers is copied, not rewritten.
+* **External integrations**: Third-party API calls, email services, payment gateways work the same way.
+* **Testing strategy**: Unit tests for business logic remain valid. Only integration tests need updating.
+
+## 10. Common Pitfalls
+
+* **Do not rewrite business logic**: Copy it into action handlers. Refactor later if needed.
+* **Do not migrate everything at once**: One service at a time. Verify each before moving to the next.
+* **Do not skip validation**: Replace manual validation with Zod schemas. This is where Nile adds value.
+* **Do not ignore the Result pattern**: `Ok()` and `Err()` are not optional. They are the framework contract.
+
+
+
+---
+url: /nile/guide/start/deploy.md
+---
+
+# Deployment
+
+Nile runs anywhere Bun or Node.js can run. It is designed for stateful backends, long-running servers with high availability, rather than serverless environments.
+
+## Runtime Requirements
+
+| Runtime | Version | Notes |
+|---------|---------|-------|
+| Bun | 1.0+ | Recommended for best performance |
+| Node.js | 18+ | Full support |
+
+Nile is not optimized for serverless functions. Each request handler maintains internal state through the action pipeline, hooks, and context. Cold starts would reset this state. Deploy Nile as a persistent server, not as ephemeral functions.
+
+## Database Support
+
+Nile uses Drizzle ORM, which supports any database Drizzle supports. This includes PostgreSQL, MySQL, SQLite, Cloudflare D1, and more. The default template uses PGLite for simplicity, but you can switch to any supported database by updating your Drizzle configuration.
+
+## Deployment Options
+
+### Docker (Recommended for Production)
+
+The fastest way to deploy Nile with a production database is using Docker.
+
+#### With PostgreSQL
+
+Create a `docker-compose.yml` for a production-ready setup with PostgreSQL:
+
+```yaml
+version: "3.8"
+
+services:
+  nile:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=nile
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: nile
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+```
+
+Build and run:
+
+```bash
+docker-compose up -d
+```
+
+#### With PGLite (Simplified)
+
+For simpler setups or development, use PGLite (embedded PostgreSQL):
+
+```yaml
+version: "3.8"
+
+services:
+  nile:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+```
+
+This requires no external database. PGLite stores data in a Docker volume.
+
+### Bare Metal / VPS
+
+Deploy directly on a server with Bun or Node.js installed:
+
+```bash
+# Install dependencies
+bun install --production
+
+# Run the server
+bun run src/index.ts
+```
+
+Or build and run with Node.js:
+
+```bash
+# Build the TypeScript
+bun build src/index.ts --outdir ./dist --target node
+
+# Run with Node.js
+node dist/index.js
+```
+
+### Container Platforms
+
+Nile works on any container platform:
+
+* **Railway** — `railway up` with a Dockerfile
+* **Render** — Deploy from GitHub with a Dockerfile
+* **Fly.io** — `fly launch` with a Dockerfile
+* **AWS EC2** — Run a Docker container on an EC2 instance
+* **GCP Cloud Run** — Deploy the container to Cloud Run
+* **Kubernetes** — Deploy the Docker image with kubectl
+
+All platforms work the same way: build a Docker image and run it.
+
+## Docker Setup
+
+### Dockerfile
+
+A production-ready Dockerfile for Nile:
+
+```dockerfile
+FROM oven/bun:1-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY package.json ./
+COPY bun.lockb ./
+
+# Install production dependencies only
+RUN bun install --frozen-lockfile --production
+
+# Copy source code
+COPY . .
+
+# Build TypeScript (optional, for better startup time)
+RUN bun build src/index.ts --outdir ./dist --target node
+
+# Expose the port
+EXPOSE 8000
+
+# Start the server
+CMD ["bun", "run", "src/index.ts"]
+```
+
+### .dockerignore
+
+Exclude unnecessary files from the build:
+
+```
+node_modules/
+.git/
+dist/
+.env
+*.log
+.DS_Store
+```
+
+### Build and Run
+
+```bash
+# Build the image
+docker build -t nile-app .
+
+# Run the container
+docker run -p 8000:8000 nile-app
+```
+
+### Multi-Stage Build (Smaller Image)
+
+For a smaller production image:
+
+```dockerfile
+# Build stage
+FROM oven/bun:1-alpine AS builder
+WORKDIR /app
+COPY package.json bun.lockb ./
+RUN bun install --frozen-lockfile
+COPY . .
+RUN bun build src/index.ts --outdir ./dist --target node
+
+# Runtime stage
+FROM oven/bun:1-alpine
+WORKDIR /app
+COPY --from=builder /app/package.json ./
+RUN bun install --frozen-lockfile --production
+COPY --from=builder /app/dist ./dist
+EXPOSE 8000
+CMD ["node", "dist/index.js"]
+```
+
+## Environment Variables
+
+Nile reads configuration from environment variables. Common ones:
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `NODE_ENV` | Runtime environment | `development` |
+| `PORT` | Server port | `8000` |
+| `BASE_URL` | API base URL | `/api` |
+| `JWT_SECRET` | Secret for JWT signing | *required in production* |
+| `DB_HOST` | Database host | `localhost` |
+| `DB_PORT` | Database port | `5432` |
+
+Refer to the [Server Configuration](/nile/guide/internals/server.md) for the full list.
+
+## Health Checks
+
+Nile exposes a `/status` endpoint when enabled:
+
+```typescript
+const server = await createNileServer({
+  rest: {
+    enableStatus: true,
+  },
+});
+```
+
+Configure your orchestrator to use this for health checks:
+
+```yaml
+# docker-compose healthcheck
+healthcheck:
+  test: ["CMD", "curl", "-f", "http://localhost:8000/api/status"]
+  interval: 30s
+  timeout: 10s
+  retries: 3
+```
+
+## Scaling
+
+Nile is designed for vertical scaling on a single instance. For horizontal scaling:
+
+* Use a separate PostgreSQL database (not PGLite)
+* Session storage must be external (Redis, database)
+* Use a load balancer in front of multiple instances
+
+PGLite does not support horizontal scaling because it is embedded. For production with multiple instances, use PostgreSQL as the database.
+
+## What's Not Supported
+
+* **Serverless** — Lambda, Vercel Functions, Cloudflare Workers
+* **Serverless databases** — DynamoDB, Firestore (use PostgreSQL)
+* **Horizontal scaling with PGLite** — Use PostgreSQL instead
+
+
+
+---
 url: /nile/guide/basics/actions.md
 ---
 
@@ -242,7 +858,7 @@ import type { Result } from "slang-ts";
 import type { NileContext } from "@nilejs/nile";
 
 type ActionHandler<T = unknown, E = string> = (
-  data: Record<string, unknown>,
+  data: T,
   context?: NileContext<unknown>
 ) => Result<T, E> | Promise<Result<T, E>>;
 ```
@@ -1882,9 +2498,11 @@ GET /status
 url: /nile/guide/basics/client.md
 ---
 
-# Nile Client
+# Client Side
 
 The `@nilejs/client` package is a standalone, type-safe client for interacting with a Nile backend from any JavaScript environment (browser, server, or edge).
+
+Nile does not dictate which frontend you use. The client works with React, Vue, Svelte, Solid, vanilla JavaScript, or any framework that can make HTTP requests. The patterns shown here use React examples, but the core `invoke`, `explore`, and `schema` methods work the same way everywhere.
 
 ## Installation
 
@@ -1941,23 +2559,171 @@ Every method returns a `ClientResult`:
 
 This is the Result pattern. The client never throws exceptions for expected failures. Network errors, timeouts, and server validation errors are all returned in the `error` field.
 
-## Type-Safe Payloads
+## Usage Patterns
 
-For full compile-time type checking, generate types using the Nile CLI and pass them as a generic:
+### Basic JavaScript / TypeScript
+
+The simplest pattern — just call invoke and handle the result:
+
+```typescript
+// Simple async/await usage
+async function createTask(title: string) {
+  const { error, data } = await nile.invoke({
+    service: "tasks",
+    action: "create",
+    payload: { title },
+  });
+
+  if (error) {
+    return { success: false, error };
+  }
+
+  return { success: true, data: data?.task };
+}
+
+// Call from anywhere
+const result = await createTask("My new task");
+```
+
+### With React Query / TanStack Query
+
+Wrap the invoke call in a query hook for caching, refetching, and loading states:
+
+```typescript
+import { useQuery, useMutation } from "@tanstack/react-query";
+
+/**
+ * Fetch a list of tasks with automatic caching.
+ * Uses the query key for invalidation and refetching.
+ */
+export function useTasks() {
+  return useQuery({
+    queryKey: ["tasks"],
+    queryFn: async () => {
+      const { error, data } = await nile.invoke({
+        service: "tasks",
+        action: "list",
+        payload: {},
+      });
+
+      if (error) throw new Error(error);
+      return data?.tasks ?? [];
+    },
+  });
+}
+
+/**
+ * Create a task with mutation.
+ * Automatically invalidates the tasks cache on success.
+ */
+export function useCreateTask() {
+  return useMutation({
+    mutationFn: async (title: string) => {
+      const { error, data } = await nile.invoke({
+        service: "tasks",
+        action: "create",
+        payload: { title },
+      });
+
+      if (error) throw new Error(error);
+      return data?.task;
+    },
+    onSuccess: () => {
+      // QueryClient.invalidateQueries({ queryKey: ["tasks"] });
+    },
+  });
+}
+
+// Usage in a component
+function TaskList() {
+  const { data: tasks, isLoading, error } = useTasks();
+  const createTask = useCreateTask();
+
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+
+  return (
+    <ul>
+      {tasks?.map((task) => (
+        <li key={task.id}>{task.title}</li>
+      ))}
+    </ul>
+  );
+}
+```
+
+### With Server-Side Rendering (Next.js, Remix, etc.)
+
+Use the client on the server with the same pattern. Just ensure the base URL points to your backend:
+
+```typescript
+import { createNileClient } from "@nilejs/client";
+
+// Server-side client with absolute URL
+const serverNile = createNileClient({
+  baseUrl: process.env.NILE_API_URL,
+});
+
+/**
+ * Fetch data during server-side rendering or in API routes.
+ * No credentials needed for server-to-server communication.
+ */
+export async function getUserProfile(userId: string) {
+  const { error, data } = await serverNile.invoke({
+    service: "users",
+    action: "get-profile",
+    payload: { userId },
+  });
+
+  if (error) {
+    throw new Error(`Failed to fetch profile: ${error}`);
+  }
+
+  return data?.profile;
+}
+```
+
+### With React Server Components
+
+```typescript
+/**
+ * Direct call inside a Server Component.
+ * No client-side JavaScript shipped for this data fetch.
+ */
+export default async function DashboardPage() {
+  const { data } = await nile.invoke({
+    service: "dashboard",
+    action: "get-stats",
+    payload: {},
+  });
+
+  return (
+    <div>
+      <h1>Dashboard</h1>
+      <pre>{JSON.stringify(data, null, 2)}</pre>
+    </div>
+  );
+}
+```
+
+### Type-Safe Payloads with Generated Types
+
+For full compile-time type checking, generate types using the Nile CLI:
 
 ```bash
-bun run gen schema --output ./src/generated
+npx @nilejs/cli generate schema --output ./src/generated
 ```
 
 ```typescript
 import { createNileClient } from "@nilejs/client";
 import type { ServicePayloads } from "./generated/types";
 
+// Pass your generated types as a generic
 const nile = createNileClient<ServicePayloads>({
   baseUrl: "/api",
 });
 
-// TypeScript now enforces valid service names, action names, and payload shapes
+// TypeScript enforces valid service names, action names, and payload shapes
 await nile.invoke({
   service: "tasks",     // autocomplete from your actual services
   action: "create",     // autocomplete from actions in "tasks"
@@ -1966,8 +2732,6 @@ await nile.invoke({
   },
 });
 ```
-
-If you pass an invalid service, action, or payload shape, TypeScript will catch it at compile time.
 
 ## Discovery
 
@@ -2061,6 +2825,127 @@ The client is a thin wrapper around `fetch` that speaks the Nile protocol:
 4. The client maps this into `{ error, data }` for consumption
 
 The client has zero runtime dependencies. It uses an internal `safeTry` utility for crash-safe async operations instead of try/catch.
+
+
+
+---
+url: /nile/guide/basics/type-system.md
+---
+
+# Type System
+
+Nile's type system provides compile-time safety for action payloads, handler parameters, and client responses, while using Zod for runtime validation.
+
+## Generic Action Types
+
+`Action<T, E>` and `ActionHandler<T, E>` are generic types. `T` represents the payload or result type. `E` represents the error type. `createAction<T, E>` preserves type inference through the action lifecycle.
+
+```typescript
+// services/payments/make-payout.ts
+import { Ok, Err } from "slang-ts";
+import { createAction, type ActionHandler } from "@nilejs/nile";
+import { z } from "zod";
+
+const makePayoutSchema = z.object({
+  transactionId: z.string(),
+  amount: z.number().positive(),
+});
+
+type MakePayoutPayload = z.infer<typeof makePayoutSchema>;
+
+const handler: ActionHandler<MakePayoutPayload> = async (data) => {
+  // data is typed as MakePayoutPayload
+  return Ok({ transactionId: data.transactionId, status: "processed" });
+};
+
+export const makePayout = createAction({
+  name: "make-payout",
+  description: "Process a payout",
+  handler,
+  validation: makePayoutSchema,
+});
+```
+
+## Type Flow
+
+Types flow through the system in a defined sequence:
+
+* `ActionHandler<T, E>` — handler receives `data: T`, returns `Result<T, E>`
+* `Action<T, E>` — the action config carries generics through registration
+* `createAction<T, E>()` — returns `Action<T, E>`, preserving inference
+* Zod validation guarantees `data` matches `T` before handler execution
+
+The handler parameter `data` is typed at compile time. Zod validates at runtime. Both must align.
+
+## Collection Boundaries
+
+Actions collected into a `Service` lose individual `T` types. TypeScript lacks existential types. `Actions = Action<any, any>[]` is a heterogeneous collection boundary.
+
+Individual actions retain full type safety via `createAction<T>()`. Type erasure occurs only at the service registration boundary. This is a deliberate trade-off for runtime flexibility.
+
+## Client-Side Type Safety
+
+`ExternalResponse<T>`, `ClientResult<T>`, and `createNileClient<TPayloads>()` provide typed client interactions. The `TPayloads` generic encodes service and action shapes.
+
+```typescript
+// clients/nile-client.ts
+import { createNileClient } from "@nilejs/client";
+
+interface ServicePayloads {
+  payments: {
+    "make-payout": { transactionId: string; amount: number };
+  };
+}
+
+const nile = createNileClient<ServicePayloads>({ baseUrl: "/api" });
+
+// TypeScript enforces service name, action name, and payload shape
+const { error, data } = await nile.invoke({
+  service: "payments",
+  action: "make-payout",
+  payload: { transactionId: "tx_123", amount: 5000 },
+});
+```
+
+Invalid service names, action names, or payload shapes produce compile-time errors.
+
+## Discovery and Schema Generation
+
+The `explore` and `schema` intents provide runtime type information. `schema` exports Zod schemas as JSON Schema for code generation.
+
+```typescript
+// clients/discovery.ts
+import { createNileClient } from "@nilejs/client";
+
+const nile = createNileClient({ baseUrl: "/api" });
+
+// Discover available services
+const { data: { services } } = await nile.explore({
+  service: "*",
+  action: "*",
+});
+
+// Get schemas for code generation
+const { data: schemas } = await nile.schema({
+  service: "payments",
+  action: "*",
+});
+```
+
+Generated types from schemas can seed `TPayloads` interfaces. See [Actions](/nile/guide/basics/actions.md) for intent details.
+
+## Type Safety Boundaries
+
+| Layer | Type Safety | Notes |
+|-------|-------------|-------|
+| `createAction<T>()` | Full | Handler `data` parameter typed as `T` |
+| `Service` registration | Partial | `T` erased at collection boundary (`any`) |
+| Zod validation | Runtime | Guarantees payload matches schema before handler |
+| Engine execution | None | `executeAction` uses `unknown` |
+| Client `invoke<TPayloads>()` | Full | Service, action, and payload shape enforced |
+| Client `explore` / `schema` | Full | Typed response shapes |
+
+Type safety is enforced at action definition and client invocation. Runtime validation via Zod bridges the gap at collection and engine boundaries.
 
 
 
@@ -4698,7 +5583,7 @@ Receives the helper as the third parameter. No return value; uses setter methods
 
 
 ---
-url: /nile/guide/others/faq.md
+url: /nile/guide/reference/faq.md
 ---
 
 # FAQ
@@ -4900,7 +5785,7 @@ See the full [Authentication guide](/nile/guide/basics/auth.md) for token source
 
 ## How does Nile handle API routing?
 
-Nile does **not** generate REST endpoints from your service definitions. This is a fundamental architectural difference from frameworks like Express, Fastify, or NestJS.
+Nile does **not** generate individual REST endpoints from your service definitions. This is a fundamental architectural difference from frameworks like Express, Fastify, or NestJS.
 
 ### Single Endpoint, Intent-Based Routing
 
@@ -4923,11 +5808,33 @@ The request body tells Nile what to do:
 
 There is no `/tasks/create` route. There is no `GET /tasks/:id`. Every operation, whether it's creating a task, listing users, or checking auth, goes through the same endpoint with a different `intent`, `service`, and `action` combination.
 
-### Why This Is Faster
+### How the Engine Resolves Actions
 
-Traditional endpoint-based frameworks match incoming requests against a route table, often a trie or regex-based router. As your API grows, route matching scales with the number of endpoints.
+At boot, Nile builds a nested dictionary from your service definitions:
 
-Nile uses pre-computed O(1) dictionary lookups. The engine builds a nested `Record<serviceName, Record<actionName, Action>>` at boot. Finding the right handler is a two-key object lookup regardless of how many services or actions exist. No route parsing, no regex matching, no middleware stacks per route.
+```
+Record<serviceName, Record<actionName, Action>>
+```
+
+When a request arrives, the engine performs a two-key object lookup:
+
+1. Look up `services[request.service]` — finds the service
+2. Look up `service.actions[request.action]` — finds the action
+3. Execute `action.handler(payload, context)` through the pipeline
+
+This is O(1) regardless of how many services or actions exist. No route parsing, no regex matching, no middleware stacks per route.
+
+### Naming Conventions
+
+Service and action names directly determine how they are addressed:
+
+| Convention | Example | Notes |
+|-----------|---------|-------|
+| Service names | `users`, `orders`, `payments` | Lowercase, kebab-case for multi-word: `api-keys` |
+| Action names | `create`, `list`, `getUser` | Verb or verb-noun pattern |
+| Full address | `orders.create`, `api-keys.revoke` | `service.action` format |
+
+Names are used for discovery (`explore` intent), logging, and error messages. They do not map to URL paths — the URL is always `{baseUrl}/services`.
 
 ### Three Intents
 
@@ -5170,7 +6077,7 @@ The services remain independent. The composition is declared at the action level
 
 ### Strategy: Custom Routes for Non-Standard Endpoints
 
-When you need endpoints that don't fit the service-action model (webhooks, health checks, file serving), use custom routes. Nile's REST layer is built on Hono, so you can register additional routes alongside the `/services` endpoint:
+When you need endpoints that don't fit the service-action model (webhooks, health checks, file serving), use [custom routes](/nile/guide/basics/custom-routes.md). Nile's REST layer is built on Hono, so you can register additional routes alongside the `/services` endpoint:
 
 ```typescript
 const server = await createNileServer({
@@ -5591,7 +6498,7 @@ You don't need to paste docs or explain the framework to your AI. It already kno
 
 
 ---
-url: /nile/guide/others/framework-comparison.md
+url: /nile/guide/reference/framework-comparison.md
 ---
 
 # Framework Comparison
@@ -5711,7 +6618,7 @@ Where Nile stands alone is the AI integration story. A Nile backend is a complet
 
 
 ---
-url: /nile/guide/others/llms-txt.md
+url: /nile/guide/reference/llms-txt.md
 ---
 
 # LLMs.txt
@@ -5727,7 +6634,7 @@ This means your AI assistant already knows how to work with Nile — services, a
 
 
 ---
-url: /nile/guide/others/llms-full-txt.md
+url: /nile/guide/reference/llms-full-txt.md
 ---
 
 # LLMs Full

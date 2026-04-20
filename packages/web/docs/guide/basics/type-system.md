@@ -36,7 +36,7 @@ export const makePayout = createAction({
 
 Types flow through the system in a defined sequence:
 
-- `ActionHandler<T, E>` — handler receives `data: T`, returns `Result<T, E>`
+- `ActionHandler<T, E>` — handler receives `data: T`, returns `Result<unknown, E>`
 - `Action<T, E>` — the action config carries generics through registration
 - `createAction<T, E>()` — returns `Action<T, E>`, preserving inference
 - Zod validation guarantees `data` matches `T` before handler execution

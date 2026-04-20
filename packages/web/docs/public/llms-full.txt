@@ -851,7 +851,7 @@ export const myAction: Action = createAction({
 
 ## Handler Signature
 
-The handler receives input data and context, and must return a `Result<T, E>` from `slang-ts`:
+The handler receives input data and context, and must return a `Result<unknown, E>` from `slang-ts`:
 
 ```typescript
 import type { Result } from "slang-ts";
@@ -860,7 +860,7 @@ import type { NileContext } from "@nilejs/nile";
 type ActionHandler<T = unknown, E = string> = (
   data: T,
   context?: NileContext<unknown>
-) => Result<T, E> | Promise<Result<T, E>>;
+) => Result<unknown, E> | Promise<Result<unknown, E>>;
 ```
 
 Use `Ok(data)` for success and `Err(error)` for failures:
@@ -2870,7 +2870,7 @@ export const makePayout = createAction({
 
 Types flow through the system in a defined sequence:
 
-* `ActionHandler<T, E>` — handler receives `data: T`, returns `Result<T, E>`
+* `ActionHandler<T, E>` — handler receives `data: T`, returns `Result<unknown, E>`
 * `Action<T, E>` — the action config carries generics through registration
 * `createAction<T, E>()` — returns `Action<T, E>`, preserving inference
 * Zod validation guarantees `data` matches `T` before handler execution

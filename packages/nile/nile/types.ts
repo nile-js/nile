@@ -75,12 +75,14 @@ export interface NileContext<TDB = unknown> {
 
 export type BeforeActionHandler<T, E> = (params: {
   nileContext: NileContext<unknown>;
+  // biome-ignore lint/suspicious/noExplicitAny: Actions are type-erased at the service boundary — concrete generics are unknown at hook dispatch time
   action: Action<any, any>;
   payload: unknown;
 }) => Result<T, E> | Promise<Result<T, E>>;
 
 export type AfterActionHandler<T, E> = (params: {
   nileContext: NileContext<unknown>;
+  // biome-ignore lint/suspicious/noExplicitAny: Actions are type-erased at the service boundary — concrete generics are unknown at hook dispatch time
   action: Action<any, any>;
   payload: unknown;
   result: Result<T, E>;

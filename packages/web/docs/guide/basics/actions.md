@@ -33,7 +33,7 @@ export const myAction: Action = createAction({
 
 ## Handler Signature
 
-The handler receives input data and context, and must return a `Result<T, E>` from `slang-ts`:
+The handler receives input data and context, and must return a `Result<unknown, E>` from `slang-ts`:
 
 ```typescript
 import type { Result } from "slang-ts";
@@ -42,7 +42,7 @@ import type { NileContext } from "@nilejs/nile";
 type ActionHandler<T = unknown, E = string> = (
   data: T,
   context?: NileContext<unknown>
-) => Result<T, E> | Promise<Result<T, E>>;
+) => Result<unknown, E> | Promise<Result<unknown, E>>;
 ```
 
 Use `Ok(data)` for success and `Err(error)` for failures:

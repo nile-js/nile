@@ -45,7 +45,7 @@ export interface HookContext {
 export type ActionHandler<T = unknown, E = string> = (
   data: T,
   context?: NileContext<unknown>
-) => Result<T, E> | Promise<Result<T, E>>;
+) => Result<unknown, E> | Promise<Result<unknown, E>>;
 
 export interface Action<T = unknown, E = string> {
   name: string;
@@ -123,6 +123,7 @@ export interface Engine {
   getAction: (
     serviceName: string,
     actionName: string
+    // biome-ignore lint/suspicious/noExplicitAny: Actions are type-erased at the service boundary — concrete generics are unknown at lookup time
   ) => Result<Action<any, any>, string>;
   executeAction: (
     serviceName: string,
