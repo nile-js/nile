@@ -34,6 +34,26 @@ const formDataRoutingSchema = z.object({
   action: z.string().min(1),
 });
 
+function checkDiscoveryAccess(
+  intent: string,
+  payload: Record<string, unknown> | undefined,
+  config: RestConfig
+): { allowed: boolean; message?: string } {
+  if (intent !== "explore" && intent !== "schema") {
+    return { allowed: true };
+  }
+  if (!config.discovery?.enabled) {
+    return { allowed: false, message: "API discovery is disabled" };
+  }
+  if (
+    config.discovery.secret &&
+    payload?.discoverySecret !== config.discovery.secret
+  ) {
+    return { allowed: false, message: "Invalid or missing discovery secret" };
+  }
+  return { allowed: true };
+}
+
 /**
  * Handles multipart/form-data requests by extracting RPC routing fields,
  * parsing files, running validation, and dispatching to the intent handler.
@@ -81,6 +101,22 @@ async function handleFormDataPath(
 
   const { intent, service, action } = routing.data;
   log(`${intent} -> ${service}.${action} (form-data)`);
+
+  const discovery = checkDiscoveryAccess(
+    intent,
+    rawBody as Record<string, unknown>,
+    config
+  );
+  if (!discovery.allowed) {
+    return c.json(
+      {
+        status: false,
+        message: discovery.message ?? "Forbidden",
+        data: {},
+      } satisfies ExternalResponse,
+      403
+    );
+  }
 
   // Content-type enforcement against action's isSpecial config
   const actionResult = engine.getAction(service, action);
@@ -257,31 +293,20 @@ export function createRestApp(params: CreateRestAppParams): RestApp {
       log(`${request.intent} -> ${request.service}.${request.action}`);
 
       // Gate explore/schema intents behind discovery config
-      if (request.intent === "explore" || request.intent === "schema") {
-        if (!config.discovery?.enabled) {
-          return c.json(
-            {
-              status: false,
-              message: "API discovery is disabled",
-              data: {},
-            } satisfies ExternalResponse,
-            403
-          );
-        }
-
-        if (
-          config.discovery.secret &&
-          request.payload?.discoverySecret !== config.discovery.secret
-        ) {
-          return c.json(
-            {
-              status: false,
-              message: "Invalid or missing discovery secret",
-              data: {},
-            } satisfies ExternalResponse,
-            403
-          );
-        }
+      const discovery = checkDiscoveryAccess(
+        request.intent,
+        request.payload,
+        config
+      );
+      if (!discovery.allowed) {
+        return c.json(
+          {
+            status: false,
+            message: discovery.message ?? "Forbidden",
+            data: {},
+          } satisfies ExternalResponse,
+          403
+        );
       }
 
       const handler = intentHandlers[request.intent];
