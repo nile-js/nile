@@ -19,6 +19,8 @@ export interface RateLimitConfig {
 
 /** Configuration for API discovery (explore/schema intents) */
 export interface DiscoveryConfig {
+  /** Cache JSON conversions lazily (default: true). Replace validation roots after metadata edits, or set false. */
+  cacheSchemas?: boolean;
   /** Enable API discovery — when false, explore/schema intents are rejected (default: false) */
   enabled?: boolean;
   /** When set, the client must include this value as `discoverySecret` in the request payload */

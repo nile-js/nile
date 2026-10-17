@@ -1,6 +1,6 @@
 import { Ok, type Result } from "slang-ts";
 import z from "zod";
-import type { Engine } from "@/engine/types";
+import type { Action, Engine } from "@/engine/types";
 import type {
   ExternalRequest,
   ExternalResponse,
@@ -32,6 +32,11 @@ export function toExternalResponse(
 }
 
 // --- Intent handlers ---
+
+/** Convert only the current action definition, without caching access decisions or response envelopes. */
+export type ActionSchemaReader = (
+  action: Pick<Action, "validation" | "cacheSchema">
+) => z.core.JSONSchema.BaseSchema | null;
 
 /**
  * Handles the "explore" intent for service/action discovery.
@@ -134,7 +139,8 @@ export async function handleExecute(
  */
 export function handleSchema(
   engine: Engine,
-  request: ExternalRequest
+  request: ExternalRequest,
+  readSchema: ActionSchemaReader = extractActionSchema
 ): ExternalResponse {
   const { service, action } = request;
 
@@ -154,7 +160,8 @@ export function handleSchema(
       schemas[svc.name] = buildServiceSchemas(
         engine,
         svc.name,
-        actionsResult.value.map((a) => a.name)
+        actionsResult.value.map((a) => a.name),
+        readSchema
       );
     }
 
@@ -170,7 +177,8 @@ export function handleSchema(
     const schemas = buildServiceSchemas(
       engine,
       service,
-      actionsResult.value.map((a) => a.name)
+      actionsResult.value.map((a) => a.name),
+      readSchema
     );
     return toExternalResponse(Ok(schemas), `Schemas for '${service}'`);
   }
@@ -188,7 +196,7 @@ export function handleSchema(
     };
   }
 
-  const schema = extractActionSchema(actionResult.value);
+  const schema = readSchema(actionResult.value);
   return toExternalResponse(
     Ok({ [action]: schema }),
     `Schema for '${service}.${action}'`
@@ -201,7 +209,8 @@ export function handleSchema(
 function buildServiceSchemas(
   engine: Engine,
   serviceName: string,
-  actionNames: string[]
+  actionNames: string[],
+  readSchema: ActionSchemaReader
 ): Record<string, unknown> {
   const schemas: Record<string, unknown> = {};
 
@@ -214,7 +223,7 @@ function buildServiceSchemas(
     if (actionResult.value.visibility?.rest === false) {
       continue;
     }
-    schemas[actionName] = extractActionSchema(actionResult.value);
+    schemas[actionName] = readSchema(actionResult.value);
   }
 
   return schemas;
@@ -223,9 +232,9 @@ function buildServiceSchemas(
 /**
  * Extracts JSON schema from an action's zod validation, returns null on failure
  */
-function extractActionSchema(action: {
-  validation?: import("zod").ZodType | null;
-}): unknown {
+export function extractActionSchema(
+  action: Parameters<ActionSchemaReader>[0]
+): ReturnType<ActionSchemaReader> {
   const schema = action.validation;
   if (!schema) {
     return null;

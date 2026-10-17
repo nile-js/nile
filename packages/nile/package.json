@@ -41,33 +41,34 @@
     "fix": "ultracite fix",
     "test": "bunx vitest",
     "test:run": "bunx vitest run",
-    "build": "tsup",
+    "build": "tsdown",
     "copy-docs": "bash scripts/copy-docs.sh",
     "export": "bun run check && bun run fix && bun run test:run && bun run build && bun run copy-docs"
   },
   "dependencies": {
-    "@hono/node-server": "^1.19.9",
-    "hono": "^4.11.9",
-    "hono-rate-limiter": "^0.5.3",
-    "nanoid": "^5.1.6",
-    "pino": "^10.3.1",
-    "slang-ts": "^0.0.7",
-    "zod": "^4.3.6"
+    "@hono/node-server": "^2.1.5",
+    "hono": "^4.13.13",
+    "hono-rate-limiter": "^0.5.4",
+    "nanoid": "^6.0.2",
+    "pino": "^10.4.0",
+    "slang-ts": "^0.0.9",
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.13",
     "@electric-sql/pglite": "^0.2.5",
     "@types/bun": "latest",
-    "drizzle-orm": "^0.45.2",
+    "drizzle-orm": "^0.45.4",
     "drizzle-zod": "0.8.3",
-    "tsup": "^8.5.1",
+    "tsdown": "^0.23.1",
+    "typescript": "^7.0.2",
     "ultracite": "7.1.5",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.0.18"
   },
   "peerDependencies": {
-    "drizzle-orm": "^0.45.2",
+    "drizzle-orm": "^0.45.4",
     "drizzle-zod": "^0.8.3",
-    "typescript": "^5"
+    "typescript": "^7.0.2"
   }
 }

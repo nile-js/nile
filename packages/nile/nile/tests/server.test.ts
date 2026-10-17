@@ -287,6 +287,7 @@ describe("createNileServer - onBoot", () => {
         Service: "users",
         Description: "User management",
         Actions: 1,
+        Registration: expect.any(String),
       },
     ]);
 

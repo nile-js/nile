@@ -1,5 +1,7 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import type { Context as HonoContext } from "hono";
+import type { HookContext } from "@/engine/types";
+import { createHookContext } from "./hook-context";
 import type { RPCContext, Sessions, WebSocketContext } from "./types";
 
 /** Per-request state isolated via AsyncLocalStorage — never shared between concurrent requests */
@@ -8,6 +10,7 @@ export interface RequestStore {
   ws?: WebSocketContext;
   rpc?: RPCContext;
   sessions: Sessions;
+  hookContext?: HookContext;
 }
 
 /** Single ALS instance shared across the entire Nile process */
@@ -35,4 +38,21 @@ export function runInRequestScope<T>(
  */
 export function getRequestStore(): RequestStore | undefined {
   return requestScope.getStore();
+}
+
+/** Isolate hook state while preserving transport identity and shared request sessions. */
+export function runInActionScope<T>({
+  actionName,
+  input,
+  fn,
+}: Pick<HookContext, "actionName" | "input"> & { fn: () => T }): T {
+  const parent = getRequestStore();
+  return requestScope.run(
+    {
+      ...parent,
+      sessions: parent?.sessions ?? {},
+      hookContext: createHookContext({ actionName, input }),
+    },
+    fn
+  );
 }

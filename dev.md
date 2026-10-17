@@ -5,7 +5,7 @@ Nile is a bun workspaces monorepo. All packages live under `packages/`.
 ## Prerequisites
 
 - [Bun](https://bun.sh) (v1.x+)
-- Node 20+ (for some tooling compatibility)
+- Node.js 22.18+, 24.11+, or 26+ for the core tsdown build (Node.js 23 and 25 are not supported by tsdown).
 
 ## Setup
 
@@ -21,7 +21,7 @@ Bun resolves `workspace:*` links automatically - no manual linking needed.
 
 | Package | Path | Published | Build |
 | --- | --- | --- | --- |
-| `@nilejs/nile` | `packages/nile` | Yes | `tsup` |
+| `@nilejs/nile` | `packages/nile` | Yes | `tsdown` + TypeScript 7 |
 | `@nilejs/client` | `packages/client` | Yes | `tsup` |
 | `@nilejs/cli` | `packages/cli` | Yes | `bun` (custom script) |
 | docs site | `packages/web` | No (private) | `rspress` |
@@ -37,7 +37,7 @@ Each package is built independently from its own directory.
 bun run --cwd packages/nile build
 ```
 
-Outputs CJS + ESM bundles via tsup. Entry point is `index.ts`.
+Outputs CJS + ESM bundles, source maps, and bundled declarations via tsdown using the native TypeScript 7 declaration generator. Entry point is `index.ts`; the existing `dist/index.js`, `dist/index.cjs`, and declaration paths are preserved. The upstream TypeScript 7 declaration integration is currently marked experimental.
 
 Full export pipeline (lint, format, test, build):
 

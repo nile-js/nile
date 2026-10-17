@@ -1,6 +1,7 @@
 import { Err, Ok, type Result } from "slang-ts";
 import { verifyJWT } from "@/auth/jwt-handler";
 import type { AuthConfig } from "@/auth/types";
+import { runInActionScope } from "@/nile/request-scope";
 import type { NileContext } from "@/nile/types";
 import { createDiagnosticsLog } from "@/utils";
 import {
@@ -13,7 +14,10 @@ import {
 import type {
   Action,
   ActionSummary,
+  Engine,
   EngineOptions,
+  EngineStats,
+  ServiceStats,
   ServiceSummary,
 } from "./types";
 
@@ -81,12 +85,14 @@ export function createEngine(options: EngineOptions) {
   const serviceSummaries: ServiceSummary[] = [];
   const serviceActionsStore: Record<string, ActionSummary[]> = {};
   const actionStore: Record<string, Record<string, Action>> = {};
+  const serviceStats: ServiceStats[] = [];
 
   // Build stores once on init
   const initStartTime = performance.now();
   const seenServiceNames = new Set<string>();
 
   for (const service of services) {
+    const registrationStart = performance.now();
     // Fail fast on duplicate service names
     if (seenServiceNames.has(service.name)) {
       throw new Error(
@@ -132,10 +138,32 @@ export function createEngine(options: EngineOptions) {
       meta: service.meta,
       actions: actionNames,
     });
+    serviceStats.push({
+      name: service.name,
+      description: service.description,
+      actionCount: actionNames.length,
+      registrationDurationMs: performance.now() - registrationStart,
+    });
   }
 
+  const registrationStats: EngineStats = {
+    totalServices: serviceStats.length,
+    totalActions: serviceStats.reduce(
+      (total, service) => total + service.actionCount,
+      0
+    ),
+    registrationDurationMs: performance.now() - initStartTime,
+    services: serviceStats,
+  };
+
+  /** Preserve startup measurements while allowing callers to inspect their own copy. */
+  const stats = (): EngineStats => ({
+    ...registrationStats,
+    services: serviceStats.map((service) => ({ ...service })),
+  });
+
   log(
-    `Initialized in ${performance.now() - initStartTime}ms. Loaded ${services.length} services.`
+    `Initialized in ${registrationStats.registrationDurationMs}ms. Loaded ${registrationStats.totalServices} services.`
   );
 
   // --- Discovery API ---
@@ -165,11 +193,12 @@ export function createEngine(options: EngineOptions) {
       : Err(`Action '${actionName}' not found in service '${serviceName}'`);
   };
 
-  const executeAction = async (
+  const runAction = async (
     serviceName: string,
     actionName: string,
     payload: unknown,
     nileContext: NileContext<unknown>
+    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: explicit optional-phase guards avoid no-op async Results while preserving fixed pipeline order
   ): Promise<Result<unknown, string>> => {
     const { onBeforeActionHandler, onAfterActionHandler } = options;
 
@@ -180,62 +209,69 @@ export function createEngine(options: EngineOptions) {
     }
     const action = actionResult.value;
 
-    // Reset hook context for this execution
-    nileContext.resetHookContext(`${serviceName}.${actionName}`, payload);
-
-    // Step 0: Auth — verify JWT for protected actions
-    const authStep = await authenticateAction(
-      action,
-      options.auth,
-      nileContext,
-      serviceName,
-      actionName,
-      log
-    );
-    if (authStep.isErr) {
-      return Err(authStep.error);
+    // Skip only absent phases; configured callbacks still run in the existing order.
+    const auth = options.auth;
+    if (action.isProtected && auth) {
+      const authStep = await authenticateAction(
+        action,
+        auth,
+        nileContext,
+        serviceName,
+        actionName,
+        log
+      );
+      if (authStep.isErr) {
+        return Err(authStep.error);
+      }
     }
 
-    // Step 1: Global Before Hook
-    const globalBeforeResult = await runGlobalBeforeHook(
-      onBeforeActionHandler,
-      nileContext,
-      action,
-      payload,
-      log
-    );
-    if (globalBeforeResult.isErr) {
-      return Err(globalBeforeResult.error);
+    if (onBeforeActionHandler) {
+      const globalBeforeResult = await runGlobalBeforeHook(
+        onBeforeActionHandler,
+        nileContext,
+        action,
+        payload,
+        log
+      );
+      if (globalBeforeResult.isErr) {
+        return Err(globalBeforeResult.error);
+      }
     }
 
-    // Step 2: Action Before Hooks
-    const beforeHooksResult = await processHooks(
-      action.hooks?.before ?? [],
-      payload,
-      getAction,
-      nileContext,
-      "before",
-      log
-    );
-    if (beforeHooksResult.isErr) {
-      return Err(beforeHooksResult.error);
+    let validatedPayload = payload;
+    const beforeHooks = action.hooks?.before;
+    if (beforeHooks?.length) {
+      const beforeHooksResult = await processHooks(
+        beforeHooks,
+        validatedPayload,
+        getAction,
+        nileContext,
+        "before",
+        log
+      );
+      if (beforeHooksResult.isErr) {
+        return Err(beforeHooksResult.error);
+      }
+      validatedPayload = beforeHooksResult.value;
     }
 
-    // Step 3: Validation
-    const validationResult = validatePayload(
-      action,
-      beforeHooksResult.value,
-      nileContext,
-      log
-    );
-    if (validationResult.isErr) {
-      return Err(validationResult.error);
+    if (action.validation) {
+      const validationResult = validatePayload(
+        action,
+        validatedPayload,
+        nileContext,
+        log
+      );
+      if (validationResult.isErr) {
+        return Err(validationResult.error);
+      }
+      validatedPayload = validationResult.value;
     }
 
-    // Step 4: Handler
+    // Handler crash safety and isolated hook state apply even when no optional phases exist.
     const handlerResult = await runHandler(
       action,
-      validationResult.value,
+      validatedPayload,
       nileContext,
       log
     );
@@ -243,42 +279,58 @@ export function createEngine(options: EngineOptions) {
       return Err(handlerResult.error);
     }
 
-    // Step 5: Action After Hooks
-    const afterHooksResult = await processHooks(
-      action.hooks?.after ?? [],
-      handlerResult.value,
-      getAction,
-      nileContext,
-      "after",
-      log
-    );
-    if (afterHooksResult.isErr) {
-      return Err(afterHooksResult.error);
+    let output = handlerResult.value;
+    const afterHooks = action.hooks?.after;
+    if (afterHooks?.length) {
+      const afterHooksResult = await processHooks(
+        afterHooks,
+        output,
+        getAction,
+        nileContext,
+        "after",
+        log
+      );
+      if (afterHooksResult.isErr) {
+        return Err(afterHooksResult.error);
+      }
+      output = afterHooksResult.value;
     }
 
-    // Step 6: Global After Hook
-    const globalAfterResult = await runGlobalAfterHook(
-      onAfterActionHandler,
-      nileContext,
-      action,
-      validationResult.value,
-      afterHooksResult.value,
-      log
-    );
-    if (globalAfterResult.isErr) {
-      return Err(globalAfterResult.error);
+    if (onAfterActionHandler) {
+      const globalAfterResult = await runGlobalAfterHook(
+        onAfterActionHandler,
+        nileContext,
+        action,
+        validatedPayload,
+        output,
+        log
+      );
+      if (globalAfterResult.isErr) {
+        return Err(globalAfterResult.error);
+      }
+      output = globalAfterResult.value;
     }
 
-    // Final response
     return action.result?.pipeline
-      ? Ok({
-          data: globalAfterResult.value,
-          pipeline: nileContext.hookContext.log,
-        })
-      : Ok(globalAfterResult.value);
+      ? Ok({ data: output, pipeline: nileContext.hookContext.log })
+      : Ok(output);
   };
 
+  /** Child scopes also isolate direct engine calls and restore state after nested actions. */
+  const executeAction: Engine["executeAction"] = (
+    serviceName,
+    actionName,
+    payload,
+    nileContext
+  ) =>
+    runInActionScope({
+      actionName: `${serviceName}.${actionName}`,
+      input: payload,
+      fn: () => runAction(serviceName, actionName, payload, nileContext),
+    });
+
   return {
+    stats,
     getServices,
     getServiceActions,
     getAction,

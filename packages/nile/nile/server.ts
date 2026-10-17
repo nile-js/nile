@@ -4,6 +4,7 @@ import type { Engine } from "@/engine/types";
 import { createRestApp } from "@/rest/rest";
 import { createDiagnosticsLog } from "@/utils";
 import { createNileContext } from "./nile";
+import { printStartupStats } from "./stats";
 import type { NileContext, NileServer, Resources, ServerConfig } from "./types";
 
 let _nileContext: NileContext | null = null;
@@ -88,15 +89,7 @@ export async function createNileServer(
 
   // Print registered services table (on by default, opt-out with logServices: false)
   if (config.logServices !== false) {
-    const servicesResult = engine.getServices();
-    if (servicesResult.isOk) {
-      const table = servicesResult.value.map((s) => ({
-        Service: s.name,
-        Description: s.description,
-        Actions: s.actions.length,
-      }));
-      console.table(table);
-    }
+    printStartupStats(engine.stats());
   }
 
   // Run onBoot lifecycle hook — await before proceeding
@@ -129,7 +122,9 @@ export async function createNileServer(
   }
 
   // Build the server object — always booted at this point
+  let startupDurationMs = 0;
   const server: NileServer = {
+    stats: () => ({ ...engine.stats(), startupDurationMs }),
     config,
     engine,
     context: nileContext as NileContext<unknown>,
@@ -163,6 +158,7 @@ export async function createNileServer(
   }
 
   const elapsed = performance.now() - startTime;
+  startupDurationMs = elapsed;
   const readyTime =
     elapsed >= 1000
       ? `${(elapsed / 1000).toFixed(1)}s`

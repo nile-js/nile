@@ -157,6 +157,71 @@ curl -X POST http://localhost:8000/api/services \
 }
 ```
 
+## Startup statistics
+
+Nile prints a service table and total service/action counts during startup by default. Each row shows the service name, description, action count, and registration duration. Set `logServices: false` in `createNileServer` to suppress this table and its summary.
+
+Inspect the same registration snapshot after creating your server:
+
+```typescript
+const stats = server.stats();
+console.log(stats);
+console.table(stats.services);
+// {
+//   totalServices, totalActions, registrationDurationMs, startupDurationMs,
+//   services: [{ name, description, actionCount, registrationDurationMs }]
+// }
+```
+
+All duration fields are milliseconds. Registration measures Nile indexing already-created service definitions; it does not include importing modules or constructing their schemas. `startupDurationMs` measures server initialization, including `onBoot` and REST setup when configured, and excludes imports performed before server creation.
+
+`stats()` is synchronous and does not print anything itself. Each call returns a fresh copy of the startup measurements, so changing it cannot change Nile's stored statistics. These measurements stay fixed after startup and do not track request traffic. `server.engine.stats()` returns the registration fields without `startupDurationMs`.
+
+## Lazy schema discovery
+
+JSON Schema conversion is cached by default and happens only when an allowed schema-discovery request first needs a schema. Startup does not convert every schema, and ordinary action execution does not convert schemas to JSON. Input validation still runs through Zod normally. This is on-demand conversion, not lazy module importing or deferred schema construction.
+
+**First discovery fixes the converted metadata for that schema object.** Later changes to descriptions, defaults, or custom conversion callbacks are not reflected automatically. Supply a new schema object to get a new conversion, or disable caching when conversion must reflect changing values. Visibility and discovery access checks still run for every request; complete responses and authorization decisions are not cached.
+
+```typescript
+import { createAction, createNileServer, createService } from "@nilejs/nile";
+import { Ok } from "slang-ts";
+import z from "zod";
+
+const readStatus = createAction({
+  name: "read-status",
+  description: "Read status",
+  validation: z.object({ label: z.string() }),
+  cacheSchema: false, // Reconvert this action's schema when discovery needs it.
+  handler: () => Ok({ ready: true }),
+});
+
+const server = await createNileServer({
+  serverName: "status-app",
+  services: [createService({
+    name: "status",
+    description: "Status tools",
+    actions: [readStatus],
+  })],
+  rest: {
+    baseUrl: "/api",
+    allowedOrigins: [],
+    discovery: {
+      enabled: true,
+      cacheSchemas: false, // Disable conversion caching for this REST app.
+    },
+  },
+});
+```
+
+Omit both options to use the default lazy cache. `cacheSchema: false` opts out per action; `rest.discovery.cacheSchemas: false` disables it for the REST app. Cache entries are held per schema identity within that app. When the global disable is observed, existing entries are cleared before caching can be enabled again.
+
+## Hook execution context
+
+Inside an action handler or hook, `context.hookContext` refers to that execution's state, output, errors, and logs. Direct engine calls also have their own execution context. Nested action calls get a separate context, then restore the parent's context when they finish. Global hook callbacks, configuration, and execution order stay unchanged. Existing REST, WebSocket, RPC, and session references remain available inside the execution.
+
+Outside action execution, `context.hookContext` refers to the context-local fallback. It is not the last completed request's state. To inspect completed hook logs, configure the action with `result: { pipeline: true }` and inspect the returned execution's `pipeline` field (inside the successful Result value for direct engine calls). `resetHookContext` remains available and resets the currently active execution context, or the fallback when called outside execution.
+
 ## Why Nile
 
 **You write business logic. Nile handles the rest.**

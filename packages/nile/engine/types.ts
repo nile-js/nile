@@ -61,6 +61,8 @@ export interface Action<T = unknown, E = string> {
   };
   handler: ActionHandler<T, E>;
   validation?: z.ZodTypeAny | null;
+  /** Cache this action's JSON discovery conversion lazily (default: true). False keeps it dynamic. */
+  cacheSchema?: boolean;
   hooks?: {
     before?: HookDefinition[];
     after?: HookDefinition[];
@@ -86,6 +88,22 @@ export interface Service {
 }
 
 export type Services = Service[];
+
+/** Registration work measured after service definitions have been constructed. */
+export interface ServiceStats {
+  name: string;
+  description: string;
+  actionCount: number;
+  registrationDurationMs: number;
+}
+
+/** Startup registration snapshot, independent of later configuration changes. */
+export interface EngineStats {
+  totalServices: number;
+  totalActions: number;
+  registrationDurationMs: number;
+  services: ServiceStats[];
+}
 
 export interface ServiceSummary {
   name: string;
@@ -118,6 +136,8 @@ export interface EngineOptions {
 
 /** Formalized return type of createEngine */
 export interface Engine {
+  /** Returns a copy so callers cannot alter the recorded startup measurements. */
+  stats: () => EngineStats;
   getServices: () => Result<ServiceSummary[], string>;
   getServiceActions: (serviceName: string) => Result<ActionSummary[], string>;
   getAction: (

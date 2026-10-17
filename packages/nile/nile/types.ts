@@ -1,7 +1,13 @@
 import type { Hono, Context as HonoContext } from "hono";
 import type { Result } from "slang-ts";
 import type { AuthConfig } from "@/auth/types";
-import type { Action, Engine, HookContext, Services } from "@/engine/types";
+import type {
+  Action,
+  Engine,
+  EngineStats,
+  HookContext,
+  Services,
+} from "@/engine/types";
 import type { RestConfig } from "@/rest/types";
 
 export interface WebSocketContext {
@@ -95,7 +101,7 @@ export interface ServerConfig {
   runtime?: ServerRuntime;
   services: Services;
   diagnostics?: boolean;
-  /** Print registered services table to console on boot (default: true) */
+  /** Print registration table and totals on boot (default: true). Stats remain available when false. */
   logServices?: boolean;
   /** Force creating a new server instance even if one already exists (default: false) */
   forceNewInstance?: boolean;
@@ -130,7 +136,12 @@ export interface ExternalRequest {
   payload: Record<string, unknown>;
 }
 
+/** Registration measurements plus framework startup, including the awaited boot hook. */
+export type NileStats = EngineStats & { startupDurationMs: number };
+
 export interface NileServer {
+  /** Returns an independent startup snapshot without printing or executing actions. */
+  stats: () => NileStats;
   config: ServerConfig;
   engine: Engine;
   context: NileContext<unknown>;

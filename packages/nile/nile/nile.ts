@@ -1,3 +1,5 @@
+import type { HookContext } from "@/engine/types";
+import { createHookContext } from "./hook-context";
 import { getRequestStore } from "./request-scope";
 import type { NileContext, Resources, Sessions } from "./types";
 
@@ -14,8 +16,8 @@ interface CreateNileContextParams<TDB = unknown> {
  * transparently delegates request-scoped reads (rest, ws, rpc, sessions)
  * to AsyncLocalStorage so concurrent requests never share mutable state.
  *
- * Hook context lives on the singleton but is reset at the start of each
- * action execution, so it does not need per-request scoping.
+ * Each action execution gets isolated hook state through its child request scope.
+ * Outside action execution, hook helpers use a private context-local fallback.
  *
  * @param params - Optional configuration including shared resources
  * @returns A fully initialized NileContext
@@ -24,6 +26,7 @@ export function createNileContext<TDB = unknown>(
   params?: CreateNileContextParams<TDB>
 ): NileContext<TDB> {
   const store = new Map<string, unknown>();
+  let fallbackHookContext = createHookContext({ actionName: "", input: null });
 
   const context: NileContext<TDB> = {
     resources: params?.resources,
@@ -54,11 +57,17 @@ export function createNileContext<TDB = unknown>(
       }
     },
 
-    hookContext: {
-      actionName: "",
-      input: null,
-      state: {},
-      log: { before: [], after: [] },
+    get hookContext(): HookContext {
+      return getRequestStore()?.hookContext ?? fallbackHookContext;
+    },
+
+    set hookContext(value: HookContext) {
+      const request = getRequestStore();
+      if (request?.hookContext) {
+        request.hookContext = value;
+        return;
+      }
+      fallbackHookContext = value;
     },
 
     updateHookState(key: string, value: unknown) {
@@ -86,12 +95,7 @@ export function createNileContext<TDB = unknown>(
     },
 
     resetHookContext(actionName: string, input: unknown) {
-      context.hookContext = {
-        actionName,
-        input,
-        state: {},
-        log: { before: [], after: [] },
-      };
+      context.hookContext = createHookContext({ actionName, input });
     },
   };
 

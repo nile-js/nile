@@ -13,8 +13,10 @@ import type {
   ServerRuntime,
 } from "@/nile/types";
 import { createDiagnosticsLog } from "@/utils";
-import { intentHandlers } from "./intent-handlers";
+import type { intentHandlers } from "./intent-handlers";
 import { applyRateLimiting, applyStaticServing } from "./middleware";
+import { createMiddlewareMatcher } from "./middleware-matcher";
+import { createRestIntentHandlers } from "./schema-cache";
 import type { MiddlewareEntry, RestConfig } from "./types";
 import { enforceActionContentType, handleFormDataRequest } from "./uploads";
 
@@ -66,7 +68,8 @@ async function handleFormDataPath(
   config: RestConfig,
   engine: Engine,
   nileContext: NileContext<unknown>,
-  log: (msg: string) => void
+  log: (msg: string) => void,
+  handlers: typeof intentHandlers
 ) {
   // Extract RPC routing fields from the form data first pass
   const rawBody = await c.req.parseBody({ all: true }).catch(() => null);
@@ -164,9 +167,8 @@ async function handleFormDataPath(
     payload: uploadResult.data as unknown as Record<string, unknown>,
   };
 
-  const handler = intentHandlers[request.intent];
-  // biome-ignore lint/suspicious/noExplicitAny: internal dispatch
-  const response = await (handler as any)(engine, request, nileContext);
+  const handler = handlers[request.intent];
+  const response = await handler(engine, request, nileContext);
 
   const statusCode = response.status ? 200 : 400;
   return c.json(response, statusCode);
@@ -202,6 +204,7 @@ export interface RestApp {
 export function createRestApp(params: CreateRestAppParams): RestApp {
   const { config, engine, nileContext, serverName, runtime } = params;
   const app = new Hono();
+  const handlers = createRestIntentHandlers({ config });
 
   const log = createDiagnosticsLog("REST", {
     diagnostics: config.diagnostics,
@@ -222,12 +225,20 @@ export function createRestApp(params: CreateRestAppParams): RestApp {
   // --- Dynamic middleware registry ---
   // Registered BEFORE the POST handler so user middleware always runs first
   const middlewareRegistry: MiddlewareEntry[] = [];
+  const servicesPath = `${config.baseUrl}/services`;
+  const middlewareMatcher = createMiddlewareMatcher({
+    servicesPath,
+    readRegistry: () => middlewareRegistry,
+  });
 
   app.use("*", async (c, next) => {
-    const requestPath = c.req.path;
-    const matching = middlewareRegistry.filter((entry) =>
-      requestPath.startsWith(entry.path)
-    );
+    if (middlewareRegistry.length === 0) {
+      return next();
+    }
+    const matching = middlewareMatcher.match(c.req.path);
+    if (matching.length === 0) {
+      return next();
+    }
 
     // Chain matching middleware sequentially, then hand off to the next Hono handler
     let index = 0;
@@ -248,18 +259,22 @@ export function createRestApp(params: CreateRestAppParams): RestApp {
   });
 
   // Single POST endpoint for all service interactions
-  const servicesPath = `${config.baseUrl}/services`;
-
   app.post(servicesPath, (c) => {
     // Each request gets its own isolated scope, concurrent requests never share mutable state
-    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: single POST handler handles discovery, form-data, JSON, middleware, and intent dispatch
     return runInRequestScope({ rest: c, sessions: {} }, async () => {
       const contentType = c.req.header("content-type") ?? "";
       const isFormData = contentType.includes("multipart/form-data");
 
       // --- Form-data path (multipart uploads) ---
       if (isFormData) {
-        return handleFormDataPath(c, config, engine, nileContext, log);
+        return handleFormDataPath(
+          c,
+          config,
+          engine,
+          nileContext,
+          log,
+          handlers
+        );
       }
 
       // --- JSON path (standard RPC) ---
@@ -309,9 +324,8 @@ export function createRestApp(params: CreateRestAppParams): RestApp {
         );
       }
 
-      const handler = intentHandlers[request.intent];
-      // biome-ignore lint/suspicious/noExplicitAny: internal dispatch
-      const response = await (handler as any)(engine, request, nileContext);
+      const handler = handlers[request.intent];
+      const response = await handler(engine, request, nileContext);
 
       const statusCode = response.status ? 200 : 400;
       return c.json(response, statusCode);
@@ -377,6 +391,7 @@ export function createRestApp(params: CreateRestAppParams): RestApp {
       );
     }
     middlewareRegistry.push({ path, fn });
+    middlewareMatcher.invalidate();
   };
 
   return { app, addMiddleware };
