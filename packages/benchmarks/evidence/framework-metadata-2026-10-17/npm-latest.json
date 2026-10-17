@@ -1,0 +1,2939 @@
+{
+  "checkedOn": "2026-10-17",
+  "packages": [
+    {
+      "source": "https://registry.npmjs.org/elysia/latest",
+      "metadata": {
+        "bugs": {
+          "url": "https://github.com/elysiajs/elysia/issues"
+        },
+        "dist": {
+          "shasum": "e71b9427e8bc9de60d6fa1d238916f335edf2702",
+          "tarball": "https://registry.npmjs.org/elysia/-/elysia-1.4.30.tgz",
+          "fileCount": 126,
+          "integrity": "sha512-S2qqV0CbM4faB1hQQ5IYoeYnAUinjHlzRduxaBc4OoNqh0GjOc8k6tt3hv5ozWcG6Svr6hugw6JL4zNke4jwfA==",
+          "signatures": [
+            {
+              "sig": "MEUCIQCTLdguCg7pUmoWyD/sgWrFfqXNrBN2jRRZbe0xUAAlTQIgGzcLsqq3lubq4ThkXox4JBgYXLoWxgKXT8am5nUPQw0=",
+              "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+            }
+          ],
+          "attestations": {
+            "url": "https://registry.npmjs.org/-/npm/v1/attestations/elysia@1.4.30",
+            "provenance": {
+              "predicateType": "https://slsa.dev/provenance/v1"
+            }
+          },
+          "unpackedSize": 1118441
+        },
+        "main": "./dist/index.js",
+        "name": "elysia",
+        "types": "./dist/index.d.ts",
+        "author": {
+          "url": "https://github.com/SaltyAom",
+          "name": "saltyAom",
+          "email": "saltyaom@gmail.com"
+        },
+        "module": "./dist/index.mjs",
+        "exports": {
+          ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.mjs",
+            "require": "./dist/index.js"
+          },
+          "./ws": {
+            "types": "./dist/ws/index.d.ts",
+            "import": "./dist/ws/index.mjs",
+            "require": "./dist/ws/index.js"
+          },
+          "./error": {
+            "types": "./dist/error.d.ts",
+            "import": "./dist/error.mjs",
+            "require": "./dist/error.js"
+          },
+          "./trace": {
+            "types": "./dist/trace.d.ts",
+            "import": "./dist/trace.mjs",
+            "require": "./dist/trace.js"
+          },
+          "./types": {
+            "types": "./dist/types.d.ts",
+            "import": "./dist/types.mjs",
+            "require": "./dist/types.js"
+          },
+          "./utils": {
+            "types": "./dist/utils.d.ts",
+            "import": "./dist/utils.mjs",
+            "require": "./dist/utils.js"
+          },
+          "./schema": {
+            "types": "./dist/schema.d.ts",
+            "import": "./dist/schema.mjs",
+            "require": "./dist/schema.js"
+          },
+          "./ws/bun": {
+            "types": "./dist/ws/bun.d.ts",
+            "import": "./dist/ws/bun.mjs",
+            "require": "./dist/ws/bun.js"
+          },
+          "./adapter": {
+            "types": "./dist/adapter/index.d.ts",
+            "import": "./dist/adapter/index.mjs",
+            "require": "./dist/adapter/index.js"
+          },
+          "./compose": {
+            "types": "./dist/compose.d.ts",
+            "import": "./dist/compose.mjs",
+            "require": "./dist/compose.js"
+          },
+          "./context": {
+            "types": "./dist/context.d.ts",
+            "import": "./dist/context.mjs",
+            "require": "./dist/context.js"
+          },
+          "./cookies": {
+            "types": "./dist/cookies.d.ts",
+            "import": "./dist/cookies.mjs",
+            "require": "./dist/cookies.js"
+          },
+          "./sucrose": {
+            "types": "./dist/sucrose.d.ts",
+            "import": "./dist/sucrose.mjs",
+            "require": "./dist/sucrose.js"
+          },
+          "./ws/types": {
+            "types": "./dist/ws/types.d.ts",
+            "import": "./dist/ws/types.mjs",
+            "require": "./dist/ws/types.js"
+          },
+          "./universal": {
+            "types": "./dist/universal/index.d.ts",
+            "import": "./dist/universal/index.mjs",
+            "require": "./dist/universal/index.js"
+          },
+          "./adapter/bun": {
+            "types": "./dist/adapter/bun/index.d.ts",
+            "import": "./dist/adapter/bun/index.mjs",
+            "require": "./dist/adapter/bun/index.js"
+          },
+          "./parse-query": {
+            "types": "./dist/parse-query.d.ts",
+            "import": "./dist/parse-query.mjs",
+            "require": "./dist/parse-query.js"
+          },
+          "./type-system": {
+            "types": "./dist/type-system/index.d.ts",
+            "import": "./dist/type-system/index.mjs",
+            "require": "./dist/type-system/index.js"
+          },
+          "./package.json": "./package.json",
+          "./adapter/utils": {
+            "types": "./dist/adapter/utils.d.ts",
+            "import": "./dist/adapter/utils.mjs",
+            "require": "./dist/adapter/utils.js"
+          },
+          "./universal/env": {
+            "types": "./dist/universal/env.d.ts",
+            "import": "./dist/universal/env.mjs",
+            "require": "./dist/universal/env.js"
+          },
+          "./universal/file": {
+            "types": "./dist/universal/file.d.ts",
+            "import": "./dist/universal/file.mjs",
+            "require": "./dist/universal/file.js"
+          },
+          "./universal/server": {
+            "types": "./dist/universal/server.d.ts",
+            "import": "./dist/universal/server.mjs",
+            "require": "./dist/universal/server.js"
+          },
+          "./type-system/types": {
+            "types": "./dist/type-system/types.d.ts",
+            "import": "./dist/type-system/types.mjs",
+            "require": "./dist/type-system/types.js"
+          },
+          "./type-system/utils": {
+            "types": "./dist/type-system/utils.d.ts",
+            "import": "./dist/type-system/utils.mjs",
+            "require": "./dist/type-system/utils.js"
+          },
+          "./type-system/format": {
+            "types": "./dist/type-system/format.d.ts",
+            "import": "./dist/type-system/format.mjs",
+            "require": "./dist/type-system/format.js"
+          },
+          "./adapter/bun/compose": {
+            "types": "./dist/adapter/bun/compose.d.ts",
+            "import": "./dist/adapter/bun/compose.mjs",
+            "require": "./dist/adapter/bun/compose.js"
+          },
+          "./adapter/bun/handler": {
+            "types": "./dist/adapter/bun/handler.d.ts",
+            "import": "./dist/adapter/bun/handler.mjs",
+            "require": "./dist/adapter/bun/handler.js"
+          },
+          "./adapter/web-standard": {
+            "types": "./dist/adapter/web-standard/index.d.ts",
+            "import": "./dist/adapter/web-standard/index.mjs",
+            "require": "./dist/adapter/web-standard/index.js"
+          },
+          "./adapter/cloudflare-worker": {
+            "types": "./dist/adapter/cloudflare-worker/index.d.ts",
+            "import": "./dist/adapter/cloudflare-worker/index.mjs",
+            "require": "./dist/adapter/cloudflare-worker/index.js"
+          },
+          "./adapter/web-standard/handler": {
+            "types": "./dist/adapter/web-standard/handler.d.ts",
+            "import": "./dist/adapter/web-standard/handler.mjs",
+            "require": "./dist/adapter/web-standard/handler.js"
+          }
+        },
+        "gitHead": "e037eca710e7ad193be09cc6615ab0dbe54af914",
+        "license": "MIT",
+        "scripts": {
+          "dev": "bun run --watch example/a.ts",
+          "test": "bun run test:functionality && bun run test:types && bun run test:node",
+          "build": "rm -rf dist && bun build.ts",
+          "release": "bun run build && bun run test && bun publish",
+          "test:cf": "npm install --prefix test/cloudflare && cd test/cloudflare && bun run cf-typegen && bun run test",
+          "deadcode": "knip",
+          "test:node": "npm install --prefix test/node/cjs && npm install --prefix test/node/esm/ && node test/node/cjs/index.js && node test/node/esm/index.js",
+          "test:types": "tsc --project tsconfig.test.json",
+          "test:imports": "bun run test/type-system/import.ts",
+          "test:functionality": "bun test && bun run test:imports"
+        },
+        "_npmUser": {
+          "name": "GitHub Actions",
+          "email": "npm-oidc-no-reply@github.com",
+          "trustedPublisher": {
+            "id": "github",
+            "oidcConfigId": "oidc:34ed344f-4d33-463d-be0a-de61f53aa141"
+          }
+        },
+        "homepage": "https://github.com/elysiajs/elysia",
+        "keywords": [
+          "bun",
+          "http",
+          "web",
+          "server"
+        ],
+        "overrides": {
+          "esbuild": "0.25.4"
+        },
+        "repository": {
+          "url": "git+https://github.com/elysiajs/elysia.git",
+          "type": "git"
+        },
+        "_npmVersion": "11.17.0",
+        "description": "Ergonomic Framework for Human",
+        "directories": {},
+        "maintainers": [
+          {
+            "name": "aomkirby123",
+            "email": "saltyaom@gmail.com"
+          }
+        ],
+        "_nodeVersion": "24.19.0",
+        "dependencies": {
+          "cookie": "^1.1.1",
+          "memoirist": "^0.4.0",
+          "exact-mirror": "^0.2.7",
+          "fast-decode-uri-component": "^1.0.1"
+        },
+        "_hasShrinkwrap": false,
+        "devDependencies": {
+          "zod": "^4.1.5",
+          "knip": "^5.64.1",
+          "tsup": "^8.4.0",
+          "eslint": "^9.24.0",
+          "arktype": "^2.1.22",
+          "valibot": "^1.1.0",
+          "prettier": "^3.5.3",
+          "file-type": "^20.4.1",
+          "@types/bun": "^1.3.5",
+          "typescript": "^5.8.3",
+          "expect-type": "^1.2.1",
+          "@types/cookie": "1.0.0",
+          "@elysiajs/openapi": "^1.4.1",
+          "eslint-plugin-sonarjs": "^3.0.2",
+          "eslint-plugin-security": "^3.0.1",
+          "@typescript-eslint/parser": "^8.30.1",
+          "esbuild-fix-imports-plugin": "^1.0.22",
+          "@types/fast-decode-uri-component": "^1.0.0",
+          "@typescript-eslint/eslint-plugin": "^8.30.1"
+        },
+        "peerDependencies": {
+          "file-type": ">= 20.0.0",
+          "@types/bun": ">= 1.2.0",
+          "typescript": ">= 5.0.0",
+          "exact-mirror": ">= 0.0.9",
+          "openapi-types": ">= 12.0.0",
+          "@sinclair/typebox": ">= 0.34.0 < 1"
+        },
+        "peerDependenciesMeta": {
+          "@types/bun": {
+            "optional": true
+          },
+          "typescript": {
+            "optional": true
+          }
+        },
+        "_npmOperationalInternal": {
+          "tmp": "tmp/elysia_1.4.30_1787764482992_0.2285304097440235",
+          "host": "s3://npm-registry-packages-npm-production"
+        },
+        "_id": "elysia@1.4.30",
+        "version": "1.4.30"
+      }
+    },
+    {
+      "source": "https://registry.npmjs.org/@elysia%2fnode/latest",
+      "metadata": {
+        "bugs": {
+          "url": "https://github.com/elysiajs/node/issues"
+        },
+        "dist": {
+          "shasum": "022f4407ec8e05c471c1c536a85b85c553d0b6e7",
+          "tarball": "https://registry.npmjs.org/@elysia/node/-/node-1.4.6.tgz",
+          "fileCount": 22,
+          "integrity": "sha512-UqtpX6E2uz3KJ9c/MWBJ4/3WDpUN15CzNWPUS/QbGMqO6Cmjqluh+pZqW5Yaday1+HL/JADj+zG8BjtHvRun2g==",
+          "signatures": [
+            {
+              "sig": "MEQCIEyN9LoI1knzV/1OPcJ+t4ka1tt9xGSnP1dW7RFQ1vb7AiBi+20GczuYlML8k2AIZdXH9yO8oMr0+lpYKPmi9oAxtA==",
+              "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+            }
+          ],
+          "attestations": {
+            "url": "https://registry.npmjs.org/-/npm/v1/attestations/@elysia%2fnode@1.4.6",
+            "provenance": {
+              "predicateType": "https://slsa.dev/provenance/v1"
+            }
+          },
+          "unpackedSize": 203908
+        },
+        "main": "./dist/cjs/index.js",
+        "name": "@elysia/node",
+        "types": "./dist/index.d.ts",
+        "author": {
+          "url": "https://github.com/SaltyAom",
+          "name": "saltyAom",
+          "email": "saltyaom@gmail.com"
+        },
+        "module": "./dist/index.mjs",
+        "exports": {
+          ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.mjs",
+            "require": "./dist/cjs/index.js"
+          },
+          "./package.json": "./package.json"
+        },
+        "gitHead": "0aae1414853b9e62eca937bc6f9a3c81874f1e27",
+        "license": "MIT",
+        "scripts": {
+          "dev": "tsx --watch ./example/index.ts",
+          "test": "bun run test:node && bun run test:node-cluster",
+          "build": "bun build.ts",
+          "release": "npm run build && npm run test && npm publish --access public",
+          "test:node": "npm install --prefix ./test/node/cjs/ && npm install --prefix ./test/node/esm/ && node ./test/node/cjs/index.js && node ./test/node/esm/index.js",
+          "test:node-cluster": "node ./test/cluster/cluster.cjs port && node ./test/cluster/cluster.cjs object && node ./test/cluster/cluster.cjs true && node ./test/cluster/cluster.cjs false"
+        },
+        "_npmUser": {
+          "name": "GitHub Actions",
+          "email": "npm-oidc-no-reply@github.com",
+          "trustedPublisher": {
+            "id": "github",
+            "oidcConfigId": "oidc:ab9bae0f-d653-4fb9-ae08-fe4175be4889"
+          }
+        },
+        "homepage": "https://github.com/elysiajs/node",
+        "keywords": [
+          "elysia",
+          "bearer",
+          "authentication"
+        ],
+        "repository": {
+          "url": "git+https://github.com/elysiajs/node.git",
+          "type": "git"
+        },
+        "_npmVersion": "11.12.1",
+        "description": "Elysia adapter to run Elysia on Node.js",
+        "directories": {},
+        "maintainers": [
+          {
+            "name": "aomkirby123",
+            "email": "saltyaom@gmail.com"
+          }
+        ],
+        "_nodeVersion": "24.15.0",
+        "dependencies": {
+          "srvx": "^0.11.5",
+          "crossws": "^0.4.5"
+        },
+        "_hasShrinkwrap": false,
+        "devDependencies": {
+          "tsx": "^4.19.2",
+          "tsup": "^8.3.5",
+          "elysia": "^1.4.21",
+          "eslint": "9.17.0",
+          "vitest": "^2.1.8",
+          "@types/bun": "^1.3.1",
+          "typescript": "^5.7.2",
+          "@types/node": "^22.10.2",
+          "@elysiajs/cors": "^1.4.0",
+          "@elysiajs/openapi": "^1.4.0"
+        },
+        "peerDependencies": {
+          "elysia": ">= 1.4.0"
+        },
+        "_npmOperationalInternal": {
+          "tmp": "tmp/node_1.4.6_1779226132796_0.6792507514464825",
+          "host": "s3://npm-registry-packages-npm-production"
+        },
+        "_id": "@elysia/node@1.4.6",
+        "version": "1.4.6"
+      }
+    },
+    {
+      "source": "https://registry.npmjs.org/@nestjs%2fcore/latest",
+      "metadata": {
+        "bugs": {
+          "url": "https://github.com/nestjs/nest/issues"
+        },
+        "dist": {
+          "shasum": "7b733c127a64206184d79b7ff2c7f97102df728b",
+          "tarball": "https://registry.npmjs.org/@nestjs/core/-/core-12.1.3.tgz",
+          "fileCount": 403,
+          "integrity": "sha512-uHv2LPVewOnt5ZxSsDI11Vku9Gt1mdL0OWy/JOfXH1D5pV/HaPRGfreHPfYsO/bsyvZxdWVqFfAaFxvop6mFhw==",
+          "signatures": [
+            {
+              "sig": "MEUCIQCioL0RqYMlDrDAUkcSe3LRmG1b2EEUs5GMS+buQR3zTwIgd0tBNCHJRmTzSnifKxcAzFKewCrMR8zkWfENTzMsnPc=",
+              "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+            },
+            {
+              "sig": "MEQCICjDuWnehK5ZhJpJfMjd/wnyDxxqfSgxNiq3axpwl6wnAiBxP7V2/UBl4AXKzBprsrKf//WQ/TC4Sm7JJCRS73ek0Q==",
+              "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+            }
+          ],
+          "unpackedSize": 695568
+        },
+        "main": "./index.js",
+        "name": "@nestjs/core",
+        "type": "module",
+        "types": "./index.d.ts",
+        "author": {
+          "name": "Kamil Mysliwiec"
+        },
+        "engines": {
+          "node": ">= 20"
+        },
+        "exports": {
+          ".": "./index.js",
+          "./*": "./*.js",
+          "./*.js": "./*.js",
+          "./internal": "./internal.js"
+        },
+        "funding": {
+          "url": "https://opencollective.com/nest",
+          "type": "opencollective"
+        },
+        "gitHead": "4514623279f6087808e3c8f08fbf9f37d3c17482",
+        "license": "MIT",
+        "_npmUser": {
+          "name": "nestjscore",
+          "email": "admin@kamilmysliwiec.com"
+        },
+        "homepage": "https://nestjs.com",
+        "repository": {
+          "url": "git+https://github.com/nestjs/nest.git",
+          "type": "git",
+          "directory": "packages/core"
+        },
+        "_npmVersion": "lerna/10.0.1/node@v24.20.0+arm64 (darwin)",
+        "description": "Nest - modern, fast, powerful node.js web framework (@core)",
+        "directories": {},
+        "maintainers": [
+          {
+            "name": "nestjscore",
+            "email": "admin@kamilmysliwiec.com"
+          }
+        ],
+        "_nodeVersion": "24.20.0",
+        "dependencies": {
+          "uid": "2.0.2",
+          "tslib": "2.8.1",
+          "iterare": "1.2.1",
+          "path-to-regexp": "8.4.2",
+          "fast-safe-stringify": "2.1.1"
+        },
+        "publishConfig": {
+          "access": "public"
+        },
+        "_hasShrinkwrap": false,
+        "devDependencies": {
+          "@nestjs/common": "12.1.3"
+        },
+        "peerDependencies": {
+          "rxjs": "^7.1.0",
+          "@nestjs/common": "^12.0.0",
+          "reflect-metadata": "^0.1.12 || ^0.2.0",
+          "@nestjs/websockets": "^12.0.0",
+          "@nestjs/microservices": "^12.0.0",
+          "@nestjs/platform-express": "^12.0.0"
+        },
+        "peerDependenciesMeta": {
+          "@nestjs/websockets": {
+            "optional": true
+          },
+          "@nestjs/microservices": {
+            "optional": true
+          },
+          "@nestjs/platform-express": {
+            "optional": true
+          }
+        },
+        "_npmOperationalInternal": {
+          "tmp": "tmp/core_12.1.3_1791804346636_0.8158385987175805",
+          "host": "s3://npm-registry-packages-npm-production"
+        },
+        "_id": "@nestjs/core@12.1.3",
+        "version": "12.1.3"
+      }
+    },
+    {
+      "source": "https://registry.npmjs.org/@nestjs%2fplatform-express/latest",
+      "metadata": {
+        "bugs": {
+          "url": "https://github.com/nestjs/nest/issues"
+        },
+        "dist": {
+          "shasum": "c9baa25e24d7117d48d7c3d2e71de96d4d794128",
+          "tarball": "https://registry.npmjs.org/@nestjs/platform-express/-/platform-express-12.1.3.tgz",
+          "fileCount": 54,
+          "integrity": "sha512-3C9tjF2VJOTAjl4ATZXksMFIbH4dwyX5EyZA+9SK3CreFr8FwOSMyha+YgAMSKECLlOIBhHUeYmTwT761iKlOQ==",
+          "signatures": [
+            {
+              "sig": "MEQCIDJSRvekqyr+h7gxdVe8pvMp5qQY0sCo6nlcb/SJgf1gAiAZgwys4ZuPJarmgSHUweYiHd3z5E41s/0JWp23crecaw==",
+              "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+            },
+            {
+              "sig": "MEUCICmgYAd4ySwoCoguseC6s5BvAPVLnyEcdu3iNVeQbB7gAiEAos4otD58IEPIuX5VVhkSs4y3xSAHeBC/PE8Aygz576A=",
+              "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+            }
+          ],
+          "unpackedSize": 72192
+        },
+        "main": "./index.js",
+        "name": "@nestjs/platform-express",
+        "type": "module",
+        "types": "./index.d.ts",
+        "author": {
+          "name": "Kamil Mysliwiec"
+        },
+        "exports": {
+          ".": "./index.js",
+          "./*": "./*.js",
+          "./*.js": "./*.js"
+        },
+        "funding": {
+          "url": "https://opencollective.com/nest",
+          "type": "opencollective"
+        },
+        "gitHead": "4514623279f6087808e3c8f08fbf9f37d3c17482",
+        "license": "MIT",
+        "_npmUser": {
+          "name": "nestjscore",
+          "email": "admin@kamilmysliwiec.com"
+        },
+        "homepage": "https://nestjs.com",
+        "repository": {
+          "url": "git+https://github.com/nestjs/nest.git",
+          "type": "git",
+          "directory": "packages/platform-express"
+        },
+        "_npmVersion": "lerna/10.0.1/node@v24.20.0+arm64 (darwin)",
+        "description": "Nest - modern, fast, powerful node.js web framework (@platform-express)",
+        "directories": {},
+        "maintainers": [
+          {
+            "name": "nestjscore",
+            "email": "admin@kamilmysliwiec.com"
+          },
+          {
+            "name": "kamilmysliwiec",
+            "email": "mail@kamilmysliwiec.com"
+          }
+        ],
+        "_nodeVersion": "24.20.0",
+        "dependencies": {
+          "cors": "2.8.6",
+          "tslib": "2.8.1",
+          "multer": "2.4.0",
+          "express": "5.2.1",
+          "path-to-regexp": "8.4.2"
+        },
+        "publishConfig": {
+          "access": "public"
+        },
+        "_hasShrinkwrap": false,
+        "devDependencies": {
+          "@nestjs/core": "12.1.3",
+          "@nestjs/common": "12.1.3"
+        },
+        "peerDependencies": {
+          "@nestjs/core": "^12.0.0",
+          "@nestjs/common": "^12.0.0"
+        },
+        "_npmOperationalInternal": {
+          "tmp": "tmp/platform-express_12.1.3_1791804421470_0.8213340556125015",
+          "host": "s3://npm-registry-packages-npm-production"
+        },
+        "_id": "@nestjs/platform-express@12.1.3",
+        "version": "12.1.3"
+      }
+    },
+    {
+      "source": "https://registry.npmjs.org/@nestjs%2fplatform-fastify/latest",
+      "metadata": {
+        "bugs": {
+          "url": "https://github.com/nestjs/nest/issues"
+        },
+        "dist": {
+          "shasum": "12ae8efe1d253a56076bf540942b3641947e098a",
+          "tarball": "https://registry.npmjs.org/@nestjs/platform-fastify/-/platform-fastify-12.1.3.tgz",
+          "fileCount": 84,
+          "integrity": "sha512-EsuTZWif+siVW2MUQd/hL7R+iGbdQZODxcz9Opo6vfjJ9ncN1ta4FPYJ7DFsQrafNk5VKXsfpRIDpNBvusl6cg==",
+          "signatures": [
+            {
+              "sig": "MEUCIQD+pqyMPYLVu6nJhL6xHarD3XaAIS4ipzBFzrwBvrlR0wIgcwcEEY/f0HrhZ/dvOV1FPDLL3RityIc+VbVzbNEe704=",
+              "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+            },
+            {
+              "sig": "MEQCIDsJbVlHVNJQzAUDn2pZwRlAWDZsbBgf6IArdNuQJNALAiAM5BSN6F5OpaqvqhMyrd1121pRWFqCxmtFKO3Tcysgfg==",
+              "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+            }
+          ],
+          "unpackedSize": 145274
+        },
+        "main": "./index.js",
+        "name": "@nestjs/platform-fastify",
+        "type": "module",
+        "types": "./index.d.ts",
+        "author": {
+          "name": "Kamil Mysliwiec"
+        },
+        "exports": {
+          ".": "./index.js",
+          "./*": "./*.js",
+          "./*.js": "./*.js",
+          "./multipart": "./multipart/index.js"
+        },
+        "funding": {
+          "url": "https://opencollective.com/nest",
+          "type": "opencollective"
+        },
+        "gitHead": "4514623279f6087808e3c8f08fbf9f37d3c17482",
+        "license": "MIT",
+        "_npmUser": {
+          "name": "nestjscore",
+          "email": "admin@kamilmysliwiec.com"
+        },
+        "homepage": "https://nestjs.com",
+        "repository": {
+          "url": "git+https://github.com/nestjs/nest.git",
+          "type": "git",
+          "directory": "packages/platform-fastify"
+        },
+        "_npmVersion": "lerna/10.0.1/node@v24.20.0+arm64 (darwin)",
+        "description": "Nest - modern, fast, powerful node.js web framework (@platform-fastify)",
+        "directories": {},
+        "maintainers": [
+          {
+            "name": "nestjscore",
+            "email": "admin@kamilmysliwiec.com"
+          },
+          {
+            "name": "kamilmysliwiec",
+            "email": "mail@kamilmysliwiec.com"
+          }
+        ],
+        "_nodeVersion": "24.20.0",
+        "dependencies": {
+          "tslib": "2.8.1",
+          "fastify": "5.12.5",
+          "find-my-way": "9.9.0",
+          "@fastify/cors": "11.3.1",
+          "path-to-regexp": "8.4.2",
+          "@fastify/middie": "9.3.5",
+          "fast-querystring": "1.1.2",
+          "light-my-request": "6.6.0",
+          "@fastify/formbody": "9.0.1"
+        },
+        "publishConfig": {
+          "access": "public"
+        },
+        "_hasShrinkwrap": false,
+        "peerDependencies": {
+          "@nestjs/core": "^12.0.0",
+          "@fastify/view": "^10.0.0 || ^11.0.0 || ^12.0.0",
+          "@nestjs/common": "^12.0.0",
+          "@fastify/static": "^10.1.2",
+          "@fastify/multipart": "^10.1.0"
+        },
+        "peerDependenciesMeta": {
+          "@fastify/view": {
+            "optional": true
+          },
+          "@fastify/static": {
+            "optional": true
+          },
+          "@fastify/multipart": {
+            "optional": true
+          }
+        },
+        "_npmOperationalInternal": {
+          "tmp": "tmp/platform-fastify_12.1.3_1791804344494_0.24587120395425832",
+          "host": "s3://npm-registry-packages-npm-production"
+        },
+        "_id": "@nestjs/platform-fastify@12.1.3",
+        "version": "12.1.3"
+      }
+    },
+    {
+      "source": "https://registry.npmjs.org/express/latest",
+      "metadata": {
+        "bugs": {
+          "url": "https://github.com/expressjs/express/issues"
+        },
+        "dist": {
+          "shasum": "ab72dace89c50c8417bd3f865dad0b4fd1ca1c73",
+          "tarball": "https://registry.npmjs.org/express/-/express-5.3.0.tgz",
+          "fileCount": 10,
+          "integrity": "sha512-qCqy1xSoaugxOD4IVHb1ZWdkvCF2W3aE2okKouWj8VwJ+ztskSiXoBnCSJqfKT+cVPJhuJqe9YLbY425+Zh00g==",
+          "signatures": [
+            {
+              "sig": "MEQCICHxm5Q3ouMkRSvPzBL4cd1e1inNV4jvmEskclN0pLl5AiAA2D5Tc8x4V1F3mmyvA+cVgJs6yQiGwONT44JG+yX29A==",
+              "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+            }
+          ],
+          "attestations": {
+            "url": "https://registry.npmjs.org/-/npm/v1/attestations/express@5.3.0",
+            "provenance": {
+              "predicateType": "https://slsa.dev/provenance/v1"
+            }
+          },
+          "unpackedSize": 76638
+        },
+        "name": "express",
+        "author": {
+          "name": "TJ Holowaychuk",
+          "email": "tj@vision-media.ca"
+        },
+        "engines": {
+          "node": ">= 18"
+        },
+        "funding": {
+          "url": "https://opencollective.com/express",
+          "type": "opencollective"
+        },
+        "gitHead": "cf6722bf89a86905281d9160b6482e08166b5ef0",
+        "license": "MIT",
+        "scripts": {
+          "lint": "eslint .",
+          "test": "mocha --require test/support/env --reporter spec --check-leaks test/ test/acceptance/",
+          "test-ci": "nyc --exclude examples --exclude test --exclude benchmarks --reporter=lcovonly --reporter=text npm test",
+          "lint:fix": "eslint . --fix",
+          "test-cov": "nyc --exclude examples --exclude test --exclude benchmarks --reporter=html --reporter=text npm test",
+          "test-tap": "mocha --require test/support/env --reporter tap --check-leaks test/ test/acceptance/"
+        },
+        "_npmUser": {
+          "name": "GitHub Actions",
+          "email": "npm-oidc-no-reply@github.com",
+          "approver": {
+            "name": "ulisesgascon",
+            "email": "ulisesgascondev@gmail.com"
+          },
+          "trustedPublisher": {
+            "id": "github",
+            "oidcConfigId": "99dba195-afaa-4d25-9fac-f714da8caf90"
+          }
+        },
+        "homepage": "https://expressjs.com/",
+        "keywords": [
+          "express",
+          "framework",
+          "sinatra",
+          "web",
+          "http",
+          "rest",
+          "restful",
+          "router",
+          "app",
+          "api"
+        ],
+        "repository": {
+          "url": "git+https://github.com/expressjs/express.git",
+          "type": "git"
+        },
+        "_npmVersion": "12.2.0",
+        "description": "Fast, unopinionated, minimalist web framework",
+        "directories": {},
+        "maintainers": [
+          {
+            "name": "wesleytodd",
+            "email": "wes@wesleytodd.com"
+          },
+          {
+            "name": "jonchurch",
+            "email": "npm@jonchurch.com"
+          },
+          {
+            "name": "ctcpip",
+            "email": "c@labsector.com"
+          },
+          {
+            "name": "ulisesgascon",
+            "email": "ulisesgascondev@gmail.com"
+          },
+          {
+            "name": "sheplu",
+            "email": "jean.burellier@gmail.com"
+          }
+        ],
+        "_nodeVersion": "24.21.0",
+        "contributors": [
+          {
+            "name": "Aaron Heckmann",
+            "email": "aaron.heckmann+github@gmail.com"
+          },
+          {
+            "name": "Ciaran Jessup",
+            "email": "ciaranj@gmail.com"
+          },
+          {
+            "name": "Douglas Christopher Wilson",
+            "email": "doug@somethingdoug.com"
+          },
+          {
+            "name": "Guillermo Rauch",
+            "email": "rauchg@gmail.com"
+          },
+          {
+            "name": "Jonathan Ong",
+            "email": "me@jongleberry.com"
+          },
+          {
+            "name": "Roman Shtylman",
+            "email": "shtylman+expressjs@gmail.com"
+          },
+          {
+            "name": "Young Jae Sim",
+            "email": "hanul@hanul.me"
+          }
+        ],
+        "dependencies": {
+          "qs": "^6.16.0",
+          "depd": "^2.0.0",
+          "etag": "^1.8.1",
+          "once": "^1.4.0",
+          "send": "^1.1.0",
+          "vary": "^1.1.2",
+          "debug": "^4.4.0",
+          "fresh": "^2.0.0",
+          "cookie": "^0.7.1",
+          "router": "^2.2.0",
+          "accepts": "^2.0.0",
+          "type-is": "^2.1.0",
+          "parseurl": "^1.3.3",
+          "statuses": "^2.0.1",
+          "encodeurl": "^2.0.0",
+          "mime-types": "^3.0.0",
+          "proxy-addr": "^2.0.8",
+          "body-parser": "^2.3.0",
+          "escape-html": "^1.0.3",
+          "http-errors": "^2.0.0",
+          "on-finished": "^2.4.1",
+          "content-type": "^2.0.0",
+          "finalhandler": "^2.1.0",
+          "range-parser": "^1.2.1",
+          "serve-static": "^2.2.0",
+          "cookie-signature": "^1.2.1",
+          "merge-descriptors": "^2.0.0",
+          "content-disposition": "^2.0.1"
+        },
+        "_hasShrinkwrap": false,
+        "devDependencies": {
+          "ejs": "^3.1.10",
+          "hbs": "4.3.1",
+          "nyc": "^17.1.0",
+          "after": "0.8.2",
+          "mocha": "^11.7.5",
+          "vhost": "~3.0.2",
+          "eslint": "8.47.0",
+          "marked": "^15.0.3",
+          "morgan": "1.12.1",
+          "supertest": "^6.3.0",
+          "connect-redis": "^8.0.1",
+          "cookie-parser": "1.4.7",
+          "cookie-session": "2.1.1",
+          "express-session": "^1.18.1",
+          "method-override": "3.0.0",
+          "pbkdf2-password": "1.2.1"
+        },
+        "_npmOperationalInternal": {
+          "tmp": "tmp/express_5.3.0_1791550614422_0.04189865239028845",
+          "host": "s3://npm-registry-packages-npm-production"
+        },
+        "_id": "express@5.3.0",
+        "version": "5.3.0"
+      }
+    },
+    {
+      "source": "https://registry.npmjs.org/fastify/latest",
+      "metadata": {
+        "bugs": {
+          "url": "https://github.com/fastify/fastify/issues"
+        },
+        "dist": {
+          "shasum": "e8f9859b1ae908ba38bbdb0572d358788c4a4b46",
+          "tarball": "https://registry.npmjs.org/fastify/-/fastify-5.12.7.tgz",
+          "fileCount": 363,
+          "integrity": "sha512-v4pEPsTRPuqlDIYiQFB+BHjVN4SdHX9u0ABk0ZDUKbbdY1vsNryUd1j4Z+jQEZajvYIVk047Kimva9/AJ79GYw==",
+          "signatures": [
+            {
+              "sig": "MEUCIQDdLs777TiwOslMO/idGH05bxg80+NjE7/tiBTtFyMCNAIgFmARpbbz4ZQXQvmLD3sOf68PwnyIIm4RGfYYCLP2ZYA=",
+              "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+            },
+            {
+              "sig": "MEQCIDGArf4SMO2pVJisYrvvKpJADAJoLzXwIR92e/18A8O5AiBgzwF5w6jvb59Zt8o1+Cd4y1EPh8G/6R96Q3i42OH4Ew==",
+              "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+            }
+          ],
+          "unpackedSize": 2970996
+        },
+        "main": "fastify.js",
+        "name": "fastify",
+        "type": "commonjs",
+        "types": "fastify.d.ts",
+        "author": {
+          "name": "Matteo Collina",
+          "email": "hello@matteocollina.com"
+        },
+        "funding": [
+          {
+            "url": "https://github.com/sponsors/fastify",
+            "type": "github"
+          },
+          {
+            "url": "https://opencollective.com/fastify",
+            "type": "opencollective"
+          }
+        ],
+        "gitHead": "9f400035ebaf572b95989db5040ebb09c01e4e77",
+        "license": "MIT",
+        "scripts": {
+          "lint": "npm run lint:eslint",
+          "test": "npm run lint && npm run unit && npm run test:types",
+          "unit": "borp",
+          "bench": "branchcmp -r 2 -g -s \"npm run benchmark\"",
+          "citgm": "borp --reporter=@jsumners/line-reporter --coverage --check-coverage --concurrency=1",
+          "test:ci": "npm run unit && npm run test:types",
+          "coverage": "c8 --reporter html borp --reporter=@jsumners/line-reporter",
+          "lint:fix": "eslint --fix",
+          "benchmark": "concurrently -k -s first \"node ./examples/benchmark/simple.js\" \"autocannon -c 100 -d 30 -p 10 localhost:3000/\"",
+          "test:types": "tstyche",
+          "test:watch": "npm run unit -- --watch --coverage-report=none --reporter=terse",
+          "lint:eslint": "eslint",
+          "test:report": "npm run lint && npm run unit:report && npm run test:types",
+          "unit:report": "c8 --reporter html borp --reporter=@jsumners/line-reporter",
+          "lint:markdown": "markdownlint-cli2",
+          "prepublishOnly": "cross-env PREPUBLISH=true borp --reporter=@jsumners/line-reporter && npm run test:validator:integrity && npm run build:sync-version",
+          "benchmark:parser": "concurrently -k -s first \"node ./examples/benchmark/parser.js\" \"autocannon -c 100 -d 30 -p 10 -i ./examples/benchmark/body.json -H \"content-type:application/jsoff\" -m POST localhost:3000/\"",
+          "build:validation": "node build/build-error-serializer.js && node build/build-validation.js",
+          "build:sync-version": "node build/sync-version.js",
+          "benchmark:parser:error": "concurrently -k -s first \"node ./examples/benchmark/parser.js\" \"autocannon -c 100 -d 30 -p 10 -i ./examples/benchmark/body.json -H \"content-type:application/jsoff\" -H \"content-length:123\" -m POST localhost:3000/\"",
+          "test:validator:integrity": "npm run build:validation && git diff --quiet --ignore-all-space --ignore-blank-lines --ignore-cr-at-eol lib/error-serializer.js && git diff --quiet --ignore-all-space --ignore-blank-lines --ignore-cr-at-eol lib/config-validator.js",
+          "coverage:ci-check-coverage": "borp --reporter=@jsumners/line-reporter --coverage --check-coverage --lines 100"
+        },
+        "_npmUser": {
+          "name": "matteo.collina",
+          "email": "hello@matteocollina.com"
+        },
+        "homepage": "https://fastify.dev/",
+        "keywords": [
+          "web",
+          "framework",
+          "json",
+          "schema",
+          "open",
+          "api"
+        ],
+        "repository": {
+          "url": "git+https://github.com/fastify/fastify.git",
+          "type": "git"
+        },
+        "_npmVersion": "11.16.0",
+        "description": "Fast and low overhead web framework, for Node.js",
+        "directories": {},
+        "maintainers": [
+          {
+            "name": "jsumners",
+            "email": "james.sumners@gmail.com"
+          },
+          {
+            "name": "delvedor",
+            "email": "tommydelved@gmail.com"
+          },
+          {
+            "name": "matteo.collina",
+            "email": "hello@matteocollina.com"
+          },
+          {
+            "name": "eomm",
+            "email": "behemoth89@gmail.com"
+          },
+          {
+            "name": "climba03003",
+            "email": "kaka@kakawebsitedemo.com"
+          }
+        ],
+        "_nodeVersion": "24.18.0",
+        "contributors": [
+          {
+            "url": "https://delvedor.dev",
+            "name": "Tomas Della Vedova"
+          },
+          {
+            "name": "Tommaso Allevi",
+            "email": "tomallevi@gmail.com"
+          },
+          {
+            "url": "https://github.com/Ethan-Arrowood",
+            "name": "Ethan Arrowood",
+            "email": "ethan.arrowood@gmail.com"
+          },
+          {
+            "url": "https://starptech.com",
+            "name": "Dustin Deus",
+            "email": "deusdustin@gmail.com"
+          },
+          {
+            "url": "https://github.com/AyoubElk",
+            "name": "Ayoub El Khattabi",
+            "email": "elkhattabi.ayoub@gmail.com"
+          },
+          {
+            "url": "https://github.com/rafaelgss",
+            "name": "Rafael Gonzaga",
+            "email": "rafael.nunu@hotmail.com"
+          },
+          {
+            "url": "https://trivikr.github.io",
+            "name": "Trivikram Kamat",
+            "email": "trivikr.dev@gmail.com"
+          },
+          {
+            "url": "https://loige.co",
+            "name": "Luciano Mammino"
+          },
+          {
+            "name": "Cemre Mengu",
+            "email": "cemremengu@gmail.com"
+          },
+          {
+            "name": "Evan Shortiss",
+            "email": "evanshortiss@gmail.com"
+          },
+          {
+            "url": "https://maksim.dev",
+            "name": "Maksim Sinik"
+          },
+          {
+            "name": "Manuel Spigolon",
+            "email": "behemoth89@gmail.com"
+          },
+          {
+            "url": "https://james.sumners.info",
+            "name": "James Sumners"
+          },
+          {
+            "url": "https://github.com/SerayaEryn",
+            "name": "Denis F\u00e4cke"
+          },
+          {
+            "url": "https://github.com/kibertoad",
+            "name": "Igor Savin",
+            "email": "kibertoad@gmail.com"
+          },
+          {
+            "url": "https://github.com/zekth",
+            "name": "Vincent Le Goff",
+            "email": "vince.legoff@gmail.com"
+          },
+          {
+            "url": "https://luisorbaiceta.com",
+            "name": "Luis Orbaiceta",
+            "email": "luisorbaiceta@gmail.com"
+          },
+          {
+            "url": "https://metcoder.dev",
+            "name": "Carlos Fuentes",
+            "email": "me@metcoder.dev"
+          },
+          {
+            "url": "https://heyhey.to/G",
+            "name": "G\u00fcrg\u00fcn Day\u0131o\u011flu",
+            "email": "hey@gurgun.day"
+          },
+          {
+            "name": "Aras Abbasi",
+            "email": "aras.abbasi@gmail.com"
+          },
+          {
+            "url": "https://github.com/fdawgs",
+            "name": "Frazer Smith",
+            "email": "frazer.dev@icloud.com"
+          },
+          {
+            "url": "https://github.com/climba03003",
+            "name": "KaKa Ng",
+            "email": "kaka@kakang.dev"
+          },
+          {
+            "url": "https://github.com/jean-michelet",
+            "name": "Jean Michelet",
+            "email": "jean.antoine.michelet@gmail.com"
+          }
+        ],
+        "dependencies": {
+          "pino": "^9.14.0 || ^10.1.0",
+          "rfdc": "^1.3.1",
+          "avvio": "^9.0.0",
+          "semver": "^7.6.0",
+          "toad-cache": "^3.7.0",
+          "find-my-way": "^9.6.0",
+          "@fastify/error": "^4.0.0",
+          "process-warning": "^5.1.0",
+          "abstract-logging": "^2.0.1",
+          "light-my-request": "^6.0.0",
+          "secure-json-parse": "^4.0.0",
+          "@fastify/proxy-addr": "^5.0.0",
+          "fast-json-stringify": "^7.0.0",
+          "@fastify/ajv-compiler": "^4.0.5",
+          "@fastify/fast-json-stringify-compiler": "^5.0.0"
+        },
+        "_hasShrinkwrap": false,
+        "devDependencies": {
+          "ajv": "^8.12.0",
+          "joi": "^18.0.1",
+          "yup": "^1.4.0",
+          "borp": "^1.0.0",
+          "vary": "^1.1.2",
+          "h2url": "^0.2.0",
+          "eslint": "^9.0.0",
+          "split2": "^4.2.0",
+          "undici": "^7.11.0",
+          "tstyche": "^7.0.0",
+          "typebox": "^1.0.81",
+          "ajv-i18n": "^4.2.0",
+          "cross-env": "^10.0.0",
+          "JSONStream": "^1.3.5",
+          "ajv-errors": "^3.0.0",
+          "autocannon": "^8.0.0",
+          "node-forge": "^1.3.1",
+          "proxyquire": "^2.1.3",
+          "typescript": "~6.0.2",
+          "@types/node": "^26.0.1",
+          "ajv-formats": "^3.0.1",
+          "http-errors": "^2.0.0",
+          "neostandard": "^0.12.0",
+          "concurrently": "^10.0.0",
+          "fast-json-body": "^1.1.0",
+          "fastify-plugin": "^6.0.0",
+          "ajv-merge-patch": "^5.0.1",
+          "branch-comparer": "^1.1.0",
+          "fastify-tsconfig": "^3.0.0",
+          "json-schema-to-ts": "^3.0.1",
+          "markdownlint-cli2": "^0.23.0",
+          "fluent-json-schema": "^6.0.0",
+          "@jsumners/line-reporter": "^1.0.1",
+          "@stylistic/eslint-plugin": "^5.1.0",
+          "@stylistic/eslint-plugin-js": "^4.1.0"
+        },
+        "_npmOperationalInternal": {
+          "tmp": "tmp/fastify_5.12.7_1791878873153_0.2055343143098871",
+          "host": "s3://npm-registry-packages-npm-production"
+        },
+        "_id": "fastify@5.12.7",
+        "version": "5.12.7"
+      }
+    },
+    {
+      "source": "https://registry.npmjs.org/@adonisjs%2fcore/latest",
+      "metadata": {
+        "c8": {
+          "exclude": [
+            "tests/**",
+            "build/**",
+            "factories/**",
+            ".yalc/**"
+          ],
+          "reporter": [
+            "text",
+            "html"
+          ]
+        },
+        "bin": {
+          "adonis-kit": "build/toolkit/main.js"
+        },
+        "bugs": {
+          "url": "https://github.com/adonisjs/core/issues"
+        },
+        "dist": {
+          "shasum": "df71499f8b49a580630686694f3602ad3cc211d2",
+          "tarball": "https://registry.npmjs.org/@adonisjs/core/-/core-7.6.0.tgz",
+          "fileCount": 313,
+          "integrity": "sha512-DGDkpoNrExwLhhmuzZBaOKe6wk67HI/0+3GLWsJXB+Ze4NjXuKKOT5169R2CqpSO6yvL1Xw39HwSJ9YJ1oTvLg==",
+          "signatures": [
+            {
+              "sig": "MEYCIQCCCL4Nzm3qiXkALZONz4czWuNJEzxqrLgqP1F7tkMLOAIhAPqaYUs1lVFtCqDJ8Z37bXoe6vpz9466Dg3Tx2tBZRC+",
+              "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+            },
+            {
+              "sig": "MEUCIQDDI+C/Oq0EelLxSXF+29lmf8C8odqxdQtMO8iL2RF7bQIgfsX2mWtQNyPeFuChutttjKsy8Z070yv32MGeAwY1fKk=",
+              "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+            }
+          ],
+          "attestations": {
+            "url": "https://registry.npmjs.org/-/npm/v1/attestations/@adonisjs%2fcore@7.6.0",
+            "provenance": {
+              "predicateType": "https://slsa.dev/provenance/v1"
+            }
+          },
+          "unpackedSize": 464682
+        },
+        "main": "build/index.js",
+        "name": "@adonisjs/core",
+        "type": "module",
+        "types": "./build/index.d.ts",
+        "author": {
+          "name": "Harminder Virk",
+          "email": "virk@adonisjs.com"
+        },
+        "tsdown": {
+          "dts": false,
+          "clean": true,
+          "entry": [
+            "index.ts",
+            "commands/main.ts",
+            "commands/**/*.ts",
+            "factories/core/main.ts",
+            "factories/**/*.ts",
+            "src/types.ts",
+            "toolkit/main.ts",
+            "types/**/*.ts",
+            "services/**/*.ts",
+            "providers/**/*.ts",
+            "src/helpers/main.ts",
+            "src/helpers/**/*.ts",
+            "src/ignitor/main.ts",
+            "src/assembler_hooks/index_entities.ts",
+            "modules/ace/main.ts",
+            "modules/ace/codemods.ts",
+            "modules/bodyparser/main.ts",
+            "modules/bodyparser/bodyparser_middleware.ts",
+            "modules/hash/main.ts",
+            "modules/hash/phc_formatter.ts",
+            "modules/hash/drivers/*.ts",
+            "modules/app.ts",
+            "modules/config.ts",
+            "modules/container.ts",
+            "modules/encryption/main.ts",
+            "modules/encryption/drivers/*.ts",
+            "modules/env/main.ts",
+            "modules/dumper/main.ts",
+            "modules/dumper/plugins/edge.ts",
+            "modules/env/editor.ts",
+            "modules/events.ts",
+            "modules/http/main.ts",
+            "modules/http/helpers.ts",
+            "modules/http/url_builder_client.ts",
+            "modules/logger.ts",
+            "modules/repl.ts",
+            "modules/transformers/main.ts",
+            "src/exceptions.ts",
+            "src/test_utils/main.ts",
+            "modules/health.ts",
+            "src/vine.ts"
+          ],
+          "format": "esm",
+          "minify": "dce-only",
+          "outDir": "./build",
+          "target": "esnext",
+          "treeshake": false,
+          "sourcemaps": false,
+          "fixedExtension": false
+        },
+        "engines": {
+          "node": ">=24.0.0"
+        },
+        "exports": {
+          ".": "./build/index.js",
+          "./ace": "./build/modules/ace/main.js",
+          "./app": "./build/modules/app.js",
+          "./env": "./build/modules/env/main.js",
+          "./hash": "./build/modules/hash/main.js",
+          "./http": "./build/modules/http/main.js",
+          "./repl": "./build/modules/repl.js",
+          "./vine": "./build/src/vine.js",
+          "./types": "./build/src/types.js",
+          "./config": "./build/modules/config.js",
+          "./dumper": "./build/modules/dumper/main.js",
+          "./events": "./build/modules/events.js",
+          "./health": "./build/modules/health.js",
+          "./logger": "./build/modules/logger.js",
+          "./helpers": "./build/src/helpers/main.js",
+          "./ignitor": "./build/src/ignitor/main.js",
+          "./types/*": "./build/types/*.js",
+          "./commands": "./build/commands/main.js",
+          "./container": "./build/modules/container.js",
+          "./factories": "./build/factories/core/main.js",
+          "./helpers/*": "./build/src/helpers/*.js",
+          "./bodyparser": "./build/modules/bodyparser/main.js",
+          "./commands/*": "./build/commands/*.js",
+          "./encryption": "./build/modules/encryption/main.js",
+          "./env/editor": "./build/modules/env/editor.js",
+          "./exceptions": "./build/src/exceptions.js",
+          "./generators": "./build/src/assembler_hooks/index_entities.js",
+          "./services/*": "./build/services/*.js",
+          "./test_utils": "./build/src/test_utils/main.js",
+          "./factories/*": "./build/factories/*.js",
+          "./providers/*": "./build/providers/*.js",
+          "./ace/codemods": "./build/modules/ace/codemods.js",
+          "./http/helpers": "./build/modules/http/helpers.js",
+          "./package.json": "./package.json",
+          "./transformers": "./build/modules/transformers/main.js",
+          "./dumper/plugin_edge": "./build/modules/dumper/plugins/edge.js",
+          "./hash/drivers/argon": "./build/modules/hash/drivers/argon.js",
+          "./hash/phc_formatter": "./build/modules/hash/phc_formatter.js",
+          "./hash/drivers/bcrypt": "./build/modules/hash/drivers/bcrypt.js",
+          "./hash/drivers/scrypt": "./build/modules/hash/drivers/scrypt.js",
+          "./bodyparser_middleware": "./build/modules/bodyparser/bodyparser_middleware.js",
+          "./http/url_builder_client": "./build/modules/http/url_builder_client.js",
+          "./encryption/drivers/aes_siv": "./build/modules/encryption/drivers/aes_siv.js",
+          "./encryption/drivers/aes_256_cbc": "./build/modules/encryption/drivers/aes_256_cbc.js",
+          "./encryption/drivers/aes_256_gcm": "./build/modules/encryption/drivers/aes_256_gcm.js",
+          "./encryption/drivers/chacha20_poly1305": "./build/modules/encryption/drivers/chacha20_poly1305.js"
+        },
+        "gitHead": "e1b2357eacc2e8e72e0815abbc5f2e94264acffb",
+        "license": "MIT",
+        "scripts": {
+          "docs": "typedoc",
+          "lint": "eslint .",
+          "test": "cross-env NODE_DEBUG=adonisjs:core npm run quick:test",
+          "build": "npm run compile",
+          "citgm": "cross-env FORCE_COLOR=0 node --import=@poppinss/ts-exec bin/test.ts --force-exit",
+          "clean": "del-cli build",
+          "format": "prettier --write .",
+          "compile": "npm run clean && tsdown && tsc --emitDeclarationOnly --declaration",
+          "pretest": "npm run lint",
+          "release": "npx release-it",
+          "version": "npm run build",
+          "typecheck": "tsc --noEmit",
+          "precompile": "npm run lint",
+          "quick:test": "node --import=@poppinss/ts-exec --enable-source-maps bin/test.ts --force-exit",
+          "postcompile": "npm run copy:templates && npm run index:commands",
+          "copy:templates": "copyfiles \"stubs/**/**/*.stub\" --up=1 build",
+          "index:commands": "node --import=@poppinss/ts-exec toolkit/main.js index build/commands",
+          "prepublishOnly": "npm run build"
+        },
+        "_npmUser": {
+          "name": "GitHub Actions",
+          "email": "npm-oidc-no-reply@github.com",
+          "trustedPublisher": {
+            "id": "github",
+            "oidcConfigId": "b13d761b-72f3-4074-9829-e11b2fbc9eff"
+          }
+        },
+        "homepage": "https://github.com/adonisjs/core#readme",
+        "keywords": [
+          "adonisjs",
+          "framework",
+          "mvc"
+        ],
+        "prettier": "@adonisjs/prettier-config",
+        "commitlint": {
+          "extends": [
+            "@commitlint/config-conventional"
+          ]
+        },
+        "release-it": {
+          "git": {
+            "push": true,
+            "tagName": "v${version}",
+            "commitMessage": "chore(release): ${version}",
+            "tagAnnotation": "v${version}",
+            "requireUpstream": true,
+            "requireCleanWorkingDir": true
+          },
+          "npm": {
+            "publish": true,
+            "skipChecks": true
+          },
+          "github": {
+            "release": true
+          },
+          "plugins": {
+            "@release-it/conventional-changelog": {
+              "preset": {
+                "name": "angular"
+              }
+            }
+          }
+        },
+        "repository": {
+          "url": "git+https://github.com/adonisjs/core.git",
+          "type": "git"
+        },
+        "_npmVersion": "11.19.0",
+        "description": "Core of AdonisJS",
+        "directories": {},
+        "maintainers": [
+          {
+            "name": "romainlanz",
+            "email": "romain.lanz@pm.me"
+          },
+          {
+            "name": "virk",
+            "email": "virk@adonisjs.com"
+          },
+          {
+            "name": "julien-r44",
+            "email": "julien@ripouteau.com"
+          }
+        ],
+        "_nodeVersion": "24.21.0",
+        "contributors": [
+          {
+            "name": "Romain Lanz",
+            "email": "romain.lanz@pm.me"
+          },
+          {
+            "name": "Julien Ripouteau",
+            "email": "julien@ripouteau.com"
+          },
+          {
+            "name": "Micha\u00ebl Zasso"
+          }
+        ],
+        "dependencies": {
+          "he": "^1.2.0",
+          "@types/he": "^1.2.3",
+          "string-width": "^8.2.2",
+          "@adonisjs/ace": "^14.1.1",
+          "@adonisjs/env": "^7.1.0",
+          "pretty-hrtime": "^1.0.3",
+          "@adonisjs/fold": "^11.1.0",
+          "@adonisjs/hash": "^10.1.1",
+          "@adonisjs/repl": "^5.0.0",
+          "@poppinss/utils": "^7.1.1",
+          "@adonisjs/config": "^6.1.0",
+          "@adonisjs/events": "^10.2.0",
+          "@adonisjs/health": "^3.1.0",
+          "@adonisjs/logger": "^7.1.1",
+          "@poppinss/colors": "^4.1.6",
+          "@poppinss/dumper": "^0.7.0",
+          "@sindresorhus/is": "^8.1.0",
+          "@poppinss/macroable": "^1.1.2",
+          "@adonisjs/bodyparser": "^11.0.4",
+          "@adonisjs/application": "^9.1.0",
+          "@adonisjs/http-server": "^9.3.1",
+          "error-stack-parser-es": "^2.0.1",
+          "@boringnode/encryption": "^1.0.1",
+          "@adonisjs/http-transformers": "^2.3.1"
+        },
+        "publishConfig": {
+          "access": "public",
+          "provenance": true
+        },
+        "_hasShrinkwrap": false,
+        "devDependencies": {
+          "c8": "^12.0.0",
+          "execa": "^10.0.1",
+          "sinon": "^22.1.0",
+          "youch": "^4.1.1",
+          "argon2": "^0.45.1",
+          "bcrypt": "^6.0.0",
+          "eslint": "^10.11.0",
+          "tsdown": "^0.23.0",
+          "del-cli": "^7.0.0",
+          "edge.js": "^6.5.1",
+          "typedoc": "^0.28.20",
+          "get-port": "^7.2.0",
+          "prettier": "^3.9.9",
+          "copyfiles": "^2.4.1",
+          "cross-env": "^10.1.0",
+          "supertest": "^7.3.0",
+          "release-it": "^21.1.0",
+          "timekeeper": "^2.3.1",
+          "typescript": "^6.0.3",
+          "@types/node": "~26.6.2",
+          "pino-pretty": "^13.1.3",
+          "@japa/assert": "^4.2.0",
+          "@japa/runner": "^5.3.0",
+          "@types/sinon": "^22.0.0",
+          "@vinejs/vine": "^4.4.0",
+          "test-console": "^2.0.0",
+          "@japa/snapshot": "^2.0.10",
+          "@types/supertest": "^7.2.1",
+          "@japa/expect-type": "^2.0.4",
+          "@japa/file-system": "^3.0.0",
+          "@poppinss/ts-exec": "^1.4.4",
+          "@adonisjs/tsconfig": "^2.0.0",
+          "@adonisjs/assembler": "^8.5.2",
+          "@types/test-console": "^2.0.3",
+          "@adonisjs/encryption": "^6.0.2",
+          "@types/pretty-hrtime": "^1.0.3",
+          "@adonisjs/eslint-config": "^3.1.0",
+          "@adonisjs/prettier-config": "^1.5.0",
+          "@release-it/conventional-changelog": "^12.0.2"
+        },
+        "peerDependencies": {
+          "youch": "^4.1.0-beta.13 || ^4.1.0",
+          "argon2": "^0.44.0 || ^0.45.1",
+          "bcrypt": "^6.0.0",
+          "edge.js": "^6.2.0",
+          "pino-pretty": "^13.1.3",
+          "@vinejs/vine": "^4.0.0",
+          "@adonisjs/assembler": "^8.0.0-next.23 || ^8.0.0"
+        },
+        "peerDependenciesMeta": {
+          "youch": {
+            "optional": true
+          },
+          "argon2": {
+            "optional": true
+          },
+          "bcrypt": {
+            "optional": true
+          },
+          "edge.js": {
+            "optional": true
+          },
+          "pino-pretty": {
+            "optional": true
+          },
+          "@vinejs/vine": {
+            "optional": true
+          },
+          "@adonisjs/assembler": {
+            "optional": true
+          }
+        },
+        "_npmOperationalInternal": {
+          "tmp": "tmp/core_7.6.0_1791202793433_0.7645418694699151",
+          "host": "s3://npm-registry-packages-npm-production"
+        },
+        "_id": "@adonisjs/core@7.6.0",
+        "version": "7.6.0"
+      }
+    },
+    {
+      "source": "https://registry.npmjs.org/effect/latest",
+      "metadata": {
+        "bugs": {
+          "url": "https://github.com/Effect-TS/effect/issues"
+        },
+        "dist": {
+          "shasum": "3d938c2a57ee3bb309f225b9e4fe47f93a1b35f5",
+          "tarball": "https://registry.npmjs.org/effect/-/effect-4.0.5.tgz",
+          "fileCount": 2682,
+          "integrity": "sha512-BY4/28NlpOd99yzmV741xbVGmp+1U7tks4oB7F/Png64bTa5tm5eCA6W0RiXsnuLDDoJpjfVSo4Dnq4BZb/89Q==",
+          "signatures": [
+            {
+              "sig": "MEUCIQDEQZsgONvGhHp6Hf00rjYvQVF7ha/OyfRaOv6fWeSeRAIgEco8CPdPmYBYfpHGvhDv+h8RE3FGg2H+1FIXbMntzA4=",
+              "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+            },
+            {
+              "sig": "MEYCIQCqsrIaa7tNb8e01NIS/W1ZcO2RL4RmIHsSnWkddex/KgIhAPm5+ex0sOAVlHDCII6qEgulIXxGXgYJwxF3QjxzAqzU",
+              "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+            }
+          ],
+          "attestations": {
+            "url": "https://registry.npmjs.org/-/npm/v1/attestations/effect@4.0.5",
+            "provenance": {
+              "predicateType": "https://slsa.dev/provenance/v1"
+            }
+          },
+          "unpackedSize": 51489523
+        },
+        "name": "effect",
+        "tags": [
+          "typescript",
+          "error-handling",
+          "concurrency",
+          "observability"
+        ],
+        "type": "module",
+        "exports": {
+          ".": "./dist/index.js",
+          "./*": "./dist/*.js",
+          "./ai": "./dist/ai/index.js",
+          "./cli": "./dist/cli/index.js",
+          "./net": "./dist/net/index.js",
+          "./rpc": "./dist/rpc/index.js",
+          "./sql": "./dist/sql/index.js",
+          "./http": "./dist/http/index.js",
+          "./index": null,
+          "./schema": "./dist/schema/index.js",
+          "./socket": "./dist/socket/index.js",
+          "./*/index": null,
+          "./cluster": "./dist/cluster/index.js",
+          "./graphql": "./dist/graphql/index.js",
+          "./process": "./dist/process/index.js",
+          "./testing": "./dist/testing/index.js",
+          "./workers": "./dist/workers/index.js",
+          "./devtools": "./dist/devtools/index.js",
+          "./encoding": "./dist/encoding/index.js",
+          "./eventlog": "./dist/eventlog/index.js",
+          "./http-api": "./dist/http-api/index.js",
+          "./workflow": "./dist/workflow/index.js",
+          "./internal/*": null,
+          "./reactivity": "./dist/reactivity/index.js",
+          "./persistence": "./dist/persistence/index.js",
+          "./package.json": "./package.json",
+          "./observability": "./dist/observability/index.js",
+          "./cli/internal/*": null,
+          "./cluster/internal/*": null
+        },
+        "license": "MIT",
+        "scripts": {
+          "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+          "build": "tsc -b tsconfig.json && pnpm babel",
+          "check": "tsc -b tsconfig.json",
+          "codegen": "effect-utils codegen"
+        },
+        "_npmUser": {
+          "name": "GitHub Actions",
+          "email": "npm-oidc-no-reply@github.com",
+          "trustedPublisher": {
+            "id": "github",
+            "oidcConfigId": "498eb933-5269-4c89-aaf6-16cf82b64ea0"
+          }
+        },
+        "homepage": "https://effect.website",
+        "keywords": [
+          "typescript",
+          "error-handling",
+          "concurrency",
+          "observability"
+        ],
+        "repository": {
+          "url": "https://github.com/Effect-TS/effect.git",
+          "type": "git",
+          "directory": "packages/effect"
+        },
+        "description": "The missing standard library for TypeScript, for writing production-grade software.",
+        "directories": {},
+        "maintainers": [
+          {
+            "name": "michael.arnaldi",
+            "email": "ma+npm@matechs.com"
+          },
+          {
+            "name": "effect-bot",
+            "email": "ma+effect@matechs.com"
+          }
+        ],
+        "sideEffects": [
+          "./src/schema/SchemaJITCompiler/enable.ts",
+          "./dist/schema/SchemaJITCompiler/enable.js"
+        ],
+        "_nodeVersion": "26.4.0",
+        "publishConfig": {
+          "access": "public",
+          "provenance": true
+        },
+        "_hasShrinkwrap": false,
+        "devDependencies": {
+          "ajv": "^8.20.0",
+          "immer": "^11.1.21",
+          "esbuild": "^0.28.2",
+          "valibot": "^1.5.0",
+          "ast-types": "^0.16.3",
+          "miniflare": "5.20260925.0-alpha",
+          "tinybench": "^6.2.1",
+          "protobufjs": "^8.8.0",
+          "@types/node": "^26.6.5",
+          "ajv-draft-04": "^1.0.0"
+        },
+        "_npmOperationalInternal": {
+          "tmp": "tmp/effect_4.0.5_1792027627265_0.12879794097027752",
+          "host": "s3://npm-registry-packages-npm-production"
+        },
+        "_id": "effect@4.0.5",
+        "version": "4.0.5"
+      }
+    },
+    {
+      "source": "https://registry.npmjs.org/@effect%2fplatform/latest",
+      "metadata": {
+        "bugs": {
+          "url": "https://github.com/Effect-TS/effect/issues"
+        },
+        "dist": {
+          "shasum": "8e169bb7f513575b1d1ba2d49d380b8710b703aa",
+          "tarball": "https://registry.npmjs.org/@effect/platform/-/platform-0.97.2.tgz",
+          "fileCount": 709,
+          "integrity": "sha512-fof9J+pId374/b1WAt0P1H8QmvulzpHTjS6SUHiG20U/sFjkBUS5vGMy1/XfdTAVKX1IY+Z87dFhi/RFDfgBPQ==",
+          "signatures": [
+            {
+              "sig": "MEQCIHZlcH5bGfcFy7Caj6cMDpY/4LeoUel2QjW5EKBnENKaAiAeR45gNOVCbZl+yo1vKV9sJRCUln3dPsmnfNChQHMJSQ==",
+              "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+            },
+            {
+              "sig": "MEUCIHmEj6oz2HgxJZEQYGrSx6vBjFuo0B5PPBrpy5lnvznOAiEAy/7IUJ73tDRWJiXk2dFBj04XMnY9QcXFWEpqlk3oX8s=",
+              "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+            }
+          ],
+          "attestations": {
+            "url": "https://registry.npmjs.org/-/npm/v1/attestations/@effect%2fplatform@0.97.2",
+            "provenance": {
+              "predicateType": "https://slsa.dev/provenance/v1"
+            }
+          },
+          "unpackedSize": 19891956
+        },
+        "main": "./dist/cjs/index.js",
+        "name": "@effect/platform",
+        "_from": "file:effect-platform-0.97.2.tgz",
+        "types": "./dist/dts/index.d.ts",
+        "module": "./dist/esm/index.js",
+        "exports": {
+          ".": {
+            "types": "./dist/dts/index.d.ts",
+            "import": "./dist/esm/index.js",
+            "default": "./dist/cjs/index.js"
+          },
+          "./Url": {
+            "types": "./dist/dts/Url.d.ts",
+            "import": "./dist/esm/Url.js",
+            "default": "./dist/cjs/Url.js"
+          },
+          "./Etag": {
+            "types": "./dist/dts/Etag.d.ts",
+            "import": "./dist/esm/Etag.js",
+            "default": "./dist/cjs/Etag.js"
+          },
+          "./Path": {
+            "types": "./dist/dts/Path.d.ts",
+            "import": "./dist/esm/Path.js",
+            "default": "./dist/cjs/Path.js"
+          },
+          "./Error": {
+            "types": "./dist/dts/Error.d.ts",
+            "import": "./dist/esm/Error.js",
+            "default": "./dist/cjs/Error.js"
+          },
+          "./index": {
+            "types": "./dist/dts/index.d.ts",
+            "import": "./dist/esm/index.js",
+            "default": "./dist/cjs/index.js"
+          },
+          "./Ndjson": {
+            "types": "./dist/dts/Ndjson.d.ts",
+            "import": "./dist/esm/Ndjson.js",
+            "default": "./dist/cjs/Ndjson.js"
+          },
+          "./Socket": {
+            "types": "./dist/dts/Socket.d.ts",
+            "import": "./dist/esm/Socket.js",
+            "default": "./dist/cjs/Socket.js"
+          },
+          "./Worker": {
+            "types": "./dist/dts/Worker.d.ts",
+            "import": "./dist/esm/Worker.js",
+            "default": "./dist/cjs/Worker.js"
+          },
+          "./Command": {
+            "types": "./dist/dts/Command.d.ts",
+            "import": "./dist/esm/Command.js",
+            "default": "./dist/cjs/Command.js"
+          },
+          "./Cookies": {
+            "types": "./dist/dts/Cookies.d.ts",
+            "import": "./dist/esm/Cookies.js",
+            "default": "./dist/cjs/Cookies.js"
+          },
+          "./Headers": {
+            "types": "./dist/dts/Headers.d.ts",
+            "import": "./dist/esm/Headers.js",
+            "default": "./dist/cjs/Headers.js"
+          },
+          "./HttpApi": {
+            "types": "./dist/dts/HttpApi.d.ts",
+            "import": "./dist/esm/HttpApi.js",
+            "default": "./dist/cjs/HttpApi.js"
+          },
+          "./HttpApp": {
+            "types": "./dist/dts/HttpApp.d.ts",
+            "import": "./dist/esm/HttpApp.js",
+            "default": "./dist/cjs/HttpApp.js"
+          },
+          "./MsgPack": {
+            "types": "./dist/dts/MsgPack.d.ts",
+            "import": "./dist/esm/MsgPack.js",
+            "default": "./dist/cjs/MsgPack.js"
+          },
+          "./OpenApi": {
+            "types": "./dist/dts/OpenApi.d.ts",
+            "import": "./dist/esm/OpenApi.js",
+            "default": "./dist/cjs/OpenApi.js"
+          },
+          "./Runtime": {
+            "types": "./dist/dts/Runtime.d.ts",
+            "import": "./dist/esm/Runtime.js",
+            "default": "./dist/cjs/Runtime.js"
+          },
+          "./HttpBody": {
+            "types": "./dist/dts/HttpBody.d.ts",
+            "import": "./dist/esm/HttpBody.js",
+            "default": "./dist/cjs/HttpBody.js"
+          },
+          "./Template": {
+            "types": "./dist/dts/Template.d.ts",
+            "import": "./dist/esm/Template.js",
+            "default": "./dist/cjs/Template.js"
+          },
+          "./Terminal": {
+            "types": "./dist/dts/Terminal.d.ts",
+            "import": "./dist/esm/Terminal.js",
+            "default": "./dist/cjs/Terminal.js"
+          },
+          "./Effectify": {
+            "types": "./dist/dts/Effectify.d.ts",
+            "import": "./dist/esm/Effectify.js",
+            "default": "./dist/cjs/Effectify.js"
+          },
+          "./Multipart": {
+            "types": "./dist/dts/Multipart.d.ts",
+            "import": "./dist/esm/Multipart.js",
+            "default": "./dist/cjs/Multipart.js"
+          },
+          "./UrlParams": {
+            "types": "./dist/dts/UrlParams.d.ts",
+            "import": "./dist/esm/UrlParams.js",
+            "default": "./dist/cjs/UrlParams.js"
+          },
+          "./FileSystem": {
+            "types": "./dist/dts/FileSystem.d.ts",
+            "import": "./dist/esm/FileSystem.js",
+            "default": "./dist/cjs/FileSystem.js"
+          },
+          "./HttpClient": {
+            "types": "./dist/dts/HttpClient.d.ts",
+            "import": "./dist/esm/HttpClient.js",
+            "default": "./dist/cjs/HttpClient.js"
+          },
+          "./HttpMethod": {
+            "types": "./dist/dts/HttpMethod.d.ts",
+            "import": "./dist/esm/HttpMethod.js",
+            "default": "./dist/cjs/HttpMethod.js"
+          },
+          "./HttpRouter": {
+            "types": "./dist/dts/HttpRouter.d.ts",
+            "import": "./dist/esm/HttpRouter.js",
+            "default": "./dist/cjs/HttpRouter.js"
+          },
+          "./HttpServer": {
+            "types": "./dist/dts/HttpServer.d.ts",
+            "import": "./dist/esm/HttpServer.js",
+            "default": "./dist/cjs/HttpServer.js"
+          },
+          "./WorkerError": {
+            "types": "./dist/dts/WorkerError.d.ts",
+            "import": "./dist/esm/WorkerError.js",
+            "default": "./dist/cjs/WorkerError.js"
+          },
+          "./HttpApiError": {
+            "types": "./dist/dts/HttpApiError.d.ts",
+            "import": "./dist/esm/HttpApiError.js",
+            "default": "./dist/cjs/HttpApiError.js"
+          },
+          "./HttpApiGroup": {
+            "types": "./dist/dts/HttpApiGroup.d.ts",
+            "import": "./dist/esm/HttpApiGroup.js",
+            "default": "./dist/cjs/HttpApiGroup.js"
+          },
+          "./HttpPlatform": {
+            "types": "./dist/dts/HttpPlatform.d.ts",
+            "import": "./dist/esm/HttpPlatform.js",
+            "default": "./dist/cjs/HttpPlatform.js"
+          },
+          "./SocketServer": {
+            "types": "./dist/dts/SocketServer.d.ts",
+            "import": "./dist/esm/SocketServer.js",
+            "default": "./dist/cjs/SocketServer.js"
+          },
+          "./Transferable": {
+            "types": "./dist/dts/Transferable.d.ts",
+            "import": "./dist/esm/Transferable.js",
+            "default": "./dist/cjs/Transferable.js"
+          },
+          "./WorkerRunner": {
+            "types": "./dist/dts/WorkerRunner.d.ts",
+            "import": "./dist/esm/WorkerRunner.js",
+            "default": "./dist/cjs/WorkerRunner.js"
+          },
+          "./package.json": "./package.json",
+          "./ChannelSchema": {
+            "types": "./dist/dts/ChannelSchema.d.ts",
+            "import": "./dist/esm/ChannelSchema.js",
+            "default": "./dist/cjs/ChannelSchema.js"
+          },
+          "./HttpApiClient": {
+            "types": "./dist/dts/HttpApiClient.d.ts",
+            "import": "./dist/esm/HttpApiClient.js",
+            "default": "./dist/cjs/HttpApiClient.js"
+          },
+          "./HttpApiScalar": {
+            "types": "./dist/dts/HttpApiScalar.d.ts",
+            "import": "./dist/esm/HttpApiScalar.js",
+            "default": "./dist/cjs/HttpApiScalar.js"
+          },
+          "./HttpApiSchema": {
+            "types": "./dist/dts/HttpApiSchema.d.ts",
+            "import": "./dist/esm/HttpApiSchema.js",
+            "default": "./dist/cjs/HttpApiSchema.js"
+          },
+          "./HttpMultiplex": {
+            "types": "./dist/dts/HttpMultiplex.d.ts",
+            "import": "./dist/esm/HttpMultiplex.js",
+            "default": "./dist/cjs/HttpMultiplex.js"
+          },
+          "./KeyValueStore": {
+            "types": "./dist/dts/KeyValueStore.d.ts",
+            "import": "./dist/esm/KeyValueStore.js",
+            "default": "./dist/cjs/KeyValueStore.js"
+          },
+          "./HttpApiBuilder": {
+            "types": "./dist/dts/HttpApiBuilder.d.ts",
+            "import": "./dist/esm/HttpApiBuilder.js",
+            "default": "./dist/cjs/HttpApiBuilder.js"
+          },
+          "./HttpApiSwagger": {
+            "types": "./dist/dts/HttpApiSwagger.d.ts",
+            "import": "./dist/esm/HttpApiSwagger.js",
+            "default": "./dist/cjs/HttpApiSwagger.js"
+          },
+          "./HttpMiddleware": {
+            "types": "./dist/dts/HttpMiddleware.d.ts",
+            "import": "./dist/esm/HttpMiddleware.js",
+            "default": "./dist/cjs/HttpMiddleware.js"
+          },
+          "./PlatformLogger": {
+            "types": "./dist/dts/PlatformLogger.d.ts",
+            "import": "./dist/esm/PlatformLogger.js",
+            "default": "./dist/cjs/PlatformLogger.js"
+          },
+          "./CommandExecutor": {
+            "types": "./dist/dts/CommandExecutor.d.ts",
+            "import": "./dist/esm/CommandExecutor.js",
+            "default": "./dist/cjs/CommandExecutor.js"
+          },
+          "./FetchHttpClient": {
+            "types": "./dist/dts/FetchHttpClient.d.ts",
+            "import": "./dist/esm/FetchHttpClient.js",
+            "default": "./dist/cjs/FetchHttpClient.js"
+          },
+          "./HttpApiEndpoint": {
+            "types": "./dist/dts/HttpApiEndpoint.d.ts",
+            "import": "./dist/esm/HttpApiEndpoint.js",
+            "default": "./dist/cjs/HttpApiEndpoint.js"
+          },
+          "./HttpApiSecurity": {
+            "types": "./dist/dts/HttpApiSecurity.d.ts",
+            "import": "./dist/esm/HttpApiSecurity.js",
+            "default": "./dist/cjs/HttpApiSecurity.js"
+          },
+          "./HttpClientError": {
+            "types": "./dist/dts/HttpClientError.d.ts",
+            "import": "./dist/esm/HttpClientError.js",
+            "default": "./dist/cjs/HttpClientError.js"
+          },
+          "./HttpLayerRouter": {
+            "types": "./dist/dts/HttpLayerRouter.d.ts",
+            "import": "./dist/esm/HttpLayerRouter.js",
+            "default": "./dist/cjs/HttpLayerRouter.js"
+          },
+          "./HttpServerError": {
+            "types": "./dist/dts/HttpServerError.d.ts",
+            "import": "./dist/esm/HttpServerError.js",
+            "default": "./dist/cjs/HttpServerError.js"
+          },
+          "./HttpTraceContext": {
+            "types": "./dist/dts/HttpTraceContext.d.ts",
+            "import": "./dist/esm/HttpTraceContext.js",
+            "default": "./dist/cjs/HttpTraceContext.js"
+          },
+          "./HttpApiMiddleware": {
+            "types": "./dist/dts/HttpApiMiddleware.d.ts",
+            "import": "./dist/esm/HttpApiMiddleware.js",
+            "default": "./dist/cjs/HttpApiMiddleware.js"
+          },
+          "./HttpClientRequest": {
+            "types": "./dist/dts/HttpClientRequest.d.ts",
+            "import": "./dist/esm/HttpClientRequest.js",
+            "default": "./dist/cjs/HttpClientRequest.js"
+          },
+          "./HttpServerRequest": {
+            "types": "./dist/dts/HttpServerRequest.d.ts",
+            "import": "./dist/esm/HttpServerRequest.js",
+            "default": "./dist/cjs/HttpServerRequest.js"
+          },
+          "./OpenApiJsonSchema": {
+            "types": "./dist/dts/OpenApiJsonSchema.d.ts",
+            "import": "./dist/esm/OpenApiJsonSchema.js",
+            "default": "./dist/cjs/OpenApiJsonSchema.js"
+          },
+          "./HttpClientResponse": {
+            "types": "./dist/dts/HttpClientResponse.d.ts",
+            "import": "./dist/esm/HttpClientResponse.js",
+            "default": "./dist/cjs/HttpClientResponse.js"
+          },
+          "./HttpServerResponse": {
+            "types": "./dist/dts/HttpServerResponse.d.ts",
+            "import": "./dist/esm/HttpServerResponse.js",
+            "default": "./dist/cjs/HttpServerResponse.js"
+          },
+          "./HttpIncomingMessage": {
+            "types": "./dist/dts/HttpIncomingMessage.d.ts",
+            "import": "./dist/esm/HttpIncomingMessage.js",
+            "default": "./dist/cjs/HttpIncomingMessage.js"
+          },
+          "./HttpServerRespondable": {
+            "types": "./dist/dts/HttpServerRespondable.d.ts",
+            "import": "./dist/esm/HttpServerRespondable.js",
+            "default": "./dist/cjs/HttpServerRespondable.js"
+          },
+          "./PlatformConfigProvider": {
+            "types": "./dist/dts/PlatformConfigProvider.d.ts",
+            "import": "./dist/esm/PlatformConfigProvider.js",
+            "default": "./dist/cjs/PlatformConfigProvider.js"
+          }
+        },
+        "license": "MIT",
+        "_npmUser": {
+          "name": "GitHub Actions",
+          "email": "npm-oidc-no-reply@github.com",
+          "trustedPublisher": {
+            "id": "github",
+            "oidcConfigId": "oidc:f2a686ad-e8ac-4b2e-af63-3760ae634279"
+          }
+        },
+        "homepage": "https://effect.website",
+        "_resolved": "/tmp/fbfbfc34464a47ee558f7fb245f7df64/effect-platform-0.97.2.tgz",
+        "_integrity": "sha512-fof9J+pId374/b1WAt0P1H8QmvulzpHTjS6SUHiG20U/sFjkBUS5vGMy1/XfdTAVKX1IY+Z87dFhi/RFDfgBPQ==",
+        "repository": {
+          "url": "git+https://github.com/Effect-TS/effect.git",
+          "type": "git",
+          "directory": "packages/platform"
+        },
+        "_npmVersion": "11.19.1",
+        "description": "Unified interfaces for common platform-specific services",
+        "directories": {},
+        "maintainers": [
+          {
+            "name": "schickling",
+            "email": "schickling.j@gmail.com"
+          },
+          {
+            "name": "michael.arnaldi",
+            "email": "ma+npm@matechs.com"
+          },
+          {
+            "name": "effect-bot",
+            "email": "ma+effect@matechs.com"
+          }
+        ],
+        "sideEffects": [],
+        "_nodeVersion": "23.7.0",
+        "dependencies": {
+          "msgpackr": "^1.11.10",
+          "multipasta": "^0.2.8",
+          "find-my-way-ts": "^0.1.6"
+        },
+        "publishConfig": {
+          "provenance": true
+        },
+        "typesVersions": {
+          "*": {
+            "Url": [
+              "./dist/dts/Url.d.ts"
+            ],
+            "Etag": [
+              "./dist/dts/Etag.d.ts"
+            ],
+            "Path": [
+              "./dist/dts/Path.d.ts"
+            ],
+            "Error": [
+              "./dist/dts/Error.d.ts"
+            ],
+            "index": [
+              "./dist/dts/index.d.ts"
+            ],
+            "Ndjson": [
+              "./dist/dts/Ndjson.d.ts"
+            ],
+            "Socket": [
+              "./dist/dts/Socket.d.ts"
+            ],
+            "Worker": [
+              "./dist/dts/Worker.d.ts"
+            ],
+            "Command": [
+              "./dist/dts/Command.d.ts"
+            ],
+            "Cookies": [
+              "./dist/dts/Cookies.d.ts"
+            ],
+            "Headers": [
+              "./dist/dts/Headers.d.ts"
+            ],
+            "HttpApi": [
+              "./dist/dts/HttpApi.d.ts"
+            ],
+            "HttpApp": [
+              "./dist/dts/HttpApp.d.ts"
+            ],
+            "MsgPack": [
+              "./dist/dts/MsgPack.d.ts"
+            ],
+            "OpenApi": [
+              "./dist/dts/OpenApi.d.ts"
+            ],
+            "Runtime": [
+              "./dist/dts/Runtime.d.ts"
+            ],
+            "HttpBody": [
+              "./dist/dts/HttpBody.d.ts"
+            ],
+            "Template": [
+              "./dist/dts/Template.d.ts"
+            ],
+            "Terminal": [
+              "./dist/dts/Terminal.d.ts"
+            ],
+            "Effectify": [
+              "./dist/dts/Effectify.d.ts"
+            ],
+            "Multipart": [
+              "./dist/dts/Multipart.d.ts"
+            ],
+            "UrlParams": [
+              "./dist/dts/UrlParams.d.ts"
+            ],
+            "FileSystem": [
+              "./dist/dts/FileSystem.d.ts"
+            ],
+            "HttpClient": [
+              "./dist/dts/HttpClient.d.ts"
+            ],
+            "HttpMethod": [
+              "./dist/dts/HttpMethod.d.ts"
+            ],
+            "HttpRouter": [
+              "./dist/dts/HttpRouter.d.ts"
+            ],
+            "HttpServer": [
+              "./dist/dts/HttpServer.d.ts"
+            ],
+            "WorkerError": [
+              "./dist/dts/WorkerError.d.ts"
+            ],
+            "HttpApiError": [
+              "./dist/dts/HttpApiError.d.ts"
+            ],
+            "HttpApiGroup": [
+              "./dist/dts/HttpApiGroup.d.ts"
+            ],
+            "HttpPlatform": [
+              "./dist/dts/HttpPlatform.d.ts"
+            ],
+            "SocketServer": [
+              "./dist/dts/SocketServer.d.ts"
+            ],
+            "Transferable": [
+              "./dist/dts/Transferable.d.ts"
+            ],
+            "WorkerRunner": [
+              "./dist/dts/WorkerRunner.d.ts"
+            ],
+            "ChannelSchema": [
+              "./dist/dts/ChannelSchema.d.ts"
+            ],
+            "HttpApiClient": [
+              "./dist/dts/HttpApiClient.d.ts"
+            ],
+            "HttpApiScalar": [
+              "./dist/dts/HttpApiScalar.d.ts"
+            ],
+            "HttpApiSchema": [
+              "./dist/dts/HttpApiSchema.d.ts"
+            ],
+            "HttpMultiplex": [
+              "./dist/dts/HttpMultiplex.d.ts"
+            ],
+            "KeyValueStore": [
+              "./dist/dts/KeyValueStore.d.ts"
+            ],
+            "HttpApiBuilder": [
+              "./dist/dts/HttpApiBuilder.d.ts"
+            ],
+            "HttpApiSwagger": [
+              "./dist/dts/HttpApiSwagger.d.ts"
+            ],
+            "HttpMiddleware": [
+              "./dist/dts/HttpMiddleware.d.ts"
+            ],
+            "PlatformLogger": [
+              "./dist/dts/PlatformLogger.d.ts"
+            ],
+            "CommandExecutor": [
+              "./dist/dts/CommandExecutor.d.ts"
+            ],
+            "FetchHttpClient": [
+              "./dist/dts/FetchHttpClient.d.ts"
+            ],
+            "HttpApiEndpoint": [
+              "./dist/dts/HttpApiEndpoint.d.ts"
+            ],
+            "HttpApiSecurity": [
+              "./dist/dts/HttpApiSecurity.d.ts"
+            ],
+            "HttpClientError": [
+              "./dist/dts/HttpClientError.d.ts"
+            ],
+            "HttpLayerRouter": [
+              "./dist/dts/HttpLayerRouter.d.ts"
+            ],
+            "HttpServerError": [
+              "./dist/dts/HttpServerError.d.ts"
+            ],
+            "HttpTraceContext": [
+              "./dist/dts/HttpTraceContext.d.ts"
+            ],
+            "HttpApiMiddleware": [
+              "./dist/dts/HttpApiMiddleware.d.ts"
+            ],
+            "HttpClientRequest": [
+              "./dist/dts/HttpClientRequest.d.ts"
+            ],
+            "HttpServerRequest": [
+              "./dist/dts/HttpServerRequest.d.ts"
+            ],
+            "OpenApiJsonSchema": [
+              "./dist/dts/OpenApiJsonSchema.d.ts"
+            ],
+            "HttpClientResponse": [
+              "./dist/dts/HttpClientResponse.d.ts"
+            ],
+            "HttpServerResponse": [
+              "./dist/dts/HttpServerResponse.d.ts"
+            ],
+            "HttpIncomingMessage": [
+              "./dist/dts/HttpIncomingMessage.d.ts"
+            ],
+            "HttpServerRespondable": [
+              "./dist/dts/HttpServerRespondable.d.ts"
+            ],
+            "PlatformConfigProvider": [
+              "./dist/dts/PlatformConfigProvider.d.ts"
+            ]
+          }
+        },
+        "_hasShrinkwrap": false,
+        "peerDependencies": {
+          "effect": "^3.22.2"
+        },
+        "_npmOperationalInternal": {
+          "tmp": "tmp/platform_0.97.2_1788929239860_0.5833916370058216",
+          "host": "s3://npm-registry-packages-npm-production"
+        },
+        "_id": "@effect/platform@0.97.2",
+        "version": "0.97.2"
+      }
+    },
+    {
+      "source": "https://registry.npmjs.org/@effect%2fplatform-node/latest",
+      "metadata": {
+        "bugs": {
+          "url": "https://github.com/Effect-TS/effect/issues"
+        },
+        "dist": {
+          "shasum": "f89623c1917d42a33fbcaeebf9716da697e34505",
+          "tarball": "https://registry.npmjs.org/@effect/platform-node/-/platform-node-4.0.5.tgz",
+          "fileCount": 232,
+          "integrity": "sha512-v4KD5fWvEUa4QmWFpZFbBsRhmfnTP6ETCME2r9ifyXVDPjhfpxpTZl41prjgQFMqZBHdWWCl7YC5ImbXv5ui5g==",
+          "signatures": [
+            {
+              "sig": "MEUCIQD/fEi24t87TTZYKP2BWlCQ1LVIx4IGxJywnRvYy9VggwIgMxUjwe2mEmviH4b6XsgPYH0mqRyhwat5Ev1EUrQzySA=",
+              "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+            },
+            {
+              "sig": "MEUCIA1MFRqfuulRgyFnShxtzMu6CMUar17sXUU+9DpbL1U6AiEAm5EWo6Kx6y+SXemH5f1WU6k8drbXQyFwgGsNzvsZcY4=",
+              "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+            }
+          ],
+          "attestations": {
+            "url": "https://registry.npmjs.org/-/npm/v1/attestations/@effect%2fplatform-node@4.0.5",
+            "provenance": {
+              "predicateType": "https://slsa.dev/provenance/v1"
+            }
+          },
+          "unpackedSize": 567336
+        },
+        "name": "@effect/platform-node",
+        "tags": [
+          "node",
+          "typescript",
+          "algebraic-data-types",
+          "functional-programming"
+        ],
+        "type": "module",
+        "engines": {
+          "node": ">=18.0.0"
+        },
+        "exports": {
+          ".": "./dist/index.js",
+          "./*": "./dist/*.js",
+          "./index": null,
+          "./*/index": null,
+          "./internal/*": null,
+          "./package.json": "./package.json"
+        },
+        "license": "MIT",
+        "scripts": {
+          "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+          "build": "tsc -b tsconfig.json && pnpm babel",
+          "check": "tsc -b tsconfig.json",
+          "codegen": "effect-utils codegen"
+        },
+        "_npmUser": {
+          "name": "GitHub Actions",
+          "email": "npm-oidc-no-reply@github.com",
+          "trustedPublisher": {
+            "id": "github",
+            "oidcConfigId": "0d0ba01d-7f44-4fa8-9c2e-2065e6be6c38"
+          }
+        },
+        "homepage": "https://effect.website",
+        "keywords": [
+          "node",
+          "typescript",
+          "algebraic-data-types",
+          "functional-programming"
+        ],
+        "repository": {
+          "url": "https://github.com/Effect-TS/effect.git",
+          "type": "git",
+          "directory": "packages/platform/node"
+        },
+        "description": "Platform specific implementations for the Node.js runtime",
+        "directories": {},
+        "maintainers": [
+          {
+            "name": "michael.arnaldi",
+            "email": "ma+npm@matechs.com"
+          },
+          {
+            "name": "effect-bot",
+            "email": "ma+effect@matechs.com"
+          }
+        ],
+        "sideEffects": [],
+        "_nodeVersion": "26.4.0",
+        "dependencies": {
+          "undici": "^8.11.2",
+          "@effect/platform-node-shared": "^4.0.5"
+        },
+        "publishConfig": {
+          "access": "public",
+          "provenance": true
+        },
+        "_hasShrinkwrap": false,
+        "devDependencies": {
+          "redis": "^6.3.0",
+          "effect": "^4.0.5",
+          "@types/node": "^26.6.5",
+          "testcontainers": "^12.2.0",
+          "@testcontainers/mysql": "^12.2.0",
+          "@testcontainers/redis": "^12.2.0",
+          "@testcontainers/postgresql": "^12.2.0"
+        },
+        "peerDependencies": {
+          "redis": ">=5.0.0 <7.0.0",
+          "effect": "^4.0.5"
+        },
+        "_npmOperationalInternal": {
+          "tmp": "tmp/platform-node_4.0.5_1792026203162_0.4488268227186998",
+          "host": "s3://npm-registry-packages-npm-production"
+        },
+        "_id": "@effect/platform-node@4.0.5",
+        "version": "4.0.5"
+      }
+    },
+    {
+      "source": "https://registry.npmjs.org/@effect%2fplatform-bun/latest",
+      "metadata": {
+        "bugs": {
+          "url": "https://github.com/Effect-TS/effect/issues"
+        },
+        "dist": {
+          "shasum": "1d1a86f20352de433388f7ebf5d00716e6b400bb",
+          "tarball": "https://registry.npmjs.org/@effect/platform-bun/-/platform-bun-4.0.5.tgz",
+          "fileCount": 217,
+          "integrity": "sha512-tB/GapZ/bVoCbwRgnojGP4TwopvkMoFoSCipXT1sf0guvG/2oRVhWzJW/1vkrYFEdLM7XyRnVVLrSJyqdok7DA==",
+          "signatures": [
+            {
+              "sig": "MEUCIQCeVhgYUjX94FADL92ryvT5hgj2WACbHdXIhOFdYQaPNwIgP+ZFGcLajnXgNb14tTs1s10e8XsYt/IJhJFOZ0ryWOo=",
+              "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+            },
+            {
+              "sig": "MEUCIBNu5GS+9u9qeeSKLDjDC+H6Ea4TUs58cQBlL06FyQ2bAiEA40h9e26VbnuWssrcEZaP7q5LH2jSMWLib/JX9pdYGuQ=",
+              "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+            }
+          ],
+          "attestations": {
+            "url": "https://registry.npmjs.org/-/npm/v1/attestations/@effect%2fplatform-bun@4.0.5",
+            "provenance": {
+              "predicateType": "https://slsa.dev/provenance/v1"
+            }
+          },
+          "unpackedSize": 508979
+        },
+        "name": "@effect/platform-bun",
+        "tags": [
+          "bun",
+          "typescript",
+          "algebraic-data-types",
+          "functional-programming"
+        ],
+        "type": "module",
+        "exports": {
+          ".": "./dist/index.js",
+          "./*": "./dist/*.js",
+          "./index": null,
+          "./*/index": null,
+          "./internal/*": null,
+          "./package.json": "./package.json"
+        },
+        "license": "MIT",
+        "scripts": {
+          "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+          "build": "tsc -b tsconfig.json && pnpm babel",
+          "check": "tsc -b tsconfig.json",
+          "codegen": "effect-utils codegen",
+          "benchmark:datagram": "bun benchmark/DatagramSocket.ts"
+        },
+        "_npmUser": {
+          "name": "GitHub Actions",
+          "email": "npm-oidc-no-reply@github.com",
+          "trustedPublisher": {
+            "id": "github",
+            "oidcConfigId": "80246953-37cd-4739-a389-f225a50c0d01"
+          }
+        },
+        "homepage": "https://effect.website",
+        "keywords": [
+          "bun",
+          "typescript",
+          "algebraic-data-types",
+          "functional-programming"
+        ],
+        "repository": {
+          "url": "https://github.com/Effect-TS/effect.git",
+          "type": "git",
+          "directory": "packages/platform/bun"
+        },
+        "description": "Platform specific implementations for the Bun runtime",
+        "directories": {},
+        "maintainers": [
+          {
+            "name": "michael.arnaldi",
+            "email": "ma+npm@matechs.com"
+          },
+          {
+            "name": "effect-bot",
+            "email": "ma+effect@matechs.com"
+          }
+        ],
+        "sideEffects": [],
+        "_nodeVersion": "26.4.0",
+        "dependencies": {
+          "@effect/platform-node-shared": "^4.0.5"
+        },
+        "publishConfig": {
+          "access": "public",
+          "provenance": true
+        },
+        "_hasShrinkwrap": false,
+        "devDependencies": {
+          "effect": "^4.0.5",
+          "tinybench": "^6.2.1",
+          "@types/bun": "^1.4.2"
+        },
+        "peerDependencies": {
+          "effect": "^4.0.5"
+        },
+        "_npmOperationalInternal": {
+          "tmp": "tmp/platform-bun_4.0.5_1792026268125_0.3787357553891473",
+          "host": "s3://npm-registry-packages-npm-production"
+        },
+        "_id": "@effect/platform-bun@4.0.5",
+        "version": "4.0.5"
+      }
+    },
+    {
+      "source": "https://registry.npmjs.org/encore.dev/latest",
+      "metadata": {
+        "bugs": {
+          "url": "https://github.com/encoredev/encore/issues"
+        },
+        "dist": {
+          "shasum": "3236743e02c69c6b7b953dc4ea6ed132dff857d7",
+          "tarball": "https://registry.npmjs.org/encore.dev/-/encore.dev-1.58.6.tgz",
+          "fileCount": 196,
+          "integrity": "sha512-KUf9ot7peFuNWJYt/GcvRAns2zThCQ4qx33snDHwO4BODkCq7hOSlHY2LbmJ+z/tvq/j7+z2yTlO4i/LEij6/Q==",
+          "signatures": [
+            {
+              "sig": "MEYCIQCI3aUVxFMylO1ZeVSMjCFKj31UXjfeueDZ3HN87CJLZAIhAKeutBB4klxe1cv/Qpr6hxcigDAoEdLQ2Xgv5lUL6FJW",
+              "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+            },
+            {
+              "sig": "MEYCIQCueyVAuzH0di5nh6U/dohyP2tM8ofEF3B3Ym8D9lMQFwIhANDRrByrtnStMiDZGHbuZhBsLfDsFTDMmMuImPTk6aYe",
+              "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+            }
+          ],
+          "unpackedSize": 630187
+        },
+        "name": "encore.dev",
+        "type": "module",
+        "_from": "file:/home/runner/work/_temp/encore-dev.tar.gz",
+        "engines": {
+          "node": ">=18.0.0"
+        },
+        "exports": {
+          ".": {
+            "bun": "./mod.ts",
+            "types": "./mod.ts",
+            "default": "./dist/mod.js"
+          },
+          "./api": {
+            "bun": "./api/mod.ts",
+            "types": "./api/mod.ts",
+            "default": "./dist/api/mod.js"
+          },
+          "./log": {
+            "bun": "./log/mod.ts",
+            "types": "./log/mod.ts",
+            "default": "./dist/log/mod.js"
+          },
+          "./auth": {
+            "bun": "./auth/mod.ts",
+            "types": "./auth/mod.ts",
+            "default": "./dist/auth/mod.js"
+          },
+          "./cron": {
+            "bun": "./cron/mod.ts",
+            "types": "./cron/mod.ts",
+            "default": "./dist/cron/mod.js"
+          },
+          "./types": {
+            "bun": "./types/mod.ts",
+            "types": "./types/mod.ts",
+            "default": "./dist/types/mod.js"
+          },
+          "./config": {
+            "bun": "./config/mod.ts",
+            "types": "./config/mod.ts",
+            "default": "./dist/config/mod.js"
+          },
+          "./pubsub": {
+            "bun": "./pubsub/mod.ts",
+            "types": "./pubsub/mod.ts",
+            "default": "./dist/pubsub/mod.js"
+          },
+          "./metrics": {
+            "bun": "./metrics/mod.ts",
+            "types": "./metrics/mod.ts",
+            "default": "./dist/metrics/mod.js"
+          },
+          "./service": {
+            "bun": "./service/mod.ts",
+            "types": "./service/mod.ts",
+            "default": "./dist/service/mod.js"
+          },
+          "./validate": {
+            "bun": "./validate/mod.ts",
+            "types": "./validate/mod.ts",
+            "default": "./dist/validate/mod.js"
+          },
+          "./storage/cache": {
+            "bun": "./storage/cache/mod.ts",
+            "types": "./storage/cache/mod.ts",
+            "default": "./dist/storage/cache/mod.js"
+          },
+          "./storage/sqldb": {
+            "bun": "./storage/sqldb/mod.ts",
+            "types": "./storage/sqldb/mod.ts",
+            "default": "./dist/storage/sqldb/mod.js"
+          },
+          "./storage/objects": {
+            "bun": "./storage/objects/mod.ts",
+            "types": "./storage/objects/mod.ts",
+            "default": "./dist/storage/objects/mod.js"
+          },
+          "./internal/codegen/*": {
+            "bun": "./internal/codegen/*.ts",
+            "types": "./internal/codegen/*.ts",
+            "default": "./dist/internal/codegen/*.js"
+          }
+        },
+        "license": "MPL-2.0",
+        "scripts": {
+          "docs": "typedoc && node scripts/postprocess-docs.mjs",
+          "lint": "eslint \"**/*.ts*\"",
+          "test": "bun test",
+          "build": "tsc -b"
+        },
+        "_npmUser": {
+          "name": "GitHub Actions",
+          "email": "npm-oidc-no-reply@github.com",
+          "trustedPublisher": {
+            "id": "github",
+            "oidcConfigId": "oidc:e682fa47-098b-4be1-a89d-8f02596fcf34"
+          }
+        },
+        "homepage": "https://github.com/encoredev/encore#readme",
+        "_resolved": "/home/runner/work/_temp/encore-dev.tar.gz",
+        "_integrity": "sha512-KUf9ot7peFuNWJYt/GcvRAns2zThCQ4qx33snDHwO4BODkCq7hOSlHY2LbmJ+z/tvq/j7+z2yTlO4i/LEij6/Q==",
+        "repository": {
+          "url": "git+https://github.com/encoredev/encore.git",
+          "type": "git",
+          "directory": "runtimes/js/encore.dev"
+        },
+        "_npmVersion": "11.19.1",
+        "description": "Encore's JavaScript/TypeScript SDK",
+        "directories": {},
+        "maintainers": [
+          {
+            "name": "eandre",
+            "email": "eandre@gmail.com"
+          }
+        ],
+        "sideEffects": false,
+        "_nodeVersion": "24.20.0",
+        "_hasShrinkwrap": false,
+        "devDependencies": {
+          "typedoc": "^0.28.19",
+          "typescript": "^5.3.3",
+          "@types/node": "^20.11.19",
+          "tsc-esm-fix": "^2.20.26",
+          "typedoc-plugin-markdown": "^4.11.0",
+          "typedoc-plugin-frontmatter": "^1.3.1"
+        },
+        "_npmOperationalInternal": {
+          "tmp": "tmp/encore.dev_1.58.6_1789719127677_0.348478457366447",
+          "host": "s3://npm-registry-packages-npm-production"
+        },
+        "_id": "encore.dev@1.58.6",
+        "version": "1.58.6"
+      }
+    },
+    {
+      "source": "https://registry.npmjs.org/@trpc%2fserver/latest",
+      "metadata": {
+        "bin": {
+          "intent": "bin/intent.js"
+        },
+        "bugs": {
+          "url": "https://github.com/trpc/trpc/issues"
+        },
+        "dist": {
+          "shasum": "1f3b6ce1a34cc1a39ca1cdb4dc2951ed77ef689d",
+          "tarball": "https://registry.npmjs.org/@trpc/server/-/server-11.19.0.tgz",
+          "fileCount": 251,
+          "integrity": "sha512-7C1goiDurz82yFKtZUbEzjXd0Rg/jyisaIZQhdvus+1l7E6mwcEYZXjZ1US/HF8kOyz1LERL8UN3bcboJtjcyQ==",
+          "signatures": [
+            {
+              "sig": "MEYCIQCFwG6as50z7ZJSP+6GusWTxN5EMnQX++wuJCOmBz68WgIhAN+V8JbuHlWscMF7q44Pmh9jZK76SESVg73kYeCN0w+S",
+              "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+            },
+            {
+              "sig": "MEUCIQCFHCgOo7FtVSY23tw5jZ1XCeewNG+bKQNMnnTC0em7uQIgfMtixOyR6xYdx0vt43Qu65dYHwM6xoedMuM2rX2K3vs=",
+              "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+            }
+          ],
+          "attestations": {
+            "url": "https://registry.npmjs.org/-/npm/v1/attestations/@trpc%2fserver@11.19.0",
+            "provenance": {
+              "predicateType": "https://slsa.dev/provenance/v1"
+            }
+          },
+          "unpackedSize": 1416043
+        },
+        "main": "./dist/index.cjs",
+        "name": "@trpc/server",
+        "type": "module",
+        "types": "./dist/index.d.cts",
+        "author": {
+          "name": "KATT"
+        },
+        "module": "./dist/index.mjs",
+        "exports": {
+          ".": {
+            "import": {
+              "types": "./dist/index.d.mts",
+              "default": "./dist/index.mjs"
+            },
+            "require": {
+              "types": "./dist/index.d.cts",
+              "default": "./dist/index.cjs"
+            }
+          },
+          "./rpc": {
+            "import": {
+              "types": "./dist/rpc.d.mts",
+              "default": "./dist/rpc.mjs"
+            },
+            "require": {
+              "types": "./dist/rpc.d.cts",
+              "default": "./dist/rpc.cjs"
+            }
+          },
+          "./http": {
+            "import": {
+              "types": "./dist/http.d.mts",
+              "default": "./dist/http.mjs"
+            },
+            "require": {
+              "types": "./dist/http.d.cts",
+              "default": "./dist/http.cjs"
+            }
+          },
+          "./shared": {
+            "import": {
+              "types": "./dist/shared.d.mts",
+              "default": "./dist/shared.mjs"
+            },
+            "require": {
+              "types": "./dist/shared.d.cts",
+              "default": "./dist/shared.cjs"
+            }
+          },
+          "./observable": {
+            "import": {
+              "types": "./dist/observable/index.d.mts",
+              "default": "./dist/observable/index.mjs"
+            },
+            "require": {
+              "types": "./dist/observable/index.d.cts",
+              "default": "./dist/observable/index.cjs"
+            }
+          },
+          "./adapters/ws": {
+            "import": {
+              "types": "./dist/adapters/ws.d.mts",
+              "default": "./dist/adapters/ws.mjs"
+            },
+            "require": {
+              "types": "./dist/adapters/ws.d.cts",
+              "default": "./dist/adapters/ws.cjs"
+            }
+          },
+          "./package.json": "./package.json",
+          "./adapters/next": {
+            "import": {
+              "types": "./dist/adapters/next.d.mts",
+              "default": "./dist/adapters/next.mjs"
+            },
+            "require": {
+              "types": "./dist/adapters/next.d.cts",
+              "default": "./dist/adapters/next.cjs"
+            }
+          },
+          "./adapters/fetch": {
+            "import": {
+              "types": "./dist/adapters/fetch/index.d.mts",
+              "default": "./dist/adapters/fetch/index.mjs"
+            },
+            "require": {
+              "types": "./dist/adapters/fetch/index.d.cts",
+              "default": "./dist/adapters/fetch/index.cjs"
+            }
+          },
+          "./adapters/express": {
+            "import": {
+              "types": "./dist/adapters/express.d.mts",
+              "default": "./dist/adapters/express.mjs"
+            },
+            "require": {
+              "types": "./dist/adapters/express.d.cts",
+              "default": "./dist/adapters/express.cjs"
+            }
+          },
+          "./adapters/fastify": {
+            "import": {
+              "types": "./dist/adapters/fastify/index.d.mts",
+              "default": "./dist/adapters/fastify/index.mjs"
+            },
+            "require": {
+              "types": "./dist/adapters/fastify/index.d.cts",
+              "default": "./dist/adapters/fastify/index.cjs"
+            }
+          },
+          "./adapters/node-http": {
+            "import": {
+              "types": "./dist/adapters/node-http/index.d.mts",
+              "default": "./dist/adapters/node-http/index.mjs"
+            },
+            "require": {
+              "types": "./dist/adapters/node-http/index.d.cts",
+              "default": "./dist/adapters/node-http/index.cjs"
+            }
+          },
+          "./adapters/aws-lambda": {
+            "import": {
+              "types": "./dist/adapters/aws-lambda/index.d.mts",
+              "default": "./dist/adapters/aws-lambda/index.mjs"
+            },
+            "require": {
+              "types": "./dist/adapters/aws-lambda/index.d.cts",
+              "default": "./dist/adapters/aws-lambda/index.cjs"
+            }
+          },
+          "./adapters/standalone": {
+            "import": {
+              "types": "./dist/adapters/standalone.d.mts",
+              "default": "./dist/adapters/standalone.mjs"
+            },
+            "require": {
+              "types": "./dist/adapters/standalone.d.cts",
+              "default": "./dist/adapters/standalone.cjs"
+            }
+          },
+          "./adapters/next-app-dir": {
+            "import": {
+              "types": "./dist/adapters/next-app-dir.d.mts",
+              "default": "./dist/adapters/next-app-dir.mjs"
+            },
+            "require": {
+              "types": "./dist/adapters/next-app-dir.d.cts",
+              "default": "./dist/adapters/next-app-dir.cjs"
+            }
+          },
+          "./unstable-core-do-not-import": {
+            "import": {
+              "types": "./dist/unstable-core-do-not-import.d.mts",
+              "default": "./dist/unstable-core-do-not-import.mjs"
+            },
+            "require": {
+              "types": "./dist/unstable-core-do-not-import.d.cts",
+              "default": "./dist/unstable-core-do-not-import.cjs"
+            }
+          }
+        },
+        "funding": [
+          "https://trpc.io/sponsor"
+        ],
+        "gitHead": "fcc6bca0ece2762e393e6d8c8527bbaa17a878d2",
+        "license": "MIT",
+        "scripts": {
+          "dev": "tsdown --watch",
+          "lint": "eslint --cache src",
+          "build": "tsdown",
+          "benchmark": "tsc --project tsconfig.benchmark.json",
+          "typecheck": "tsc --noEmit --preserveWatchOutput --pretty"
+        },
+        "_npmUser": {
+          "name": "GitHub Actions",
+          "email": "npm-oidc-no-reply@github.com",
+          "trustedPublisher": {
+            "id": "github",
+            "oidcConfigId": "oidc:814264a6-eaba-43ac-8e26-2060d1f2438e"
+          }
+        },
+        "homepage": "https://trpc.io",
+        "keywords": [
+          "tanstack-intent"
+        ],
+        "repository": {
+          "url": "git+https://github.com/trpc/trpc.git",
+          "type": "git",
+          "directory": "packages/server"
+        },
+        "_npmVersion": "lerna/10.0.1/node@v24.21.0+x64 (linux)",
+        "description": "The tRPC server library",
+        "directories": {},
+        "maintainers": [
+          {
+            "name": "katt",
+            "email": "alexander@n1s.se"
+          },
+          {
+            "name": "juliusmarminge",
+            "email": "julius0216@outlook.com"
+          }
+        ],
+        "sideEffects": false,
+        "_nodeVersion": "24.21.0",
+        "publishConfig": {
+          "access": "public"
+        },
+        "_hasShrinkwrap": false,
+        "devDependencies": {
+          "ws": "catalog:",
+          "yup": "^1.0.0",
+          "zod": "^4.2.1",
+          "next": "catalog:",
+          "myzod": "^1.3.1",
+          "react": "^19.1.0",
+          "eslint": "catalog:",
+          "tsdown": "catalog:",
+          "devalue": "catalog:",
+          "express": "^5.0.0",
+          "fastify": "catalog:",
+          "valibot": "catalog:",
+          "hash-sum": "^2.0.0",
+          "@types/ws": "^8.2.0",
+          "react-dom": "^19.1.0",
+          "superjson": "^1.12.4",
+          "typescript": "catalog:",
+          "@types/node": "catalog:",
+          "superstruct": "^2.0.0",
+          "@types/react": "^19.1.0",
+          "@types/express": "^5.0.0",
+          "fastify-plugin": "catalog:",
+          "@types/hash-sum": "^1.0.0",
+          "@tanstack/intent": "^0.0.27",
+          "@types/react-dom": "^19.1.1",
+          "@types/aws-lambda": "^8.10.149",
+          "@fastify/websocket": "catalog:",
+          "@oxc-project/runtime": "0.123.0",
+          "@tanstack/react-query": "^5.80.3"
+        },
+        "peerDependencies": {
+          "typescript": ">=5.7.2"
+        },
+        "_npmOperationalInternal": {
+          "tmp": "tmp/server_11.19.0_1789601920786_0.4325060751262009",
+          "host": "s3://npm-registry-packages-npm-production"
+        },
+        "_id": "@trpc/server@11.19.0",
+        "version": "11.19.0"
+      }
+    }
+  ]
+}

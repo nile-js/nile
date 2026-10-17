@@ -1,0 +1,47 @@
+{
+  "profile": "development",
+  "durationSeconds": 2,
+  "warmupSeconds": 1,
+  "timeoutSeconds": 5,
+  "rounds": 5,
+  "seed": 421017,
+  "workload": {
+    "name": "300-actions-json-increment",
+    "mode": "plain",
+    "actionCount": 300,
+    "concurrencies": [
+      1,
+      30,
+      100,
+      300
+    ]
+  },
+  "frameworks": [
+    {
+      "name": "nile",
+      "url": "http://127.0.0.1:4100",
+      "codec": "nile",
+      "pathTemplate": "/api/services",
+      "runtime": "node 24.16.0",
+      "version": "0.0.17 source:9f5a173"
+    },
+    {
+      "name": "express",
+      "url": "http://127.0.0.1:4103",
+      "codec": "json",
+      "pathTemplate": "/actions/action-{action}",
+      "runtime": "node 24.16.0",
+      "version": "5.3.0"
+    },
+    {
+      "name": "trpc",
+      "url": "http://127.0.0.1:4105",
+      "codec": "trpc",
+      "pathTemplate": "/trpc/action-{action}",
+      "runtime": "node 24.16.0",
+      "version": "11.19.0"
+    }
+  ],
+  "metadataRecordedOn": "2026-10-17",
+  "exampleOnly": true
+}
