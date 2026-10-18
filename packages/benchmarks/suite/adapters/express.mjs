@@ -6,7 +6,7 @@ import {
 } from "../shared/workload.mjs";
 
 /** Use Express JSON parsing, native route dispatch and response serialization. */
-export function createExpress({ mode }) {
+export function createExpress({ mode, execute = calculateResult }) {
   const app = express();
   app.disable("x-powered-by");
   app.use(express.json());
@@ -15,7 +15,7 @@ export function createExpress({ mode }) {
       const parsed = parsePayload({ payload: request.body, mode });
       if (!parsed.status)
         return response.status(400).json({ message: parsed.message });
-      return response.json(calculateResult({ payload: parsed.data, action }));
+      return response.json(execute({ payload: parsed.data, action }));
     });
   });
   return app;

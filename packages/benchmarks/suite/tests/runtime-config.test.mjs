@@ -52,3 +52,25 @@ test("manifest refuses non-production readiness even when the coordinator reques
   assert.equal(manifest.nodeEnvironment, "production");
   assert.equal(manifest.frameworks[0].nodeEnvironment, "production");
 });
+
+test("fixture SQLite durability defaults full and accepts normal explicitly", () => {
+  assert.equal(
+    readConfig(["--framework", "nile"], "production").sqliteSynchronous,
+    "full"
+  );
+  assert.equal(
+    readConfig(
+      ["--framework", "nile", "--sqlite-synchronous", "normal"],
+      "production"
+    ).sqliteSynchronous,
+    "normal"
+  );
+  assert.throws(
+    () =>
+      readConfig(
+        ["--framework", "nile", "--sqlite-synchronous", "off"],
+        "production"
+      ),
+    /full\|normal/
+  );
+});

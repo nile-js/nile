@@ -1,0 +1,50 @@
+[
+  {
+    "label": "node-smoke",
+    "folder": "benchmarks/results/2026-10-17T20-10-03.796Z-node-interleaved-BGsm64",
+    "completed": true,
+    "valid": true,
+    "successfulTrials": 12,
+    "measuredRequests": 3600,
+    "roundOrdering": [
+      1,
+      1,
+      1,
+      1,
+      2,
+      2,
+      2,
+      2,
+      3,
+      3,
+      3,
+      3
+    ],
+    "attempts": 2,
+    "comparisonEvidence": false
+  },
+  {
+    "label": "bun-smoke",
+    "folder": "benchmarks/results/2026-10-17T20-15-25.176Z-bun-interleaved-zlzgCz",
+    "completed": true,
+    "valid": true,
+    "successfulTrials": 12,
+    "measuredRequests": 3600,
+    "roundOrdering": [
+      1,
+      1,
+      1,
+      1,
+      2,
+      2,
+      2,
+      2,
+      3,
+      3,
+      3,
+      3
+    ],
+    "attempts": 1,
+    "comparisonEvidence": false
+  }
+]

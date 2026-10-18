@@ -32,15 +32,26 @@ export function accountResponse({ counters, response, exchange, codec }) {
   counters.successful += 1;
 }
 
-/** Run closed-loop workers; finish all in-flight responses before measuring final elapsed time. */
+/** Run a timed or exact-budget trial; shared issuance prevents concurrent overshoot. */
 export async function runTrial({
   framework,
   workload,
   concurrency,
   durationSeconds,
+  requestCount,
   request,
   now = () => performance.now(),
 }) {
+  if (
+    requestCount !== undefined &&
+    (!Number.isSafeInteger(requestCount) || requestCount <= 0)
+  )
+    throw Error("requestCount must be a positive safe integer");
+  if (
+    requestCount === undefined &&
+    (!Number.isFinite(durationSeconds) || durationSeconds <= 0)
+  )
+    throw Error("durationSeconds must be finite and positive for timed trials");
   const counters = {
     requests: 0,
     successful: 0,
@@ -55,10 +66,14 @@ export async function runTrial({
   };
   const latency = createLatencyRecorder();
   let sequence = 0;
+  const cpuStarted = process.cpuUsage();
   const started = now();
   const deadline = started + durationSeconds * 1000;
   const worker = async () => {
-    while (now() < deadline) {
+    // No await occurs between the shared limit check and sequence reservation.
+    while (
+      requestCount === undefined ? now() < deadline : sequence < requestCount
+    ) {
       const exchange = createExchange({
         framework,
         sequence: sequence++,
@@ -73,17 +88,31 @@ export async function runTrial({
   };
   await Promise.all(Array.from({ length: concurrency }, worker));
   const elapsedSeconds = (now() - started) / 1000;
+  const clientCpu = process.cpuUsage(cpuStarted);
   return {
     framework: framework.name,
+    ...(workload.operation ? { operation: workload.operation } : {}),
     concurrency,
     durationSeconds,
+    ...(requestCount === undefined ? {} : { requestCount }),
     elapsedSeconds,
-    drainSeconds: Math.max(0, elapsedSeconds - durationSeconds),
+    clientCpu: {
+      ...clientCpu,
+      percentOfOneCore:
+        (clientCpu.user + clientCpu.system) / (elapsedSeconds * 10000),
+    },
+    drainSeconds:
+      requestCount === undefined
+        ? Math.max(0, elapsedSeconds - durationSeconds)
+        : 0,
     counters,
     requestsPerSecond: counters.requests / elapsedSeconds,
     successfulPerSecond: counters.successful / elapsedSeconds,
     latency: latency.snapshot(),
-    valid: counters.failed === 0 && counters.requests > 0,
+    valid:
+      counters.failed === 0 &&
+      counters.requests > 0 &&
+      (requestCount === undefined || counters.requests === requestCount),
     actionCoverage: Math.min(sequence, workload.actionCount),
   };
 }

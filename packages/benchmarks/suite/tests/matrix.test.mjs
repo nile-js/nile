@@ -10,6 +10,7 @@ import {
   preflightFramework,
 } from "../shared/preflight.mjs";
 import { validateManifest } from "../../harness/config.mjs";
+import { readConfig } from "../shared/config.mjs";
 
 const ready = {
   framework: "nile",
@@ -29,10 +30,10 @@ test("development and publication profiles retain all five rounds with explicit 
   const dev = configuration();
   assert.deepEqual(dev.concurrencies, [100]);
   assert.equal(dev.rounds, 5);
-  assert.equal(readMatrixConfig([], "production").frameworks.length, 10);
+  assert.equal(readMatrixConfig([], "production").frameworks.length, 9);
   assert.deepEqual(
     readMatrixConfig(["--runtime", "bun"], "production").frameworks,
-    ["nile", "nile-release", "elysia", "effect"]
+    ["nile", "elysia", "effect"]
   );
   const publication = readMatrixConfig(
     ["--profile", "publication"],
@@ -59,6 +60,18 @@ test("development and publication profiles retain all five rounds with explicit 
   assert.throws(() =>
     readMatrixConfig(["--framework", "nile,nile"], "production")
   );
+});
+
+test("published Nile is rejected by individual and matrix launch configuration", () => {
+  assert.throws(() => readConfig(["--framework", "nile-release"], "production"));
+  for (const runtime of ["node", "bun"]) {
+    assert.throws(() =>
+      readMatrixConfig(
+        ["--runtime", runtime, "--framework", "nile-release"],
+        "production"
+      )
+    );
+  }
 });
 
 test("generated manifests identify artifact/source and fixed loopback endpoint", () => {

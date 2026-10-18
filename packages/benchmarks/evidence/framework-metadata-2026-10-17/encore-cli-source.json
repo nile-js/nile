@@ -1,0 +1,32 @@
+{
+  "checkedAt": "2026-10-17",
+  "version": "1.58.6",
+  "platform": "linux_amd64",
+  "officialFormulaUrl": "https://raw.githubusercontent.com/encoredev/homebrew-tap/60b9d904837927f580ef30ef3f12e03a3b1df29d/Formula/encore.rb",
+  "formulaRepositoryCommit": "60b9d904837927f580ef30ef3f12e03a3b1df29d",
+  "formulaBlobSha": "d45780c522f057f95025cca6d48f2e82e23f9bd3",
+  "formulaContentVerifiedAtCommit": true,
+  "archiveUrl": "https://d2f391esomvqpi.cloudfront.net/encore-1.58.6-linux_amd64.tar.gz",
+  "expectedSha256": "46add1a88eb02349e4ce51269fdade91c52e8fc044c972cc0ae40129a1eb91b2",
+  "head": {
+    "status": 200,
+    "contentLength": 165260594,
+    "contentType": "application/octet-stream",
+    "etag": "9bbba44468743796ff012d07292a1259",
+    "lastModified": "Fri, 18 Sep 2026 08:04:56 GMT",
+    "server": "AmazonS3",
+    "cache": "Hit from cloudfront"
+  },
+  "archiveDownloaded": false,
+  "archiveSha256Verified": false,
+  "reason": "Only metadata requested during concurrent framework measurement; large download/install deferred until root confirms quiet window ended.",
+  "productionBuildSources": [
+    "https://encore.dev/docs/self-host/build",
+    "https://github.com/encoredev/encore/blob/v1.58.6/cli/cmd/encore/build.go"
+  ],
+  "productionBuildNotes": [
+    "Official production path: encore build docker IMAGE_TAG; compiles on host, packages TypeScript with node:slim by default.",
+    "CLI starts or connects Encore daemon via setupDaemon and sends local Export request. Local image export requires Docker daemon. No --push used for local benchmark.",
+    "These apps declare no database, secrets or external resources. Native development and production compiler verification remains pending."
+  ]
+}

@@ -6,5 +6,6 @@
     "encore.dev": "1.58.6",
     "slang-ts": "0.0.9",
     "zod": "4.6.7"
-  }
+  },
+  "packageManager": "bun@1.4.2"
 }

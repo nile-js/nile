@@ -1,9 +1,15 @@
 import { createServer } from "node:http";
 import { Ignitor } from "@adonisjs/core";
-import { registerRoutes } from "./adonis/routes.js";
+import { registerRoutes, type Execute } from "./adonis/routes.js";
 
 /** Boot core Adonis providers and its HTTP pipeline without listening. */
-export async function createAdonis({ mode }: { mode: "plain" | "validated" }) {
+export async function createAdonis({
+  mode,
+  execute,
+}: {
+  mode: "plain" | "validated";
+  execute?: Execute;
+}) {
   const app = new Ignitor(new URL("./adonis/", import.meta.url)).createApp(
     "web"
   );
@@ -13,7 +19,7 @@ export async function createAdonis({ mode }: { mode: "plain" | "validated" }) {
   const server = await app.container.make("server");
   await app.start(async () => {
     const router = await app.container.make("router");
-    registerRoutes({ router, mode });
+    registerRoutes({ router, mode, execute });
     server.use([() => import("@adonisjs/core/bodyparser_middleware")]);
     await server.boot();
   });

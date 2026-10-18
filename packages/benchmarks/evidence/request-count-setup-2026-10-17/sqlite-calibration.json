@@ -1,0 +1,34 @@
+{
+  "name": "Isolated SQLite calibration, not framework HTTP evidence",
+  "normal": {
+    "transactions": 1000,
+    "seconds": 0.11877025700000002,
+    "transactionsPerSecond": 8419.616369104933,
+    "metadata": {
+      "workload": "sqlite-read-write",
+      "reuseSeeded": false,
+      "storage": "sqlite",
+      "databasePath": "/tmp/nile-benchmark-normal-pilot-16yX1k/pilot.sqlite",
+      "driver": "node:sqlite",
+      "runtime": "node",
+      "runtimeVersion": "24.16.0",
+      "sqliteVersion": "3.53.0",
+      "rows": 1000,
+      "journalMode": "wal",
+      "synchronous": 1,
+      "sqliteSynchronous": "normal",
+      "transaction": "BEGIN IMMEDIATE; SELECT; UPDATE; COMMIT",
+      "setup": "Fresh file; 1000 seeded rows; preparation excluded from request timing"
+    }
+  },
+  "previousFullCalibration": {
+    "transactions": 1000,
+    "seconds": 7.116162466,
+    "transactionsPerSecond": 140.52517839184478,
+    "node": "24.16.0",
+    "sqlite": "3.53.0",
+    "journal": "WAL",
+    "synchronous": 2,
+    "source": "Observed actual-host calibration before owner chose NORMAL for main comparison"
+  }
+}

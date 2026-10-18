@@ -1,6 +1,9 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { safeTry } from "slang-ts";
 import { z } from "zod";
+import { createEncoreWorkload } from "../../../shared/encore-workload.mjs";
+
+const operation = await createEncoreWorkload();
 
 interface BenchmarkInput {
   id: number;
@@ -41,10 +44,6 @@ export const createRawHandler =
     const input = parsed?.data ?? body.value;
     response.writeHead(200, { "Content-Type": "application/json" });
     response.end(
-      JSON.stringify({
-        id: input.id,
-        value: input.value + 1,
-        action,
-      })
+      JSON.stringify(operation.execute({ payload: input, action }))
     );
   };

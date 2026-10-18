@@ -1,0 +1,141 @@
+
+  POST http://localhost:8000/api/services
+
+
+nile-current-benchmark server ready in 6.7ms
+
+  POST http://localhost:8000/api/services
+
+
+nile-current-benchmark server ready in 1.0ms
+Core fixtures: plain/validated route identity, common validation, current local Nile and non-listening initialization PASS
+✔ Bun client fails immediately under another runtime (3.28455ms)
+﹣ Bun client rejects unsupported concurrency and nonfinite deadlines (0.245243ms) # SKIP
+﹣ native fetch preserves HTTP/1.1 JSON bodies and reuses keepalive sockets (0.185177ms) # SKIP
+﹣ deadline covers a stalled chunked body after headers arrive (0.147747ms) # SKIP
+﹣ deadline covers a stalled framed body after headers arrive (0.194531ms) # SKIP
+﹣ streamed responses over the byte limit are aborted and reported (0.176829ms) # SKIP
+﹣ exact byte limit is accepted and fully consumed (0.116708ms) # SKIP
+﹣ native transport retains exact concurrent request budgets and validates every response (0.107279ms) # SKIP
+﹣ wrong payload, non200 and redirects remain failures without retries (0.190238ms) # SKIP
+﹣ close aborts active body reads and refuses new work (0.278294ms) # SKIP
+﹣ framed body truncation is a transport failure (0.147653ms) # SKIP
+﹣ a too-short declared frame cannot conceal a payload mismatch (0.139915ms) # SKIP
+﹣ oversized declared frames are rejected before native buffering (0.095415ms) # SKIP
+✔ codecs rotate 300 actions and retain the same payload and expected action (0.613103ms)
+✔ native envelopes decode without hiding wrong actions or unsuccessful responses (0.564758ms)
+✔ manifest rejects invalid protocols, routes, workloads and publication shortcuts (1.28946ms)
+✔ CLI requires explicit distinct options and rejects unsupported arguments (0.33779ms)
+✔ latency quantiles include every observation and describe upper bucket edges (0.487876ms)
+✔ shuffle is deterministic, complete and seed-dependent (0.578221ms)
+✔ injected adapter accounts timeout, transport, non200, mismatch and success without a listener (1.094675ms)
+✔ non200 with correct JSON still counts as failure without payload mismatch (0.309625ms)
+✔ exact budgets support three publication rounds and explicit workload operations (0.332662ms)
+✔ every coordinator workload and allocated round budget is accepted by the harness (0.477848ms)
+✔ count manifests reject invalid budgets, timeouts, warmups and round counts (0.910821ms)
+✔ concurrent workers issue exactly a shared budget and consume every response (10.007012ms)
+✔ a budget smaller than concurrency still does not overshoot (1.731055ms)
+✔ errors consume budget without retries and a wrong final response invalidates a trial (8.695095ms)
+✔ invalid direct trial budgets fail before sending requests (0.403243ms)
+✔ selected count rounds retain original identities and full indexed budgets (0.316649ms)
+✔ selectedRound refuses invalid selectors and duration mode (0.764234ms)
+✔ benchmarks/suite/tests/core-fixtures.test.mjs (0.072919ms)
+✔ one million requests divide exactly across six cells and three complete repeats (0.27711ms)
+✔ count protocol defaults to current Nile and native framework fixtures with three repeats (0.977179ms)
+✔ host idle evidence does not count I/O waiting as idle or hide swap traffic (0.29959ms)
+✔ comparison refuses a readiness record with different workload, runtime or actual durability (0.646972ms)
+✔ targeted result report states actual budget and full durability without claiming a million (0.341319ms)
+✔ resume retains only revalidated completed cells and preserves failed attempts (7.833142ms)
+✔ resume refuses changed settings, artifacts or client source (4.297229ms)
+✔ resume rejects corrupted counts and incomplete warmup evidence (26.957258ms)
+✔ post-run database verification proves every successful write including probes (1448.760228ms)
+✔ read-only database benchmark must leave zero persisted writes (42.022795ms)
+✔ Effect plain: all 300 registered routes preserve action identity (92.066393ms)
+✔ Effect validated: all 300 registered routes preserve action identity (72.129117ms)
+✔ Effect native: all 300 registered routes preserve action identity (98.058072ms)
+✔ Effect validated: identical integer and bounds validation (8.594048ms)
+✔ Effect native: identical integer and bounds validation (7.977331ms)
+✔ Effect rejects unsupported configuration before any listener exists (0.223859ms)
+✔ Elysia native HTTP node/memory-read/plain (887.206429ms)
+✔ Elysia native HTTP node/memory-read/validated (958.448037ms)
+✔ Elysia native HTTP node/sqlite-read/plain (1047.050373ms)
+✔ Elysia native HTTP node/sqlite-read/validated (1229.769953ms)
+✔ Elysia native HTTP node/sqlite-read-write/plain (1074.195618ms)
+✔ Elysia native HTTP node/sqlite-read-write/validated (1030.442415ms)
+✔ Elysia native HTTP bun/memory-read/plain (503.977787ms)
+✔ Elysia native HTTP bun/memory-read/validated (507.782341ms)
+✔ Elysia native HTTP bun/sqlite-read/plain (611.437697ms)
+✔ Elysia native HTTP bun/sqlite-read/validated (552.1941ms)
+✔ Elysia native HTTP bun/sqlite-read-write/plain (570.193219ms)
+✔ Elysia native HTTP bun/sqlite-read-write/validated (589.200722ms)
+✔ Encore plain: 300 distinct compiler-visible literal route declarations (5.498893ms)
+✔ Encore validated: 300 distinct compiler-visible literal route declarations (3.232959ms)
+✔ Encore native: 300 distinct compiler-visible literal route declarations (2.770368ms)
+✔ Encore raw helpers: actual JSON handling and action-specific output (6.454744ms)
+✔ Encore common-Zod helper: invalid numeric and missing fields rejected (2.280347ms)
+✔ Encore mounted config selects actual memory-read business work (1.182739ms)
+✔ Encore mounted config selects actual sqlite-read business work (37.175347ms)
+✔ Encore mounted config selects actual sqlite-read-write business work (56.869996ms)
+✔ Encore config fails fast for malformed/unsupported inputs and missing isolation (1.217199ms)
+✔ Encore mounted full sets actual worker durability (50.702607ms)
+✔ Encore mounted normal sets actual worker durability (36.995427ms)
+✔ Encore mounted config rejects unsupported durability (0.671373ms)
+✔ owned process cleanup drains complete evidence streams before returning (82.82108ms)
+✔ failed spawn surfaces promptly and still permits cleanup (9.187106ms)
+✔ every framework finishes its first pass before any second or third pass (1.827629ms)
+✔ corrective selections are explicit, unique and retain original per-round budgets (0.973293ms)
+✔ aggregation averages all three rounds and leaves partial work incomplete (8.671343ms)
+✔ raw evidence rejects wrong round, failed requests, missing warmup and incomplete coverage (2.839127ms)
+✔ median and range use every available trial and retain empty values gracefully (0.273839ms)
+✔ invalid trials remain in ranges and failure totals rather than being filtered out (0.611735ms)
+✔ Markdown shows incomplete modes, insufficient trial counts and errors visibly (1.301064ms)
+✔ three counted repeats use arithmetic mean and preserve range and median (0.803206ms)
+✔ count summaries reject budget mismatches and duplicate rounds even if flagged valid (0.467518ms)
+✔ selected round summary requires one trial with the original indexed budget (0.391395ms)
+✔ selected round summary rejects a different round even if its own budget matches (0.230015ms)
+✔ selected round summary rejects wrong indexed counts, duplicates and foreign warmups (0.380132ms)
+✔ complete three-round count summary still requires all original budgets (0.361579ms)
+✔ development and publication profiles retain all five rounds with explicit runtime support (1.62272ms)
+✔ published Nile is rejected by individual and matrix launch configuration (0.850535ms)
+✔ generated manifests identify artifact/source and fixed loopback endpoint (1.190134ms)
+✔ preflight refuses remote, credentialed, alternate loopback and nonHTTP targets (0.489659ms)
+✔ validation rejection accepts native client failures but never server/transport failures (0.368847ms)
+✔ pure injected preflight checks all 300 routes and 30 invalid inputs across first/middle/last actions (5.345806ms)
+✔ Nest Fastify plain: all 300 native routes without listening (346.179498ms)
+✔ Nest Express plain: 300 registered POST routes without listening (73.969441ms)
+✔ Adonis plain: normal provider lifecycle and 300 routes without listening (109.521733ms)
+✔ Nest Fastify validated: all 300 native routes without listening (226.229026ms)
+✔ Nest Express validated: 300 registered POST routes without listening (59.493071ms)
+
+  POST http://localhost:8000/api/services
+
+
+nile-current-benchmark server ready in 1.6ms
+✔ Adonis validated: normal provider lifecycle and 300 routes without listening (13.345291ms)
+✔ config records the explicit runtime environment without reading application files (0.419062ms)
+✔ matrix rejects unset, development and test environments before fixture startup (0.496551ms)
+✔ manifest refuses non-production readiness even when the coordinator requests production (0.598093ms)
+✔ fixture SQLite durability defaults full and accepts normal explicitly (0.63872ms)
+
+  POST http://localhost:8000/api/services
+
+
+nile-current-benchmark server ready in 1.1ms
+✔ all adapters invoke shared SQLite operation: plain (351.101225ms)
+✔ all adapters invoke shared SQLite operation: validated (284.984295ms)
+✔ memory-read: deterministic results and real isolated storage (1.218921ms)
+✔ sqlite-read: deterministic results and real isolated storage (38.684182ms)
+✔ sqlite-read-write: deterministic results and real isolated storage (73.242978ms)
+✔ SQLite refuses application, missing-parent and nonisolated database paths (0.508524ms)
+✔ Encore-style workers may only reuse an explicit validated benchmark seed (64.165392ms)
+✔ SQLite full: actual durability and committed mutation (43.793241ms)
+✔ SQLite normal: actual durability and committed mutation (59.97488ms)
+✔ SQLite refuses unsupported durability before opening storage (0.445192ms)
+ℹ tests 112
+ℹ suites 0
+ℹ pass 100
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 12
+ℹ todo 0
+ℹ duration_ms 17285.619883

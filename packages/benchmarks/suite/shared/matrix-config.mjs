@@ -3,7 +3,6 @@ import { readRuntimeEnvironment } from "./config.mjs";
 
 export const NODE_FRAMEWORKS = [
   "nile",
-  "nile-release",
   "elysia",
   "express",
   "fastify",
@@ -13,7 +12,7 @@ export const NODE_FRAMEWORKS = [
   "adonis",
   "effect",
 ];
-export const BUN_FRAMEWORKS = ["nile", "nile-release", "elysia", "effect"];
+export const BUN_FRAMEWORKS = ["nile", "elysia", "effect"];
 
 /** Require the owner-provided production runtime flag before starting fixture children. */
 export function readMatrixConfig(
@@ -88,7 +87,6 @@ export function createMatrixManifest({
 }) {
   const packages = {
     nile: "@nilejs/nile",
-    "nile-release": "nile-release",
     elysia: "elysia",
     express: "express",
     fastify: "fastify",
@@ -110,7 +108,7 @@ export function createMatrixManifest({
       ready.port > 65535
     )
       throw Error("Readiness does not match requested fixture configuration");
-    const codec = ready.framework.startsWith("nile")
+    const codec = ready.framework === "nile"
       ? "nile"
       : ready.framework === "trpc"
         ? "trpc"

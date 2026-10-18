@@ -1,0 +1,303 @@
+{
+  "source": "benchmarks/results/2026-10-17T16-52-01.373Z-node-count-gnJWij",
+  "purpose": "Owner requested interleaved correction; original raw evidence retained separately",
+  "cells": [
+    {
+      "framework": "nile",
+      "operation": "memory-read",
+      "mode": "plain",
+      "reasons": [
+        "owner requested Nile rerun"
+      ],
+      "originalSpreadPercent": 6.239361523765985
+    },
+    {
+      "framework": "nile",
+      "operation": "memory-read",
+      "mode": "validated",
+      "reasons": [
+        "owner requested Nile rerun"
+      ],
+      "originalSpreadPercent": 12.083436845331551
+    },
+    {
+      "framework": "nile",
+      "operation": "sqlite-read",
+      "mode": "plain",
+      "reasons": [
+        "owner requested Nile rerun"
+      ],
+      "originalSpreadPercent": 9.193704964317085
+    },
+    {
+      "framework": "nile",
+      "operation": "sqlite-read",
+      "mode": "validated",
+      "reasons": [
+        "owner requested Nile rerun"
+      ],
+      "originalSpreadPercent": 4.99069492631139
+    },
+    {
+      "framework": "nile",
+      "operation": "sqlite-read-write",
+      "mode": "plain",
+      "reasons": [
+        "owner requested Nile rerun"
+      ],
+      "originalSpreadPercent": 18.344313218472543
+    },
+    {
+      "framework": "nile",
+      "operation": "sqlite-read-write",
+      "mode": "validated",
+      "reasons": [
+        "unfinished scenario",
+        "owner requested Nile rerun"
+      ],
+      "originalSpreadPercent": null
+    },
+    {
+      "framework": "elysia",
+      "operation": "sqlite-read-write",
+      "mode": "validated",
+      "reasons": [
+        "unfinished scenario"
+      ],
+      "originalSpreadPercent": null
+    },
+    {
+      "framework": "express",
+      "operation": "sqlite-read-write",
+      "mode": "plain",
+      "reasons": [
+        "repeat spread >=20%",
+        "paired validation-mode control for a >=20% spread outlier"
+      ],
+      "originalSpreadPercent": 20.92734536246763
+    },
+    {
+      "framework": "express",
+      "operation": "sqlite-read-write",
+      "mode": "validated",
+      "reasons": [
+        "unfinished scenario",
+        "paired validation-mode control for a >=20% spread outlier"
+      ],
+      "originalSpreadPercent": null
+    },
+    {
+      "framework": "fastify",
+      "operation": "sqlite-read",
+      "mode": "plain",
+      "reasons": [
+        "repeat spread >=20%",
+        "paired validation-mode control for a >=20% spread outlier"
+      ],
+      "originalSpreadPercent": 55.56154514455076
+    },
+    {
+      "framework": "fastify",
+      "operation": "sqlite-read-write",
+      "mode": "plain",
+      "reasons": [
+        "unfinished scenario"
+      ],
+      "originalSpreadPercent": null
+    },
+    {
+      "framework": "fastify",
+      "operation": "sqlite-read-write",
+      "mode": "validated",
+      "reasons": [
+        "unfinished scenario"
+      ],
+      "originalSpreadPercent": null
+    },
+    {
+      "framework": "trpc",
+      "operation": "memory-read",
+      "mode": "validated",
+      "reasons": [
+        "repeat spread >=20%",
+        "paired validation-mode control for a >=20% spread outlier"
+      ],
+      "originalSpreadPercent": 95.50621400147246
+    },
+    {
+      "framework": "trpc",
+      "operation": "sqlite-read-write",
+      "mode": "plain",
+      "reasons": [
+        "unfinished scenario"
+      ],
+      "originalSpreadPercent": null
+    },
+    {
+      "framework": "trpc",
+      "operation": "sqlite-read-write",
+      "mode": "validated",
+      "reasons": [
+        "unfinished scenario"
+      ],
+      "originalSpreadPercent": null
+    },
+    {
+      "framework": "nest-express",
+      "operation": "sqlite-read",
+      "mode": "plain",
+      "reasons": [
+        "repeat spread >=20%",
+        "paired validation-mode control for a >=20% spread outlier"
+      ],
+      "originalSpreadPercent": 27.11343927469194
+    },
+    {
+      "framework": "nest-express",
+      "operation": "sqlite-read-write",
+      "mode": "validated",
+      "reasons": [
+        "unfinished scenario"
+      ],
+      "originalSpreadPercent": null
+    },
+    {
+      "framework": "nest-fastify",
+      "operation": "sqlite-read",
+      "mode": "plain",
+      "reasons": [
+        "repeat spread >=20%",
+        "paired validation-mode control for a >=20% spread outlier"
+      ],
+      "originalSpreadPercent": 21.839590939330435
+    },
+    {
+      "framework": "nest-fastify",
+      "operation": "sqlite-read-write",
+      "mode": "validated",
+      "reasons": [
+        "unfinished scenario"
+      ],
+      "originalSpreadPercent": null
+    },
+    {
+      "framework": "adonis",
+      "operation": "sqlite-read-write",
+      "mode": "plain",
+      "reasons": [
+        "repeat spread >=20%",
+        "paired validation-mode control for a >=20% spread outlier"
+      ],
+      "originalSpreadPercent": 31.84338710270911
+    },
+    {
+      "framework": "adonis",
+      "operation": "sqlite-read-write",
+      "mode": "validated",
+      "reasons": [
+        "unfinished scenario",
+        "paired validation-mode control for a >=20% spread outlier"
+      ],
+      "originalSpreadPercent": null
+    },
+    {
+      "framework": "effect",
+      "operation": "memory-read",
+      "mode": "plain",
+      "reasons": [
+        "cross-mode anomaly review; rerun both modes without selecting favorable repeats"
+      ],
+      "originalSpreadPercent": 13.263717732021995
+    },
+    {
+      "framework": "effect",
+      "operation": "memory-read",
+      "mode": "validated",
+      "reasons": [
+        "cross-mode anomaly review; rerun both modes without selecting favorable repeats"
+      ],
+      "originalSpreadPercent": 1.9039418844824407
+    },
+    {
+      "framework": "effect",
+      "operation": "sqlite-read",
+      "mode": "plain",
+      "reasons": [
+        "cross-mode anomaly review; rerun both modes without selecting favorable repeats"
+      ],
+      "originalSpreadPercent": 0.7903483510004694
+    },
+    {
+      "framework": "effect",
+      "operation": "sqlite-read",
+      "mode": "validated",
+      "reasons": [
+        "cross-mode anomaly review; rerun both modes without selecting favorable repeats"
+      ],
+      "originalSpreadPercent": 15.02642405388388
+    },
+    {
+      "framework": "effect",
+      "operation": "sqlite-read-write",
+      "mode": "validated",
+      "reasons": [
+        "unfinished scenario"
+      ],
+      "originalSpreadPercent": null
+    },
+    {
+      "framework": "encore",
+      "operation": "sqlite-read-write",
+      "mode": "plain",
+      "reasons": [
+        "unfinished scenario"
+      ],
+      "originalSpreadPercent": null
+    },
+    {
+      "framework": "encore",
+      "operation": "sqlite-read-write",
+      "mode": "validated",
+      "reasons": [
+        "unfinished scenario"
+      ],
+      "originalSpreadPercent": null
+    },
+    {
+      "framework": "fastify",
+      "operation": "sqlite-read",
+      "mode": "validated",
+      "reasons": [
+        "paired validation-mode control for a >=20% spread outlier"
+      ],
+      "originalSpreadPercent": 1.2284197097635952
+    },
+    {
+      "framework": "trpc",
+      "operation": "memory-read",
+      "mode": "plain",
+      "reasons": [
+        "paired validation-mode control for a >=20% spread outlier"
+      ],
+      "originalSpreadPercent": 4.373054103128804
+    },
+    {
+      "framework": "nest-express",
+      "operation": "sqlite-read",
+      "mode": "validated",
+      "reasons": [
+        "paired validation-mode control for a >=20% spread outlier"
+      ],
+      "originalSpreadPercent": 5.866766016508107
+    },
+    {
+      "framework": "nest-fastify",
+      "operation": "sqlite-read",
+      "mode": "validated",
+      "reasons": [
+        "paired validation-mode control for a >=20% spread outlier"
+      ],
+      "originalSpreadPercent": 10.511378902038814
+    }
+  ]
+}

@@ -3,3 +3,5 @@ compiled/
 trash/
 results/
 tools/
+.encore/
+encore.gen/

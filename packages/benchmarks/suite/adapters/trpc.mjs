@@ -7,7 +7,7 @@ import {
 } from "../shared/workload.mjs";
 
 /** Retain the standalone tRPC protocol and one mutation per HTTP request. */
-export function createTrpc({ mode }) {
+export function createTrpc({ mode, execute = calculateResult }) {
   const t = initTRPC.create();
   const procedures = Object.fromEntries(
     Array.from({ length: ACTION_COUNT }, (_, action) => {
@@ -17,9 +17,7 @@ export function createTrpc({ mode }) {
           : t.procedure.input((input) => input);
       return [
         `action-${action}`,
-        procedure.mutation(({ input }) =>
-          calculateResult({ payload: input, action })
-        ),
+        procedure.mutation(({ input }) => execute({ payload: input, action })),
       ];
     })
   );

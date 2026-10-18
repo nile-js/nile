@@ -1,0 +1,13 @@
+{
+  "checkedAtUtc": "2026-10-17T16:34:00.621147+00:00",
+  "processes": [
+    {
+      "pid": 300984,
+      "verifiedExecutable": "/home/kizz/CODE/new-nile/packages/benchmarks/suite/tools/encore-1.58.6/bin/encore",
+      "ownedCommand": "encore daemon -f",
+      "signal": "SIGTERM",
+      "goneVerified": true
+    }
+  ],
+  "unrelatedProcessesStopped": false
+}

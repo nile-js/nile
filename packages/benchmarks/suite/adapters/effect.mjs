@@ -2,13 +2,12 @@ import { createServer } from "node:http";
 import { NodeHttpServer } from "@effect/platform-node";
 import { Effect, Layer, Schema } from "effect";
 import { HttpRouter, HttpServerRequest, HttpServerResponse } from "effect/http";
-import { z } from "zod";
+import {
+  inputSchema,
+  ACTION_COUNT,
+  calculateResult,
+} from "../shared/workload.mjs";
 
-const ROUTE_COUNT = 300;
-const inputSchema = z.object({
-  id: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
-  value: z.number().int().min(0).max(999),
-});
 const nativeInputSchema = Schema.Struct({
   id: Schema.Number.check(Schema.isInt(), Schema.isGreaterThanOrEqualTo(0)),
   value: Schema.Number.check(
@@ -42,19 +41,21 @@ const createBodyReader = (mode) => {
 };
 
 /** Build 300 native Effect routes without opening a listening socket. */
-export const createEffectRoutes = ({ mode = "plain" } = {}) => {
+export const createEffectRoutes = ({
+  mode = "plain",
+  execute = calculateResult,
+} = {}) => {
   const readBody = createBodyReader(mode);
-  const routes = Array.from({ length: ROUTE_COUNT }, (_, action) =>
+  const routes = Array.from({ length: ACTION_COUNT }, (_, action) =>
     HttpRouter.route(
       "POST",
       `/actions/action-${action}`,
       Effect.gen(function* () {
         const body = yield* readBody;
-        return yield* HttpServerResponse.json({
-          id: body.id,
-          value: body.value + 1,
-          action,
-        });
+        const result = yield* Effect.sync(() =>
+          execute({ payload: body, action })
+        );
+        return yield* HttpServerResponse.json(result);
       }).pipe(
         Effect.catch(() =>
           HttpServerResponse.json(
@@ -69,8 +70,13 @@ export const createEffectRoutes = ({ mode = "plain" } = {}) => {
 };
 
 /** Return the native Node server layer; only the user's launcher may run it. */
-export const createEffectServerLayer = ({ mode = "plain", port, onReady }) =>
-  HttpRouter.serve(createEffectRoutes({ mode }), {
+export const createEffectServerLayer = ({
+  mode = "plain",
+  port,
+  onReady,
+  execute = calculateResult,
+}) =>
+  HttpRouter.serve(createEffectRoutes({ mode, execute }), {
     disableLogger: true,
     disableListenLog: true,
   }).pipe(
@@ -81,7 +87,10 @@ export const createEffectServerLayer = ({ mode = "plain", port, onReady }) =>
   );
 
 /** Create a Fetch handler solely for non-listening fixture correctness checks. */
-export const createEffectWebHandler = ({ mode = "plain" } = {}) =>
-  HttpRouter.toWebHandler(createEffectRoutes({ mode }), {
+export const createEffectWebHandler = ({
+  mode = "plain",
+  execute = calculateResult,
+} = {}) =>
+  HttpRouter.toWebHandler(createEffectRoutes({ mode, execute }), {
     disableLogger: true,
   });

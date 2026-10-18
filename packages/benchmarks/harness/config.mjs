@@ -42,6 +42,13 @@ export function validateManifest(manifest) {
   if (!["plain", "validated"].includes(manifest.workload.mode))
     throw Error("workload.mode must be plain or validated");
   if (
+    manifest.workload.operation !== undefined &&
+    !["memory-read", "sqlite-read", "sqlite-read-write"].includes(
+      manifest.workload.operation
+    )
+  )
+    throw Error("Unsupported workload.operation");
+  if (
     !Array.isArray(manifest.workload.concurrencies) ||
     !manifest.workload.concurrencies.length ||
     manifest.workload.concurrencies.some(
@@ -49,19 +56,42 @@ export function validateManifest(manifest) {
     )
   )
     throw Error("concurrencies must contain 1, 30, 100, or 300");
-  for (const field of ["durationSeconds", "warmupSeconds", "timeoutSeconds"]) {
+  const isCountMode = manifest.requestCounts !== undefined;
+  const timedFields = ["warmupSeconds", "timeoutSeconds"];
+  if (!isCountMode || manifest.durationSeconds !== undefined)
+    timedFields.push("durationSeconds");
+  for (const field of timedFields) {
     if (!Number.isFinite(manifest[field]) || manifest[field] <= 0)
       throw Error(`${field} must be positive`);
   }
-  if (manifest.rounds !== 5) throw Error("Use five randomized rounds");
+  if (manifest.rounds !== (isCountMode ? 3 : 5))
+    throw Error("Use three count-mode rounds or five duration-mode rounds");
+  if (
+    isCountMode &&
+    (!Array.isArray(manifest.requestCounts) ||
+      manifest.requestCounts.length !== manifest.rounds ||
+      manifest.requestCounts.some(
+        (count) => !Number.isSafeInteger(count) || count < 300
+      ))
+  )
+    throw Error("requestCounts requires one integer >=300 per round");
+  if (
+    manifest.selectedRound !== undefined &&
+    (!isCountMode ||
+      !Number.isInteger(manifest.selectedRound) ||
+      manifest.selectedRound < 1 ||
+      manifest.selectedRound > 3)
+  )
+    throw Error("selectedRound must be 1, 2, or 3 in count mode only");
   if (!Number.isSafeInteger(manifest.seed) || manifest.seed < 0)
     throw Error("seed must be a nonnegative safe integer");
   if (
     manifest.profile === "publication" &&
-    (manifest.durationSeconds < 30 || manifest.warmupSeconds < 5)
+    ((!isCountMode && manifest.durationSeconds < 30) ||
+      manifest.warmupSeconds < 5)
   )
     throw Error(
-      "Publication requires at least 30s measured and 5s warmup per trial"
+      "Publication requires 5s warmup and either exact counts or 30s measured per trial"
     );
   if (!["development", "publication"].includes(manifest.profile))
     throw Error("profile must be development or publication");
@@ -89,4 +119,11 @@ export function readArguments(argumentsList) {
     manifestPath: options["--manifest"],
     outputPath: options["--output"],
   };
+}
+
+/** Keep original round identities when a coordinator interleaves one count round at a time. */
+export function selectManifestRounds(manifest) {
+  return manifest.selectedRound === undefined
+    ? Array.from({ length: manifest.rounds }, (_, index) => index + 1)
+    : [manifest.selectedRound];
 }

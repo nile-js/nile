@@ -6,12 +6,10 @@ import {
 } from "../shared/workload.mjs";
 
 /** Build the public Nile pipeline; request listening is reserved for the owner-run launcher. */
-export async function createNile({ mode, released = false }) {
-  const api = released
-    ? await import("nile-release")
-    : await import("../../../nile/dist/index.js");
+export async function createNile({ mode, execute = calculateResult }) {
+  const api = await import("../../../nile/dist/index.js");
   const server = await api.createNileServer({
-    serverName: released ? "nile-release-benchmark" : "nile-current-benchmark",
+    serverName: "nile-current-benchmark",
     forceNewInstance: true,
     logServices: false,
     diagnostics: false,
@@ -23,7 +21,7 @@ export async function createNile({ mode, released = false }) {
           name: `action-${action}`,
           description: "Increment a value",
           ...(mode === "validated" ? { validation: inputSchema } : {}),
-          handler: (payload) => Ok(calculateResult({ payload, action })),
+          handler: (payload) => Ok(execute({ payload, action })),
         })),
       },
     ],

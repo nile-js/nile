@@ -7,20 +7,31 @@ const inputSchema = z.object({
 });
 
 type Input = z.infer<typeof inputSchema>;
+export type Execute = (options: {
+  payload: Input;
+  action: number;
+}) => Input & { action: number };
+const calculateResult: Execute = ({ payload, action }) => ({
+  id: payload.id,
+  value: payload.value + 1,
+  action,
+});
 
 /** Define 300 real router entries through Adonis's core router. */
 export function registerRoutes({
   router,
   mode,
+  execute = calculateResult,
 }: {
   router: Router;
   mode: "plain" | "validated";
+  execute?: Execute;
 }) {
   Array.from({ length: 300 }, (_, action) => {
     router.post(`/actions/action-${action}`, ({ request, response }) => {
       const body = request.body() as Input;
       if (mode === "plain") {
-        return { id: body.id, value: body.value + 1, action };
+        return execute({ payload: body, action });
       }
 
       const parsed = inputSchema.safeParse(body);
@@ -28,7 +39,7 @@ export function registerRoutes({
         return response.badRequest({ message: "Invalid input" });
       }
 
-      return { id: parsed.data.id, value: parsed.data.value + 1, action };
+      return execute({ payload: parsed.data, action });
     });
   });
 }

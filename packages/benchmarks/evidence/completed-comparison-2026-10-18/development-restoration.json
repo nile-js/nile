@@ -1,0 +1,34 @@
+{
+  "recordedAt": "2026-10-17T20:19:54Z",
+  "authorization": "User approved pausing hot-ug Bun and OpenCode sessions during benchmarks; resume afterward.",
+  "roots": [
+    22136,
+    128013
+  ],
+  "processes": [
+    {
+      "pid": 22136,
+      "ppid": 1,
+      "state": "S",
+      "startTicks": "1721470",
+      "name": "opencode",
+      "cwd": "/home/kizz",
+      "pausedByBenchmark": true,
+      "resumed": true,
+      "restoreStatus": "resumed"
+    },
+    {
+      "pid": 128013,
+      "ppid": 128010,
+      "state": "S",
+      "startTicks": "6734725",
+      "name": "bun",
+      "cwd": "/home/kizz/CODE/hot-ug/backend",
+      "pausedByBenchmark": true,
+      "resumed": true,
+      "restoreStatus": "resumed"
+    }
+  ],
+  "restored": true,
+  "restoredAt": "2026-10-18T01:40:32Z"
+}

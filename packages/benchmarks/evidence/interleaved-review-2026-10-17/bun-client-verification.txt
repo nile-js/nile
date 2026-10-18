@@ -1,0 +1,21 @@
+bun test v1.4.2 (744846f84)
+
+benchmarks/harness/bun-http-client.test.mjs:
+(skip) Bun client fails immediately under another runtime
+(pass) Bun client rejects unsupported concurrency and nonfinite deadlines [2.91ms]
+(pass) native fetch preserves HTTP/1.1 JSON bodies and reuses keepalive sockets [22.46ms]
+(pass) deadline covers a stalled chunked body after headers arrive [53.02ms]
+(pass) deadline covers a stalled framed body after headers arrive [53.13ms]
+(pass) streamed responses over the byte limit are aborted and reported [9.82ms]
+(pass) exact byte limit is accepted and fully consumed [7.50ms]
+(pass) native transport retains exact concurrent request budgets and validates every response [104.88ms]
+(pass) wrong payload, non200 and redirects remain failures without retries [7.10ms]
+(pass) close aborts active body reads and refuses new work [3.15ms]
+(pass) framed body truncation is a transport failure [3.56ms]
+(pass) a too-short declared frame cannot conceal a payload mismatch [3.00ms]
+(pass) oversized declared frames are rejected before native buffering [2.63ms]
+
+ 12 pass
+ 1 skip
+ 0 fail
+Ran 13 tests across 1 file. [347.00ms]

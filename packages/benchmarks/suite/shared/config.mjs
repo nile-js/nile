@@ -1,4 +1,5 @@
 import { parseArgs } from "node:util";
+import { WORKLOAD_NAMES } from "./workload-store.mjs";
 
 /** Read the standard runtime flag only here; application environment files remain untouched. */
 export function readRuntimeEnvironment() {
@@ -14,6 +15,9 @@ export function readConfig(
     args,
     options: {
       framework: { type: "string" },
+      workload: { type: "string", default: "memory-read" },
+      "database-path": { type: "string" },
+      "sqlite-synchronous": { type: "string", default: "full" },
       mode: { type: "string", default: "plain" },
       port: { type: "string", default: "4100" },
       runtime: { type: "string", default: "node" },
@@ -21,7 +25,6 @@ export function readConfig(
   });
   const supported = [
     "nile",
-    "nile-release",
     "express",
     "fastify",
     "elysia",
@@ -30,6 +33,8 @@ export function readConfig(
     "nest-fastify",
     "adonis",
     "effect",
+    "hono",
+    "bun",
   ];
   if (!supported.includes(values.framework))
     throw new Error(`Choose --framework ${supported.join("|")}`);
@@ -37,11 +42,20 @@ export function readConfig(
     throw new Error("Choose --mode plain|validated");
   if (!["node", "bun"].includes(values.runtime))
     throw new Error("Choose --runtime node|bun");
+  if (!WORKLOAD_NAMES.includes(values.workload))
+    throw Error(`Choose --workload ${WORKLOAD_NAMES.join("|")}`);
+  if (values.framework === "bun" && values.runtime !== "bun")
+    throw Error("The bare Bun fixture requires --runtime bun");
+  if (!["full", "normal"].includes(values["sqlite-synchronous"]))
+    throw Error("Choose --sqlite-synchronous full|normal");
   const port = Number(values.port);
   if (!Number.isInteger(port) || port < 1024 || port > 65535)
     throw new Error("Choose an unprivileged TCP port (1024..65535)");
   return {
     framework: values.framework,
+    workload: values.workload,
+    databasePath: values["database-path"],
+    sqliteSynchronous: values["sqlite-synchronous"],
     mode: values.mode,
     runtime: values.runtime,
     nodeEnvironment: runtimeEnvironment,

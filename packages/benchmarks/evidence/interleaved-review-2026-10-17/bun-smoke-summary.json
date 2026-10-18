@@ -1,0 +1,3941 @@
+{
+  "startedAt": "2026-10-17T20:15:25.212Z",
+  "ordering": "interleaved-rounds",
+  "config": {
+    "runtime": "bun",
+    "clientRuntime": "bun",
+    "sqliteSynchronous": "normal",
+    "frameworks": [
+      "nile",
+      "hono"
+    ],
+    "requestBudget": 5400,
+    "requestCounts": [
+      [
+        300,
+        300,
+        300
+      ],
+      [
+        300,
+        300,
+        300
+      ],
+      [
+        300,
+        300,
+        300
+      ],
+      [
+        300,
+        300,
+        300
+      ],
+      [
+        300,
+        300,
+        300
+      ],
+      [
+        300,
+        300,
+        300
+      ]
+    ],
+    "concurrency": 100,
+    "warmupSeconds": 5,
+    "rounds": 3,
+    "seed": 421017,
+    "quietIdlePercent": 0,
+    "serverCpu": 1,
+    "clientCpu": 0,
+    "nileRevision": "9f5a173",
+    "serverCpuList": "1,3",
+    "clientCpuList": "0,2"
+  },
+  "isolationRoot": "/tmp/nile-benchmark-interleaved-wY98zA",
+  "provenance": {
+    "cpuTopology": [
+      {
+        "id": 1,
+        "core": 1,
+        "socket": 0,
+        "siblingIds": [
+          1,
+          3
+        ]
+      },
+      {
+        "id": 0,
+        "core": 0,
+        "socket": 0,
+        "siblingIds": [
+          0,
+          2
+        ]
+      }
+    ],
+    "nileVersion": "0.0.17",
+    "nileArtifactSha256": "24024c1ad52d1a36c7730ae8d446845fd7c4b6142f842c96c208490d07f5038a",
+    "suiteLockSha256": "1175aae63499b36867bf3410c050513133ab5cb8c4736166680f52e23d302919",
+    "suitePackageSha256": "13017c66f3a0913789c8eef4c0456010841ec0e90eb15a8216641b4ae807b3e2",
+    "node": "v24.16.0",
+    "encoreImages": {}
+  },
+  "selectedCells": [
+    {
+      "framework": "nile",
+      "operation": "memory-read",
+      "mode": "plain",
+      "requestCounts": [
+        300,
+        300,
+        300
+      ]
+    },
+    {
+      "framework": "nile",
+      "operation": "sqlite-read-write",
+      "mode": "validated",
+      "requestCounts": [
+        300,
+        300,
+        300
+      ]
+    },
+    {
+      "framework": "hono",
+      "operation": "memory-read",
+      "mode": "plain",
+      "requestCounts": [
+        300,
+        300,
+        300
+      ]
+    },
+    {
+      "framework": "hono",
+      "operation": "sqlite-read-write",
+      "mode": "validated",
+      "requestCounts": [
+        300,
+        300,
+        300
+      ]
+    }
+  ],
+  "selection": {
+    "cells": [
+      {
+        "framework": "nile",
+        "operation": "memory-read",
+        "mode": "plain"
+      },
+      {
+        "framework": "nile",
+        "operation": "sqlite-read-write",
+        "mode": "validated"
+      },
+      {
+        "framework": "hono",
+        "operation": "memory-read",
+        "mode": "plain"
+      },
+      {
+        "framework": "hono",
+        "operation": "sqlite-read-write",
+        "mode": "validated"
+      }
+    ]
+  },
+  "completed": true,
+  "valid": true,
+  "cells": [
+    {
+      "framework": "nile",
+      "operation": "memory-read",
+      "mode": "plain",
+      "requestCounts": [
+        300,
+        300,
+        300
+      ],
+      "completed": true,
+      "measuredRequests": 900,
+      "expectedRequests": 900,
+      "summary": {
+        "framework": "nile",
+        "runtime": "bun 1.4.2",
+        "version": "0.0.17 source:9f5a173 sha256:24024c1ad52d1a36c7730ae8d446845fd7c4b6142f842c96c208490d07f5038a",
+        "concurrency": 100,
+        "trialCount": 3,
+        "expected": 3,
+        "invalidTrials": 0,
+        "warmupFailures": 0,
+        "failures": 0,
+        "requests": 900,
+        "expectedRequests": 900,
+        "valid": true,
+        "throughput": {
+          "mean": 13186.48979927082,
+          "median": 13865.332587501744,
+          "min": 11300.110906821805,
+          "max": 14394.025903488913
+        },
+        "p95": {
+          "mean": 9.000000000000002,
+          "median": 8.9,
+          "min": 8.8,
+          "max": 9.3
+        },
+        "p99": {
+          "mean": 10.466666666666667,
+          "median": 9.6,
+          "min": 9.1,
+          "max": 12.7
+        },
+        "requestBodyBytesPerOp": 91.9,
+        "responseBodyBytesPerOp": 103.54
+      },
+      "runs": [
+        {
+          "round": 1,
+          "results": "round1-nile-memory-read-plain-attempt1-results.json",
+          "databaseVerification": {
+            "storage": "memory",
+            "writes": 0
+          }
+        },
+        {
+          "round": 2,
+          "results": "round2-nile-memory-read-plain-attempt1-results.json",
+          "databaseVerification": {
+            "storage": "memory",
+            "writes": 0
+          }
+        },
+        {
+          "round": 3,
+          "results": "round3-nile-memory-read-plain-attempt1-results.json",
+          "databaseVerification": {
+            "storage": "memory",
+            "writes": 0
+          }
+        }
+      ]
+    },
+    {
+      "framework": "nile",
+      "operation": "sqlite-read-write",
+      "mode": "validated",
+      "requestCounts": [
+        300,
+        300,
+        300
+      ],
+      "completed": true,
+      "measuredRequests": 900,
+      "expectedRequests": 900,
+      "summary": {
+        "framework": "nile",
+        "runtime": "bun 1.4.2",
+        "version": "0.0.17 source:9f5a173 sha256:24024c1ad52d1a36c7730ae8d446845fd7c4b6142f842c96c208490d07f5038a",
+        "concurrency": 100,
+        "trialCount": 3,
+        "expected": 3,
+        "invalidTrials": 0,
+        "warmupFailures": 0,
+        "failures": 0,
+        "requests": 900,
+        "expectedRequests": 900,
+        "valid": true,
+        "throughput": {
+          "mean": 8281.743125715446,
+          "median": 8643.85817572396,
+          "min": 7364.199015220058,
+          "max": 8837.17218620232
+        },
+        "p95": {
+          "mean": 13.533333333333333,
+          "median": 10.9,
+          "min": 10.8,
+          "max": 18.9
+        },
+        "p99": {
+          "mean": 17.099999999999998,
+          "median": 19.8,
+          "min": 11,
+          "max": 20.5
+        },
+        "requestBodyBytesPerOp": 91.9,
+        "responseBodyBytesPerOp": 103.54
+      },
+      "runs": [
+        {
+          "round": 1,
+          "results": "round1-nile-sqlite-read-write-validated-attempt1-results.json",
+          "databaseVerification": {
+            "storage": "sqlite",
+            "rows": 1000,
+            "writes": 26407,
+            "expectedWrites": 26407,
+            "verified": true,
+            "includes": "Measured requests, timed warmups, 300 preflight operations and Encore readiness probe when applicable"
+          }
+        },
+        {
+          "round": 2,
+          "results": "round2-nile-sqlite-read-write-validated-attempt1-results.json",
+          "databaseVerification": {
+            "storage": "sqlite",
+            "rows": 1000,
+            "writes": 20721,
+            "expectedWrites": 20721,
+            "verified": true,
+            "includes": "Measured requests, timed warmups, 300 preflight operations and Encore readiness probe when applicable"
+          }
+        },
+        {
+          "round": 3,
+          "results": "round3-nile-sqlite-read-write-validated-attempt1-results.json",
+          "databaseVerification": {
+            "storage": "sqlite",
+            "rows": 1000,
+            "writes": 24810,
+            "expectedWrites": 24810,
+            "verified": true,
+            "includes": "Measured requests, timed warmups, 300 preflight operations and Encore readiness probe when applicable"
+          }
+        }
+      ]
+    },
+    {
+      "framework": "hono",
+      "operation": "memory-read",
+      "mode": "plain",
+      "requestCounts": [
+        300,
+        300,
+        300
+      ],
+      "completed": true,
+      "measuredRequests": 900,
+      "expectedRequests": 900,
+      "summary": {
+        "framework": "hono",
+        "runtime": "bun 1.4.2",
+        "version": "4.13.13",
+        "concurrency": 100,
+        "trialCount": 3,
+        "expected": 3,
+        "invalidTrials": 0,
+        "warmupFailures": 0,
+        "failures": 0,
+        "requests": 900,
+        "expectedRequests": 900,
+        "valid": true,
+        "throughput": {
+          "mean": 15293.344760584345,
+          "median": 15664.737850089728,
+          "min": 14376.311748594957,
+          "max": 15838.98468306835
+        },
+        "p95": {
+          "mean": 10.533333333333333,
+          "median": 10.1,
+          "min": 10.1,
+          "max": 11.4
+        },
+        "p99": {
+          "mean": 10.766666666666666,
+          "median": 10.5,
+          "min": 10.2,
+          "max": 11.6
+        },
+        "requestBodyBytesPerOp": 21.266666666666666,
+        "responseBodyBytesPerOp": 33.906666666666666
+      },
+      "runs": [
+        {
+          "round": 1,
+          "results": "round1-hono-memory-read-plain-attempt1-results.json",
+          "databaseVerification": {
+            "storage": "memory",
+            "writes": 0
+          }
+        },
+        {
+          "round": 2,
+          "results": "round2-hono-memory-read-plain-attempt1-results.json",
+          "databaseVerification": {
+            "storage": "memory",
+            "writes": 0
+          }
+        },
+        {
+          "round": 3,
+          "results": "round3-hono-memory-read-plain-attempt1-results.json",
+          "databaseVerification": {
+            "storage": "memory",
+            "writes": 0
+          }
+        }
+      ]
+    },
+    {
+      "framework": "hono",
+      "operation": "sqlite-read-write",
+      "mode": "validated",
+      "requestCounts": [
+        300,
+        300,
+        300
+      ],
+      "completed": true,
+      "measuredRequests": 900,
+      "expectedRequests": 900,
+      "summary": {
+        "framework": "hono",
+        "runtime": "bun 1.4.2",
+        "version": "4.13.13",
+        "concurrency": 100,
+        "trialCount": 3,
+        "expected": 3,
+        "invalidTrials": 0,
+        "warmupFailures": 0,
+        "failures": 0,
+        "requests": 900,
+        "expectedRequests": 900,
+        "valid": true,
+        "throughput": {
+          "mean": 9850.994752705215,
+          "median": 12194.884993697944,
+          "min": 4961.671419065787,
+          "max": 12396.427845351916
+        },
+        "p95": {
+          "mean": 19.666666666666668,
+          "median": 9.8,
+          "min": 9.2,
+          "max": 40
+        },
+        "p99": {
+          "mean": 21.366666666666664,
+          "median": 11.3,
+          "min": 10.3,
+          "max": 42.5
+        },
+        "requestBodyBytesPerOp": 21.266666666666666,
+        "responseBodyBytesPerOp": 33.906666666666666
+      },
+      "runs": [
+        {
+          "round": 1,
+          "results": "round1-hono-sqlite-read-write-validated-attempt1-results.json",
+          "databaseVerification": {
+            "storage": "sqlite",
+            "rows": 1000,
+            "writes": 44129,
+            "expectedWrites": 44129,
+            "verified": true,
+            "includes": "Measured requests, timed warmups, 300 preflight operations and Encore readiness probe when applicable"
+          }
+        },
+        {
+          "round": 2,
+          "results": "round2-hono-sqlite-read-write-validated-attempt1-results.json",
+          "databaseVerification": {
+            "storage": "sqlite",
+            "rows": 1000,
+            "writes": 44386,
+            "expectedWrites": 44386,
+            "verified": true,
+            "includes": "Measured requests, timed warmups, 300 preflight operations and Encore readiness probe when applicable"
+          }
+        },
+        {
+          "round": 3,
+          "results": "round3-hono-sqlite-read-write-validated-attempt1-results.json",
+          "databaseVerification": {
+            "storage": "sqlite",
+            "rows": 1000,
+            "writes": 37514,
+            "expectedWrites": 37514,
+            "verified": true,
+            "includes": "Measured requests, timed warmups, 300 preflight operations and Encore readiness probe when applicable"
+          }
+        }
+      ]
+    }
+  ],
+  "runs": [
+    {
+      "framework": "hono",
+      "operation": "memory-read",
+      "mode": "plain",
+      "requestCounts": [
+        300,
+        300,
+        300
+      ],
+      "round": 1,
+      "completed": true,
+      "ready": {
+        "framework": "hono",
+        "workload": "memory-read",
+        "sqliteSynchronous": "normal",
+        "mode": "plain",
+        "runtime": "bun",
+        "nodeEnvironment": "production",
+        "port": 4100,
+        "workloadMetadata": {
+          "workload": "memory-read",
+          "rows": 1000,
+          "storage": "memory",
+          "runtime": "bun"
+        },
+        "runtimeVersion": "1.4.2",
+        "pid": 328307,
+        "factoryAndListenMs": 49.126096000000004,
+        "processReadyMs": 81.665652,
+        "memory": {
+          "rss": 38195200,
+          "heapTotal": 3497984,
+          "heapUsed": 3497984,
+          "external": 552137,
+          "arrayBuffers": 98
+        }
+      },
+      "preflight": {
+        "framework": "hono",
+        "mode": "plain",
+        "validActions": 300,
+        "invalidCases": 0,
+        "status": true
+      },
+      "manifest": "round1-hono-memory-read-plain-attempt1-manifest.json",
+      "results": "round1-hono-memory-read-plain-attempt1-results.json",
+      "loadSamples": [
+        {
+          "startedAt": "2026-10-17T20:15:34.563Z",
+          "finishedAt": "2026-10-17T20:15:39.569Z",
+          "idlePercent": 22.01740911418331,
+          "ioWaitPercent": 0.409626216077829,
+          "swapInPages": 0,
+          "swapOutPages": 0,
+          "availableKiB": 9594840,
+          "perCpu": [
+            {
+              "id": 0,
+              "idlePercent": 3.2064128256513027
+            },
+            {
+              "id": 1,
+              "idlePercent": 39.54451345755694
+            },
+            {
+              "id": 2,
+              "idlePercent": 1.606425702811245
+            },
+            {
+              "id": 3,
+              "idlePercent": 45.26315789473684
+            }
+          ]
+        }
+      ],
+      "hostLoad": {
+        "startedAt": "2026-10-17T20:15:34.563Z",
+        "finishedAt": "2026-10-17T20:15:39.650Z",
+        "idlePercent": 22.267002518891687,
+        "ioWaitPercent": 0.4534005037783375,
+        "swapInPages": 0,
+        "swapOutPages": 0,
+        "availableKiB": 9608784,
+        "perCpu": [
+          {
+            "id": 0,
+            "idlePercent": 3.3596837944664033
+          },
+          {
+            "id": 1,
+            "idlePercent": 40.32586558044807
+          },
+          {
+            "id": 2,
+            "idlePercent": 1.7786561264822134
+          },
+          {
+            "id": 3,
+            "idlePercent": 45.22821576763486
+          }
+        ]
+      },
+      "summary": {
+        "framework": "hono",
+        "runtime": "bun 1.4.2",
+        "version": "4.13.13",
+        "concurrency": 100,
+        "trialCount": 1,
+        "expected": 1,
+        "invalidTrials": 0,
+        "warmupFailures": 0,
+        "failures": 0,
+        "requests": 300,
+        "expectedRequests": 300,
+        "valid": true,
+        "throughput": {
+          "mean": 15664.737850089728,
+          "median": 15664.737850089728,
+          "min": 15664.737850089728,
+          "max": 15664.737850089728
+        },
+        "p95": {
+          "mean": 10.1,
+          "median": 10.1,
+          "min": 10.1,
+          "max": 10.1
+        },
+        "p99": {
+          "mean": 10.2,
+          "median": 10.2,
+          "min": 10.2,
+          "max": 10.2
+        },
+        "requestBodyBytesPerOp": 21.266666666666666,
+        "responseBodyBytesPerOp": 33.906666666666666
+      },
+      "measuredRequests": 300,
+      "expectedRequests": 300,
+      "telemetry": [
+        {
+          "framework": "hono",
+          "workload": "memory-read",
+          "sqliteSynchronous": "normal",
+          "mode": "plain",
+          "runtime": "bun",
+          "nodeEnvironment": "production",
+          "port": 4100,
+          "workloadMetadata": {
+            "workload": "memory-read",
+            "rows": 1000,
+            "storage": "memory",
+            "runtime": "bun"
+          },
+          "pid": 328307,
+          "uptimeSeconds": 5.377244676999999,
+          "cpu": {
+            "user": 3264670,
+            "system": 2006573
+          },
+          "resources": {
+            "userCPUTime": 3264676,
+            "systemCPUTime": 2006576,
+            "maxRSS": 54396,
+            "sharedMemorySize": 0,
+            "unsharedDataSize": 0,
+            "unsharedStackSize": 0,
+            "minorPageFault": 7667,
+            "majorPageFault": 0,
+            "swappedOut": 0,
+            "fsRead": 0,
+            "fsWrite": 0,
+            "ipcSent": 0,
+            "ipcReceived": 0,
+            "signalsCount": 0,
+            "voluntaryContextSwitches": 49611,
+            "involuntaryContextSwitches": 2102
+          },
+          "memory": {
+            "rss": 54829056,
+            "heapTotal": 7366656,
+            "heapUsed": 6121042,
+            "external": 4271730,
+            "arrayBuffers": 98
+          }
+        }
+      ],
+      "databaseVerification": {
+        "storage": "memory",
+        "writes": 0
+      }
+    },
+    {
+      "framework": "hono",
+      "operation": "sqlite-read-write",
+      "mode": "validated",
+      "requestCounts": [
+        300,
+        300,
+        300
+      ],
+      "round": 1,
+      "completed": true,
+      "ready": {
+        "framework": "hono",
+        "workload": "sqlite-read-write",
+        "databasePath": "/tmp/nile-benchmark-interleaved-wY98zA/round1-hono-sqlite-read-write-validated-attempt1.sqlite",
+        "sqliteSynchronous": "normal",
+        "mode": "validated",
+        "runtime": "bun",
+        "nodeEnvironment": "production",
+        "port": 4100,
+        "workloadMetadata": {
+          "workload": "sqlite-read-write",
+          "reuseSeeded": false,
+          "storage": "sqlite",
+          "databasePath": "/tmp/nile-benchmark-interleaved-wY98zA/round1-hono-sqlite-read-write-validated-attempt1.sqlite",
+          "driver": "bun:sqlite",
+          "runtime": "bun",
+          "runtimeVersion": "1.4.2",
+          "sqliteVersion": "3.53.2",
+          "rows": 1000,
+          "journalMode": "wal",
+          "synchronous": 1,
+          "sqliteSynchronous": "normal",
+          "transaction": "BEGIN IMMEDIATE; SELECT; UPDATE; COMMIT",
+          "setup": "Fresh file; 1000 seeded rows; preparation excluded from request timing"
+        },
+        "runtimeVersion": "1.4.2",
+        "pid": 328327,
+        "factoryAndListenMs": 75.595055,
+        "processReadyMs": 114.853656,
+        "memory": {
+          "rss": 41426944,
+          "heapTotal": 3616768,
+          "heapUsed": 3616768,
+          "external": 612534,
+          "arrayBuffers": 98
+        }
+      },
+      "preflight": {
+        "framework": "hono",
+        "mode": "validated",
+        "validActions": 300,
+        "invalidCases": 30,
+        "status": true
+      },
+      "manifest": "round1-hono-sqlite-read-write-validated-attempt1-manifest.json",
+      "results": "round1-hono-sqlite-read-write-validated-attempt1-results.json",
+      "loadSamples": [
+        {
+          "startedAt": "2026-10-17T20:15:49.074Z",
+          "finishedAt": "2026-10-17T20:15:54.080Z",
+          "idlePercent": 39.20367534456355,
+          "ioWaitPercent": 6.278713629402756,
+          "swapInPages": 0,
+          "swapOutPages": 0,
+          "availableKiB": 9607848,
+          "perCpu": [
+            {
+              "id": 0,
+              "idlePercent": 27.198364008179958
+            },
+            {
+              "id": 1,
+              "idlePercent": 42.91497975708502
+            },
+            {
+              "id": 2,
+              "idlePercent": 30.45267489711934
+            },
+            {
+              "id": 3,
+              "idlePercent": 56.211812627291245
+            }
+          ]
+        }
+      ],
+      "hostLoad": {
+        "startedAt": "2026-10-17T20:15:49.074Z",
+        "finishedAt": "2026-10-17T20:15:54.205Z",
+        "idlePercent": 39.173718267794925,
+        "ioWaitPercent": 6.2717770034843205,
+        "swapInPages": 0,
+        "swapOutPages": 0,
+        "availableKiB": 9633828,
+        "perCpu": [
+          {
+            "id": 0,
+            "idlePercent": 27.345309381237524
+          },
+          {
+            "id": 1,
+            "idlePercent": 42.772277227722775
+          },
+          {
+            "id": 2,
+            "idlePercent": 30.522088353413654
+          },
+          {
+            "id": 3,
+            "idlePercent": 56.039603960396036
+          }
+        ]
+      },
+      "summary": {
+        "framework": "hono",
+        "runtime": "bun 1.4.2",
+        "version": "4.13.13",
+        "concurrency": 100,
+        "trialCount": 1,
+        "expected": 1,
+        "invalidTrials": 0,
+        "warmupFailures": 0,
+        "failures": 0,
+        "requests": 300,
+        "expectedRequests": 300,
+        "valid": true,
+        "throughput": {
+          "mean": 4961.671419065787,
+          "median": 4961.671419065787,
+          "min": 4961.671419065787,
+          "max": 4961.671419065787
+        },
+        "p95": {
+          "mean": 40,
+          "median": 40,
+          "min": 40,
+          "max": 40
+        },
+        "p99": {
+          "mean": 42.5,
+          "median": 42.5,
+          "min": 42.5,
+          "max": 42.5
+        },
+        "requestBodyBytesPerOp": 21.266666666666666,
+        "responseBodyBytesPerOp": 33.906666666666666
+      },
+      "measuredRequests": 300,
+      "expectedRequests": 300,
+      "telemetry": [
+        {
+          "framework": "hono",
+          "workload": "sqlite-read-write",
+          "databasePath": "/tmp/nile-benchmark-interleaved-wY98zA/round1-hono-sqlite-read-write-validated-attempt1.sqlite",
+          "sqliteSynchronous": "normal",
+          "mode": "validated",
+          "runtime": "bun",
+          "nodeEnvironment": "production",
+          "port": 4100,
+          "workloadMetadata": {
+            "workload": "sqlite-read-write",
+            "reuseSeeded": false,
+            "storage": "sqlite",
+            "databasePath": "/tmp/nile-benchmark-interleaved-wY98zA/round1-hono-sqlite-read-write-validated-attempt1.sqlite",
+            "driver": "bun:sqlite",
+            "runtime": "bun",
+            "runtimeVersion": "1.4.2",
+            "sqliteVersion": "3.53.2",
+            "rows": 1000,
+            "journalMode": "wal",
+            "synchronous": 1,
+            "sqliteSynchronous": "normal",
+            "transaction": "BEGIN IMMEDIATE; SELECT; UPDATE; COMMIT",
+            "setup": "Fresh file; 1000 seeded rows; preparation excluded from request timing"
+          },
+          "pid": 328327,
+          "uptimeSeconds": 5.518183697,
+          "cpu": {
+            "user": 2764488,
+            "system": 1514871
+          },
+          "resources": {
+            "userCPUTime": 2764495,
+            "systemCPUTime": 1514874,
+            "maxRSS": 60272,
+            "sharedMemorySize": 0,
+            "unsharedDataSize": 0,
+            "unsharedStackSize": 0,
+            "minorPageFault": 8729,
+            "majorPageFault": 1,
+            "swappedOut": 0,
+            "fsRead": 8,
+            "fsWrite": 356784,
+            "ipcSent": 0,
+            "ipcReceived": 0,
+            "signalsCount": 0,
+            "voluntaryContextSwitches": 2204,
+            "involuntaryContextSwitches": 155
+          },
+          "memory": {
+            "rss": 59674624,
+            "heapTotal": 5552128,
+            "heapUsed": 6727921,
+            "external": 4979473,
+            "arrayBuffers": 98
+          }
+        }
+      ],
+      "databaseVerification": {
+        "storage": "sqlite",
+        "rows": 1000,
+        "writes": 44129,
+        "expectedWrites": 44129,
+        "verified": true,
+        "includes": "Measured requests, timed warmups, 300 preflight operations and Encore readiness probe when applicable"
+      }
+    },
+    {
+      "framework": "nile",
+      "operation": "memory-read",
+      "mode": "plain",
+      "requestCounts": [
+        300,
+        300,
+        300
+      ],
+      "round": 1,
+      "completed": true,
+      "ready": {
+        "framework": "nile",
+        "workload": "memory-read",
+        "sqliteSynchronous": "normal",
+        "mode": "plain",
+        "runtime": "bun",
+        "nodeEnvironment": "production",
+        "port": 4100,
+        "workloadMetadata": {
+          "workload": "memory-read",
+          "rows": 1000,
+          "storage": "memory",
+          "runtime": "bun"
+        },
+        "runtimeVersion": "1.4.2",
+        "pid": 328430,
+        "factoryAndListenMs": 132.673353,
+        "processReadyMs": 181.524037,
+        "memory": {
+          "rss": 51904512,
+          "heapTotal": 5702656,
+          "heapUsed": 5702656,
+          "external": 640511,
+          "arrayBuffers": 198
+        }
+      },
+      "preflight": {
+        "framework": "nile",
+        "mode": "plain",
+        "validActions": 300,
+        "invalidCases": 0,
+        "status": true
+      },
+      "manifest": "round1-nile-memory-read-plain-attempt1-manifest.json",
+      "results": "round1-nile-memory-read-plain-attempt1-results.json",
+      "loadSamples": [
+        {
+          "startedAt": "2026-10-17T20:16:03.712Z",
+          "finishedAt": "2026-10-17T20:16:08.716Z",
+          "idlePercent": 22.88607594936709,
+          "ioWaitPercent": 0.1518987341772152,
+          "swapInPages": 0,
+          "swapOutPages": 0,
+          "availableKiB": 9665560,
+          "perCpu": [
+            {
+              "id": 0,
+              "idlePercent": 4.4534412955465585
+            },
+            {
+              "id": 1,
+              "idlePercent": 74.33808553971487
+            },
+            {
+              "id": 2,
+              "idlePercent": 5.691056910569106
+            },
+            {
+              "id": 3,
+              "idlePercent": 7.414829659318637
+            }
+          ]
+        }
+      ],
+      "hostLoad": {
+        "startedAt": "2026-10-17T20:16:03.712Z",
+        "finishedAt": "2026-10-17T20:16:08.794Z",
+        "idlePercent": 23.06925759840558,
+        "ioWaitPercent": 0.14947683109118087,
+        "swapInPages": 0,
+        "swapOutPages": 0,
+        "availableKiB": 9701788,
+        "perCpu": [
+          {
+            "id": 0,
+            "idlePercent": 4.563492063492063
+          },
+          {
+            "id": 1,
+            "idlePercent": 74.54909819639279
+          },
+          {
+            "id": 2,
+            "idlePercent": 5.9880239520958085
+          },
+          {
+            "id": 3,
+            "idlePercent": 7.677165354330708
+          }
+        ]
+      },
+      "summary": {
+        "framework": "nile",
+        "runtime": "bun 1.4.2",
+        "version": "0.0.17 source:9f5a173 sha256:24024c1ad52d1a36c7730ae8d446845fd7c4b6142f842c96c208490d07f5038a",
+        "concurrency": 100,
+        "trialCount": 1,
+        "expected": 1,
+        "invalidTrials": 0,
+        "warmupFailures": 0,
+        "failures": 0,
+        "requests": 300,
+        "expectedRequests": 300,
+        "valid": true,
+        "throughput": {
+          "mean": 14394.025903488913,
+          "median": 14394.025903488913,
+          "min": 14394.025903488913,
+          "max": 14394.025903488913
+        },
+        "p95": {
+          "mean": 9.3,
+          "median": 9.3,
+          "min": 9.3,
+          "max": 9.3
+        },
+        "p99": {
+          "mean": 9.6,
+          "median": 9.6,
+          "min": 9.6,
+          "max": 9.6
+        },
+        "requestBodyBytesPerOp": 91.9,
+        "responseBodyBytesPerOp": 103.54
+      },
+      "measuredRequests": 300,
+      "expectedRequests": 300,
+      "telemetry": [
+        {
+          "framework": "nile",
+          "workload": "memory-read",
+          "sqliteSynchronous": "normal",
+          "mode": "plain",
+          "runtime": "bun",
+          "nodeEnvironment": "production",
+          "port": 4100,
+          "workloadMetadata": {
+            "workload": "memory-read",
+            "rows": 1000,
+            "storage": "memory",
+            "runtime": "bun"
+          },
+          "pid": 328430,
+          "uptimeSeconds": 5.5214039249999995,
+          "cpu": {
+            "user": 4468573,
+            "system": 1494846
+          },
+          "resources": {
+            "userCPUTime": 4468582,
+            "systemCPUTime": 1494849,
+            "maxRSS": 70100,
+            "sharedMemorySize": 0,
+            "unsharedDataSize": 0,
+            "unsharedStackSize": 0,
+            "minorPageFault": 12129,
+            "majorPageFault": 0,
+            "swappedOut": 0,
+            "fsRead": 0,
+            "fsWrite": 0,
+            "ipcSent": 0,
+            "ipcReceived": 0,
+            "signalsCount": 0,
+            "voluntaryContextSwitches": 3711,
+            "involuntaryContextSwitches": 385
+          },
+          "memory": {
+            "rss": 70475776,
+            "heapTotal": 11079680,
+            "heapUsed": 9067942,
+            "external": 5561254,
+            "arrayBuffers": 198
+          }
+        }
+      ],
+      "databaseVerification": {
+        "storage": "memory",
+        "writes": 0
+      }
+    },
+    {
+      "framework": "nile",
+      "operation": "sqlite-read-write",
+      "mode": "validated",
+      "requestCounts": [
+        300,
+        300,
+        300
+      ],
+      "round": 1,
+      "completed": true,
+      "ready": {
+        "framework": "nile",
+        "workload": "sqlite-read-write",
+        "databasePath": "/tmp/nile-benchmark-interleaved-wY98zA/round1-nile-sqlite-read-write-validated-attempt1.sqlite",
+        "sqliteSynchronous": "normal",
+        "mode": "validated",
+        "runtime": "bun",
+        "nodeEnvironment": "production",
+        "port": 4100,
+        "workloadMetadata": {
+          "workload": "sqlite-read-write",
+          "reuseSeeded": false,
+          "storage": "sqlite",
+          "databasePath": "/tmp/nile-benchmark-interleaved-wY98zA/round1-nile-sqlite-read-write-validated-attempt1.sqlite",
+          "driver": "bun:sqlite",
+          "runtime": "bun",
+          "runtimeVersion": "1.4.2",
+          "sqliteVersion": "3.53.2",
+          "rows": 1000,
+          "journalMode": "wal",
+          "synchronous": 1,
+          "sqliteSynchronous": "normal",
+          "transaction": "BEGIN IMMEDIATE; SELECT; UPDATE; COMMIT",
+          "setup": "Fresh file; 1000 seeded rows; preparation excluded from request timing"
+        },
+        "runtimeVersion": "1.4.2",
+        "pid": 328455,
+        "factoryAndListenMs": 160.330832,
+        "processReadyMs": 204.171321,
+        "memory": {
+          "rss": 54067200,
+          "heapTotal": 5738496,
+          "heapUsed": 5738496,
+          "external": 582866,
+          "arrayBuffers": 198
+        }
+      },
+      "preflight": {
+        "framework": "nile",
+        "mode": "validated",
+        "validActions": 300,
+        "invalidCases": 30,
+        "status": true
+      },
+      "manifest": "round1-nile-sqlite-read-write-validated-attempt1-manifest.json",
+      "results": "round1-nile-sqlite-read-write-validated-attempt1-results.json",
+      "loadSamples": [
+        {
+          "startedAt": "2026-10-17T20:16:18.349Z",
+          "finishedAt": "2026-10-17T20:16:23.352Z",
+          "idlePercent": 42.28778467908903,
+          "ioWaitPercent": 6.418219461697722,
+          "swapInPages": 0,
+          "swapOutPages": 0,
+          "availableKiB": 9645036,
+          "perCpu": [
+            {
+              "id": 0,
+              "idlePercent": 47.36842105263158
+            },
+            {
+              "id": 1,
+              "idlePercent": 41.81818181818182
+            },
+            {
+              "id": 2,
+              "idlePercent": 45.03171247357294
+            },
+            {
+              "id": 3,
+              "idlePercent": 35.30612244897959
+            }
+          ]
+        }
+      ],
+      "hostLoad": {
+        "startedAt": "2026-10-17T20:16:18.349Z",
+        "finishedAt": "2026-10-17T20:16:23.448Z",
+        "idlePercent": 42.53807106598985,
+        "ioWaitPercent": 6.49746192893401,
+        "swapInPages": 0,
+        "swapOutPages": 0,
+        "availableKiB": 9672184,
+        "perCpu": [
+          {
+            "id": 0,
+            "idlePercent": 47.52066115702479
+          },
+          {
+            "id": 1,
+            "idlePercent": 42.57425742574257
+          },
+          {
+            "id": 2,
+            "idlePercent": 45.3416149068323
+          },
+          {
+            "id": 3,
+            "idlePercent": 35.12974051896207
+          }
+        ]
+      },
+      "summary": {
+        "framework": "nile",
+        "runtime": "bun 1.4.2",
+        "version": "0.0.17 source:9f5a173 sha256:24024c1ad52d1a36c7730ae8d446845fd7c4b6142f842c96c208490d07f5038a",
+        "concurrency": 100,
+        "trialCount": 1,
+        "expected": 1,
+        "invalidTrials": 0,
+        "warmupFailures": 0,
+        "failures": 0,
+        "requests": 300,
+        "expectedRequests": 300,
+        "valid": true,
+        "throughput": {
+          "mean": 8643.85817572396,
+          "median": 8643.85817572396,
+          "min": 8643.85817572396,
+          "max": 8643.85817572396
+        },
+        "p95": {
+          "mean": 10.9,
+          "median": 10.9,
+          "min": 10.9,
+          "max": 10.9
+        },
+        "p99": {
+          "mean": 20.5,
+          "median": 20.5,
+          "min": 20.5,
+          "max": 20.5
+        },
+        "requestBodyBytesPerOp": 91.9,
+        "responseBodyBytesPerOp": 103.54
+      },
+      "measuredRequests": 300,
+      "expectedRequests": 300,
+      "telemetry": [
+        {
+          "framework": "nile",
+          "workload": "sqlite-read-write",
+          "databasePath": "/tmp/nile-benchmark-interleaved-wY98zA/round1-nile-sqlite-read-write-validated-attempt1.sqlite",
+          "sqliteSynchronous": "normal",
+          "mode": "validated",
+          "runtime": "bun",
+          "nodeEnvironment": "production",
+          "port": 4100,
+          "workloadMetadata": {
+            "workload": "sqlite-read-write",
+            "reuseSeeded": false,
+            "storage": "sqlite",
+            "databasePath": "/tmp/nile-benchmark-interleaved-wY98zA/round1-nile-sqlite-read-write-validated-attempt1.sqlite",
+            "driver": "bun:sqlite",
+            "runtime": "bun",
+            "runtimeVersion": "1.4.2",
+            "sqliteVersion": "3.53.2",
+            "rows": 1000,
+            "journalMode": "wal",
+            "synchronous": 1,
+            "sqliteSynchronous": "normal",
+            "transaction": "BEGIN IMMEDIATE; SELECT; UPDATE; COMMIT",
+            "setup": "Fresh file; 1000 seeded rows; preparation excluded from request timing"
+          },
+          "pid": 328455,
+          "uptimeSeconds": 5.606163509,
+          "cpu": {
+            "user": 3731070,
+            "system": 1209124
+          },
+          "resources": {
+            "userCPUTime": 3731080,
+            "systemCPUTime": 1209127,
+            "maxRSS": 75064,
+            "sharedMemorySize": 0,
+            "unsharedDataSize": 0,
+            "unsharedStackSize": 0,
+            "minorPageFault": 14373,
+            "majorPageFault": 0,
+            "swappedOut": 0,
+            "fsRead": 0,
+            "fsWrite": 213584,
+            "ipcSent": 0,
+            "ipcReceived": 0,
+            "signalsCount": 0,
+            "voluntaryContextSwitches": 2113,
+            "involuntaryContextSwitches": 259
+          },
+          "memory": {
+            "rss": 75210752,
+            "heapTotal": 11169792,
+            "heapUsed": 9433968,
+            "external": 5829488,
+            "arrayBuffers": 198
+          }
+        }
+      ],
+      "databaseVerification": {
+        "storage": "sqlite",
+        "rows": 1000,
+        "writes": 26407,
+        "expectedWrites": 26407,
+        "verified": true,
+        "includes": "Measured requests, timed warmups, 300 preflight operations and Encore readiness probe when applicable"
+      }
+    },
+    {
+      "framework": "hono",
+      "operation": "memory-read",
+      "mode": "plain",
+      "requestCounts": [
+        300,
+        300,
+        300
+      ],
+      "round": 2,
+      "completed": true,
+      "ready": {
+        "framework": "hono",
+        "workload": "memory-read",
+        "sqliteSynchronous": "normal",
+        "mode": "plain",
+        "runtime": "bun",
+        "nodeEnvironment": "production",
+        "port": 4100,
+        "workloadMetadata": {
+          "workload": "memory-read",
+          "rows": 1000,
+          "storage": "memory",
+          "runtime": "bun"
+        },
+        "runtimeVersion": "1.4.2",
+        "pid": 328476,
+        "factoryAndListenMs": 49.301885999999996,
+        "processReadyMs": 94.521512,
+        "memory": {
+          "rss": 38334464,
+          "heapTotal": 3497984,
+          "heapUsed": 3497984,
+          "external": 567333,
+          "arrayBuffers": 98
+        }
+      },
+      "preflight": {
+        "framework": "hono",
+        "mode": "plain",
+        "validActions": 300,
+        "invalidCases": 0,
+        "status": true
+      },
+      "manifest": "round2-hono-memory-read-plain-attempt1-manifest.json",
+      "results": "round2-hono-memory-read-plain-attempt1-results.json",
+      "loadSamples": [
+        {
+          "startedAt": "2026-10-17T20:16:32.760Z",
+          "finishedAt": "2026-10-17T20:16:37.767Z",
+          "idlePercent": 23.25102880658436,
+          "ioWaitPercent": 0.102880658436214,
+          "swapInPages": 0,
+          "swapOutPages": 0,
+          "availableKiB": 9649528,
+          "perCpu": [
+            {
+              "id": 0,
+              "idlePercent": 1.4056224899598393
+            },
+            {
+              "id": 1,
+              "idlePercent": 40.37656903765691
+            },
+            {
+              "id": 2,
+              "idlePercent": 3.6144578313253013
+            },
+            {
+              "id": 3,
+              "idlePercent": 49.471458773784356
+            }
+          ]
+        }
+      ],
+      "hostLoad": {
+        "startedAt": "2026-10-17T20:16:32.760Z",
+        "finishedAt": "2026-10-17T20:16:37.841Z",
+        "idlePercent": 23.46680182463254,
+        "ioWaitPercent": 0.10136847440446022,
+        "swapInPages": 0,
+        "swapOutPages": 0,
+        "availableKiB": 9692268,
+        "perCpu": [
+          {
+            "id": 0,
+            "idlePercent": 1.5841584158415842
+          },
+          {
+            "id": 1,
+            "idlePercent": 40.824742268041234
+          },
+          {
+            "id": 2,
+            "idlePercent": 3.762376237623762
+          },
+          {
+            "id": 3,
+            "idlePercent": 49.478079331941544
+          }
+        ]
+      },
+      "summary": {
+        "framework": "hono",
+        "runtime": "bun 1.4.2",
+        "version": "4.13.13",
+        "concurrency": 100,
+        "trialCount": 1,
+        "expected": 1,
+        "invalidTrials": 0,
+        "warmupFailures": 0,
+        "failures": 0,
+        "requests": 300,
+        "expectedRequests": 300,
+        "valid": true,
+        "throughput": {
+          "mean": 14376.311748594957,
+          "median": 14376.311748594957,
+          "min": 14376.311748594957,
+          "max": 14376.311748594957
+        },
+        "p95": {
+          "mean": 11.4,
+          "median": 11.4,
+          "min": 11.4,
+          "max": 11.4
+        },
+        "p99": {
+          "mean": 11.6,
+          "median": 11.6,
+          "min": 11.6,
+          "max": 11.6
+        },
+        "requestBodyBytesPerOp": 21.266666666666666,
+        "responseBodyBytesPerOp": 33.906666666666666
+      },
+      "measuredRequests": 300,
+      "expectedRequests": 300,
+      "telemetry": [
+        {
+          "framework": "hono",
+          "workload": "memory-read",
+          "sqliteSynchronous": "normal",
+          "mode": "plain",
+          "runtime": "bun",
+          "nodeEnvironment": "production",
+          "port": 4100,
+          "workloadMetadata": {
+            "workload": "memory-read",
+            "rows": 1000,
+            "storage": "memory",
+            "runtime": "bun"
+          },
+          "pid": 328476,
+          "uptimeSeconds": 5.316360044,
+          "cpu": {
+            "user": 3258269,
+            "system": 2062707
+          },
+          "resources": {
+            "userCPUTime": 3258274,
+            "systemCPUTime": 2062710,
+            "maxRSS": 54412,
+            "sharedMemorySize": 0,
+            "unsharedDataSize": 0,
+            "unsharedStackSize": 0,
+            "minorPageFault": 7485,
+            "majorPageFault": 0,
+            "swappedOut": 0,
+            "fsRead": 0,
+            "fsWrite": 0,
+            "ipcSent": 0,
+            "ipcReceived": 0,
+            "signalsCount": 0,
+            "voluntaryContextSwitches": 53480,
+            "involuntaryContextSwitches": 801
+          },
+          "memory": {
+            "rss": 54853632,
+            "heapTotal": 7809024,
+            "heapUsed": 5332857,
+            "external": 3760873,
+            "arrayBuffers": 98
+          }
+        }
+      ],
+      "databaseVerification": {
+        "storage": "memory",
+        "writes": 0
+      }
+    },
+    {
+      "framework": "hono",
+      "operation": "sqlite-read-write",
+      "mode": "validated",
+      "requestCounts": [
+        300,
+        300,
+        300
+      ],
+      "round": 2,
+      "completed": true,
+      "ready": {
+        "framework": "hono",
+        "workload": "sqlite-read-write",
+        "databasePath": "/tmp/nile-benchmark-interleaved-wY98zA/round2-hono-sqlite-read-write-validated-attempt1.sqlite",
+        "sqliteSynchronous": "normal",
+        "mode": "validated",
+        "runtime": "bun",
+        "nodeEnvironment": "production",
+        "port": 4100,
+        "workloadMetadata": {
+          "workload": "sqlite-read-write",
+          "reuseSeeded": false,
+          "storage": "sqlite",
+          "databasePath": "/tmp/nile-benchmark-interleaved-wY98zA/round2-hono-sqlite-read-write-validated-attempt1.sqlite",
+          "driver": "bun:sqlite",
+          "runtime": "bun",
+          "runtimeVersion": "1.4.2",
+          "sqliteVersion": "3.53.2",
+          "rows": 1000,
+          "journalMode": "wal",
+          "synchronous": 1,
+          "sqliteSynchronous": "normal",
+          "transaction": "BEGIN IMMEDIATE; SELECT; UPDATE; COMMIT",
+          "setup": "Fresh file; 1000 seeded rows; preparation excluded from request timing"
+        },
+        "runtimeVersion": "1.4.2",
+        "pid": 328494,
+        "factoryAndListenMs": 73.555604,
+        "processReadyMs": 120.30576,
+        "memory": {
+          "rss": 41578496,
+          "heapTotal": 3616768,
+          "heapUsed": 3616768,
+          "external": 641686,
+          "arrayBuffers": 98
+        }
+      },
+      "preflight": {
+        "framework": "hono",
+        "mode": "validated",
+        "validActions": 300,
+        "invalidCases": 30,
+        "status": true
+      },
+      "manifest": "round2-hono-sqlite-read-write-validated-attempt1-manifest.json",
+      "results": "round2-hono-sqlite-read-write-validated-attempt1-results.json",
+      "loadSamples": [
+        {
+          "startedAt": "2026-10-17T20:16:47.239Z",
+          "finishedAt": "2026-10-17T20:16:52.245Z",
+          "idlePercent": 37.634408602150536,
+          "ioWaitPercent": 5.6835637480798775,
+          "swapInPages": 0,
+          "swapOutPages": 0,
+          "availableKiB": 9670160,
+          "perCpu": [
+            {
+              "id": 0,
+              "idlePercent": 29.4238683127572
+            },
+            {
+              "id": 1,
+              "idlePercent": 30.02028397565923
+            },
+            {
+              "id": 2,
+              "idlePercent": 28.75
+            },
+            {
+              "id": 3,
+              "idlePercent": 61.99186991869919
+            }
+          ]
+        }
+      ],
+      "hostLoad": {
+        "startedAt": "2026-10-17T20:16:47.239Z",
+        "finishedAt": "2026-10-17T20:16:52.339Z",
+        "idlePercent": 37.80794369029663,
+        "ioWaitPercent": 5.681246857717446,
+        "swapInPages": 0,
+        "swapOutPages": 0,
+        "availableKiB": 9670160,
+        "perCpu": [
+          {
+            "id": 0,
+            "idlePercent": 29.637096774193548
+          },
+          {
+            "id": 1,
+            "idlePercent": 31.137724550898202
+          },
+          {
+            "id": 2,
+            "idlePercent": 28.920570264765786
+          },
+          {
+            "id": 3,
+            "idlePercent": 61.155378486055774
+          }
+        ]
+      },
+      "summary": {
+        "framework": "hono",
+        "runtime": "bun 1.4.2",
+        "version": "4.13.13",
+        "concurrency": 100,
+        "trialCount": 1,
+        "expected": 1,
+        "invalidTrials": 0,
+        "warmupFailures": 0,
+        "failures": 0,
+        "requests": 300,
+        "expectedRequests": 300,
+        "valid": true,
+        "throughput": {
+          "mean": 12194.884993697944,
+          "median": 12194.884993697944,
+          "min": 12194.884993697944,
+          "max": 12194.884993697944
+        },
+        "p95": {
+          "mean": 9.8,
+          "median": 9.8,
+          "min": 9.8,
+          "max": 9.8
+        },
+        "p99": {
+          "mean": 11.3,
+          "median": 11.3,
+          "min": 11.3,
+          "max": 11.3
+        },
+        "requestBodyBytesPerOp": 21.266666666666666,
+        "responseBodyBytesPerOp": 33.906666666666666
+      },
+      "measuredRequests": 300,
+      "expectedRequests": 300,
+      "telemetry": [
+        {
+          "framework": "hono",
+          "workload": "sqlite-read-write",
+          "databasePath": "/tmp/nile-benchmark-interleaved-wY98zA/round2-hono-sqlite-read-write-validated-attempt1.sqlite",
+          "sqliteSynchronous": "normal",
+          "mode": "validated",
+          "runtime": "bun",
+          "nodeEnvironment": "production",
+          "port": 4100,
+          "workloadMetadata": {
+            "workload": "sqlite-read-write",
+            "reuseSeeded": false,
+            "storage": "sqlite",
+            "databasePath": "/tmp/nile-benchmark-interleaved-wY98zA/round2-hono-sqlite-read-write-validated-attempt1.sqlite",
+            "driver": "bun:sqlite",
+            "runtime": "bun",
+            "runtimeVersion": "1.4.2",
+            "sqliteVersion": "3.53.2",
+            "rows": 1000,
+            "journalMode": "wal",
+            "synchronous": 1,
+            "sqliteSynchronous": "normal",
+            "transaction": "BEGIN IMMEDIATE; SELECT; UPDATE; COMMIT",
+            "setup": "Fresh file; 1000 seeded rows; preparation excluded from request timing"
+          },
+          "pid": 328494,
+          "uptimeSeconds": 5.440169035,
+          "cpu": {
+            "user": 2728730,
+            "system": 1647135
+          },
+          "resources": {
+            "userCPUTime": 2728736,
+            "systemCPUTime": 1647138,
+            "maxRSS": 59840,
+            "sharedMemorySize": 0,
+            "unsharedDataSize": 0,
+            "unsharedStackSize": 0,
+            "minorPageFault": 8837,
+            "majorPageFault": 0,
+            "swappedOut": 0,
+            "fsRead": 0,
+            "fsWrite": 358856,
+            "ipcSent": 0,
+            "ipcReceived": 0,
+            "signalsCount": 0,
+            "voluntaryContextSwitches": 2248,
+            "involuntaryContextSwitches": 190
+          },
+          "memory": {
+            "rss": 58773504,
+            "heapTotal": 6027264,
+            "heapUsed": 7390790,
+            "external": 5724918,
+            "arrayBuffers": 98
+          }
+        }
+      ],
+      "databaseVerification": {
+        "storage": "sqlite",
+        "rows": 1000,
+        "writes": 44386,
+        "expectedWrites": 44386,
+        "verified": true,
+        "includes": "Measured requests, timed warmups, 300 preflight operations and Encore readiness probe when applicable"
+      }
+    },
+    {
+      "framework": "nile",
+      "operation": "memory-read",
+      "mode": "plain",
+      "requestCounts": [
+        300,
+        300,
+        300
+      ],
+      "round": 2,
+      "completed": true,
+      "ready": {
+        "framework": "nile",
+        "workload": "memory-read",
+        "sqliteSynchronous": "normal",
+        "mode": "plain",
+        "runtime": "bun",
+        "nodeEnvironment": "production",
+        "port": 4100,
+        "workloadMetadata": {
+          "workload": "memory-read",
+          "rows": 1000,
+          "storage": "memory",
+          "runtime": "bun"
+        },
+        "runtimeVersion": "1.4.2",
+        "pid": 328600,
+        "factoryAndListenMs": 134.11912999999998,
+        "processReadyMs": 178.278502,
+        "memory": {
+          "rss": 52080640,
+          "heapTotal": 5668864,
+          "heapUsed": 5668864,
+          "external": 627270,
+          "arrayBuffers": 198
+        }
+      },
+      "preflight": {
+        "framework": "nile",
+        "mode": "plain",
+        "validActions": 300,
+        "invalidCases": 0,
+        "status": true
+      },
+      "manifest": "round2-nile-memory-read-plain-attempt1-manifest.json",
+      "results": "round2-nile-memory-read-plain-attempt1-results.json",
+      "loadSamples": [
+        {
+          "startedAt": "2026-10-17T20:17:01.833Z",
+          "finishedAt": "2026-10-17T20:17:06.840Z",
+          "idlePercent": 20.69838056680162,
+          "ioWaitPercent": 0.30364372469635625,
+          "swapInPages": 0,
+          "swapOutPages": 0,
+          "availableKiB": 9662076,
+          "perCpu": [
+            {
+              "id": 0,
+              "idlePercent": 4.471544715447155
+            },
+            {
+              "id": 1,
+              "idlePercent": 18.10865191146881
+            },
+            {
+              "id": 2,
+              "idlePercent": 4.65587044534413
+            },
+            {
+              "id": 3,
+              "idlePercent": 55.60081466395112
+            }
+          ]
+        }
+      ],
+      "hostLoad": {
+        "startedAt": "2026-10-17T20:17:01.833Z",
+        "finishedAt": "2026-10-17T20:17:06.922Z",
+        "idlePercent": 20.955699352911896,
+        "ioWaitPercent": 0.2986560477849676,
+        "swapInPages": 0,
+        "swapOutPages": 0,
+        "availableKiB": 9698716,
+        "perCpu": [
+          {
+            "id": 0,
+            "idlePercent": 4.581673306772909
+          },
+          {
+            "id": 1,
+            "idlePercent": 18.650793650793652
+          },
+          {
+            "id": 2,
+            "idlePercent": 4.970178926441352
+          },
+          {
+            "id": 3,
+            "idlePercent": 55.71142284569138
+          }
+        ]
+      },
+      "summary": {
+        "framework": "nile",
+        "runtime": "bun 1.4.2",
+        "version": "0.0.17 source:9f5a173 sha256:24024c1ad52d1a36c7730ae8d446845fd7c4b6142f842c96c208490d07f5038a",
+        "concurrency": 100,
+        "trialCount": 1,
+        "expected": 1,
+        "invalidTrials": 0,
+        "warmupFailures": 0,
+        "failures": 0,
+        "requests": 300,
+        "expectedRequests": 300,
+        "valid": true,
+        "throughput": {
+          "mean": 13865.332587501744,
+          "median": 13865.332587501744,
+          "min": 13865.332587501744,
+          "max": 13865.332587501744
+        },
+        "p95": {
+          "mean": 8.8,
+          "median": 8.8,
+          "min": 8.8,
+          "max": 8.8
+        },
+        "p99": {
+          "mean": 9.1,
+          "median": 9.1,
+          "min": 9.1,
+          "max": 9.1
+        },
+        "requestBodyBytesPerOp": 91.9,
+        "responseBodyBytesPerOp": 103.54
+      },
+      "measuredRequests": 300,
+      "expectedRequests": 300,
+      "telemetry": [
+        {
+          "framework": "nile",
+          "workload": "memory-read",
+          "sqliteSynchronous": "normal",
+          "mode": "plain",
+          "runtime": "bun",
+          "nodeEnvironment": "production",
+          "port": 4100,
+          "workloadMetadata": {
+            "workload": "memory-read",
+            "rows": 1000,
+            "storage": "memory",
+            "runtime": "bun"
+          },
+          "pid": 328600,
+          "uptimeSeconds": 5.4899358540000005,
+          "cpu": {
+            "user": 4379011,
+            "system": 1483648
+          },
+          "resources": {
+            "userCPUTime": 4379023,
+            "systemCPUTime": 1483652,
+            "maxRSS": 70120,
+            "sharedMemorySize": 0,
+            "unsharedDataSize": 0,
+            "unsharedStackSize": 0,
+            "minorPageFault": 12023,
+            "majorPageFault": 0,
+            "swappedOut": 0,
+            "fsRead": 0,
+            "fsWrite": 0,
+            "ipcSent": 0,
+            "ipcReceived": 0,
+            "signalsCount": 0,
+            "voluntaryContextSwitches": 3764,
+            "involuntaryContextSwitches": 734
+          },
+          "memory": {
+            "rss": 70705152,
+            "heapTotal": 11027456,
+            "heapUsed": 7665134,
+            "external": 4147006,
+            "arrayBuffers": 198
+          }
+        }
+      ],
+      "databaseVerification": {
+        "storage": "memory",
+        "writes": 0
+      }
+    },
+    {
+      "framework": "nile",
+      "operation": "sqlite-read-write",
+      "mode": "validated",
+      "requestCounts": [
+        300,
+        300,
+        300
+      ],
+      "round": 2,
+      "completed": true,
+      "ready": {
+        "framework": "nile",
+        "workload": "sqlite-read-write",
+        "databasePath": "/tmp/nile-benchmark-interleaved-wY98zA/round2-nile-sqlite-read-write-validated-attempt1.sqlite",
+        "sqliteSynchronous": "normal",
+        "mode": "validated",
+        "runtime": "bun",
+        "nodeEnvironment": "production",
+        "port": 4100,
+        "workloadMetadata": {
+          "workload": "sqlite-read-write",
+          "reuseSeeded": false,
+          "storage": "sqlite",
+          "databasePath": "/tmp/nile-benchmark-interleaved-wY98zA/round2-nile-sqlite-read-write-validated-attempt1.sqlite",
+          "driver": "bun:sqlite",
+          "runtime": "bun",
+          "runtimeVersion": "1.4.2",
+          "sqliteVersion": "3.53.2",
+          "rows": 1000,
+          "journalMode": "wal",
+          "synchronous": 1,
+          "sqliteSynchronous": "normal",
+          "transaction": "BEGIN IMMEDIATE; SELECT; UPDATE; COMMIT",
+          "setup": "Fresh file; 1000 seeded rows; preparation excluded from request timing"
+        },
+        "runtimeVersion": "1.4.2",
+        "pid": 328625,
+        "factoryAndListenMs": 176.53805999999997,
+        "processReadyMs": 206.420962,
+        "memory": {
+          "rss": 54517760,
+          "heapTotal": 5673984,
+          "heapUsed": 5673984,
+          "external": 531574,
+          "arrayBuffers": 198
+        }
+      },
+      "preflight": {
+        "framework": "nile",
+        "mode": "validated",
+        "validActions": 300,
+        "invalidCases": 30,
+        "status": true
+      },
+      "manifest": "round2-nile-sqlite-read-write-validated-attempt1-manifest.json",
+      "results": "round2-nile-sqlite-read-write-validated-attempt1-results.json",
+      "loadSamples": [
+        {
+          "startedAt": "2026-10-17T20:17:16.474Z",
+          "finishedAt": "2026-10-17T20:17:21.475Z",
+          "idlePercent": 43.95661157024794,
+          "ioWaitPercent": 7.541322314049586,
+          "swapInPages": 0,
+          "swapOutPages": 0,
+          "availableKiB": 9685056,
+          "perCpu": [
+            {
+              "id": 0,
+              "idlePercent": 47.07112970711297
+            },
+            {
+              "id": 1,
+              "idlePercent": 65.51020408163265
+            },
+            {
+              "id": 2,
+              "idlePercent": 46.62447257383966
+            },
+            {
+              "id": 3,
+              "idlePercent": 16.733870967741936
+            }
+          ]
+        }
+      ],
+      "hostLoad": {
+        "startedAt": "2026-10-17T20:17:16.474Z",
+        "finishedAt": "2026-10-17T20:17:21.582Z",
+        "idlePercent": 43.83215369059656,
+        "ioWaitPercent": 7.381193124368049,
+        "swapInPages": 0,
+        "swapOutPages": 0,
+        "availableKiB": 9691952,
+        "perCpu": [
+          {
+            "id": 0,
+            "idlePercent": 47.02258726899384
+          },
+          {
+            "id": 1,
+            "idlePercent": 65.8
+          },
+          {
+            "id": 2,
+            "idlePercent": 46.28099173553719
+          },
+          {
+            "id": 3,
+            "idlePercent": 16.765285996055226
+          }
+        ]
+      },
+      "summary": {
+        "framework": "nile",
+        "runtime": "bun 1.4.2",
+        "version": "0.0.17 source:9f5a173 sha256:24024c1ad52d1a36c7730ae8d446845fd7c4b6142f842c96c208490d07f5038a",
+        "concurrency": 100,
+        "trialCount": 1,
+        "expected": 1,
+        "invalidTrials": 0,
+        "warmupFailures": 0,
+        "failures": 0,
+        "requests": 300,
+        "expectedRequests": 300,
+        "valid": true,
+        "throughput": {
+          "mean": 7364.199015220058,
+          "median": 7364.199015220058,
+          "min": 7364.199015220058,
+          "max": 7364.199015220058
+        },
+        "p95": {
+          "mean": 18.9,
+          "median": 18.9,
+          "min": 18.9,
+          "max": 18.9
+        },
+        "p99": {
+          "mean": 19.8,
+          "median": 19.8,
+          "min": 19.8,
+          "max": 19.8
+        },
+        "requestBodyBytesPerOp": 91.9,
+        "responseBodyBytesPerOp": 103.54
+      },
+      "measuredRequests": 300,
+      "expectedRequests": 300,
+      "telemetry": [
+        {
+          "framework": "nile",
+          "workload": "sqlite-read-write",
+          "databasePath": "/tmp/nile-benchmark-interleaved-wY98zA/round2-nile-sqlite-read-write-validated-attempt1.sqlite",
+          "sqliteSynchronous": "normal",
+          "mode": "validated",
+          "runtime": "bun",
+          "nodeEnvironment": "production",
+          "port": 4100,
+          "workloadMetadata": {
+            "workload": "sqlite-read-write",
+            "reuseSeeded": false,
+            "storage": "sqlite",
+            "databasePath": "/tmp/nile-benchmark-interleaved-wY98zA/round2-nile-sqlite-read-write-validated-attempt1.sqlite",
+            "driver": "bun:sqlite",
+            "runtime": "bun",
+            "runtimeVersion": "1.4.2",
+            "sqliteVersion": "3.53.2",
+            "rows": 1000,
+            "journalMode": "wal",
+            "synchronous": 1,
+            "sqliteSynchronous": "normal",
+            "transaction": "BEGIN IMMEDIATE; SELECT; UPDATE; COMMIT",
+            "setup": "Fresh file; 1000 seeded rows; preparation excluded from request timing"
+          },
+          "pid": 328625,
+          "uptimeSeconds": 5.605261323,
+          "cpu": {
+            "user": 3664280,
+            "system": 1137950
+          },
+          "resources": {
+            "userCPUTime": 3664289,
+            "systemCPUTime": 1137953,
+            "maxRSS": 75084,
+            "sharedMemorySize": 0,
+            "unsharedDataSize": 0,
+            "unsharedStackSize": 0,
+            "minorPageFault": 14891,
+            "majorPageFault": 0,
+            "swappedOut": 0,
+            "fsRead": 0,
+            "fsWrite": 167632,
+            "ipcSent": 0,
+            "ipcReceived": 0,
+            "signalsCount": 0,
+            "voluntaryContextSwitches": 1887,
+            "involuntaryContextSwitches": 263
+          },
+          "memory": {
+            "rss": 75706368,
+            "heapTotal": 11515904,
+            "heapUsed": 6634312,
+            "external": 3134744,
+            "arrayBuffers": 198
+          }
+        }
+      ],
+      "databaseVerification": {
+        "storage": "sqlite",
+        "rows": 1000,
+        "writes": 20721,
+        "expectedWrites": 20721,
+        "verified": true,
+        "includes": "Measured requests, timed warmups, 300 preflight operations and Encore readiness probe when applicable"
+      }
+    },
+    {
+      "framework": "hono",
+      "operation": "memory-read",
+      "mode": "plain",
+      "requestCounts": [
+        300,
+        300,
+        300
+      ],
+      "round": 3,
+      "completed": true,
+      "ready": {
+        "framework": "hono",
+        "workload": "memory-read",
+        "sqliteSynchronous": "normal",
+        "mode": "plain",
+        "runtime": "bun",
+        "nodeEnvironment": "production",
+        "port": 4100,
+        "workloadMetadata": {
+          "workload": "memory-read",
+          "rows": 1000,
+          "storage": "memory",
+          "runtime": "bun"
+        },
+        "runtimeVersion": "1.4.2",
+        "pid": 328644,
+        "factoryAndListenMs": 49.26860800000001,
+        "processReadyMs": 81.731291,
+        "memory": {
+          "rss": 38526976,
+          "heapTotal": 3563520,
+          "heapUsed": 3563520,
+          "external": 567322,
+          "arrayBuffers": 98
+        }
+      },
+      "preflight": {
+        "framework": "hono",
+        "mode": "plain",
+        "validActions": 300,
+        "invalidCases": 0,
+        "status": true
+      },
+      "manifest": "round3-hono-memory-read-plain-attempt1-manifest.json",
+      "results": "round3-hono-memory-read-plain-attempt1-results.json",
+      "loadSamples": [
+        {
+          "startedAt": "2026-10-17T20:17:30.884Z",
+          "finishedAt": "2026-10-17T20:17:35.886Z",
+          "idlePercent": 21.435897435897434,
+          "ioWaitPercent": 0.10256410256410256,
+          "swapInPages": 0,
+          "swapOutPages": 0,
+          "availableKiB": 9659960,
+          "perCpu": [
+            {
+              "id": 0,
+              "idlePercent": 3.006012024048096
+            },
+            {
+              "id": 1,
+              "idlePercent": 24.024640657084188
+            },
+            {
+              "id": 2,
+              "idlePercent": 1.606425702811245
+            },
+            {
+              "id": 3,
+              "idlePercent": 59.65665236051502
+            }
+          ]
+        }
+      ],
+      "hostLoad": {
+        "startedAt": "2026-10-17T20:17:30.884Z",
+        "finishedAt": "2026-10-17T20:17:35.965Z",
+        "idlePercent": 21.644803229061555,
+        "ioWaitPercent": 0.15136226034308778,
+        "swapInPages": 0,
+        "swapOutPages": 0,
+        "availableKiB": 9681948,
+        "perCpu": [
+          {
+            "id": 0,
+            "idlePercent": 3.3596837944664033
+          },
+          {
+            "id": 1,
+            "idlePercent": 24.193548387096776
+          },
+          {
+            "id": 2,
+            "idlePercent": 1.7751479289940828
+          },
+          {
+            "id": 3,
+            "idlePercent": 60.04228329809725
+          }
+        ]
+      },
+      "summary": {
+        "framework": "hono",
+        "runtime": "bun 1.4.2",
+        "version": "4.13.13",
+        "concurrency": 100,
+        "trialCount": 1,
+        "expected": 1,
+        "invalidTrials": 0,
+        "warmupFailures": 0,
+        "failures": 0,
+        "requests": 300,
+        "expectedRequests": 300,
+        "valid": true,
+        "throughput": {
+          "mean": 15838.98468306835,
+          "median": 15838.98468306835,
+          "min": 15838.98468306835,
+          "max": 15838.98468306835
+        },
+        "p95": {
+          "mean": 10.1,
+          "median": 10.1,
+          "min": 10.1,
+          "max": 10.1
+        },
+        "p99": {
+          "mean": 10.5,
+          "median": 10.5,
+          "min": 10.5,
+          "max": 10.5
+        },
+        "requestBodyBytesPerOp": 21.266666666666666,
+        "responseBodyBytesPerOp": 33.906666666666666
+      },
+      "measuredRequests": 300,
+      "expectedRequests": 300,
+      "telemetry": [
+        {
+          "framework": "hono",
+          "workload": "memory-read",
+          "sqliteSynchronous": "normal",
+          "mode": "plain",
+          "runtime": "bun",
+          "nodeEnvironment": "production",
+          "port": 4100,
+          "workloadMetadata": {
+            "workload": "memory-read",
+            "rows": 1000,
+            "storage": "memory",
+            "runtime": "bun"
+          },
+          "pid": 328644,
+          "uptimeSeconds": 5.307829735,
+          "cpu": {
+            "user": 3176076,
+            "system": 1932000
+          },
+          "resources": {
+            "userCPUTime": 3176082,
+            "systemCPUTime": 1932004,
+            "maxRSS": 54704,
+            "sharedMemorySize": 0,
+            "unsharedDataSize": 0,
+            "unsharedStackSize": 0,
+            "minorPageFault": 8457,
+            "majorPageFault": 0,
+            "swappedOut": 0,
+            "fsRead": 0,
+            "fsWrite": 0,
+            "ipcSent": 0,
+            "ipcReceived": 0,
+            "signalsCount": 0,
+            "voluntaryContextSwitches": 49948,
+            "involuntaryContextSwitches": 1103
+          },
+          "memory": {
+            "rss": 54849536,
+            "heapTotal": 7350272,
+            "heapUsed": 3126831,
+            "external": 1162447,
+            "arrayBuffers": 98
+          }
+        }
+      ],
+      "databaseVerification": {
+        "storage": "memory",
+        "writes": 0
+      }
+    },
+    {
+      "framework": "hono",
+      "operation": "sqlite-read-write",
+      "mode": "validated",
+      "requestCounts": [
+        300,
+        300,
+        300
+      ],
+      "round": 3,
+      "completed": true,
+      "ready": {
+        "framework": "hono",
+        "workload": "sqlite-read-write",
+        "databasePath": "/tmp/nile-benchmark-interleaved-wY98zA/round3-hono-sqlite-read-write-validated-attempt1.sqlite",
+        "sqliteSynchronous": "normal",
+        "mode": "validated",
+        "runtime": "bun",
+        "nodeEnvironment": "production",
+        "port": 4100,
+        "workloadMetadata": {
+          "workload": "sqlite-read-write",
+          "reuseSeeded": false,
+          "storage": "sqlite",
+          "databasePath": "/tmp/nile-benchmark-interleaved-wY98zA/round3-hono-sqlite-read-write-validated-attempt1.sqlite",
+          "driver": "bun:sqlite",
+          "runtime": "bun",
+          "runtimeVersion": "1.4.2",
+          "sqliteVersion": "3.53.2",
+          "rows": 1000,
+          "journalMode": "wal",
+          "synchronous": 1,
+          "sqliteSynchronous": "normal",
+          "transaction": "BEGIN IMMEDIATE; SELECT; UPDATE; COMMIT",
+          "setup": "Fresh file; 1000 seeded rows; preparation excluded from request timing"
+        },
+        "runtimeVersion": "1.4.2",
+        "pid": 328753,
+        "factoryAndListenMs": 77.566097,
+        "processReadyMs": 118.222949,
+        "memory": {
+          "rss": 41623552,
+          "heapTotal": 3683328,
+          "heapUsed": 3683328,
+          "external": 662918,
+          "arrayBuffers": 98
+        }
+      },
+      "preflight": {
+        "framework": "hono",
+        "mode": "validated",
+        "validActions": 300,
+        "invalidCases": 30,
+        "status": true
+      },
+      "manifest": "round3-hono-sqlite-read-write-validated-attempt1-manifest.json",
+      "results": "round3-hono-sqlite-read-write-validated-attempt1-results.json",
+      "loadSamples": [
+        {
+          "startedAt": "2026-10-17T20:17:45.434Z",
+          "finishedAt": "2026-10-17T20:17:50.439Z",
+          "idlePercent": 18.28339258506856,
+          "ioWaitPercent": 3.6566785170137126,
+          "swapInPages": 2,
+          "swapOutPages": 0,
+          "availableKiB": 9534904,
+          "perCpu": [
+            {
+              "id": 0,
+              "idlePercent": 16.260162601626018
+            },
+            {
+              "id": 1,
+              "idlePercent": 17.137096774193548
+            },
+            {
+              "id": 2,
+              "idlePercent": 15.98360655737705
+            },
+            {
+              "id": 3,
+              "idlePercent": 23.88663967611336
+            }
+          ]
+        }
+      ],
+      "hostLoad": {
+        "startedAt": "2026-10-17T20:17:45.434Z",
+        "finishedAt": "2026-10-17T20:17:50.575Z",
+        "idlePercent": 18.94164193867458,
+        "ioWaitPercent": 3.7091988130563798,
+        "swapInPages": 2,
+        "swapOutPages": 0,
+        "availableKiB": 9542960,
+        "perCpu": [
+          {
+            "id": 0,
+            "idlePercent": 16.633663366336634
+          },
+          {
+            "id": 1,
+            "idlePercent": 17.716535433070867
+          },
+          {
+            "id": 2,
+            "idlePercent": 16.50099403578529
+          },
+          {
+            "id": 3,
+            "idlePercent": 25.04930966469428
+          }
+        ]
+      },
+      "summary": {
+        "framework": "hono",
+        "runtime": "bun 1.4.2",
+        "version": "4.13.13",
+        "concurrency": 100,
+        "trialCount": 1,
+        "expected": 1,
+        "invalidTrials": 0,
+        "warmupFailures": 0,
+        "failures": 0,
+        "requests": 300,
+        "expectedRequests": 300,
+        "valid": true,
+        "throughput": {
+          "mean": 12396.427845351916,
+          "median": 12396.427845351916,
+          "min": 12396.427845351916,
+          "max": 12396.427845351916
+        },
+        "p95": {
+          "mean": 9.2,
+          "median": 9.2,
+          "min": 9.2,
+          "max": 9.2
+        },
+        "p99": {
+          "mean": 10.3,
+          "median": 10.3,
+          "min": 10.3,
+          "max": 10.3
+        },
+        "requestBodyBytesPerOp": 21.266666666666666,
+        "responseBodyBytesPerOp": 33.906666666666666
+      },
+      "measuredRequests": 300,
+      "expectedRequests": 300,
+      "telemetry": [
+        {
+          "framework": "hono",
+          "workload": "sqlite-read-write",
+          "databasePath": "/tmp/nile-benchmark-interleaved-wY98zA/round3-hono-sqlite-read-write-validated-attempt1.sqlite",
+          "sqliteSynchronous": "normal",
+          "mode": "validated",
+          "runtime": "bun",
+          "nodeEnvironment": "production",
+          "port": 4100,
+          "workloadMetadata": {
+            "workload": "sqlite-read-write",
+            "reuseSeeded": false,
+            "storage": "sqlite",
+            "databasePath": "/tmp/nile-benchmark-interleaved-wY98zA/round3-hono-sqlite-read-write-validated-attempt1.sqlite",
+            "driver": "bun:sqlite",
+            "runtime": "bun",
+            "runtimeVersion": "1.4.2",
+            "sqliteVersion": "3.53.2",
+            "rows": 1000,
+            "journalMode": "wal",
+            "synchronous": 1,
+            "sqliteSynchronous": "normal",
+            "transaction": "BEGIN IMMEDIATE; SELECT; UPDATE; COMMIT",
+            "setup": "Fresh file; 1000 seeded rows; preparation excluded from request timing"
+          },
+          "pid": 328753,
+          "uptimeSeconds": 5.568124695000001,
+          "cpu": {
+            "user": 2894749,
+            "system": 1522178
+          },
+          "resources": {
+            "userCPUTime": 2894755,
+            "systemCPUTime": 1522181,
+            "maxRSS": 61392,
+            "sharedMemorySize": 0,
+            "unsharedDataSize": 0,
+            "unsharedStackSize": 0,
+            "minorPageFault": 10967,
+            "majorPageFault": 0,
+            "swappedOut": 0,
+            "fsRead": 0,
+            "fsWrite": 303328,
+            "ipcSent": 0,
+            "ipcReceived": 0,
+            "signalsCount": 0,
+            "voluntaryContextSwitches": 2281,
+            "involuntaryContextSwitches": 1198
+          },
+          "memory": {
+            "rss": 57827328,
+            "heapTotal": 6224896,
+            "heapUsed": 6750618,
+            "external": 5078890,
+            "arrayBuffers": 98
+          }
+        }
+      ],
+      "databaseVerification": {
+        "storage": "sqlite",
+        "rows": 1000,
+        "writes": 37514,
+        "expectedWrites": 37514,
+        "verified": true,
+        "includes": "Measured requests, timed warmups, 300 preflight operations and Encore readiness probe when applicable"
+      }
+    },
+    {
+      "framework": "nile",
+      "operation": "memory-read",
+      "mode": "plain",
+      "requestCounts": [
+        300,
+        300,
+        300
+      ],
+      "round": 3,
+      "completed": true,
+      "ready": {
+        "framework": "nile",
+        "workload": "memory-read",
+        "sqliteSynchronous": "normal",
+        "mode": "plain",
+        "runtime": "bun",
+        "nodeEnvironment": "production",
+        "port": 4100,
+        "workloadMetadata": {
+          "workload": "memory-read",
+          "rows": 1000,
+          "storage": "memory",
+          "runtime": "bun"
+        },
+        "runtimeVersion": "1.4.2",
+        "pid": 328858,
+        "factoryAndListenMs": 133.408947,
+        "processReadyMs": 181.51848,
+        "memory": {
+          "rss": 51740672,
+          "heapTotal": 5668864,
+          "heapUsed": 5668864,
+          "external": 596633,
+          "arrayBuffers": 198
+        }
+      },
+      "preflight": {
+        "framework": "nile",
+        "mode": "plain",
+        "validActions": 300,
+        "invalidCases": 0,
+        "status": true
+      },
+      "manifest": "round3-nile-memory-read-plain-attempt1-manifest.json",
+      "results": "round3-nile-memory-read-plain-attempt1-results.json",
+      "loadSamples": [
+        {
+          "startedAt": "2026-10-17T20:18:00.057Z",
+          "finishedAt": "2026-10-17T20:18:05.063Z",
+          "idlePercent": 23.15096251266464,
+          "ioWaitPercent": 0,
+          "swapInPages": 0,
+          "swapOutPages": 0,
+          "availableKiB": 9565108,
+          "perCpu": [
+            {
+              "id": 0,
+              "idlePercent": 4.2682926829268295
+            },
+            {
+              "id": 1,
+              "idlePercent": 29.032258064516128
+            },
+            {
+              "id": 2,
+              "idlePercent": 5.1020408163265305
+            },
+            {
+              "id": 3,
+              "idlePercent": 54.15821501014199
+            }
+          ]
+        }
+      ],
+      "hostLoad": {
+        "startedAt": "2026-10-17T20:18:00.057Z",
+        "finishedAt": "2026-10-17T20:18:05.142Z",
+        "idlePercent": 23.241895261845386,
+        "ioWaitPercent": 0,
+        "swapInPages": 0,
+        "swapOutPages": 0,
+        "availableKiB": 9594116,
+        "perCpu": [
+          {
+            "id": 0,
+            "idlePercent": 4.408817635270541
+          },
+          {
+            "id": 1,
+            "idlePercent": 28.82703777335984
+          },
+          {
+            "id": 2,
+            "idlePercent": 5.210420841683367
+          },
+          {
+            "id": 3,
+            "idlePercent": 54.38247011952191
+          }
+        ]
+      },
+      "summary": {
+        "framework": "nile",
+        "runtime": "bun 1.4.2",
+        "version": "0.0.17 source:9f5a173 sha256:24024c1ad52d1a36c7730ae8d446845fd7c4b6142f842c96c208490d07f5038a",
+        "concurrency": 100,
+        "trialCount": 1,
+        "expected": 1,
+        "invalidTrials": 0,
+        "warmupFailures": 0,
+        "failures": 0,
+        "requests": 300,
+        "expectedRequests": 300,
+        "valid": true,
+        "throughput": {
+          "mean": 11300.110906821805,
+          "median": 11300.110906821805,
+          "min": 11300.110906821805,
+          "max": 11300.110906821805
+        },
+        "p95": {
+          "mean": 8.9,
+          "median": 8.9,
+          "min": 8.9,
+          "max": 8.9
+        },
+        "p99": {
+          "mean": 12.7,
+          "median": 12.7,
+          "min": 12.7,
+          "max": 12.7
+        },
+        "requestBodyBytesPerOp": 91.9,
+        "responseBodyBytesPerOp": 103.54
+      },
+      "measuredRequests": 300,
+      "expectedRequests": 300,
+      "telemetry": [
+        {
+          "framework": "nile",
+          "workload": "memory-read",
+          "sqliteSynchronous": "normal",
+          "mode": "plain",
+          "runtime": "bun",
+          "nodeEnvironment": "production",
+          "port": 4100,
+          "workloadMetadata": {
+            "workload": "memory-read",
+            "rows": 1000,
+            "storage": "memory",
+            "runtime": "bun"
+          },
+          "pid": 328858,
+          "uptimeSeconds": 5.488271566000001,
+          "cpu": {
+            "user": 4364818,
+            "system": 1493306
+          },
+          "resources": {
+            "userCPUTime": 4364827,
+            "systemCPUTime": 1493309,
+            "maxRSS": 69608,
+            "sharedMemorySize": 0,
+            "unsharedDataSize": 0,
+            "unsharedStackSize": 0,
+            "minorPageFault": 11708,
+            "majorPageFault": 0,
+            "swappedOut": 0,
+            "fsRead": 0,
+            "fsWrite": 0,
+            "ipcSent": 0,
+            "ipcReceived": 0,
+            "signalsCount": 0,
+            "voluntaryContextSwitches": 3952,
+            "involuntaryContextSwitches": 446
+          },
+          "memory": {
+            "rss": 69931008,
+            "heapTotal": 10999808,
+            "heapUsed": 8328534,
+            "external": 4753942,
+            "arrayBuffers": 198
+          }
+        }
+      ],
+      "databaseVerification": {
+        "storage": "memory",
+        "writes": 0
+      }
+    },
+    {
+      "framework": "nile",
+      "operation": "sqlite-read-write",
+      "mode": "validated",
+      "requestCounts": [
+        300,
+        300,
+        300
+      ],
+      "round": 3,
+      "completed": true,
+      "ready": {
+        "framework": "nile",
+        "workload": "sqlite-read-write",
+        "databasePath": "/tmp/nile-benchmark-interleaved-wY98zA/round3-nile-sqlite-read-write-validated-attempt1.sqlite",
+        "sqliteSynchronous": "normal",
+        "mode": "validated",
+        "runtime": "bun",
+        "nodeEnvironment": "production",
+        "port": 4100,
+        "workloadMetadata": {
+          "workload": "sqlite-read-write",
+          "reuseSeeded": false,
+          "storage": "sqlite",
+          "databasePath": "/tmp/nile-benchmark-interleaved-wY98zA/round3-nile-sqlite-read-write-validated-attempt1.sqlite",
+          "driver": "bun:sqlite",
+          "runtime": "bun",
+          "runtimeVersion": "1.4.2",
+          "sqliteVersion": "3.53.2",
+          "rows": 1000,
+          "journalMode": "wal",
+          "synchronous": 1,
+          "sqliteSynchronous": "normal",
+          "transaction": "BEGIN IMMEDIATE; SELECT; UPDATE; COMMIT",
+          "setup": "Fresh file; 1000 seeded rows; preparation excluded from request timing"
+        },
+        "runtimeVersion": "1.4.2",
+        "pid": 328876,
+        "factoryAndListenMs": 162.521838,
+        "processReadyMs": 200.797853,
+        "memory": {
+          "rss": 54075392,
+          "heapTotal": 5772288,
+          "heapUsed": 5772288,
+          "external": 561084,
+          "arrayBuffers": 198
+        }
+      },
+      "preflight": {
+        "framework": "nile",
+        "mode": "validated",
+        "validActions": 300,
+        "invalidCases": 30,
+        "status": true
+      },
+      "manifest": "round3-nile-sqlite-read-write-validated-attempt1-manifest.json",
+      "results": "round3-nile-sqlite-read-write-validated-attempt1-results.json",
+      "loadSamples": [
+        {
+          "startedAt": "2026-10-17T20:18:14.701Z",
+          "finishedAt": "2026-10-17T20:18:19.712Z",
+          "idlePercent": 42.48838409912236,
+          "ioWaitPercent": 6.608156943727414,
+          "swapInPages": 0,
+          "swapOutPages": 0,
+          "availableKiB": 9599320,
+          "perCpu": [
+            {
+              "id": 0,
+              "idlePercent": 45.26315789473684
+            },
+            {
+              "id": 1,
+              "idlePercent": 64.08163265306122
+            },
+            {
+              "id": 2,
+              "idlePercent": 44.53781512605042
+            },
+            {
+              "id": 3,
+              "idlePercent": 16.565656565656564
+            }
+          ]
+        }
+      ],
+      "hostLoad": {
+        "startedAt": "2026-10-17T20:18:14.701Z",
+        "finishedAt": "2026-10-17T20:18:19.800Z",
+        "idlePercent": 42.393509127789045,
+        "ioWaitPercent": 6.490872210953347,
+        "swapInPages": 0,
+        "swapOutPages": 0,
+        "availableKiB": 9607412,
+        "perCpu": [
+          {
+            "id": 0,
+            "idlePercent": 44.83471074380165
+          },
+          {
+            "id": 1,
+            "idlePercent": 64
+          },
+          {
+            "id": 2,
+            "idlePercent": 44.21487603305785
+          },
+          {
+            "id": 3,
+            "idlePercent": 16.99604743083004
+          }
+        ]
+      },
+      "summary": {
+        "framework": "nile",
+        "runtime": "bun 1.4.2",
+        "version": "0.0.17 source:9f5a173 sha256:24024c1ad52d1a36c7730ae8d446845fd7c4b6142f842c96c208490d07f5038a",
+        "concurrency": 100,
+        "trialCount": 1,
+        "expected": 1,
+        "invalidTrials": 0,
+        "warmupFailures": 0,
+        "failures": 0,
+        "requests": 300,
+        "expectedRequests": 300,
+        "valid": true,
+        "throughput": {
+          "mean": 8837.17218620232,
+          "median": 8837.17218620232,
+          "min": 8837.17218620232,
+          "max": 8837.17218620232
+        },
+        "p95": {
+          "mean": 10.8,
+          "median": 10.8,
+          "min": 10.8,
+          "max": 10.8
+        },
+        "p99": {
+          "mean": 11,
+          "median": 11,
+          "min": 11,
+          "max": 11
+        },
+        "requestBodyBytesPerOp": 91.9,
+        "responseBodyBytesPerOp": 103.54
+      },
+      "measuredRequests": 300,
+      "expectedRequests": 300,
+      "telemetry": [
+        {
+          "framework": "nile",
+          "workload": "sqlite-read-write",
+          "databasePath": "/tmp/nile-benchmark-interleaved-wY98zA/round3-nile-sqlite-read-write-validated-attempt1.sqlite",
+          "sqliteSynchronous": "normal",
+          "mode": "validated",
+          "runtime": "bun",
+          "nodeEnvironment": "production",
+          "port": 4100,
+          "workloadMetadata": {
+            "workload": "sqlite-read-write",
+            "reuseSeeded": false,
+            "storage": "sqlite",
+            "databasePath": "/tmp/nile-benchmark-interleaved-wY98zA/round3-nile-sqlite-read-write-validated-attempt1.sqlite",
+            "driver": "bun:sqlite",
+            "runtime": "bun",
+            "runtimeVersion": "1.4.2",
+            "sqliteVersion": "3.53.2",
+            "rows": 1000,
+            "journalMode": "wal",
+            "synchronous": 1,
+            "sqliteSynchronous": "normal",
+            "transaction": "BEGIN IMMEDIATE; SELECT; UPDATE; COMMIT",
+            "setup": "Fresh file; 1000 seeded rows; preparation excluded from request timing"
+          },
+          "pid": 328876,
+          "uptimeSeconds": 5.595391770999999,
+          "cpu": {
+            "user": 3743904,
+            "system": 1221864
+          },
+          "resources": {
+            "userCPUTime": 3743912,
+            "systemCPUTime": 1221866,
+            "maxRSS": 75144,
+            "sharedMemorySize": 0,
+            "unsharedDataSize": 0,
+            "unsharedStackSize": 0,
+            "minorPageFault": 14576,
+            "majorPageFault": 0,
+            "swappedOut": 0,
+            "fsRead": 0,
+            "fsWrite": 200664,
+            "ipcSent": 0,
+            "ipcReceived": 0,
+            "signalsCount": 0,
+            "voluntaryContextSwitches": 2144,
+            "involuntaryContextSwitches": 355
+          },
+          "memory": {
+            "rss": 75784192,
+            "heapTotal": 11080704,
+            "heapUsed": 8767105,
+            "external": 5204929,
+            "arrayBuffers": 198
+          }
+        }
+      ],
+      "databaseVerification": {
+        "storage": "sqlite",
+        "rows": 1000,
+        "writes": 24810,
+        "expectedWrites": 24810,
+        "verified": true,
+        "includes": "Measured requests, timed warmups, 300 preflight operations and Encore readiness probe when applicable"
+      }
+    }
+  ],
+  "quietSamples": [
+    {
+      "trial": "round1-hono-memory-read-plain-attempt1",
+      "startedAt": "2026-10-17T20:15:25.216Z",
+      "finishedAt": "2026-10-17T20:15:28.222Z",
+      "idlePercent": 92.49578414839797,
+      "ioWaitPercent": 0,
+      "swapInPages": 0,
+      "swapOutPages": 0,
+      "availableKiB": 9628492,
+      "perCpu": [
+        {
+          "id": 0,
+          "idlePercent": 93.22033898305085
+        },
+        {
+          "id": 1,
+          "idlePercent": 93.91891891891892
+        },
+        {
+          "id": 2,
+          "idlePercent": 92.54237288135593
+        },
+        {
+          "id": 3,
+          "idlePercent": 90.60402684563758
+        }
+      ]
+    },
+    {
+      "trial": "round1-hono-memory-read-plain-attempt1",
+      "startedAt": "2026-10-17T20:15:28.228Z",
+      "finishedAt": "2026-10-17T20:15:31.233Z",
+      "idlePercent": 94.68802698145025,
+      "ioWaitPercent": 0.08431703204047218,
+      "swapInPages": 0,
+      "swapOutPages": 0,
+      "availableKiB": 9628640,
+      "perCpu": [
+        {
+          "id": 0,
+          "idlePercent": 96.25850340136054
+        },
+        {
+          "id": 1,
+          "idlePercent": 93.64548494983278
+        },
+        {
+          "id": 2,
+          "idlePercent": 93.6026936026936
+        },
+        {
+          "id": 3,
+          "idlePercent": 95.60810810810811
+        }
+      ]
+    },
+    {
+      "trial": "round1-hono-memory-read-plain-attempt1",
+      "startedAt": "2026-10-17T20:15:31.238Z",
+      "finishedAt": "2026-10-17T20:15:34.241Z",
+      "idlePercent": 96.29005059021922,
+      "ioWaitPercent": 0.25295109612141653,
+      "swapInPages": 1,
+      "swapOutPages": 0,
+      "availableKiB": 9628032,
+      "perCpu": [
+        {
+          "id": 0,
+          "idlePercent": 96.30872483221476
+        },
+        {
+          "id": 1,
+          "idlePercent": 94.96644295302013
+        },
+        {
+          "id": 2,
+          "idlePercent": 96.29629629629629
+        },
+        {
+          "id": 3,
+          "idlePercent": 96.95945945945945
+        }
+      ]
+    },
+    {
+      "trial": "round1-hono-sqlite-read-write-validated-attempt1",
+      "startedAt": "2026-10-17T20:15:39.661Z",
+      "finishedAt": "2026-10-17T20:15:42.662Z",
+      "idlePercent": 96.6301600673968,
+      "ioWaitPercent": 0,
+      "swapInPages": 0,
+      "swapOutPages": 0,
+      "availableKiB": 9625052,
+      "perCpu": [
+        {
+          "id": 0,
+          "idlePercent": 97.31543624161074
+        },
+        {
+          "id": 1,
+          "idlePercent": 96.61016949152543
+        },
+        {
+          "id": 2,
+          "idlePercent": 95.94594594594595
+        },
+        {
+          "id": 3,
+          "idlePercent": 96.97986577181209
+        }
+      ]
+    },
+    {
+      "trial": "round1-hono-sqlite-read-write-validated-attempt1",
+      "startedAt": "2026-10-17T20:15:42.664Z",
+      "finishedAt": "2026-10-17T20:15:45.670Z",
+      "idlePercent": 95.3664700926706,
+      "ioWaitPercent": 0.2527379949452401,
+      "swapInPages": 0,
+      "swapOutPages": 0,
+      "availableKiB": 9625128,
+      "perCpu": [
+        {
+          "id": 0,
+          "idlePercent": 96.28378378378379
+        },
+        {
+          "id": 1,
+          "idlePercent": 94.23728813559322
+        },
+        {
+          "id": 2,
+          "idlePercent": 96.30872483221476
+        },
+        {
+          "id": 3,
+          "idlePercent": 94.61279461279462
+        }
+      ]
+    },
+    {
+      "trial": "round1-hono-sqlite-read-write-validated-attempt1",
+      "startedAt": "2026-10-17T20:15:45.675Z",
+      "finishedAt": "2026-10-17T20:15:48.679Z",
+      "idlePercent": 96.12468407750632,
+      "ioWaitPercent": 0,
+      "swapInPages": 1,
+      "swapOutPages": 0,
+      "availableKiB": 9625384,
+      "perCpu": [
+        {
+          "id": 0,
+          "idlePercent": 94.63087248322148
+        },
+        {
+          "id": 1,
+          "idlePercent": 95.9866220735786
+        },
+        {
+          "id": 2,
+          "idlePercent": 96.25850340136054
+        },
+        {
+          "id": 3,
+          "idlePercent": 96.97986577181209
+        }
+      ]
+    },
+    {
+      "trial": "round1-nile-memory-read-plain-attempt1",
+      "startedAt": "2026-10-17T20:15:54.232Z",
+      "finishedAt": "2026-10-17T20:15:57.237Z",
+      "idlePercent": 92.09183673469387,
+      "ioWaitPercent": 0,
+      "swapInPages": 0,
+      "swapOutPages": 0,
+      "availableKiB": 9640348,
+      "perCpu": [
+        {
+          "id": 0,
+          "idlePercent": 92.43986254295532
+        },
+        {
+          "id": 1,
+          "idlePercent": 92.22972972972973
+        },
+        {
+          "id": 2,
+          "idlePercent": 91.49659863945578
+        },
+        {
+          "id": 3,
+          "idlePercent": 92.83276450511946
+        }
+      ]
+    },
+    {
+      "trial": "round1-nile-memory-read-plain-attempt1",
+      "startedAt": "2026-10-17T20:15:57.242Z",
+      "finishedAt": "2026-10-17T20:16:00.245Z",
+      "idlePercent": 61.7968094038623,
+      "ioWaitPercent": 0.16792611251049538,
+      "swapInPages": 0,
+      "swapOutPages": 0,
+      "availableKiB": 9666472,
+      "perCpu": [
+        {
+          "id": 0,
+          "idlePercent": 60.40268456375839
+        },
+        {
+          "id": 1,
+          "idlePercent": 57.85953177257525
+        },
+        {
+          "id": 2,
+          "idlePercent": 65.43624161073825
+        },
+        {
+          "id": 3,
+          "idlePercent": 63.08724832214765
+        }
+      ]
+    },
+    {
+      "trial": "round1-nile-memory-read-plain-attempt1",
+      "startedAt": "2026-10-17T20:16:00.247Z",
+      "finishedAt": "2026-10-17T20:16:03.252Z",
+      "idlePercent": 93.32770270270271,
+      "ioWaitPercent": 0,
+      "swapInPages": 0,
+      "swapOutPages": 0,
+      "availableKiB": 9690820,
+      "perCpu": [
+        {
+          "id": 0,
+          "idlePercent": 91.21621621621621
+        },
+        {
+          "id": 1,
+          "idlePercent": 93.51535836177474
+        },
+        {
+          "id": 2,
+          "idlePercent": 93.31103678929766
+        },
+        {
+          "id": 3,
+          "idlePercent": 95.59322033898304
+        }
+      ]
+    },
+    {
+      "trial": "round1-nile-sqlite-read-write-validated-attempt1",
+      "startedAt": "2026-10-17T20:16:08.805Z",
+      "finishedAt": "2026-10-17T20:16:11.808Z",
+      "idlePercent": 83.52941176470588,
+      "ioWaitPercent": 0.7563025210084033,
+      "swapInPages": 0,
+      "swapOutPages": 0,
+      "availableKiB": 9663672,
+      "perCpu": [
+        {
+          "id": 0,
+          "idlePercent": 95.59322033898304
+        },
+        {
+          "id": 1,
+          "idlePercent": 83.5016835016835
+        },
+        {
+          "id": 2,
+          "idlePercent": 63.17567567567568
+        },
+        {
+          "id": 3,
+          "idlePercent": 92.33333333333333
+        }
+      ]
+    },
+    {
+      "trial": "round1-nile-sqlite-read-write-validated-attempt1",
+      "startedAt": "2026-10-17T20:16:11.810Z",
+      "finishedAt": "2026-10-17T20:16:14.812Z",
+      "idlePercent": 92.4178601516428,
+      "ioWaitPercent": 0,
+      "swapInPages": 0,
+      "swapOutPages": 0,
+      "availableKiB": 9663672,
+      "perCpu": [
+        {
+          "id": 0,
+          "idlePercent": 91.94630872483222
+        },
+        {
+          "id": 1,
+          "idlePercent": 92.56756756756756
+        },
+        {
+          "id": 2,
+          "idlePercent": 92.20338983050847
+        },
+        {
+          "id": 3,
+          "idlePercent": 93.26599326599326
+        }
+      ]
+    },
+    {
+      "trial": "round1-nile-sqlite-read-write-validated-attempt1",
+      "startedAt": "2026-10-17T20:16:14.818Z",
+      "finishedAt": "2026-10-17T20:16:17.823Z",
+      "idlePercent": 95.52364864864865,
+      "ioWaitPercent": 0.2533783783783784,
+      "swapInPages": 1,
+      "swapOutPages": 0,
+      "availableKiB": 9663680,
+      "perCpu": [
+        {
+          "id": 0,
+          "idlePercent": 94.94949494949495
+        },
+        {
+          "id": 1,
+          "idlePercent": 95.59322033898304
+        },
+        {
+          "id": 2,
+          "idlePercent": 97.29729729729729
+        },
+        {
+          "id": 3,
+          "idlePercent": 93.93939393939394
+        }
+      ]
+    },
+    {
+      "trial": "round2-hono-memory-read-plain-attempt1",
+      "startedAt": "2026-10-17T20:16:23.477Z",
+      "finishedAt": "2026-10-17T20:16:26.482Z",
+      "idlePercent": 86.83544303797468,
+      "ioWaitPercent": 0.25316455696202533,
+      "swapInPages": 0,
+      "swapOutPages": 0,
+      "availableKiB": 9683856,
+      "perCpu": [
+        {
+          "id": 0,
+          "idlePercent": 82.77027027027027
+        },
+        {
+          "id": 1,
+          "idlePercent": 93.55932203389831
+        },
+        {
+          "id": 2,
+          "idlePercent": 85.85858585858585
+        },
+        {
+          "id": 3,
+          "idlePercent": 85.23489932885906
+        }
+      ]
+    },
+    {
+      "trial": "round2-hono-memory-read-plain-attempt1",
+      "startedAt": "2026-10-17T20:16:26.488Z",
+      "finishedAt": "2026-10-17T20:16:29.494Z",
+      "idlePercent": 94.44444444444444,
+      "ioWaitPercent": 0.5050505050505051,
+      "swapInPages": 0,
+      "swapOutPages": 0,
+      "availableKiB": 9684656,
+      "perCpu": [
+        {
+          "id": 0,
+          "idlePercent": 92.25589225589225
+        },
+        {
+          "id": 1,
+          "idlePercent": 93.24324324324324
+        },
+        {
+          "id": 2,
+          "idlePercent": 96.96969696969697
+        },
+        {
+          "id": 3,
+          "idlePercent": 95.62289562289563
+        }
+      ]
+    },
+    {
+      "trial": "round2-hono-memory-read-plain-attempt1",
+      "startedAt": "2026-10-17T20:16:29.500Z",
+      "finishedAt": "2026-10-17T20:16:32.505Z",
+      "idlePercent": 95.26226734348562,
+      "ioWaitPercent": 0,
+      "swapInPages": 0,
+      "swapOutPages": 0,
+      "availableKiB": 9684720,
+      "perCpu": [
+        {
+          "id": 0,
+          "idlePercent": 94.25675675675676
+        },
+        {
+          "id": 1,
+          "idlePercent": 95.90443686006826
+        },
+        {
+          "id": 2,
+          "idlePercent": 94.96644295302013
+        },
+        {
+          "id": 3,
+          "idlePercent": 95.94594594594595
+        }
+      ]
+    },
+    {
+      "trial": "round2-hono-sqlite-read-write-validated-attempt1",
+      "startedAt": "2026-10-17T20:16:37.851Z",
+      "finishedAt": "2026-10-17T20:16:40.856Z",
+      "idlePercent": 95.53496208930076,
+      "ioWaitPercent": 0.8424599831508003,
+      "swapInPages": 0,
+      "swapOutPages": 0,
+      "availableKiB": 9692324,
+      "perCpu": [
+        {
+          "id": 0,
+          "idlePercent": 93.91891891891892
+        },
+        {
+          "id": 1,
+          "idlePercent": 95.59322033898304
+        },
+        {
+          "id": 2,
+          "idlePercent": 97.66666666666667
+        },
+        {
+          "id": 3,
+          "idlePercent": 94.93243243243244
+        }
+      ]
+    },
+    {
+      "trial": "round2-hono-sqlite-read-write-validated-attempt1",
+      "startedAt": "2026-10-17T20:16:40.866Z",
+      "finishedAt": "2026-10-17T20:16:43.870Z",
+      "idlePercent": 96.96714406065712,
+      "ioWaitPercent": 0,
+      "swapInPages": 0,
+      "swapOutPages": 0,
+      "availableKiB": 9692264,
+      "perCpu": [
+        {
+          "id": 0,
+          "idlePercent": 96.94915254237289
+        },
+        {
+          "id": 1,
+          "idlePercent": 97.96610169491525
+        },
+        {
+          "id": 2,
+          "idlePercent": 97.98657718120805
+        },
+        {
+          "id": 3,
+          "idlePercent": 95.62289562289563
+        }
+      ]
+    },
+    {
+      "trial": "round2-hono-sqlite-read-write-validated-attempt1",
+      "startedAt": "2026-10-17T20:16:43.876Z",
+      "finishedAt": "2026-10-17T20:16:46.879Z",
+      "idlePercent": 96.29317607413648,
+      "ioWaitPercent": 0.2527379949452401,
+      "swapInPages": 1,
+      "swapOutPages": 0,
+      "availableKiB": 9692400,
+      "perCpu": [
+        {
+          "id": 0,
+          "idlePercent": 96.28378378378379
+        },
+        {
+          "id": 1,
+          "idlePercent": 95.94594594594595
+        },
+        {
+          "id": 2,
+          "idlePercent": 97.9933110367893
+        },
+        {
+          "id": 3,
+          "idlePercent": 94.94949494949495
+        }
+      ]
+    },
+    {
+      "trial": "round2-nile-memory-read-plain-attempt1",
+      "startedAt": "2026-10-17T20:16:52.364Z",
+      "finishedAt": "2026-10-17T20:16:55.367Z",
+      "idlePercent": 90.27072758037225,
+      "ioWaitPercent": 0.25380710659898476,
+      "swapInPages": 0,
+      "swapOutPages": 0,
+      "availableKiB": 9668124,
+      "perCpu": [
+        {
+          "id": 0,
+          "idlePercent": 89.49152542372882
+        },
+        {
+          "id": 1,
+          "idlePercent": 90.84745762711864
+        },
+        {
+          "id": 2,
+          "idlePercent": 88.21548821548822
+        },
+        {
+          "id": 3,
+          "idlePercent": 92.22972972972973
+        }
+      ]
+    },
+    {
+      "trial": "round2-nile-memory-read-plain-attempt1",
+      "startedAt": "2026-10-17T20:16:55.371Z",
+      "finishedAt": "2026-10-17T20:16:58.375Z",
+      "idlePercent": 61.56433978132885,
+      "ioWaitPercent": 0.6728343145500421,
+      "swapInPages": 0,
+      "swapOutPages": 0,
+      "availableKiB": 9681852,
+      "perCpu": [
+        {
+          "id": 0,
+          "idlePercent": 73.73737373737374
+        },
+        {
+          "id": 1,
+          "idlePercent": 62.71186440677966
+        },
+        {
+          "id": 2,
+          "idlePercent": 42.95302013422819
+        },
+        {
+          "id": 3,
+          "idlePercent": 67.4496644295302
+        }
+      ]
+    },
+    {
+      "trial": "round2-nile-memory-read-plain-attempt1",
+      "startedAt": "2026-10-17T20:16:58.382Z",
+      "finishedAt": "2026-10-17T20:17:01.387Z",
+      "idlePercent": 94.93243243243244,
+      "ioWaitPercent": 0,
+      "swapInPages": 0,
+      "swapOutPages": 0,
+      "availableKiB": 9685248,
+      "perCpu": [
+        {
+          "id": 0,
+          "idlePercent": 92.54237288135593
+        },
+        {
+          "id": 1,
+          "idlePercent": 96.25850340136054
+        },
+        {
+          "id": 2,
+          "idlePercent": 94.31438127090301
+        },
+        {
+          "id": 3,
+          "idlePercent": 95.97315436241611
+        }
+      ]
+    },
+    {
+      "trial": "round2-nile-sqlite-read-write-validated-attempt1",
+      "startedAt": "2026-10-17T20:17:06.941Z",
+      "finishedAt": "2026-10-17T20:17:09.945Z",
+      "idlePercent": 77.54415475189235,
+      "ioWaitPercent": 0,
+      "swapInPages": 0,
+      "swapOutPages": 0,
+      "availableKiB": 9696408,
+      "perCpu": [
+        {
+          "id": 0,
+          "idlePercent": 84.94983277591973
+        },
+        {
+          "id": 1,
+          "idlePercent": 82.0945945945946
+        },
+        {
+          "id": 2,
+          "idlePercent": 54.88215488215488
+        },
+        {
+          "id": 3,
+          "idlePercent": 88.8135593220339
+        }
+      ]
+    },
+    {
+      "trial": "round2-nile-sqlite-read-write-validated-attempt1",
+      "startedAt": "2026-10-17T20:17:09.951Z",
+      "finishedAt": "2026-10-17T20:17:12.955Z",
+      "idlePercent": 92.91736930860034,
+      "ioWaitPercent": 0.7588532883642496,
+      "swapInPages": 0,
+      "swapOutPages": 0,
+      "availableKiB": 9696220,
+      "perCpu": [
+        {
+          "id": 0,
+          "idlePercent": 91.89189189189189
+        },
+        {
+          "id": 1,
+          "idlePercent": 92.5925925925926
+        },
+        {
+          "id": 2,
+          "idlePercent": 95.2542372881356
+        },
+        {
+          "id": 3,
+          "idlePercent": 92.56756756756756
+        }
+      ]
+    },
+    {
+      "trial": "round2-nile-sqlite-read-write-validated-attempt1",
+      "startedAt": "2026-10-17T20:17:12.961Z",
+      "finishedAt": "2026-10-17T20:17:15.967Z",
+      "idlePercent": 96.29629629629629,
+      "ioWaitPercent": 0,
+      "swapInPages": 1,
+      "swapOutPages": 0,
+      "availableKiB": 9696228,
+      "perCpu": [
+        {
+          "id": 0,
+          "idlePercent": 95.60810810810811
+        },
+        {
+          "id": 1,
+          "idlePercent": 95.28619528619528
+        },
+        {
+          "id": 2,
+          "idlePercent": 97.28813559322033
+        },
+        {
+          "id": 3,
+          "idlePercent": 97.6510067114094
+        }
+      ]
+    },
+    {
+      "trial": "round3-hono-memory-read-plain-attempt1",
+      "startedAt": "2026-10-17T20:17:21.623Z",
+      "finishedAt": "2026-10-17T20:17:24.628Z",
+      "idlePercent": 96.54300168634065,
+      "ioWaitPercent": 0,
+      "swapInPages": 0,
+      "swapOutPages": 0,
+      "availableKiB": 9687932,
+      "perCpu": [
+        {
+          "id": 0,
+          "idlePercent": 97.64309764309765
+        },
+        {
+          "id": 1,
+          "idlePercent": 94.94949494949495
+        },
+        {
+          "id": 2,
+          "idlePercent": 96.63299663299664
+        },
+        {
+          "id": 3,
+          "idlePercent": 96.95945945945945
+        }
+      ]
+    },
+    {
+      "trial": "round3-hono-memory-read-plain-attempt1",
+      "startedAt": "2026-10-17T20:17:24.635Z",
+      "finishedAt": "2026-10-17T20:17:27.639Z",
+      "idlePercent": 96.21212121212122,
+      "ioWaitPercent": 0.5050505050505051,
+      "swapInPages": 0,
+      "swapOutPages": 0,
+      "availableKiB": 9687932,
+      "perCpu": [
+        {
+          "id": 0,
+          "idlePercent": 96.96969696969697
+        },
+        {
+          "id": 1,
+          "idlePercent": 94.5945945945946
+        },
+        {
+          "id": 2,
+          "idlePercent": 96.30872483221476
+        },
+        {
+          "id": 3,
+          "idlePercent": 96.95945945945945
+        }
+      ]
+    },
+    {
+      "trial": "round3-hono-memory-read-plain-attempt1",
+      "startedAt": "2026-10-17T20:17:27.643Z",
+      "finishedAt": "2026-10-17T20:17:30.649Z",
+      "idlePercent": 96.8040370058873,
+      "ioWaitPercent": 0,
+      "swapInPages": 0,
+      "swapOutPages": 0,
+      "availableKiB": 9687944,
+      "perCpu": [
+        {
+          "id": 0,
+          "idlePercent": 96.63299663299664
+        },
+        {
+          "id": 1,
+          "idlePercent": 96.97986577181209
+        },
+        {
+          "id": 2,
+          "idlePercent": 96.28378378378379
+        },
+        {
+          "id": 3,
+          "idlePercent": 97.63513513513513
+        }
+      ]
+    },
+    {
+      "trial": "round3-hono-sqlite-read-write-validated-attempt1",
+      "startedAt": "2026-10-17T20:17:35.978Z",
+      "finishedAt": "2026-10-17T20:17:38.983Z",
+      "idlePercent": 96.28691983122363,
+      "ioWaitPercent": 0.16877637130801687,
+      "swapInPages": 0,
+      "swapOutPages": 0,
+      "availableKiB": 9681828,
+      "perCpu": [
+        {
+          "id": 0,
+          "idlePercent": 95.578231292517
+        },
+        {
+          "id": 1,
+          "idlePercent": 97.31543624161074
+        },
+        {
+          "id": 2,
+          "idlePercent": 96.64429530201342
+        },
+        {
+          "id": 3,
+          "idlePercent": 95.578231292517
+        }
+      ]
+    },
+    {
+      "trial": "round3-hono-sqlite-read-write-validated-attempt1",
+      "startedAt": "2026-10-17T20:17:38.989Z",
+      "finishedAt": "2026-10-17T20:17:41.993Z",
+      "idlePercent": 90.55649241146712,
+      "ioWaitPercent": 0.16863406408094436,
+      "swapInPages": 0,
+      "swapOutPages": 0,
+      "availableKiB": 9681356,
+      "perCpu": [
+        {
+          "id": 0,
+          "idlePercent": 93.89830508474576
+        },
+        {
+          "id": 1,
+          "idlePercent": 85.18518518518519
+        },
+        {
+          "id": 2,
+          "idlePercent": 90.54054054054055
+        },
+        {
+          "id": 3,
+          "idlePercent": 92.61744966442953
+        }
+      ]
+    },
+    {
+      "trial": "round3-hono-sqlite-read-write-validated-attempt1",
+      "startedAt": "2026-10-17T20:17:41.996Z",
+      "finishedAt": "2026-10-17T20:17:44.999Z",
+      "idlePercent": 36.50126156433978,
+      "ioWaitPercent": 0.5887300252312868,
+      "swapInPages": 2,
+      "swapOutPages": 0,
+      "availableKiB": 9585108,
+      "perCpu": [
+        {
+          "id": 0,
+          "idlePercent": 40.33898305084746
+        },
+        {
+          "id": 1,
+          "idlePercent": 43.43434343434343
+        },
+        {
+          "id": 2,
+          "idlePercent": 31.543624161073826
+        },
+        {
+          "id": 3,
+          "idlePercent": 30.76923076923077
+        }
+      ]
+    },
+    {
+      "trial": "round3-nile-memory-read-plain-attempt1",
+      "startedAt": "2026-10-17T20:17:50.607Z",
+      "finishedAt": "2026-10-17T20:17:53.610Z",
+      "idlePercent": 97.72344013490725,
+      "ioWaitPercent": 0,
+      "swapInPages": 0,
+      "swapOutPages": 0,
+      "availableKiB": 9562416,
+      "perCpu": [
+        {
+          "id": 0,
+          "idlePercent": 98.64864864864865
+        },
+        {
+          "id": 1,
+          "idlePercent": 97.97979797979798
+        },
+        {
+          "id": 2,
+          "idlePercent": 97.65886287625418
+        },
+        {
+          "id": 3,
+          "idlePercent": 96.94915254237289
+        }
+      ]
+    },
+    {
+      "trial": "round3-nile-memory-read-plain-attempt1",
+      "startedAt": "2026-10-17T20:17:53.618Z",
+      "finishedAt": "2026-10-17T20:17:56.623Z",
+      "idlePercent": 95.20605550883096,
+      "ioWaitPercent": 0.2523128679562658,
+      "swapInPages": 0,
+      "swapOutPages": 0,
+      "availableKiB": 9586800,
+      "perCpu": [
+        {
+          "id": 0,
+          "idlePercent": 94.25675675675676
+        },
+        {
+          "id": 1,
+          "idlePercent": 95.95959595959596
+        },
+        {
+          "id": 2,
+          "idlePercent": 96.28378378378379
+        },
+        {
+          "id": 3,
+          "idlePercent": 94.63087248322148
+        }
+      ]
+    },
+    {
+      "trial": "round3-nile-memory-read-plain-attempt1",
+      "startedAt": "2026-10-17T20:17:56.630Z",
+      "finishedAt": "2026-10-17T20:17:59.632Z",
+      "idlePercent": 86.49789029535864,
+      "ioWaitPercent": 0.25316455696202533,
+      "swapInPages": 0,
+      "swapOutPages": 0,
+      "availableKiB": 9605392,
+      "perCpu": [
+        {
+          "id": 0,
+          "idlePercent": 89.52702702702703
+        },
+        {
+          "id": 1,
+          "idlePercent": 87.5
+        },
+        {
+          "id": 2,
+          "idlePercent": 84.45945945945945
+        },
+        {
+          "id": 3,
+          "idlePercent": 84.84848484848484
+        }
+      ]
+    },
+    {
+      "trial": "round3-nile-sqlite-read-write-validated-attempt1",
+      "startedAt": "2026-10-17T20:18:05.157Z",
+      "finishedAt": "2026-10-17T20:18:08.159Z",
+      "idlePercent": 94.94097807757167,
+      "ioWaitPercent": 0.5059021922428331,
+      "swapInPages": 0,
+      "swapOutPages": 0,
+      "availableKiB": 9610292,
+      "perCpu": [
+        {
+          "id": 0,
+          "idlePercent": 95.91836734693878
+        },
+        {
+          "id": 1,
+          "idlePercent": 95.63758389261746
+        },
+        {
+          "id": 2,
+          "idlePercent": 94.91525423728814
+        },
+        {
+          "id": 3,
+          "idlePercent": 94.23728813559322
+        }
+      ]
+    },
+    {
+      "trial": "round3-nile-sqlite-read-write-validated-attempt1",
+      "startedAt": "2026-10-17T20:18:08.166Z",
+      "finishedAt": "2026-10-17T20:18:11.170Z",
+      "idlePercent": 96.71440606571188,
+      "ioWaitPercent": 0.33698399326032014,
+      "swapInPages": 0,
+      "swapOutPages": 0,
+      "availableKiB": 9610056,
+      "perCpu": [
+        {
+          "id": 0,
+          "idlePercent": 94.98327759197325
+        },
+        {
+          "id": 1,
+          "idlePercent": 97.28813559322033
+        },
+        {
+          "id": 2,
+          "idlePercent": 97.97979797979798
+        },
+        {
+          "id": 3,
+          "idlePercent": 95.97315436241611
+        }
+      ]
+    },
+    {
+      "trial": "round3-nile-sqlite-read-write-validated-attempt1",
+      "startedAt": "2026-10-17T20:18:11.176Z",
+      "finishedAt": "2026-10-17T20:18:14.182Z",
+      "idlePercent": 94.75908706677937,
+      "ioWaitPercent": 0.16906170752324598,
+      "swapInPages": 0,
+      "swapOutPages": 0,
+      "availableKiB": 9623700,
+      "perCpu": [
+        {
+          "id": 0,
+          "idlePercent": 96.25850340136054
+        },
+        {
+          "id": 1,
+          "idlePercent": 93.24324324324324
+        },
+        {
+          "id": 2,
+          "idlePercent": 94.94949494949495
+        },
+        {
+          "id": 3,
+          "idlePercent": 94.93243243243244
+        }
+      ]
+    }
+  ],
+  "attemptNumber": 1,
+  "totals": {
+    "nile": 1800,
+    "hono": 1800
+  },
+  "expectedTotals": {
+    "nile": 1800,
+    "hono": 1800
+  },
+  "finishedAt": "2026-10-17T20:18:19.842Z"
+}

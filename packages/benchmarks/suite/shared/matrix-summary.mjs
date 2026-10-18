@@ -1,4 +1,4 @@
-/** Compute across-trial medians; latency values remain trial quantiles, not pooled observations. */
+/** Preserve arithmetic means and medians; latency summaries describe trial quantiles. */
 export function summarizeValues(values) {
   const sorted = values.filter(Number.isFinite).sort((a, b) => a - b);
   if (!sorted.length) return null;
@@ -7,12 +7,17 @@ export function summarizeValues(values) {
     sorted.length % 2
       ? sorted[middle]
       : (sorted[middle - 1] + sorted[middle]) / 2;
-  return { median, min: sorted[0], max: sorted.at(-1) };
+  const mean = sorted.reduce((sum, value) => sum + value, 0) / sorted.length;
+  return { mean, median, min: sorted[0], max: sorted.at(-1) };
 }
 
 /** Retain invalid and missing trials visibly instead of selecting only successful runs. */
 export function summarizeScenario(results) {
-  const expected = results.manifest.rounds;
+  const expectedRounds =
+    results.manifest.selectedRound === undefined
+      ? Array.from({ length: results.manifest.rounds }, (_, index) => index + 1)
+      : [results.manifest.selectedRound];
+  const expected = expectedRounds.length;
   return results.manifest.frameworks.flatMap((framework) =>
     results.manifest.workload.concurrencies.map((concurrency) => {
       const trials = results.trials.filter(
@@ -21,18 +26,28 @@ export function summarizeScenario(results) {
           trial.framework === framework.name &&
           trial.concurrency === concurrency
       );
+      const budgets = results.manifest.requestCounts;
+      const invalidBudget = (trial) =>
+        budgets !== undefined &&
+        (!Number.isInteger(trial.round) ||
+          !expectedRounds.includes(trial.round) ||
+          trial.counters.requests !== budgets[trial.round - 1]);
       const warmupFailures = results.trials.filter(
         (trial) =>
           trial.phase === "warmup" &&
           trial.framework === framework.name &&
           trial.concurrency === concurrency &&
-          !trial.valid
+          (!trial.valid ||
+            (results.manifest.selectedRound !== undefined &&
+              trial.round !== results.manifest.selectedRound))
       ).length;
       const requests = trials.reduce(
         (sum, trial) => sum + trial.counters.requests,
         0
       );
-      const invalidTrials = trials.filter((trial) => !trial.valid).length;
+      const invalidTrials = trials.filter(
+        (trial) => !trial.valid || invalidBudget(trial)
+      ).length;
       const failures = trials.reduce(
         (sum, trial) => sum + trial.counters.failed,
         0
@@ -55,10 +70,20 @@ export function summarizeScenario(results) {
         invalidTrials,
         warmupFailures,
         failures,
+        requests,
+        expectedRequests:
+          budgets === undefined
+            ? undefined
+            : expectedRounds.reduce(
+                (sum, round) => sum + budgets[round - 1],
+                0
+              ),
         valid:
           results.completed === true &&
           trials.length === expected &&
           invalidTrials === 0 &&
+          (!budgets ||
+            new Set(trials.map((trial) => trial.round)).size === expected) &&
           warmupFailures === 0,
         throughput: summarizeValues(
           trials.map((trial) => trial.successfulPerSecond)
@@ -82,9 +107,9 @@ export function renderMatrixSummary({ report, resultsByMode }) {
     "",
     `Profile: **${report.config.profile}**. Runtime track: **${report.config.runtime}**. Suite completed: **${report.completed}**. Suite valid: **${report.valid}**.`,
     "",
-    "Rows remain in manifest order. Throughput is median successful requests/s with min–max across all measured trials, including invalid trials. p95/p99 columns are medians of trial percentiles, not pooled request percentiles. Bytes/op aggregate attempted request body and consumed response body bytes across measured requests, including failures; headers and network overhead are excluded.",
+    "Rows remain in manifest order. Count-mode rows use arithmetic mean successful requests/s with min–max; historical duration-mode rows use medians. All measured trials, including invalid trials, remain visible. p95/p99 columns use the same statistic across trial percentiles, not pooled request percentiles. Bytes/op aggregate attempted request body and consumed response body bytes, including failures; headers and network overhead are excluded.",
     "",
-    "Five measured trials are required for each row. INVALID or INCOMPLETE rows cannot support a performance comparison. Warmup failures remain visible. Development results are harness checks, not publication evidence. Shared-machine, closed-loop results apply only to the named workload and runtime; they do not establish a universal fastest-framework claim.",
+    "Every configured round is required: three for exact-count mode or five for duration mode. INVALID or INCOMPLETE rows cannot support a performance comparison. Warmup failures remain visible. Development results are harness checks, not publication evidence. Shared-machine, closed-loop results apply only to the named workload and runtime; they do not establish a universal fastest-framework claim.",
     "",
   ];
   if (report.failure)
@@ -99,10 +124,11 @@ export function renderMatrixSummary({ report, resultsByMode }) {
       );
       continue;
     }
+    const statistic = results.manifest.requestCounts ? "mean" : "median";
     lines.push(
       `Generator complete: ${results.completed}; generator valid: ${results.valid ?? false}.`,
       "",
-      "| Framework | Runtime | Concurrency | Trials | Validity | Successful req/s median [min–max] | p95 ms | p99 ms | Failed requests | Invalid trials | Bad warmups | Req bytes/op | Resp bytes/op |",
+      `| Framework | Runtime | Concurrency | Trials | Validity | Successful req/s ${statistic} [min–max] | p95 ms | p99 ms | Failed requests | Invalid trials | Bad warmups | Req bytes/op | Resp bytes/op |`,
       "| --- | --- | ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |"
     );
     const rows = summarizeScenario(results);
@@ -113,10 +139,10 @@ export function renderMatrixSummary({ report, resultsByMode }) {
           ? "INCOMPLETE"
           : "INVALID";
       const speed = row.throughput
-        ? `${number(row.throughput.median)} [${number(row.throughput.min)}–${number(row.throughput.max)}]`
+        ? `${number(row.throughput[statistic])} [${number(row.throughput.min)}–${number(row.throughput.max)}]`
         : "—";
       lines.push(
-        `| ${safeCell(row.framework)} | ${safeCell(row.runtime)} | ${row.concurrency} | ${row.trialCount}/${row.expected} | ${validity} | ${speed} | ${number(row.p95?.median)} | ${number(row.p99?.median)} | ${row.failures} | ${row.invalidTrials} | ${row.warmupFailures} | ${number(row.requestBodyBytesPerOp)} | ${number(row.responseBodyBytesPerOp)} |`
+        `| ${safeCell(row.framework)} | ${safeCell(row.runtime)} | ${row.concurrency} | ${row.trialCount}/${row.expected} | ${validity} | ${speed} | ${number(row.p95?.[statistic])} | ${number(row.p99?.[statistic])} | ${row.failures} | ${row.invalidTrials} | ${row.warmupFailures} | ${number(row.requestBodyBytesPerOp)} | ${number(row.responseBodyBytesPerOp)} |`
       );
     });
     lines.push("", "Versions tested:", "");

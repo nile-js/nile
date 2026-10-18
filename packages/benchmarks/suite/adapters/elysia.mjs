@@ -7,7 +7,11 @@ import {
 } from "../shared/workload.mjs";
 
 /** Select Elysia's supported runtime adapter while preserving its compiled routing. */
-export function createElysia({ mode, runtime = "node" }) {
+export function createElysia({
+  mode,
+  runtime = "node",
+  execute = calculateResult,
+}) {
   const app = new Elysia(runtime === "node" ? { adapter: node() } : {});
   Array.from({ length: ACTION_COUNT }, (_, action) => {
     app.post(`/actions/action-${action}`, ({ body, set }) => {
@@ -16,7 +20,7 @@ export function createElysia({ mode, runtime = "node" }) {
         set.status = 400;
         return { message: parsed.message };
       }
-      return calculateResult({ payload: parsed.data, action });
+      return execute({ payload: parsed.data, action });
     });
   });
   return app.compile();

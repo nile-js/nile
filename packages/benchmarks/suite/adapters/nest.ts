@@ -19,16 +19,33 @@ const inputSchema = z.object({
 
 type Input = z.infer<typeof inputSchema>;
 type Mode = "plain" | "validated";
+type Execute = (options: {
+  payload: Input;
+  action: number;
+}) => Input & { action: number };
+const calculateResult: Execute = ({ payload, action }) => ({
+  id: payload.id,
+  value: payload.value + 1,
+  action,
+});
 
 /** Register each operation through Nest's controller and method metadata. */
-function createController({ action, mode }: { action: number; mode: Mode }) {
+function createController({
+  action,
+  mode,
+  execute,
+}: {
+  action: number;
+  mode: Mode;
+  execute: Execute;
+}) {
   @Controller(`actions/action-${action}`)
   class ActionController {
     @Post()
     @HttpCode(200)
     execute(@Body() body: Input) {
       if (mode === "plain") {
-        return { id: body.id, value: body.value + 1, action };
+        return execute({ payload: body, action });
       }
 
       const parsed = inputSchema.safeParse(body);
@@ -36,7 +53,7 @@ function createController({ action, mode }: { action: number; mode: Mode }) {
         throw new BadRequestException("Invalid input");
       }
 
-      return { id: parsed.data.id, value: parsed.data.value + 1, action };
+      return execute({ payload: parsed.data, action });
     }
   }
 
@@ -47,12 +64,14 @@ function createController({ action, mode }: { action: number; mode: Mode }) {
 export async function createNest({
   host,
   mode,
+  execute = calculateResult,
 }: {
   host: "express" | "fastify";
   mode: Mode;
+  execute?: Execute;
 }) {
   const controllers = Array.from({ length: 300 }, (_, action) =>
-    createController({ action, mode })
+    createController({ action, mode, execute })
   );
 
   @Module({ controllers })

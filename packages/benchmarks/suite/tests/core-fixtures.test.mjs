@@ -14,9 +14,7 @@ for (const mode of ["plain", "validated"]) {
   assert.equal(express.router.stack.filter((layer) => layer.route).length, 300);
   assert.equal(fastify.server.listening, false);
   assert.equal(trpc.server.listening, false);
-  const servers = await Promise.all(
-    [false, true].map((released) => createNile({ mode, released }))
-  );
+  const server = await createNile({ mode });
   for (const action of Array.from({ length: 300 }, (_, action) => action)) {
     const payload = { id: action, value: action % 1000 };
     const expected = { id: action, value: payload.value + 1, action };
@@ -37,20 +35,18 @@ for (const mode of ["plain", "validated"]) {
     );
     assert.equal(elysiaResponse.status, 200);
     assert.deepEqual(await elysiaResponse.json(), expected);
-    for (const server of servers) {
-      const nileResponse = await server.rest.app.request("/api/services", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          intent: "execute",
-          service: "bench",
-          action: `action-${action}`,
-          payload,
-        }),
-      });
-      assert.equal(nileResponse.status, 200);
-      assert.deepEqual((await nileResponse.json()).data, expected);
-    }
+    const nileResponse = await server.rest.app.request("/api/services", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        intent: "execute",
+        service: "bench",
+        action: `action-${action}`,
+        payload,
+      }),
+    });
+    assert.equal(nileResponse.status, 200);
+    assert.deepEqual((await nileResponse.json()).data, expected);
   }
   if (mode === "validated") {
     const response = await fastify.inject({
@@ -64,5 +60,5 @@ for (const mode of ["plain", "validated"]) {
   await fastify.close();
 }
 console.log(
-  "Core fixtures: plain/validated route identity, common validation, released/current Nile and non-listening initialization PASS"
+  "Core fixtures: plain/validated route identity, common validation, current local Nile and non-listening initialization PASS"
 );

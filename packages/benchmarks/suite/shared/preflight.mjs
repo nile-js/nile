@@ -54,7 +54,7 @@ export async function preflightFramework({ framework, mode, request }) {
       }).status
     )
       throw Error(
-        `Preflight failed: ${framework.name} action-${action} does not return the matched payload and action identity`
+        `Preflight failed: ${framework.name} action-${action} does not return the matched payload and action identity; ${response.status ? `HTTP ${response.statusCode}, body=${JSON.stringify(response.body?.slice(0, 500))}` : `${response.kind}: ${response.message}`}`
       );
     checked.validActions += 1;
   }
