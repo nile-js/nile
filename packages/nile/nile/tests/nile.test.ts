@@ -1,3 +1,4 @@
+import { Context } from "hono";
 import { describe, expect, it } from "vitest";
 import { createNileContext } from "../nile";
 import { getRequestStore, runInRequestScope } from "../request-scope";
@@ -106,25 +107,22 @@ describe("createNileContext - request-scoped get() for interface contexts", () =
 
   it("should return the rest context from the current request scope", async () => {
     const ctx = createNileContext();
-    const mockHonoCtx = { req: { raw: { headers: new Headers() } } };
+    const mockHonoCtx = new Context(new Request("http://localhost/"));
 
-    await runInRequestScope(
-      { rest: mockHonoCtx as unknown, sessions: {} },
-      () => {
-        expect(ctx.get("rest")).toBe(mockHonoCtx);
-        expect(ctx.get("ws")).toBeUndefined();
-        expect(ctx.get("rpc")).toBeUndefined();
-      }
-    );
+    await runInRequestScope({ rest: mockHonoCtx, sessions: {} }, () => {
+      expect(ctx.get("rest")).toBe(mockHonoCtx);
+      expect(ctx.get("ws")).toBeUndefined();
+      expect(ctx.get("rpc")).toBeUndefined();
+    });
   });
 
   it("should isolate rest contexts between concurrent scopes", async () => {
     const ctx = createNileContext();
-    const mockCtxA = { req: { id: "A" } };
-    const mockCtxB = { req: { id: "B" } };
+    const mockCtxA = new Context(new Request("http://localhost/a"));
+    const mockCtxB = new Context(new Request("http://localhost/b"));
 
     const scopeA = runInRequestScope(
-      { rest: mockCtxA as unknown, sessions: {} },
+      { rest: mockCtxA, sessions: {} },
       async () => {
         await new Promise((r) => setTimeout(r, 10));
         return ctx.get("rest");
@@ -132,7 +130,7 @@ describe("createNileContext - request-scoped get() for interface contexts", () =
     );
 
     const scopeB = runInRequestScope(
-      { rest: mockCtxB as unknown, sessions: {} },
+      { rest: mockCtxB, sessions: {} },
       async () => {
         await new Promise((r) => setTimeout(r, 10));
         return ctx.get("rest");

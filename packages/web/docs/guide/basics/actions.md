@@ -1,158 +1,44 @@
-# Actions
+# Give each operation a clear boundary
 
-Actions are the core building blocks of Nile. Each action represents a single operation that can be called via the REST-RPC interface.
-
-## createAction
+An action is a named business operation. Keep its description, input schema and handler together so a teammate can understand what it accepts and how it finishes without tracing a chain of route definitions.
 
 ```typescript
-import { Ok, Err } from "slang-ts";
-import { createAction, type Action } from "@nilejs/nile";
-
-export const myAction: Action = createAction({
-  name: "actionName",
-  description: "What this action does",
-  handler: (data) => {
-    // Return Ok with data on success
-    return Ok({ result: "success" });
-    // Or return Err on failure
-    // return Err("Something went wrong");
-  },
-});
-```
-
-## Options
-
-| Option | Type | Description |
-|--------|------|-------------|
-| `name` | `string` | Unique identifier for the action. Duplicates within the same service throw on boot. |
-| `description` | `string` | Human-readable description |
-| `validation` | `z.ZodTypeAny \| null` | Optional Zod schema for input validation |
-| `handler` | `ActionHandler` | The function that executes when the action is called |
-| `isProtected` | `boolean` | If true, requires authentication |
-| `visibility` | `{ rest?: boolean; rpc?: boolean }` | Control which interfaces expose this action |
-
-## Handler Signature
-
-The handler receives input data and context, and must return a `Result<unknown, E>` from `slang-ts`:
-
-```typescript
-import type { Result } from "slang-ts";
-import type { NileContext } from "@nilejs/nile";
-
-type ActionHandler<T = unknown, E = string> = (
-  data: T,
-  context?: NileContext<unknown>
-) => Result<unknown, E> | Promise<Result<unknown, E>>;
-```
-
-Use `Ok(data)` for success and `Err(error)` for failures:
-
-```typescript
-handler: (data) => {
-  if (!data.requiredField) {
-    return Err("Required field is missing");
-  }
-  return Ok({ id: "1", name: "Item" });
-},
-```
-
-## Example: Action with Validation
-
-```typescript
-// services/tasks/create.ts
+import { createAction } from "@nilejs/nile";
 import { Ok } from "slang-ts";
-import z from "zod";
-import { createAction, type Action } from "@nilejs/nile";
+import { z } from "zod";
 
-const createTaskSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  status: z.enum(["pending", "in-progress", "done"]).default("pending"),
-});
+const createProjectSchema = z.object({ name: z.string().trim().min(1) });
+type CreateProjectInput = z.infer<typeof createProjectSchema>;
 
-const createTaskHandler = (data: Record<string, unknown>) => {
-  const task = {
-    id: crypto.randomUUID(),
-    title: data.title as string,
-    status: (data.status as string) ?? "pending",
-  };
-  return Ok({ task });
-};
-
-export const createTaskAction: Action = createAction({
+export const createProject = createAction<CreateProjectInput>({
   name: "create",
-  description: "Create a new task",
-  validation: createTaskSchema,
-  handler: createTaskHandler,
+  description: "Create a team project",
+  validation: createProjectSchema,
+  handler: (input) => Ok({
+    project: { id: crypto.randomUUID(), name: input.name },
+  }),
 });
 ```
 
-## Multiple Actions
+The example returns a project without persistence. In a real application, coordinate the business function or model from the handler and propagate its Result.
 
-Actions are typically defined in separate files and then grouped into a service:
+## Keep the contract close to the work
 
-```typescript
-// services/tasks/create.ts
-import { Ok } from "slang-ts";
-import z from "zod";
-import { createAction, type Action } from "@nilejs/nile";
+| Setting | Purpose |
+|---|---|
+| `name`, `description` | Name and explain the operation. |
+| `validation` | A Zod schema parsed before the main handler. Omit it only when no schema validation is needed. |
+| `handler` | Receive parsed input and optional Nile context; return a Result or a promise of a Result. |
+| `isProtected` | Request built-in JWT verification **when server `auth` is also configured**. |
+| `hooks.before`, `hooks.after` | Reference registered actions for reusable pipeline steps. |
+| `accessControl` | Application-defined policy metadata; Nile does not enforce role strings automatically. |
+| `visibility.rest` | Hide an action from detailed REST discovery/schema results. This is not an access-control policy. |
+| `cacheSchema` | Set `false` to convert this action's discovery schema on each request. |
+| `cors` | Inherit CORS, override its options, or set `false` for this action's response headers. |
+| `isSpecial` | Declare multipart or other content-type expectations. |
+| `result.pipeline` | Include local hook execution logs in the returned data. |
+| `meta` | Attach application-defined metadata. No automatic caching or permissions are implied. |
 
-const createTaskSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-});
+`createAction` preserves your definition; it does not infer a handler's input from the `validation` property. Derive the input type with `z.infer` and pass it explicitly, as above.
 
-const createTaskHandler = (data: Record<string, unknown>) => {
-  return Ok({ task: { id: crypto.randomUUID(), title: data.title } });
-};
-
-export const createTaskAction: Action = createAction({
-  name: "create",
-  description: "Create a new task",
-  validation: createTaskSchema,
-  handler: createTaskHandler,
-});
-```
-
-```typescript
-// services/tasks/list.ts
-import { Ok } from "slang-ts";
-import { createAction, type Action } from "@nilejs/nile";
-
-export const listTaskAction: Action = createAction({
-  name: "list",
-  description: "List all tasks",
-  handler: () => Ok({ tasks: [] }),
-});
-```
-
-Then group them in the service config:
-
-```typescript
-// services/tasks.ts
-import { createServices, type Services } from "@nilejs/nile";
-import { createTaskAction } from "./tasks/create";
-import { listTaskAction } from "./tasks/list";
-
-export const services: Services = createServices([
-  {
-    name: "tasks",
-    description: "Task management",
-    actions: [createTaskAction, listTaskAction],
-  },
-]);
-```
-
-## Accessing Context
-
-The handler receives a second parameter with access to resources:
-
-```typescript
-handler: (data, context) => {
-  // Access database from context
-  const users = await context?.resources?.database?.query.users.findMany();
-  
-  // Access logger
-  context?.resources?.logger?.info({ atFunction: "myAction", message: "Processing" });
-  
-  return Ok({ count: users.length });
-}
-```
+Use [services](/guide/basics/services) to group actions, [Results](/guide/basics/errors-and-results) for failure paths, and [hooks](/guide/basics/hooks-and-pipelines) for shared policy.

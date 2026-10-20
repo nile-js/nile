@@ -1,136 +1,35 @@
-# Services
+# Group work by domain
 
-Services group related actions together. A service is a logical container that organizes your actions under a common namespace.
-
-## Defining a Service
-
-Services are plain objects with a name, description, and array of actions. You can define them directly or use the `createServices` helper for better type inference:
+A service gives related actions a recognizable home. Use domain names the team already uses: projects, tickets, billing or collaboration. As more operations arrive, people can start with the domain rather than search an unfamiliar route map.
 
 ```typescript
-import { createServices, type Services } from "@nilejs/nile";
-import { createTaskAction } from "./tasks/create";
-import { listTaskAction } from "./tasks/list";
+import { createService, createServices } from "@nilejs/nile";
+import { createProject } from "./projects/create-project";
+import { archiveProject } from "./projects/archive-project";
 
-export const services: Services = createServices([
-  {
-    name: "tasks",
-    description: "Task management with CRUD operations",
-    actions: [createTaskAction, listTaskAction],
-  },
-]);
-```
-
-> **Note:** The `createServices` helper is optional - you can also pass the array directly (`services: [...]`). Similarly, you can use `createActions` to wrap action arrays, or pass them directly - both approaches work.
-
-## Options
-
-| Option | Type | Description |
-|--------|------|-------------|
-| `name` | `string` | Unique identifier for the service. Duplicate service names throw on boot. |
-| `description` | `string` | Human-readable description |
-| `actions` | `Action[]` | Array of actions belonging to this service |
-| `meta` | `Record<string, unknown>` | Optional metadata for the service |
-
-## Example: Full Service Setup
-
-```typescript
-// services/tasks/create.ts
-import { Ok } from "slang-ts";
-import z from "zod";
-import { createAction, type Action } from "@nilejs/nile";
-
-const createTaskSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  status: z.enum(["pending", "in-progress", "done"]).default("pending"),
+const projectsService = createService({
+  name: "projects",
+  description: "Create and manage team projects",
+  actions: [createProject, archiveProject],
 });
 
-const createTaskHandler = (data: Record<string, unknown>) => {
-  const task = {
-    id: crypto.randomUUID(),
-    title: data.title as string,
-    status: (data.status as string) ?? "pending",
-  };
-  return Ok({ task });
-};
-
-export const createTaskAction: Action = createAction({
-  name: "create",
-  description: "Create a new task",
-  validation: createTaskSchema,
-  handler: createTaskHandler,
-});
+export const services = createServices([projectsService]);
 ```
+
+Pass `services` to `createNileServer`. Nile registers that list at startup and rejects duplicate service names or duplicate action names within a service.
+
+A service is an application grouping, not a separately deployed microservice. It does not create a database, process or network boundary. Your ordinary business functions and models can be shared through explicit imports or application resources.
+
+## Keep registration useful
+
+Put the registry in a predictable file, such as `services/services.config.ts`. Give actions descriptions that explain the business effect. Keep large implementations in their own domain modules so the registry remains easy to scan.
+
+Nile logs service/action totals and per-service registration timings at startup by default. Inspect the same snapshot without printing:
 
 ```typescript
-// services/tasks/list.ts
-import { Ok } from "slang-ts";
-import { createAction, type Action } from "@nilejs/nile";
-
-const listTaskHandler = () => {
-  return Ok({
-    tasks: [
-      { id: "1", title: "Learn Nile", status: "pending" },
-      { id: "2", title: "Build something", status: "done" },
-    ],
-  });
-};
-
-export const listTaskAction: Action = createAction({
-  name: "list",
-  description: "List all tasks",
-  handler: listTaskHandler,
-});
+console.log(server.stats());
 ```
 
-```typescript
-// services/tasks.ts
-import { createServices, type Services } from "@nilejs/nile";
-import { createTaskAction } from "./tasks/create";
-import { listTaskAction } from "./tasks/list";
+The snapshot contains `totalServices`, `totalActions`, `registrationDurationMs`, `startupDurationMs` and a `services` array with each service's `actionCount` and `registrationDurationMs`. It measures registration after modules have been constructed, not module import time or database loading per service. Set `logServices: false` to suppress the startup table.
 
-export const services: Services = createServices([
-  {
-    name: "tasks",
-    description: "Task management operations",
-    actions: [createTaskAction, listTaskAction],
-  },
-]);
-```
-
-## Using Services in the Server
-
-```typescript
-// server.ts
-import { createNileServer } from "@nilejs/nile";
-import { services } from "./services/tasks";
-
-const server = await createNileServer({
-  serverName: "my-app",
-  services,
-  rest: {
-    baseUrl: "/api",
-    port: 8000,
-  },
-});
-
-if (server.rest) {
-  const { fetch } = server.rest.app;
-  Bun.serve({ fetch, port: 8000 });
-  console.log("Server running at http://localhost:8000");
-}
-```
-
-## Invoking Actions
-
-Once the server is running, invoke actions via POST to `/api/services`:
-
-```bash
-curl -X POST http://localhost:8000/api/services \
-  -H "Content-Type: application/json" \
-  -d '{
-    "intent": "execute",
-    "service": "tasks",
-    "action": "list",
-    "payload": {}
-  }'
-```
+See [application structure](/guide/start/application-structure) for a domain layout that gives new teammates a familiar path through the code.

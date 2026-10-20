@@ -1,69 +1,53 @@
+@font-face {
+	font-family: "Nile Sans";
+	src: url("../docs/public/fonts/FiraSans-Regular.otf") format("opentype");
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+}
+@font-face {
+	font-family: "Nile Sans";
+	src: url("../docs/public/fonts/FiraSans-SemiBold.otf") format("opentype");
+	font-style: normal;
+	font-weight: 500 800;
+	font-display: swap;
+}
+@font-face {
+	font-family: "Nile Mono";
+	src: url("../docs/public/fonts/FiraMono-Regular.otf") format("opentype");
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+}
 :root {
-  /* Blue brand colors for Nile */
-  --rp-c-brand: #3b82f6;
-  --rp-c-brand-light: #60a5fa;
-  --rp-c-brand-lighter: #bfdbfe;
-  --rp-c-brand-dark: #2563eb;
-  --rp-c-brand-darker: #1d4ed8;
-  --rp-c-brand-tint: rgba(59, 130, 246, 0.16);
+	--rp-c-brand: #036b9c;
+	--rp-c-brand-light: #087eaf;
+	--rp-c-brand-lighter: #38bdf8;
+	--rp-c-brand-dark: #075779;
+	--rp-c-brand-darker: #06445e;
+	--rp-c-brand-tint: #38bdf814;
+	--rp-font-family-base: "Nile Sans", sans-serif;
+	--rp-font-family-mono: "Nile Mono", monospace;
 }
-
-/* Add wave icon before navbar logo text */
-.rspress-nav-logo-text::before {
-  content: "🌊";
-  margin-right: 0.5rem;
-  font-size: 1.5rem;
-  vertical-align: middle;
+html.dark {
+	--rp-c-brand: #38bdf8;
+	--rp-c-brand-light: #7dd3fc;
+	--rp-c-brand-lighter: #bae6fd;
+	--rp-c-brand-dark: #0ea5e9;
+	--rp-c-brand-darker: #0284c7;
+	--rp-c-brand-tint: #38bdf814;
 }
-
-/* Fix code snippet overflow and right-side spacing */
-.rp-codeblock__content :where(code) {
-  /* Ensure padding on both sides */
-  padding: 1rem 1.5rem !important;
-  /* Ensure it takes up full width for background consistency */
-  display: block;
-  width: max-content;
-  min-width: 100%;
+body {
+	font-family: "Nile Sans", sans-serif;
 }
-
-/* Ensure line numbers (if enabled) still look correct with new padding */
-.rp-codeblock__content--line-numbers code {
-  padding-left: 0.5rem !important;
+.rspress-nav-logo-text {
+	font-family: "Nile Sans", sans-serif;
+	font-weight: 600;
+	letter-spacing: -0.03em;
 }
-
-/* Ensure the pre tag doesn't introduce extra margins */
-.rp-codeblock__content :where(pre) {
-  margin: 0 !important;
+.rp-doc a {
+	text-underline-offset: 3px;
 }
-
-/* Force code blocks to use consistent dark background in both modes */
-.rp-codeblock__content {
-  background-color: #0d0d0d !important;
-}
-
-.rp-codeblock__content pre {
-  background-color: #0d0d0d !important;
-}
-
-.rp-codeblock__content code {
-  background-color: #0d0d0d !important;
-}
-
-/* Code block wrapper/header */
-.rp-codeblock {
-  background-color: #0d0d0d !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-}
-
-.rp-codeblock__header {
-  background-color: #080808 !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-}
-
-.rp-codeblock__header span {
-  color: rgba(255, 255, 255, 0.6) !important;
-}
-
-.rp-codeblock__header button {
-  color: rgba(255, 255, 255, 0.6) !important;
+.rp-doc pre {
+	overflow-x: auto;
 }

@@ -1,4 +1,4 @@
-import type { Hono } from "hono";
+import type { Hono, MiddlewareHandler } from "hono";
 import { cors } from "hono/cors";
 import type { RestConfig } from "@/rest/types";
 import type { CorsConfig, CorsHelper, CorsOptions } from "./types";
@@ -36,7 +36,7 @@ export const buildDefaultCorsOptions = (config: RestConfig): CorsOptions => {
  * Creates a CorsHelper instance pre-loaded with default options.
  * Methods mutate internal state. After the resolver runs, call `toOptions()` to get the final CorsOptions.
  */
-function createCorsHelper(
+export function createCorsHelper(
   defaults: CorsOptions
 ): CorsHelper & { toOptions: () => CorsOptions } {
   const state: CorsOptions = { ...defaults };
@@ -86,7 +86,11 @@ function createCorsHelper(
 /**
  * Apply CORS configuration to a Hono app based on RestConfig
  */
-export const applyCorsConfig = (app: Hono, config: RestConfig): void => {
+export const applyCorsConfig = (
+  app: Hono,
+  config: RestConfig,
+  services?: { path: string; middleware: MiddlewareHandler }
+): void => {
   const corsEnabled = config.cors?.enabled ?? "default";
 
   if (corsEnabled === false) {
@@ -98,11 +102,17 @@ export const applyCorsConfig = (app: Hono, config: RestConfig): void => {
   // Apply route-specific CORS rules FIRST (before global catch-all)
   const corsRules = config.cors?.addCors ?? [];
   for (const rule of corsRules) {
-    applyRouteCorsRule(app, rule, defaultCorsOpts);
+    applyRouteCorsRule(app, rule, defaultCorsOpts, services?.path);
   }
 
   // Apply global CORS as fallback
-  app.use("*", cors(defaultCorsOpts as Parameters<typeof cors>[0]));
+  const globalCors = cors(defaultCorsOpts as Parameters<typeof cors>[0]);
+  app.use("*", (c, next) => {
+    if (services && c.req.method === "POST" && c.req.path === services.path) {
+      return services.middleware(c, next);
+    }
+    return globalCors(c, next);
+  });
 };
 
 /**
@@ -111,12 +121,19 @@ export const applyCorsConfig = (app: Hono, config: RestConfig): void => {
 const applyRouteCorsRule = (
   app: Hono,
   rule: NonNullable<CorsConfig["addCors"]>[number],
-  defaultOpts: CorsOptions
+  defaultOpts: CorsOptions,
+  servicesPath?: string
 ): void => {
   if (rule.resolver) {
-    applyResolverBasedCors(app, rule.path, rule.resolver, defaultOpts);
+    applyResolverBasedCors(
+      app,
+      rule.path,
+      rule.resolver,
+      defaultOpts,
+      servicesPath
+    );
   } else if (rule.options) {
-    applyStaticCors(app, rule.path, rule.options, defaultOpts);
+    applyStaticCors(app, rule.path, rule.options, defaultOpts, servicesPath);
   }
 };
 
@@ -128,13 +145,17 @@ const applyResolverBasedCors = (
   app: Hono,
   path: string,
   resolver: NonNullable<CorsConfig["addCors"]>[number]["resolver"],
-  defaultOpts: CorsOptions
+  defaultOpts: CorsOptions,
+  servicesPath?: string
 ): void => {
   if (!resolver) {
     return;
   }
 
   app.use(path, (c, next) => {
+    if (c.req.method === "POST" && c.req.path === servicesPath) {
+      return next();
+    }
     const reqOrigin = c.req.header("origin") ?? "";
     const helper = createCorsHelper(defaultOpts);
 
@@ -158,10 +179,16 @@ const applyStaticCors = (
   app: Hono,
   path: string,
   options: CorsOptions,
-  defaultOpts: CorsOptions
+  defaultOpts: CorsOptions,
+  servicesPath?: string
 ): void => {
-  app.use(
-    path,
-    cors({ ...defaultOpts, ...options } as Parameters<typeof cors>[0])
-  );
+  const middleware = cors({ ...defaultOpts, ...options } as Parameters<
+    typeof cors
+  >[0]);
+  app.use(path, (c, next) => {
+    if (c.req.method === "POST" && c.req.path === servicesPath) {
+      return next();
+    }
+    return middleware(c, next);
+  });
 };

@@ -3,6 +3,7 @@ import type { Hono } from "hono";
 import { rateLimiter } from "hono-rate-limiter";
 import { safeTry } from "slang-ts";
 import type { ServerRuntime } from "@/nile/types";
+import { getRequestStore } from "../nile/request-scope";
 import type { RestConfig } from "./types";
 
 const ASSETS_REGEX = /^\/assets\//;
@@ -36,10 +37,7 @@ export function applyRateLimiting(
           return key;
         }
         // Fall back to IP-based rate limiting when the configured header is absent
-        const ip =
-          c.req.header("x-forwarded-for") ??
-          c.req.header("x-real-ip") ??
-          "unknown-client";
+        const ip = getRequestStore()?.execution?.clientKey ?? "unknown-client";
         log(
           `Rate limiting header '${rateLimiting.limitingHeader}' missing — falling back to IP: ${ip}`
         );

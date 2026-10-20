@@ -4,7 +4,7 @@ import { getRequestStore } from "./request-scope";
 import type { NileContext, Resources, Sessions } from "./types";
 
 /** Keys that are stored per-request via AsyncLocalStorage, not on the global _store */
-const REQUEST_SCOPED_KEYS = new Set(["rest", "ws", "rpc"]);
+const REQUEST_SCOPED_KEYS = new Set(["rest", "nativeRest", "ws", "rpc"]);
 
 interface CreateNileContextParams<TDB = unknown> {
   resources?: Resources<TDB>;
@@ -29,6 +29,9 @@ export function createNileContext<TDB = unknown>(
   let fallbackHookContext = createHookContext({ actionName: "", input: null });
 
   const context: NileContext<TDB> = {
+    get execution() {
+      return getRequestStore()?.execution;
+    },
     resources: params?.resources,
     _store: store,
 

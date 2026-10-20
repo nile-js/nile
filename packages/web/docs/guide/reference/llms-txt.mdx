@@ -1,13 +1,13 @@
 ---
-title: LLMs
+title: Documentation for coding agents
 ---
 
-# LLMs.txt
+# Give your coding assistant the same map
 
-[View LLMs.txt](/llms.txt)
+Nile's <a href="/nile/llms.txt">llms.txt</a> lists the public guides, and <a href="/nile/llms-full.txt">llms-full.txt</a> contains the documentation bundle. Use them to give a coding assistant the current service/action conventions, runtime APIs and examples before it changes an application.
 
-## Context7 MCP
+The npm package also includes `SKILL.md` and these generated documentation files under `docs/`. Follow the application's own instructions and check its existing service registry before adding another operation.
 
-Nile is indexed on [Context7](https://context7.com/nile-js/nile) — an MCP server that feeds up-to-date library documentation directly into AI coding assistants. Any AI tool with Context7 MCP support (Cursor, Windsurf, Copilot, Claude Code, etc.) can pull Nile's full documentation into context while generating code.
+Nile is listed on [Context7](https://context7.com/nile-js/nile). If your assistant has Context7 configured, it can retrieve library documentation through that integration. Availability and retrieved versions depend on that service and your assistant setup.
 
-This means your AI assistant already knows how to work with Nile — services, actions, hooks, auth, uploads, the client SDK — without you needing to paste docs or explain the framework.
+Documentation access is separate from [runtime API discovery](/guide/basics/discovery-and-agents). Reading these files does not give an agent credentials or permission to execute an application's actions.

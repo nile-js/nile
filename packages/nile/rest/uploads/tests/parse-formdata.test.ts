@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { Action } from "../../../engine/types";
 import {
   collectFiles,
   detectMixedKeys,
@@ -58,7 +59,7 @@ describe("collectFiles", () => {
     fd.append("avatar", file);
     const result = collectFiles(fd);
     expect(result).toHaveLength(1);
-    expect(result[0].name).toBe("a.png");
+    expect(result[0]?.name).toBe("a.png");
   });
 
   it("collects only files from mixed entries", () => {
@@ -209,7 +210,7 @@ describe("parseBodyToStructured", () => {
     const result = await parseBodyToStructured(ctx);
     expect(result.status).toBe(true);
     expect(Array.isArray(result.data?.files.photos)).toBe(true);
-    expect((result.data?.files.photos as File[]).length).toBe(2);
+    expect(result.data?.files.photos).toHaveLength(2);
   });
 
   it("handles array of strings under same key", async () => {
@@ -264,7 +265,7 @@ describe("enforceActionContentType", () => {
   });
 
   it("passes when action has no isSpecial.contentType", () => {
-    const action = { isSpecial: {} as { contentType: string } };
+    const action = { isSpecial: {} as NonNullable<Action["isSpecial"]> };
     const result = enforceActionContentType(action, "text/plain", true);
     expect(result.status).toBe(true);
   });
@@ -295,9 +296,13 @@ describe("enforceActionContentType", () => {
   });
 
   it("matches case-insensitively", () => {
-    const action = {
-      isSpecial: { contentType: "Multipart/Form-Data" as const },
+    const action: Pick<Action, "isSpecial"> = {
+      isSpecial: { contentType: "multipart/form-data" },
     };
+    // Exercise a runtime value outside the typed configuration boundary.
+    Object.defineProperty(action.isSpecial, "contentType", {
+      value: "Multipart/Form-Data",
+    });
     const result = enforceActionContentType(
       action,
       "MULTIPART/FORM-DATA; boundary=xyz",

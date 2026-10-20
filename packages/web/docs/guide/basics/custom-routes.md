@@ -1,228 +1,66 @@
-# Custom Routes
+# Keep HTTP-specific work in a route
 
-Nile's REST interface is a standard Hono app. After creating your server, you can add custom routes directly on the Hono instance for things Nile doesn't handle through the service/action model, such as webhooks, OAuth callbacks, health checks, or any traditional HTTP endpoint.
+Use actions for business operations, and ordinary HTTP routes when an integration expects a particular URL, method or response. Webhooks, authentication callbacks and streaming endpoints can live beside Nile's action API.
 
-## Accessing the Hono App
+## Bun native routes
 
-`createNileServer` returns a `NileServer` object with a `rest.app` property. A regular Hono instance:
+After constructing a Bun native server, register routes before starting its listener:
 
 ```typescript
-import { createNileServer } from "@nilejs/nile";
+const native = server.nativeRest;
+if (!native) throw new Error("Bun native transport was not initialized");
 
-const server = await createNileServer({
-  name: "MyApp",
-  services: [/* ... */],
-  rest: {
-    baseUrl: "/api/v1",
-    allowedOrigins: ["http://localhost:3000"],
-  },
+native.route("GET", "/projects/:id/preview", (context) => {
+  return context.json({ projectId: context.params.id });
 });
 
+native.addMiddleware("/api", async (context, next) => {
+  context.setHeader("X-Application", "team-workspace");
+  await next();
+});
+
+Bun.serve({ port: 8000, fetch: native.fetch });
+```
+
+Native handlers use standard `Request` and `Response` APIs, with `context.json`, `text`, `respond`, outgoing `headers` and request-local state helpers. Routes support exact paths, named/optional parameters and a terminal wildcard. `ALL` matches any method. Exact matches take precedence; a later exact registration replaces the same method/path.
+
+Native middleware may return a Response to stop execution, or await `next()` and modify the resulting headers. It must respond or call `next`, and must not call `next` twice. Static serving and CORS preflight occur ahead of user middleware.
+
+## Hono routes
+
+Existing applications can keep their Hono adapter and its plugins:
+
+```typescript
 const app = server.rest?.app;
-```
+if (!app) throw new Error("Hono transport was not initialized");
 
-## Adding Routes
-
-Use any Hono method (`get`, `post`, `put`, `delete`, `all`) to register custom routes:
-
-### Webhook Endpoint
-
-```typescript
-app?.post("/webhooks/stripe", async (c) => {
-  const signature = c.req.header("stripe-signature");
-  const body = await c.req.text();
-
-  // Verify and process the webhook
-  const event = verifyStripeSignature(body, signature);
-
-  if (!event) {
-    return c.json({ error: "Invalid signature" }, 401);
-  }
-
-  await processStripeEvent(event);
-  return c.json({ received: true });
-});
-```
-
-### OAuth Callback
-
-```typescript
-app?.get("/auth/callback", async (c) => {
-  const code = c.req.query("code");
-  const state = c.req.query("state");
-
-  if (!code || !state) {
-    return c.json({ error: "Missing code or state" }, 400);
-  }
-
-  const tokens = await exchangeCodeForTokens(code);
-  // Set cookie, create session, etc.
-
-  return c.redirect("/dashboard");
-});
-```
-
-### Custom Health Check
-
-```typescript
-app?.get("/health", async (c) => {
-  const dbHealthy = await checkDatabaseConnection();
-  const cacheHealthy = await checkCacheConnection();
-
-  const healthy = dbHealthy && cacheHealthy;
-
-  return c.json({
-    status: healthy ? "ok" : "degraded",
-    checks: {
-      database: dbHealthy ? "up" : "down",
-      cache: cacheHealthy ? "up" : "down",
-    },
-  }, healthy ? 200 : 503);
-});
-```
-
-## Using Nile Context in Custom Routes
-
-Access the shared `NileContext` from custom routes using `getContext`:
-
-```typescript
-import { createNileServer, getContext } from "@nilejs/nile";
-
-const server = await createNileServer({
-  name: "MyApp",
-  services: [/* ... */],
-  resources: { database: db, logger },
-  rest: {
-    baseUrl: "/api/v1",
-    allowedOrigins: ["http://localhost:3000"],
-  },
+app.get("/projects/:id/preview", (context) => {
+  return context.json({ projectId: context.req.param("id") });
 });
 
-server.rest?.app.post("/webhooks/payment", async (c) => {
-  const ctx = getContext<typeof db>();
-  const logger = ctx.resources?.logger;
-  const database = ctx.resources?.database;
-
-  const payload = await c.req.json();
-
-  logger?.info({
-    atFunction: "webhookHandler",
-    message: "Payment webhook received",
-    data: { eventType: payload.type },
-  });
-
-  // Use your database, cache, or any shared resource
-  await database?.insert(payments).values({
-    eventId: payload.id,
-    amount: payload.amount,
-  });
-
-  return c.json({ processed: true });
-});
-```
-
-### Middleware for the Services Endpoint
-
-To add middleware that runs before Nile's built-in `POST /services` handler, use `addMiddleware`:
-
-```typescript
-server.rest?.addMiddleware("*", async (c, next) => {
-  const start = Date.now();
+server.rest?.addMiddleware("/api", async (context, next) => {
+  context.header("X-Application", "team-workspace");
   await next();
-  console.log(`Request took ${Date.now() - start}ms`);
 });
+```
 
-// Path-specific middleware
-server.rest?.addMiddleware("/api/v1/services", async (c, next) => {
-  const apiKey = c.req.header("x-api-key");
-  if (!apiKey) {
-    return c.json({ error: "API key required" }, 401); // Short-circuit, returns Response, skips handler
+Use `server.rest.addMiddleware` for middleware that must run before Nile's services handler; late `app.use` registration is not a reliable way to wrap an already registered route. The current compatibility middleware runner does not consistently adopt a directly returned Response. For a Hono services-endpoint denial, use Hono's `HTTPException` rather than relying on a returned Response:
+
+```typescript
+import { HTTPException } from "hono/http-exception";
+
+server.rest?.addMiddleware("/api", async (context, next) => {
+  if (!context.req.header("X-Application-Key")) {
+    throw new HTTPException(401, { message: "Application key required" });
   }
   await next();
 });
 ```
 
-Middleware registered via `addMiddleware` runs in registration order, before the POST handler processes the intent. Each middleware receives the Hono context and a `next()` function to pass control to the next middleware (or the handler). A middleware can return a `Response` to short-circuit the request. Downstream middleware and the handler will not execute.
+This demonstrates a missing-header guard, not a complete key-verification policy. For business-action access, prefer an explicit [authorization hook](/guide/basics/auth).
 
-## Adding Middleware
+## Reuse logic, preserve the boundary
 
-You can also add Hono middleware to the app for custom routes:
+A custom route can call ordinary business functions and access `server.context.resources`. It does not automatically run an action's schema, JWT check or hooks. Validate input and enforce the integration's signature/authentication requirements before calling the business function.
 
-```typescript
-// Apply to specific paths
-app?.use("/webhooks/*", async (c, next) => {
-  const apiKey = c.req.header("x-api-key");
-  if (apiKey !== process.env.WEBHOOK_SECRET) {
-    return c.json({ error: "Unauthorized" }, 401);
-  }
-  await next();
-});
-
-// Then register your webhook handlers
-app?.post("/webhooks/stripe", stripeHandler);
-app?.post("/webhooks/github", githubHandler);
-```
-
-## Route Order
-
-Custom routes registered after `createNileServer` are added after Nile's built-in routes. The order is:
-
-1. CORS middleware
-2. Rate limiting middleware
-3. Static file serving (`/assets/*`)
-4. **Registered middleware** (via `addMiddleware`, can short-circuit by returning `Response`)
-5. `POST {baseUrl}/services` (Nile RPC)
-6. `GET /status` (if enabled)
-7. **Your custom routes**
-8. 404 handler
-
-Since Nile's 404 handler catches unmatched routes, register your custom routes **before** exporting the app for serving.
-
-## Full Example
-
-```typescript
-import { createNileServer, getContext } from "@nilejs/nile";
-import { Ok } from "slang-ts";
-
-const server = await createNileServer({
-  name: "PaymentService",
-  services: [
-    {
-      name: "payments",
-      description: "Payment processing",
-      actions: [
-        {
-          name: "list",
-          description: "List recent payments",
-          handler: () => Ok({ payments: [] }),
-        },
-      ],
-    },
-  ],
-  resources: { database: db },
-  rest: {
-    baseUrl: "/api/v1",
-    allowedOrigins: ["http://localhost:3000"],
-    enableStatus: true,
-  },
-});
-
-const app = server.rest?.app;
-
-// Stripe webhook, outside the service/action model
-app?.post("/webhooks/stripe", async (c) => {
-  const ctx = getContext();
-  const body = await c.req.json();
-  // Process webhook...
-  return c.json({ received: true });
-});
-
-// OAuth callback
-app?.get("/auth/google/callback", async (c) => {
-  const code = c.req.query("code");
-  // Exchange code, set session...
-  return c.redirect("/");
-});
-
-export default app;
-```
+Hono Context and native context APIs are different; plugins require deliberate migration. See [runtime adapters](/guide/start/runtime-adapters).

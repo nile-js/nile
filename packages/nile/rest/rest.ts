@@ -1,8 +1,7 @@
-import type { Context } from "hono";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import type { ContentfulStatusCode } from "hono/utils/http-status";
 import z from "zod";
+import { createActionCors } from "@/cors/action-cors";
 import { applyCorsConfig } from "@/cors/cors";
 import type { Engine } from "@/engine/types";
 import { runInRequestScope } from "@/nile/request-scope";
@@ -13,14 +12,15 @@ import type {
   ServerRuntime,
 } from "@/nile/types";
 import { createDiagnosticsLog } from "@/utils";
-import type { intentHandlers } from "./intent-handlers";
+import type { NileLifecycle } from "../lifecycle/types";
+import { getRequestStore } from "../nile/request-scope";
+import { createHttpBoundary } from "../protection/http";
+import { checkDiscoveryAccess } from "./discovery-access";
+import { handleFormDataPath } from "./form-data-handler";
 import { applyRateLimiting, applyStaticServing } from "./middleware";
 import { createMiddlewareMatcher } from "./middleware-matcher";
 import { createRestIntentHandlers } from "./schema-cache";
 import type { MiddlewareEntry, RestConfig } from "./types";
-import { enforceActionContentType, handleFormDataRequest } from "./uploads";
-
-// --- Zod schema for incoming requests ---
 
 const externalRequestSchema = z.object({
   intent: z.enum(["explore", "execute", "schema"]),
@@ -29,154 +29,8 @@ const externalRequestSchema = z.object({
   payload: z.record(z.string(), z.unknown()),
 });
 
-/** Zod schema for the RPC routing fields extracted from form-data */
-const formDataRoutingSchema = z.object({
-  intent: z.enum(["explore", "execute", "schema"]),
-  service: z.string().min(1),
-  action: z.string().min(1),
-});
-
-function checkDiscoveryAccess(
-  intent: string,
-  payload: Record<string, unknown> | undefined,
-  config: RestConfig
-): { allowed: boolean; message?: string } {
-  if (intent !== "explore" && intent !== "schema") {
-    return { allowed: true };
-  }
-  if (!config.discovery?.enabled) {
-    return { allowed: false, message: "API discovery is disabled" };
-  }
-  if (
-    config.discovery.secret &&
-    payload?.discoverySecret !== config.discovery.secret
-  ) {
-    return { allowed: false, message: "Invalid or missing discovery secret" };
-  }
-  return { allowed: true };
-}
-
-/**
- * Handles multipart/form-data requests by extracting RPC routing fields,
- * parsing files, running validation, and dispatching to the intent handler.
- *
- * Form-data must include 'intent', 'service', 'action' as string fields.
- * Remaining fields/files become the structured payload passed to the action handler.
- */
-async function handleFormDataPath(
-  c: Context,
-  config: RestConfig,
-  engine: Engine,
-  nileContext: NileContext<unknown>,
-  log: (msg: string) => void,
-  handlers: typeof intentHandlers
-) {
-  // Extract RPC routing fields from the form data first pass
-  const rawBody = await c.req.parseBody({ all: true }).catch(() => null);
-  if (!rawBody) {
-    return c.json(
-      {
-        status: false,
-        message: "Failed to parse multipart form data",
-        data: {},
-      } satisfies ExternalResponse,
-      400
-    );
-  }
-
-  const routing = formDataRoutingSchema.safeParse({
-    intent: rawBody.intent,
-    service: rawBody.service,
-    action: rawBody.action,
-  });
-
-  if (!routing.success) {
-    return c.json(
-      {
-        status: false,
-        message:
-          "Form-data must include 'intent', 'service', and 'action' fields",
-        data: { errors: routing.error.issues },
-      } satisfies ExternalResponse,
-      400
-    );
-  }
-
-  const { intent, service, action } = routing.data;
-  log(`${intent} -> ${service}.${action} (form-data)`);
-
-  const discovery = checkDiscoveryAccess(
-    intent,
-    rawBody as Record<string, unknown>,
-    config
-  );
-  if (!discovery.allowed) {
-    return c.json(
-      {
-        status: false,
-        message: discovery.message ?? "Forbidden",
-        data: {},
-      } satisfies ExternalResponse,
-      403
-    );
-  }
-
-  // Content-type enforcement against action's isSpecial config
-  const actionResult = engine.getAction(service, action);
-  if (actionResult.isOk && config.uploads?.enforceContentType) {
-    const contentTypeCheck = enforceActionContentType(
-      actionResult.value,
-      "multipart/form-data",
-      true
-    );
-    if (!contentTypeCheck.status) {
-      return c.json(
-        {
-          status: false,
-          message: contentTypeCheck.message ?? "Unsupported content type",
-          data: contentTypeCheck.data ?? {},
-        } satisfies ExternalResponse,
-        (contentTypeCheck.statusCode ?? 415) as ContentfulStatusCode
-      );
-    }
-  }
-
-  // Parse and validate uploaded files
-  const uploadConfig = config.uploads ?? {};
-  const uploadMode = actionResult.isOk
-    ? (actionResult.value.isSpecial?.uploadMode ?? "flat")
-    : "flat";
-
-  const uploadResult = await handleFormDataRequest(c, uploadConfig, uploadMode);
-  if (!(uploadResult.status && uploadResult.data)) {
-    return c.json(
-      {
-        status: false,
-        message: uploadResult.message ?? "Upload validation failed",
-        data: uploadResult.errorData ?? {},
-      } satisfies ExternalResponse,
-      (uploadResult.statusCode ?? 400) as ContentfulStatusCode
-    );
-  }
-
-  // Build the RPC request with the structured payload
-  const request: ExternalRequest = {
-    intent,
-    service,
-    action,
-    payload: uploadResult.data as unknown as Record<string, unknown>,
-  };
-
-  const handler = handlers[request.intent];
-  const response = await handler(engine, request, nileContext);
-
-  const statusCode = response.status ? 200 : 400;
-  return c.json(response, statusCode);
-}
-
-// --- Factory ---
-
 interface CreateRestAppParams {
+  lifecycle?: NileLifecycle;
   config: RestConfig;
   engine: Engine;
   nileContext: NileContext<unknown>;
@@ -195,15 +49,22 @@ export interface RestApp {
  * Creates the Hono REST app with a single POST endpoint for all service interactions
  * and an optional GET /status health check.
  *
- * Middleware registered via addMiddleware runs before the services POST handler
- * through a dynamic runner registered first in the Hono dispatch chain.
- *
- * All service communication flows through POST {baseUrl}/services using
- * the intent field to discriminate between explore, execute, and schema operations.
  */
 export function createRestApp(params: CreateRestAppParams): RestApp {
   const { config, engine, nileContext, serverName, runtime } = params;
   const app = new Hono();
+  const boundary = createHttpBoundary(config.protection, params.lifecycle);
+  app.use("*", async (c, next) => {
+    const response = await boundary(c.req.raw, async (request) => {
+      c.req.raw = request;
+      await next();
+      return c.res;
+    });
+    // Hono ignores returned middleware responses after finalization; assign the wrapped response explicitly.
+    c.res = response;
+    return response;
+  });
+
   const handlers = createRestIntentHandlers({ config });
 
   const log = createDiagnosticsLog("REST", {
@@ -214,7 +75,9 @@ export function createRestApp(params: CreateRestAppParams): RestApp {
   });
 
   // Apply CORS
-  applyCorsConfig(app, config);
+  const servicesPath = `${config.baseUrl}/services`;
+  const actionCors = createActionCors(config, engine, servicesPath);
+  applyCorsConfig(app, config, actionCors);
 
   // Apply rate limiting when a limiting header is configured
   applyRateLimiting(app, config, log);
@@ -225,13 +88,13 @@ export function createRestApp(params: CreateRestAppParams): RestApp {
   // --- Dynamic middleware registry ---
   // Registered BEFORE the POST handler so user middleware always runs first
   const middlewareRegistry: MiddlewareEntry[] = [];
-  const servicesPath = `${config.baseUrl}/services`;
   const middlewareMatcher = createMiddlewareMatcher({
     servicesPath,
     readRegistry: () => middlewareRegistry,
   });
 
-  app.use("*", async (c, next) => {
+  // Keep this boundary synchronous when no user middleware needs to run.
+  app.use("*", (c, next) => {
     if (middlewareRegistry.length === 0) {
       return next();
     }
@@ -255,85 +118,110 @@ export function createRestApp(params: CreateRestAppParams): RestApp {
       }
     };
 
-    await runNext();
+    return runNext();
   });
 
   // Single POST endpoint for all service interactions
   app.post(servicesPath, (c) => {
     // Each request gets its own isolated scope, concurrent requests never share mutable state
-    return runInRequestScope({ rest: c, sessions: {} }, async () => {
-      const contentType = c.req.header("content-type") ?? "";
-      const isFormData = contentType.includes("multipart/form-data");
+    return runInRequestScope(
+      {
+        ...getRequestStore(),
+        rest: c,
+        sessions: getRequestStore()?.sessions ?? {},
+      },
+      async () => {
+        const contentType = c.req.header("content-type") ?? "";
+        const isFormData = contentType.includes("multipart/form-data");
 
-      // --- Form-data path (multipart uploads) ---
-      if (isFormData) {
-        return handleFormDataPath(
-          c,
-          config,
-          engine,
-          nileContext,
-          log,
-          handlers
+        // --- Form-data path (multipart uploads) ---
+        if (isFormData) {
+          return handleFormDataPath(
+            c,
+            config,
+            engine,
+            nileContext,
+            log,
+            handlers,
+            actionCors
+          );
+        }
+
+        // --- JSON path (standard RPC) ---
+        const body = await c.req
+          .json<Partial<ExternalRequest>>()
+          .catch(() => null);
+
+        if (!body) {
+          return c.json(
+            {
+              status: false,
+              message: "Invalid or missing JSON body",
+              data: {},
+            } satisfies ExternalResponse,
+            400
+          );
+        }
+
+        const pendingCors = actionCors?.select(c, body);
+        if (pendingCors) {
+          await pendingCors;
+        }
+        const parsed = externalRequestSchema.safeParse(body);
+        if (!parsed.success) {
+          return c.json(
+            {
+              status: false,
+              message: "Invalid request format",
+              data: { errors: parsed.error.issues },
+            } satisfies ExternalResponse,
+            400
+          );
+        }
+
+        const request = parsed.data as ExternalRequest;
+
+        log(`${request.intent} -> ${request.service}.${request.action}`);
+
+        // Gate explore/schema intents behind discovery config
+        const discovery = checkDiscoveryAccess(
+          request.intent,
+          request.payload,
+          config
         );
+        if (!discovery.allowed) {
+          return c.json(
+            {
+              status: false,
+              message: discovery.message ?? "Forbidden",
+              data: {},
+            } satisfies ExternalResponse,
+            403
+          );
+        }
+
+        const handler = handlers[request.intent];
+        const response = await handler(engine, request, nileContext);
+
+        const statusCode = response.status ? 200 : 400;
+        return c.json(response, statusCode);
       }
-
-      // --- JSON path (standard RPC) ---
-      const body = await c.req.json().catch(() => null);
-
-      if (!body) {
-        return c.json(
-          {
-            status: false,
-            message: "Invalid or missing JSON body",
-            data: {},
-          } satisfies ExternalResponse,
-          400
-        );
-      }
-
-      const parsed = externalRequestSchema.safeParse(body);
-      if (!parsed.success) {
-        return c.json(
-          {
-            status: false,
-            message: "Invalid request format",
-            data: { errors: parsed.error.issues },
-          } satisfies ExternalResponse,
-          400
-        );
-      }
-
-      const request = parsed.data as ExternalRequest;
-
-      log(`${request.intent} -> ${request.service}.${request.action}`);
-
-      // Gate explore/schema intents behind discovery config
-      const discovery = checkDiscoveryAccess(
-        request.intent,
-        request.payload,
-        config
-      );
-      if (!discovery.allowed) {
-        return c.json(
-          {
-            status: false,
-            message: discovery.message ?? "Forbidden",
-            data: {},
-          } satisfies ExternalResponse,
-          403
-        );
-      }
-
-      const handler = handlers[request.intent];
-      const response = await handler(engine, request, nileContext);
-
-      const statusCode = response.status ? 200 : 400;
-      return c.json(response, statusCode);
-    });
+    );
   });
 
   // Health check endpoint
   if (config.enableStatus) {
+    app.get("/ready", (c) =>
+      c.json(
+        {
+          status: params.lifecycle?.isReady() ?? true,
+          message:
+            params.lifecycle?.isReady() === false ? "Not ready" : "Ready",
+          data: {},
+        },
+        params.lifecycle?.isReady() === false ? 503 : 200
+      )
+    );
     app.get("/status", (c) => {
       return c.json({
         status: true,

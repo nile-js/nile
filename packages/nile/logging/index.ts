@@ -9,3 +9,4 @@ export {
   type LogReaderConfig,
   resolveLogPath,
 } from "./logger";
+export { getLogWriteFailures } from "./transports";

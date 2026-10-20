@@ -1,85 +1,24 @@
-# Static File Serving
+# Serve public assets when needed
 
-Nile can serve static files from a local directory through the REST interface. This is useful for serving images, documents, or any assets your application needs to expose over HTTP.
-
-## Configuration
-
-Enable static file serving with `enableStatic` and specify your server runtime:
+For a small application, Nile can expose a local public asset directory without another HTTP service. Both adapters support the same configuration:
 
 ```typescript
-const server = await createNileServer({
-  name: "MyApp",
-  runtime: "bun", // or "node"
-  services: [/* ... */],
-  rest: {
-    baseUrl: "/api/v1",
-    allowedOrigins: ["http://localhost:3000"],
-    enableStatic: true,
-  },
-});
+rest: {
+  baseUrl: "/api",
+  allowedOrigins: ["https://app.example.com"],
+  enableStatic: true,
+  staticDir: "./assets",
+}
 ```
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `enableStatic` | `boolean` | `false` | Enable static file serving at `/assets/*` |
-| `runtime` | `"bun" \| "node"` | `"bun"` | Server runtime — determines which adapter is used |
+The default directory is `./assets`, relative to the application's working directory. A file at `assets/logo.png` is available at `GET /assets/logo.png`; the asset namespace is independent of `rest.baseUrl`.
 
-## How It Works
+Bun native uses Bun file responses and supports GET/HEAD. Hono selects its runtime-specific static adapter. Select `runtime: "bun"` or `runtime: "node"` explicitly; `native: true` requires Bun.
 
-When `enableStatic` is `true`, Nile registers a middleware on `/assets/*` that serves files from a `./assets` directory relative to your project root.
+## Decide what belongs in the directory
 
-```
-your-project/
-├── assets/
-│   ├── logo.png
-│   ├── styles.css
-│   └── docs/
-│       └── readme.pdf
-├── src/
-│   └── index.ts
-└── package.json
-```
+Static files are public resources, not protected actions. Do not place private documents there expecting action authorization hooks to protect them. Use an authenticated route or your application's storage access mechanism for private files.
 
-These files are then accessible at:
+Enabling native static serving creates a missing configured directory. Missing files fall through; native serving rejects traversal and symlink escapes. Keep file permissions, persistent volumes and deployment working directories deliberate.
 
-```
-GET /assets/logo.png
-GET /assets/styles.css
-GET /assets/docs/readme.pdf
-```
-
-## Cross-Runtime Support
-
-Nile dynamically imports the correct `serveStatic` adapter based on the `runtime` value:
-
-| Runtime | Adapter |
-|---------|---------|
-| `bun` | `hono/bun` |
-| `node` | `@hono/node-server/serve-static` |
-
-The adapter is **lazy-loaded** on the first request to `/assets/*`, not at startup. This avoids runtime-specific import issues during testing or mixed environments.
-
-If the adapter fails to load (e.g., the package isn't installed), static serving is silently disabled and requests to `/assets/*` fall through to the 404 handler.
-
-### Node Requirement
-
-When using `runtime: "node"`, make sure the Node adapter is installed:
-
-```bash
-bun add @hono/node-server
-```
-
-The Bun adapter ships with Hono by default, so no extra install is needed for Bun.
-
-## Middleware Order
-
-Static file serving runs after CORS and rate limiting, but before the main service endpoint:
-
-1. CORS
-2. Rate limiting
-3. **Static file serving** (`/assets/*`)
-4. `POST {baseUrl}/services` (RPC endpoint)
-5. `GET /status` (health check)
-6. 404 handler
-
-This means static file requests respect your CORS and rate limiting configuration.
+A reverse proxy, CDN or object store may be a better fit for larger deployments. Nile does not provision one or automatically persist files uploaded through an action. See [uploads](/guide/basics/uploads) for the upload boundary and [deployment](/guide/start/deploy) for resource ownership.

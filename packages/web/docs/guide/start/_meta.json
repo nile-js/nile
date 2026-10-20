@@ -2,7 +2,17 @@
   {
     "type": "file",
     "name": "getting-started",
-    "label": "Getting Started"
+    "label": "Getting started"
+  },
+  {
+    "type": "file",
+    "name": "application-structure",
+    "label": "Application structure"
+  },
+  {
+    "type": "file",
+    "name": "runtime-adapters",
+    "label": "Runtime adapters"
   },
   {
     "type": "file",
@@ -12,7 +22,7 @@
   {
     "type": "file",
     "name": "migration",
-    "label": "Migration Guide"
+    "label": "Migration guide"
   },
   {
     "type": "file",

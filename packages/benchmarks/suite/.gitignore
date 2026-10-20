@@ -5,3 +5,8 @@ results/
 tools/
 .encore/
 encore.gen/
+
+# Framework-generated caches and local image manifests
+**/.adonisjs/
+**/.encore/
+**/encore.gen/

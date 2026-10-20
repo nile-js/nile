@@ -6,6 +6,21 @@
   },
   {
     "type": "file",
+    "name": "operations",
+    "label": "Running Nile in production"
+  },
+  {
+    "type": "file",
+    "name": "realtime",
+    "label": "Sockets and typed messages"
+  },
+  {
+    "type": "file",
+    "name": "performance",
+    "label": "Performance and methodology"
+  },
+  {
+    "type": "file",
     "name": "framework-comparison",
     "label": "Framework Comparison"
   },

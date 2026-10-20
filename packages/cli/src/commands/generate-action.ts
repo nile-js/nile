@@ -53,7 +53,8 @@ export const ${camel}Action: Action = createAction({
  */
 export const generateActionCommand = async (
   serviceName: string,
-  actionName: string
+  actionName: string,
+  options: { folder?: boolean } = {}
 ): Promise<void> => {
   const serviceDir = resolve(process.cwd(), "src/services", serviceName);
 
@@ -63,9 +64,18 @@ export const generateActionCommand = async (
     process.exit(1);
   }
 
-  const actionFile = resolve(serviceDir, `${actionName}.ts`);
+  const relative = options.folder
+    ? `actions/${actionName}/${actionName}.ts`
+    : `actions/${actionName}.ts`;
+  const actionFile = resolve(serviceDir, relative);
 
-  if (pathExists(actionFile)) {
+  const existingEntries = [
+    actionFile,
+    resolve(serviceDir, `${actionName}.ts`),
+    resolve(serviceDir, `actions/${actionName}.ts`),
+    resolve(serviceDir, `actions/${actionName}/${actionName}.ts`),
+  ];
+  if (existingEntries.some(pathExists)) {
     error(
       `Action file "${actionName}.ts" already exists in src/services/${serviceName}/`
     );
@@ -81,14 +91,21 @@ export const generateActionCommand = async (
     generateActionContent(actionName, serviceName)
   );
 
-  spinner.stop(
-    `Action created at src/services/${serviceName}/${actionName}.ts`
-  );
+  if (options.folder) {
+    await writeFileSafe(
+      resolve(serviceDir, `actions/${actionName}/index.ts`),
+      `export { ${toCamelCase(actionName)}Action } from "./${actionName}";\n`
+    );
+  }
+
+  spinner.stop(`Action created at src/services/${serviceName}/${relative}`);
 
   const camel = toCamelCase(actionName);
   console.log("");
   hint("Register the action in your service config:");
-  hint(`  import { ${camel}Action } from "./${serviceName}/${actionName}";`);
+  hint(
+    `  import { ${camel}Action } from "./${serviceName}/actions/${actionName}";`
+  );
 
   outro();
 };

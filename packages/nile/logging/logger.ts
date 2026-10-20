@@ -1,3 +1,8 @@
+import { formatLog } from "./format-log";
+import type { Log, LogFilter, LoggerConfig, LogReaderConfig } from "./types";
+
+export type { Log, LogFilter, LoggerConfig, LogReaderConfig } from "./types";
+
 import {
   appendFileSync,
   existsSync,
@@ -7,27 +12,12 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 import { nanoid } from "nanoid";
-import pino, { type Logger } from "pino";
-
-export interface Log {
-  atFunction: string;
-  appName: string;
-  message: string;
-  data?: unknown;
-  level?: "info" | "warn" | "error";
-  log_id?: string;
-}
+import { getRequestStore } from "../nile/request-scope";
+import { writeLogRecord } from "./transports";
 
 /** Configuration for reading logs — only needs chunking strategy */
-export interface LogReaderConfig {
-  chunking?: "monthly" | "daily" | "weekly" | "none";
-}
 
 /** Configuration for log file chunking behavior and runtime mode */
-export interface LoggerConfig extends LogReaderConfig {
-  /** Runtime mode — controls how logs are output */
-  mode: "prod" | "dev" | "agentic";
-}
 
 const logDir = join(process.cwd(), "logs");
 
@@ -113,40 +103,6 @@ function getISOWeekNumber(date: Date): number {
 }
 
 /**
- * Creates a pino logger instance that writes to the resolved log file path.
- * Each call creates a fresh pino transport — callers should cache if needed.
- */
-function createLoggerForApp(appName: string, config?: LogReaderConfig): Logger {
-  const logFile = resolveLogPath(appName, config);
-
-  const transport = pino.transport({
-    targets: [
-      {
-        level: "info",
-        target: "pino/file",
-        options: {
-          destination: logFile,
-          mkdir: true,
-        },
-      },
-    ],
-  });
-
-  return pino(
-    {
-      base: null,
-      timestamp: () => `,"time":"${new Date().toISOString()}"`,
-      formatters: {
-        level(label) {
-          return { level: label };
-        },
-      },
-    },
-    transport
-  );
-}
-
-/**
  * Creates a new log entry with the provided log information.
  * Supports optional chunking config to split logs into time-based files.
  * @param log - The log object containing the log details
@@ -162,7 +118,16 @@ export const createLog = (log: Log, config: LoggerConfig) => {
   const level = log.level || "info";
   const log_id = log.log_id || nanoid(6);
 
+  const execution = getRequestStore()?.execution;
   const logRecord = {
+    ...(execution
+      ? {
+          requestId: execution.requestId,
+          traceId: execution.traceId,
+          spanId: execution.spanId,
+          runId: execution.runId,
+        }
+      : {}),
     log_id,
     appName: log.appName,
     atFunction: log.atFunction,
@@ -182,8 +147,7 @@ export const createLog = (log: Log, config: LoggerConfig) => {
       appendFileSync(logFile, `${JSON.stringify(logRecord)}\n`, "utf-8");
     } else {
       // For production, use pino logger
-      const appLogger = createLoggerForApp(log.appName, config);
-      appLogger[level as "info" | "warn" | "error"](logRecord);
+      writeLogRecord(logFile, logRecord);
     }
     return log_id;
   }
@@ -192,20 +156,9 @@ export const createLog = (log: Log, config: LoggerConfig) => {
     return JSON.stringify(logRecord);
   }
 
-  console.log({
-    ...logRecord,
-    data: JSON.stringify(logRecord.data, null, 2),
-  });
+  console.log(formatLog(logRecord), logRecord.data ?? "");
   return "dev-mode, see your dev console!";
 };
-
-export interface LogFilter {
-  appName?: string;
-  log_id?: string;
-  level?: "info" | "warn" | "error";
-  from?: Date;
-  to?: Date;
-}
 
 /**
  * Retrieves logs based on the provided filters.
@@ -394,13 +347,10 @@ function applyLogFilters(
   filters: LogFilter
 ): Log[] {
   return logs.filter((log) => {
-    if (filters.appName && log.appName !== filters.appName) {
-      return false;
-    }
-    if (filters.log_id && log.log_id !== filters.log_id) {
-      return false;
-    }
-    if (filters.level && log.level !== filters.level) {
+    const matches = (
+      ["requestId", "runId", "traceId", "appName", "log_id", "level"] as const
+    ).every((key) => !filters[key] || log[key] === filters[key]);
+    if (!matches) {
       return false;
     }
 

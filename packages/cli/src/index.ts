@@ -51,6 +51,7 @@ generate
   .argument("<service-name>", "Name of the existing service")
   .argument("<action-name>", "Name of the action to create")
   .description("Generate a new action in an existing service")
+  .option("--folder", "Create an action folder for private modules")
   .action(generateActionCommand);
 
 generate

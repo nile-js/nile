@@ -334,7 +334,9 @@ describe("validateAllowlist", () => {
     Object.defineProperty(file, "name", { value: undefined });
     const result = validateAllowlist([file], ["image/png"], [".png"]);
     expect(result.status).toBe(false);
-    expect(result.data?.rejected?.[0]?.name).toBe("<unnamed>");
+    expect(result.data?.rejected).toEqual([
+      expect.objectContaining({ name: "<unnamed>" }),
+    ]);
   });
 });
 

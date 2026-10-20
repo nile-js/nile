@@ -1,95 +1,41 @@
-# Nile Documentation Site
+# Nile documentation website
 
-The official documentation site for [Nile](https://github.com/nile-js/nile), built with [Rspress](https://rspress.dev).
+The public Nile site uses Rspress and React, with a custom landing page. It deploys under `/nile/` at https://nile-js.github.io/nile/.
 
-Live at [nile-js.github.io/nile](https://nile-js.github.io/nile)
-
-## Setup
+## Work locally
 
 ```bash
 bun install
-```
-
-## Development
-
-```bash
 bun run dev
 ```
 
-The site will be available at `http://localhost:8000`
-
-## Building
+For a production build and preview:
 
 ```bash
 bun run build
-```
-
-Preview the production build:
-
-```bash
 bun run preview
 ```
 
-## Documentation Structure
+The build checks internal documentation links and generates assistant documentation. Follow the repository's server and dependency approval rules when working with an agent.
 
-```
-docs/
-  index.tsx                     # Home page (custom React component)
-  home.css                      # Home page styles
-  _nav.json                     # Top navigation
-  guide/
-    _meta.json
-    start/
-      getting-started.md
-    basics/
-      actions.md
-      services.md
-      context.md
-      interacting.md
-    internals/
-      server.md
-      engine.md
-      rest.md
-      cors.md
-      logging.md
-      db/
-        index.md
-        create-model.md
-    others/
-      architecture.md
-      roadmap.md
-```
+## Edit the story and examples
 
-## Theming
+- `docs/index.tsx` composes the landing page from focused sections in `components/home/`.
+- `docs/home.css` loads the focused base, section and benchmark styles in `components/home/`.
+- `theme/` preserves Rspress navigation/search and defines the shared brand/font tokens.
+- `scripts/home-examples.ts` is the source for highlighted code and copy text. The build runs `scripts/generate-home-code.ts` to create `home-code-blocks.ts`; do not edit generated markup manually.
+- `docs/guide/` contains the human guides. Each directory's `_meta.json` controls its reading order; `docs/_nav.json` controls top navigation.
 
-Blue brand colors are defined in `theme/index.css`:
+Keep the copy grounded in small-team outcomes and shipped behavior. In-house production accounts are from the maintainers; do not add invented quotes, customer logos or performance promises.
 
-```css
-:root {
-  --rp-c-brand: #3b82f6;
-  --rp-c-brand-light: #60a5fa;
-  --rp-c-brand-dark: #2563eb;
-}
-```
+## Benchmark evidence
 
-## LLMs Integration
+The landing chart imports `../benchmarks/reference/rankings.json` directly. `docs/public/benchmarks/` exposes matching raw measurements and SVG exports for the performance guide. Do not hand-edit displayed values; derive presentation from the benchmark source and keep the public evidence synchronized. See the benchmark README for collection and chart-generation instructions.
 
-The site uses `@rspress/plugin-llms` to generate `llms.txt` and `llms-full.txt` files at build time. These are copied to `docs/public/` via the `postbuild` script so they're accessible at the site root.
+The current shared-Zod comparison has explicit workload, machine, desktop-variation and adapter limitations. It is separate from an each-framework-native-validator comparison.
 
-## Customization
+## Assistant documentation and assets
 
-- **Navigation**: `docs/_nav.json`
-- **Sidebar**: `_meta.json` files in each directory
-- **Home page**: `docs/index.tsx` and `docs/home.css`
-- **Theme**: `theme/index.css`
-- **Site config**: `rspress.config.ts`
+`@rspress/plugin-llms` generates `doc_build/llms.txt` and `llms-full.txt`. The postbuild step synchronizes them into `docs/public/`. From the Nile package, `bun run copy-docs` copies the built documentation into the package's `docs/` directory for release. Regenerate after changing the human guides.
 
-## Adding Documentation
-
-1. Create a `.md` file in the appropriate directory under `docs/guide/`
-2. Update the corresponding `_meta.json` to include the new page in the sidebar
-3. Test locally with `bun run dev`
-
-## Deployment
-
-Deploys to GitHub Pages automatically when changes are pushed to `main` via GitHub Actions (see `.github/`).
+`docs/public/fonts/` contains self-hosted Fira fonts with their SIL Open Font License. The mark and social sharing image are in `docs/public/`. Site assets and custom links must preserve the `/nile/` base.

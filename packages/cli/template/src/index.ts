@@ -1,6 +1,6 @@
 import { createLogger, createNileServer } from "@nilejs/nile";
 import { sql } from "drizzle-orm";
-import { Err, Ok, safeTry } from "slang-ts";
+import { Ok, safeTry } from "slang-ts";
 import { db } from "@/db/client";
 import { services } from "@/services/services.config";
 
@@ -31,6 +31,9 @@ const pushSchema = async () => {
 
 const server = await createNileServer({
   serverName: "{{projectName}}",
+  runtime: "bun",
+  native: true,
+  project: { structure: "error" },
   services,
   resources: { logger, database: db },
   rest: {
@@ -54,18 +57,18 @@ const server = await createNileServer({
 });
 
 // Register custom middleware (runs before all service requests)
-server.rest?.addMiddleware("/api", async (c, next) => {
+server.nativeRest?.addMiddleware("/api", async (c, next) => {
   const start = performance.now();
   await next();
   const ms = (performance.now() - start).toFixed(1);
   logger.info({
     atFunction: "requestLog",
-    message: `${c.req.method} ${c.req.path} - ${ms}ms`,
+    message: `${c.request.method} ${c.path} - ${ms}ms`,
   });
 });
 
-if (server.rest) {
+if (server.nativeRest) {
   const port = server.config.rest?.port ?? 8000;
-  Bun.serve({ port, fetch: server.rest.app.fetch });
+  Bun.serve({ port, fetch: server.nativeRest.fetch });
   console.log(`\n{{projectName}} listening on http://localhost:${port}\n`);
 }

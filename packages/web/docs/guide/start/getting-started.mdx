@@ -1,200 +1,118 @@
 ---
-title: Getting Started
-description: Installation, basic setup, and your first Nile server
+title: Getting started
+description: Build your first business operation with Nile.
 ---
 
-# Getting Started with Nile
+# Build your first service
 
-Nile is a functional-first, type-safe backend framework built on Hono. It works with **Bun**, **Node.js**, and **Deno**, uses Zod for validation, and returns Results from all action handlers using the `Ok` / `Err` pattern from `slang-ts`.
+Start with one useful operation. A Nile **service** groups a domain's work, and an **action** exposes one operation with its input checks and handler. The same pattern gives the next teammate somewhere familiar to start.
 
-## 1. Installation
-
-### Scaffold with the CLI (recommended)
-
-The CLI creates a working project with services, database setup, and dev tooling:
+## Start from the template
 
 ```bash
-npx @nilejs/cli new my-app
-cd my-app && bun install && bun run dev
+bunx @nilejs/cli new my-app
+cd my-app
+bun install
+bun run dev
 ```
 
-The generated project includes a tasks service, PGLite database, Drizzle ORM, and a running server. You can add more services and actions with `npx @nilejs/cli generate service <name>` and `npx @nilejs/cli generate action <service> <name>`. To extract Zod schemas and TypeScript types from your actions, run `npx @nilejs/cli generate schema`.
+The current template selects Bun native, registers a tasks service, and includes PGLite with Drizzle. Its startup hook creates the example tasks table. It explicitly enables discovery for development; discovery is otherwise off by default.
 
-### Manual install
+Generate the next service or action from the project directory:
 
-import { Tab, Tabs } from '@rspress/core/dist/theme';
+```bash
+bunx @nilejs/cli generate service projects
+bunx @nilejs/cli generate action projects archive
+```
 
-<Tabs>
-<Tab label="Bun">
+Prefer your own data layer? The manual example below has no database dependency.
+
+## A complete first operation
+
+Install the core package and the two libraries used in this example:
 
 ```bash
 bun add @nilejs/nile zod slang-ts
 ```
 
-</Tab>
-<Tab label="npm">
-
-```bash
-npm install @nilejs/nile zod slang-ts
-```
-
-</Tab>
-<Tab label="pnpm">
-
-```bash
-pnpm add @nilejs/nile zod slang-ts
-```
-
-</Tab>
-</Tabs>
-
-## 2. Quick Start
-
-### 2.1 Create Actions
-
-Actions are the core building blocks. Each action has a name, optional Zod validation schema, and a handler that returns a `Result`.
+Create `server.ts`:
 
 ```typescript
-// services/todos/create.ts
+import { createAction, createNileServer, createServices } from "@nilejs/nile";
 import { Ok } from "slang-ts";
-import z from "zod";
-import { createAction, type Action } from "@nilejs/nile";
+import { z } from "zod";
 
-const createTodoSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  completed: z.boolean().default(false),
+const createProjectSchema = z.object({
+  name: z.string().trim().min(1),
 });
 
-const createTodoHandler = (data: Record<string, unknown>) => {
-  const todo = {
-    id: crypto.randomUUID(),
-    title: data.title as string,
-    completed: (data.completed as boolean) ?? false,
-  };
-  return Ok({ todo });
-};
+type CreateProjectInput = z.infer<typeof createProjectSchema>;
 
-export const createTodoAction: Action = createAction({
+const createProject = createAction<CreateProjectInput>({
   name: "create",
-  description: "Create a new todo",
-  validation: createTodoSchema,
-  handler: createTodoHandler,
+  description: "Create a project",
+  validation: createProjectSchema,
+  handler: (input) => Ok({
+    project: { id: crypto.randomUUID(), name: input.name },
+  }),
 });
-```
 
-### 2.2 Group Actions into a Service
-
-```typescript
-// services/todos/list.ts
-import { Ok } from "slang-ts";
-import { createAction, type Action } from "@nilejs/nile";
-
-const listTodoHandler = () => {
-  return Ok({
-    todos: [
-      { id: "1", title: "Learn Nile", completed: false },
-      { id: "2", title: "Build an API", completed: true },
-    ],
-  });
-};
-
-export const listTodoAction: Action = createAction({
-  name: "list",
-  description: "List all todos",
-  handler: listTodoHandler,
-});
-```
-
-```typescript
-// services/todos.ts
-import { createServices, type Services } from "@nilejs/nile";
-import { createTodoAction } from "./create";
-import { listTodoAction } from "./list";
-
-export const services: Services = createServices([
+const services = createServices([
   {
-    name: "todos",
-    description: "Todo list management",
-    actions: [createTodoAction, listTodoAction],
+    name: "projects",
+    description: "Organize the team's projects",
+    actions: [createProject],
   },
 ]);
-```
-
-### 2.3 Create and Start the Server
-
-```typescript
-// server.ts
-import { createNileServer } from "@nilejs/nile";
-import { services } from "./services/todos";
 
 const server = await createNileServer({
-  serverName: "my-app",
+  serverName: "Team workspace",
+  runtime: "bun",
+  native: true,
   services,
   rest: {
     baseUrl: "/api",
-    port: 8000,
-    allowedOrigins: ["http://localhost:8000"],
+    allowedOrigins: ["http://localhost:3000"],
     enableStatus: true,
   },
 });
 
-if (server.rest) {
-  const { fetch } = server.rest.app;
-  Bun.serve({ fetch, port: 8000 });
-  console.log("Server running at http://localhost:8000");
-}
+const native = server.nativeRest;
+if (!native) throw new Error("Bun native transport was not initialized");
+
+Bun.serve({ port: 8000, fetch: native.fetch });
 ```
 
-Run with Bun:
+This example returns a new project without persisting it. Add storage through your application's model or repository when you need it.
+
+`createNileServer` builds the engine and transport; it does **not** start a listener. `Bun.serve` starts this application's listener. Existing Hono applications remain supported; see [runtime adapters](/guide/start/runtime-adapters).
 
 ```bash
 bun run server.ts
 ```
 
-### 2.4 Invoke Your Actions
-
-Nile uses a single POST endpoint with an intent-driven payload:
+## Call the operation
 
 ```bash
-# List todos
-curl -X POST http://localhost:8000/api/services \
-  -H "Content-Type: application/json" \
-  -d '{
-    "intent": "execute",
-    "service": "todos",
-    "action": "list",
-    "payload": {}
-  }'
-
-# Create a todo
-curl -X POST http://localhost:8000/api/services \
-  -H "Content-Type: application/json" \
-  -d '{
-    "intent": "execute",
-    "service": "todos",
-    "action": "create",
-    "payload": { "title": "Ship Nile", "completed": false }
-  }'
+curl http://localhost:8000/api/services \
+  -H 'Content-Type: application/json' \
+  -d '{"intent":"execute","service":"projects","action":"create","payload":{"name":"Customer portal"}}'
 ```
 
-## 3. Project Structure
+The response contains the project in a consistent envelope:
 
+```json
+{
+  "status": true,
+  "message": "Action 'projects.create' executed",
+  "data": {
+    "project": { "id": "generated-id", "name": "Customer portal" }
+  }
+}
 ```
-my-api/
-├── server.ts                  # Entry point
-├── services/
-│   ├── todos.ts               # Service definition
-│   └── todos/
-│       ├── create.ts          # Action: create todo
-│       └── list.ts            # Action: list todos
-└── package.json
-```
 
-## 4. Next Steps
+Send an empty name and validation stops the handler with a failure response. You can call the same action from the [frontend client](/guide/basics/client).
 
-- Learn about [Actions](/guide/basics/actions) and [Services](/guide/basics/services)
-- Explore the [Context](/guide/basics/context) for accessing resources like databases
-- Set up a [database layer with model files](/guide/internals/db) for structured data access
-- See [Server Configuration](/guide/internals/server) for more options
+## Keep the next change easy to find
 
-*This documentation reflects the current implementation and is subject to evolution.*
+Move this operation into a `projects` domain as the application grows. Read [application structure](/guide/start/application-structure), then [errors and Results](/guide/basics/errors-and-results) to give new operations the same recognizable shape.

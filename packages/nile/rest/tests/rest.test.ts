@@ -591,7 +591,7 @@ describe("REST Interface - addMiddleware", () => {
     });
 
     expect(res.status).toBe(403);
-    const json = await res.json();
+    const json = (await res.json()) as ExternalResponse;
     expect(json.message).toBe("Blocked by middleware");
   });
 

@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import type { LoggerConfig } from "./index";
+import type { LoggerConfig, LogReaderConfig } from "./index";
 import {
   createLog,
   createLogger,
@@ -275,7 +275,7 @@ describe("Logger - createLogger instance (chunked mode)", () => {
 // --- getLogs with chunking ---
 
 describe("getLogs (chunked mode)", () => {
-  const monthlyConfig: LoggerConfig = { chunking: "monthly" };
+  const monthlyConfig: LogReaderConfig = { chunking: "monthly" };
 
   it("should retrieve logs from chunked files", () => {
     const logs = getLogs({ appName: chunkedApp }, monthlyConfig);

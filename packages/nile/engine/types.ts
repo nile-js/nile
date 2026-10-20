@@ -1,6 +1,7 @@
 import type { Result } from "slang-ts";
 import type z from "zod";
 import type { AuthConfig } from "@/auth/types";
+import type { CorsOptions } from "@/cors/types";
 /**
  * Circular `import type` with @/nile/types is intentional and safe —
  * type imports are erased at compile time and produce no runtime dependency.
@@ -48,12 +49,17 @@ export type ActionHandler<T = unknown, E = string> = (
 ) => Result<unknown, E> | Promise<Result<unknown, E>>;
 
 export interface Action<T = unknown, E = string> {
+  /** Inherit endpoint CORS by default; false skips response headers; options override global defaults.
+   * Shared endpoint preflight remains global. Global CORS disabled takes precedence.
+   */
+  cors?: boolean | CorsOptions;
   name: string;
   description: string;
   isProtected?: boolean;
   visibility?: {
     rest?: boolean;
     rpc?: boolean;
+    ws?: boolean;
   };
   isSpecial?: {
     contentType: "multipart/form-data" | "application/json" | "other";
@@ -122,6 +128,16 @@ export interface ActionSummary {
 }
 
 export interface EngineOptions {
+  /** Internal execution boundary shared by every transport; absent keeps the standalone engine lightweight. */
+  execute?: (
+    service: string,
+    action: string,
+    run: () => ReturnType<Engine["executeAction"]>
+  ) => ReturnType<Engine["executeAction"]>;
+  checkQuota?: (
+    service: string,
+    action: string
+  ) => Promise<Result<void, string>>;
   diagnostics?: boolean;
   /** Optional logger from resources — used for diagnostics output when available */
   logger?:

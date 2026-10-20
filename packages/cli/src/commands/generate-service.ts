@@ -61,13 +61,13 @@ export const sample${pascal}Action: Action = createAction({
 /** Generate the barrel index file content */
 const generateBarrelContent = (serviceName: string): string => {
   const pascal = toPascalCase(serviceName);
-  return `export { sample${pascal}Action } from "./sample";\n`;
+  return `export { sample${pascal}Action } from "./actions/sample";\n`;
 };
 
 /** Generate the import + registration snippet for services.config.ts */
 const generateConfigSnippet = (serviceName: string): string => {
   const pascal = toPascalCase(serviceName);
-  const importLine = `import { sample${pascal}Action } from "./${serviceName}/sample";`;
+  const importLine = `import { sample${pascal}Action } from "./${serviceName}/actions/sample";`;
   const serviceEntry = `  {
     name: "${serviceName}",
     description: "${pascal} service",
@@ -89,7 +89,7 @@ const autoRegisterService = async (
     let content = await readFileContent(configPath);
     const pascal = toPascalCase(serviceName);
 
-    const importLine = `import { sample${pascal}Action } from "./${serviceName}/sample";`;
+    const importLine = `import { sample${pascal}Action } from "./${serviceName}/actions/sample";`;
 
     // Find the last import line and add after it
     const importLines = content
@@ -162,7 +162,7 @@ export const generateServiceCommand = async (
   await ensureDir(serviceDir);
 
   await writeFileSafe(
-    resolve(serviceDir, "sample.ts"),
+    resolve(serviceDir, "actions/sample.ts"),
     generateActionContent(serviceName)
   );
 

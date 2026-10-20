@@ -1,222 +1,76 @@
-# File Uploads
+# Receive files through an action
 
-Nile handles multipart form-data uploads through the same single POST endpoint. Files are parsed, validated through a 7-step chain, and delivered to your action handler as a structured payload.
+Multipart uploads use the same `POST /api/services` endpoint as JSON operations. Nile parses fields and files and applies configured file limits; the action decides what the upload means and where it is stored.
 
-## Configuration
-
-Enable uploads in your REST config:
+## Set the limits your application needs
 
 ```typescript
-const server = await createNileServer({
-  name: "MyApp",
-  services: [/* ... */],
-  rest: {
-    baseUrl: "/api/v1",
-    allowedOrigins: ["http://localhost:3000"],
-    uploads: {
-      enforceContentType: true,
-      limits: {
-        maxFiles: 5,
-        maxFileSize: 5 * 1024 * 1024,     // 5MB per file
-        minFileSize: 1,                     // reject zero-byte files
-        maxTotalSize: 20 * 1024 * 1024,    // 20MB total
-        maxFilenameLength: 128,
-      },
-      allow: {
-        mimeTypes: ["image/png", "image/jpeg", "application/pdf"],
-        extensions: [".png", ".jpg", ".jpeg", ".pdf"],
-      },
+rest: {
+  baseUrl: "/api",
+  allowedOrigins: ["https://app.example.com"],
+  uploads: {
+    enforceContentType: true,
+    limits: {
+      maxFiles: 3,
+      maxFileSize: 5 * 1024 * 1024,
+      maxTotalSize: 10 * 1024 * 1024,
+      minFileSize: 1,
+      maxFilenameLength: 128,
+    },
+    allow: {
+      mimeTypes: ["image/png", "image/jpeg", "application/pdf"],
+      extensions: [".png", ".jpg", ".jpeg", ".pdf"],
     },
   },
+}
+```
+
+Limits cover file count, per-file and total size, filename length, and allowed MIME signatures/extensions. These checks are not malware scanning or application-specific document validation. Enforcing content type checks the request against the action's `isSpecial.contentType`.
+
+## Receive a structured payload
+
+```typescript
+import { createAction, type StructuredPayload } from "@nilejs/nile";
+import { Err, Ok } from "slang-ts";
+
+export const inspectDocument = createAction<StructuredPayload>({
+  name: "inspect",
+  description: "Inspect an uploaded document",
+  isSpecial: { contentType: "multipart/form-data" },
+  handler: ({ fields, files }) => {
+    const document = files.document;
+    if (!(document instanceof File)) return Err("Send one document");
+    const title = fields.title;
+    if (typeof title !== "string") return Err("A title is required");
+    return Ok({ title, filename: document.name, size: document.size });
+  },
 });
 ```
 
-### Upload Config Options
+The handler receives `{ fields, files }`. Repeated same-kind keys become arrays. The current entry point rejects a key used for both a file and text, regardless of `uploadMode`; changing that option does not enable mixed keys. Routing `action` is removed from parsed fields, while `intent` and `service` may remain. Read the application fields you actually need.
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `enforceContentType` | `boolean` | `false` | Enforce action-level content-type matching |
-| `limits.maxFiles` | `number` | `10` | Maximum number of files per request |
-| `limits.maxFileSize` | `number` | `10MB` | Maximum size per individual file (bytes) |
-| `limits.minFileSize` | `number` | `1` | Minimum file size (rejects zero-byte files) |
-| `limits.maxTotalSize` | `number` | `20MB` | Maximum combined size of all files |
-| `limits.maxFilenameLength` | `number` | `128` | Maximum filename character length |
-| `allow.mimeTypes` | `string[]` | `["image/png", "image/jpeg", "application/pdf"]` | Allowed MIME types |
-| `allow.extensions` | `string[]` | `[".png", ".jpg", ".jpeg", ".pdf"]` | Allowed file extensions |
+If supplying an action Zod schema, describe the **structured payload**, not the JSON shape of a normal action. Add your normal identity and access rules to protected uploads.
 
-## Sending Uploads
-
-Form-data requests must include the RPC routing fields (`intent`, `service`, `action`) as string fields alongside file fields.
-
-### Using the Nile Client
+## Send from the frontend
 
 ```typescript
-import { createNileClient } from "@nilejs/client";
-
-const nile = createNileClient({ baseUrl: "http://localhost:8000/api/v1" });
-
-const { error, data } = await nile.upload({
+const result = await nile.upload({
   service: "documents",
-  action: "upload",
-  files: {
-    document: new File(["content"], "report.pdf", { type: "application/pdf" }),
-  },
-  fields: {
-    title: "Q4 Report",
-    category: "finance",
-  },
+  action: "inspect",
+  files: { document: selectedFile },
+  fields: { title: "Project brief" },
 });
+if (result.error) console.error(result.error);
 ```
 
-### Using fetch Directly
+Here `nile` is a [configured client](/guide/basics/client) and `selectedFile` is the File chosen by the user. The client creates FormData with the routing fields. Do not manually set a multipart Content-Type header; Fetch supplies its boundary.
 
-```typescript
-const formData = new FormData();
-formData.append("intent", "execute");
-formData.append("service", "documents");
-formData.append("action", "upload");
-formData.append("title", "Q4 Report");
-formData.append("document", file);
-
-const response = await fetch("http://localhost:8000/api/v1/services", {
-  method: "POST",
-  body: formData,
-});
-```
-
-### Using curl
+For a direct request:
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/services \
-  -F "intent=execute" \
-  -F "service=documents" \
-  -F "action=upload" \
-  -F "title=Q4 Report" \
-  -F "document=@./report.pdf"
+curl http://localhost:8000/api/services \
+  -F 'intent=execute' -F 'service=documents' -F 'action=inspect' \
+  -F 'title=Project brief' -F 'document=@./brief.pdf'
 ```
 
-## Action Handler
-
-Your action handler receives a `StructuredPayload` with `fields` and `files` separated:
-
-```typescript
-import { Ok, Err } from "slang-ts";
-import { createAction, type Action } from "@nilejs/nile";
-
-const uploadDocument: Action = createAction({
-  name: "upload",
-  description: "Upload a document",
-  isSpecial: {
-    contentType: "multipart/form-data",
-    uploadMode: "flat",
-  },
-  handler: (data, context) => {
-    const { fields, files } = data as {
-      fields: Record<string, string | string[]>;
-      files: Record<string, File | File[]>;
-    };
-
-    const title = fields.title as string;
-    const document = files.document as File;
-
-    // Process the file (save to storage, etc.)
-    return Ok({
-      title,
-      filename: document.name,
-      size: document.size,
-      type: document.type,
-    });
-  },
-});
-```
-
-### Action-Level Config
-
-The `isSpecial` field on an action controls upload behavior:
-
-| Option | Type | Description |
-|--------|------|-------------|
-| `contentType` | `"multipart/form-data" \| "application/json" \| "other"` | Expected content type for this action |
-| `uploadMode` | `"flat" \| "structured"` | Parsing mode (default: `"flat"`) |
-
-## Parsing Modes
-
-### Flat Mode (default)
-
-Rejects requests where the same form-data key carries both files and string fields. This prevents ambiguous payloads.
-
-```
-✓ document=@file.pdf, title="Report"       (different keys)
-✗ data=@file.pdf, data="some string"        (same key, mixed types)
-```
-
-### Structured Mode
-
-Allows any combination of keys. Files and fields are separated into their respective buckets, with duplicate keys aggregated into arrays.
-
-```
-✓ attachment=@file1.pdf, attachment=@file2.pdf   (array of files)
-✓ tag=frontend, tag=docs                         (array of strings)
-```
-
-## Validation Chain
-
-Every upload request passes through a 7-step validation chain that fails fast on the first error:
-
-1. **Filename length** — rejects files with names exceeding the configured limit
-2. **Zero-byte detection** — rejects empty files
-3. **Minimum size** — rejects files smaller than the threshold
-4. **File count** — rejects requests exceeding the max file count
-5. **Per-file size** — rejects individual files exceeding the size limit
-6. **Total size** — rejects requests where combined file size exceeds the limit
-7. **MIME + extension allowlist** — rejects files that don't match both the allowed MIME type and extension
-
-## Error Responses
-
-Validation errors return structured error data with the `error_category` field:
-
-```json
-{
-  "status": false,
-  "message": "upload limit exceeded",
-  "data": {
-    "error_category": "validation",
-    "limit": "maxFileSize",
-    "max": 5242880,
-    "files": [{ "name": "huge-video.mp4", "size": 104857600 }]
-  }
-}
-```
-
-```json
-{
-  "status": false,
-  "message": "file type not allowed",
-  "data": {
-    "error_category": "validation",
-    "rejected": [{ "name": "script.exe", "type": "application/x-msdownload" }],
-    "allowed": {
-      "mimeTypes": ["image/png", "image/jpeg", "application/pdf"],
-      "extensions": [".png", ".jpg", ".jpeg", ".pdf"]
-    }
-  }
-}
-```
-
-```json
-{
-  "status": false,
-  "message": "mixed key types not allowed",
-  "data": {
-    "error_category": "validation",
-    "conflicts": ["data"],
-    "hint": "Same key cannot be used for both files and fields"
-  }
-}
-```
-
-## Content-Type Enforcement
-
-When `enforceContentType` is enabled and an action specifies `isSpecial.contentType`, Nile checks that the incoming request's content type matches. Mismatches return `415 Unsupported Media Type`.
-
-This is useful when certain actions should only accept file uploads and reject JSON requests.
+Upload parsing/limit failures return a failure envelope with validation details; content-type mismatch can return 415. Handle the failure before treating the upload as stored. Nile does not save files automatically; persistence, cleanup and private-download authorization remain application decisions.

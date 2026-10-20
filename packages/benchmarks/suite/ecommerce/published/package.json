@@ -1,0 +1,8 @@
+{
+  "name": "nile-published-benchmark-only",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@nilejs/nile": "0.0.17"
+  }
+}

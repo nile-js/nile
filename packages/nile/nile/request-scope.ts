@@ -1,12 +1,26 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import type { Context as HonoContext } from "hono";
 import type { HookContext } from "@/engine/types";
+import type { NativeRequestContext } from "@/native/types";
+import type { AuthContext } from "../auth/types";
+import type { ExecutionContext } from "../execution/types";
 import { createHookContext } from "./hook-context";
-import type { RPCContext, Sessions, WebSocketContext } from "./types";
+import type {
+  NileContext,
+  RPCContext,
+  Sessions,
+  WebSocketContext,
+} from "./types";
 
 /** Per-request state isolated via AsyncLocalStorage — never shared between concurrent requests */
 export interface RequestStore {
+  context?: NileContext;
+  admissionSignal?: AbortSignal;
+  traceHook?: <T>(name: string, fn: () => Promise<T>) => Promise<T>;
+  execution?: ExecutionContext;
+  credentials?: AuthContext;
   rest?: HonoContext;
+  nativeRest?: NativeRequestContext;
   ws?: WebSocketContext;
   rpc?: RPCContext;
   sessions: Sessions;

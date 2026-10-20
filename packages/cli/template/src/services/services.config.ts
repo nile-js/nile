@@ -1,9 +1,9 @@
 import { createServices, type Services } from "@nilejs/nile";
-import { createTaskAction } from "./tasks/create";
-import { deleteTaskAction } from "./tasks/delete";
-import { getTaskAction } from "./tasks/get";
-import { listTaskAction } from "./tasks/list";
-import { updateTaskAction } from "./tasks/update";
+import { createTaskAction } from "./tasks/actions/create";
+import { deleteTaskAction } from "./tasks/actions/delete";
+import { getTaskAction } from "./tasks/actions/get";
+import { listTaskAction } from "./tasks/actions/list";
+import { updateTaskAction } from "./tasks/actions/update";
 
 export const services: Services = createServices([
   {

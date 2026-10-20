@@ -381,7 +381,11 @@ describe("REST Form-Data Path - JSON requests still work", () => {
 describe("REST Form-Data Path - Discovery Protection", () => {
   it("rejects explore when discovery is disabled (default)", async () => {
     const { app } = createTestApp({ discovery: { enabled: false } });
-    const res = await buildFormRequest(app, { intent: "explore", service: "*", action: "*" });
+    const res = await buildFormRequest(app, {
+      intent: "explore",
+      service: "*",
+      action: "*",
+    });
     const json = (await res.json()) as ExternalResponse;
     expect(res.status).toBe(403);
     expect(json.message).toBe("API discovery is disabled");
@@ -389,7 +393,11 @@ describe("REST Form-Data Path - Discovery Protection", () => {
 
   it("rejects schema when discovery is disabled", async () => {
     const { app } = createTestApp({ discovery: { enabled: false } });
-    const res = await buildFormRequest(app, { intent: "schema", service: "*", action: "*" });
+    const res = await buildFormRequest(app, {
+      intent: "schema",
+      service: "*",
+      action: "*",
+    });
     const json = (await res.json()) as ExternalResponse;
     expect(res.status).toBe(403);
     expect(json.message).toBe("API discovery is disabled");
@@ -397,16 +405,24 @@ describe("REST Form-Data Path - Discovery Protection", () => {
 
   it("allows explore when discovery is enabled without secret", async () => {
     const { app } = createTestApp({ discovery: { enabled: true } });
-    const res = await buildFormRequest(app, { intent: "explore", service: "*", action: "*" });
+    const res = await buildFormRequest(app, {
+      intent: "explore",
+      service: "*",
+      action: "*",
+    });
     const json = (await res.json()) as ExternalResponse;
     expect(res.status).toBe(200);
     expect(json.status).toBe(true);
   });
 
   it("rejects explore when secret is wrong", async () => {
-    const { app } = createTestApp({ discovery: { enabled: true, secret: "s3cret" } });
+    const { app } = createTestApp({
+      discovery: { enabled: true, secret: "s3cret" },
+    });
     const res = await buildFormRequest(app, {
-      intent: "explore", service: "*", action: "*",
+      intent: "explore",
+      service: "*",
+      action: "*",
       fields: { discoverySecret: "wrong" },
     });
     const json = (await res.json()) as ExternalResponse;
@@ -415,9 +431,13 @@ describe("REST Form-Data Path - Discovery Protection", () => {
   });
 
   it("allows explore when secret matches", async () => {
-    const { app } = createTestApp({ discovery: { enabled: true, secret: "s3cret" } });
+    const { app } = createTestApp({
+      discovery: { enabled: true, secret: "s3cret" },
+    });
     const res = await buildFormRequest(app, {
-      intent: "explore", service: "*", action: "*",
+      intent: "explore",
+      service: "*",
+      action: "*",
       fields: { discoverySecret: "s3cret" },
     });
     const json = (await res.json()) as ExternalResponse;
@@ -425,4 +445,3 @@ describe("REST Form-Data Path - Discovery Protection", () => {
     expect(json.status).toBe(true);
   });
 });
-

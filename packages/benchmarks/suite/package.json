@@ -3,8 +3,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "serve": "node serve.mjs",
-    "check": "node --test tests/*.test.mjs"
+    "setup": "bun setup.mjs",
+    "check": "bun ecommerce/fixtures.test.mjs && bun ecommerce/full/effect-fixture.test.mjs bun",
+    "smoke": "bun ecommerce/full/run.mjs --smoke",
+    "bench": "bun ecommerce/full/run.mjs",
+    "rank": "bun ecommerce/full/rank-results.mjs",
+    "compare:published": "bun ecommerce/published-compare/run.mjs"
   },
   "dependencies": {
     "hono": "4.13.13",

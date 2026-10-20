@@ -3,5 +3,13 @@
     "text": "Guide",
     "link": "/guide/start/getting-started",
     "activeMatch": "/guide/"
+  },
+  {
+    "text": "Examples",
+    "link": "/guide/start/getting-started#a-complete-first-operation"
+  },
+  {
+    "text": "Performance",
+    "link": "/guide/reference/performance"
   }
 ]

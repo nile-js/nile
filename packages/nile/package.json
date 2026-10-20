@@ -1,6 +1,6 @@
 {
   "name": "@nilejs/nile",
-  "version": "0.0.17",
+  "version": "1.0.0",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -41,17 +41,30 @@
     "fix": "ultracite fix",
     "test": "bunx vitest",
     "test:run": "bunx vitest run",
+    "test:bun": "bun test ./scripts/verify-bun-runtime.spec.ts",
     "build": "tsdown",
     "copy-docs": "bash scripts/copy-docs.sh",
-    "export": "bun run check && bun run fix && bun run test:run && bun run build && bun run copy-docs"
+    "export": "bun run check && bun run fix && bun run test:run && bun run build && bun run copy-docs",
+    "test:pglite": "bun test ./scripts/verify-pglite-v1.spec.ts"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.5",
+    "@opentelemetry/api": "1.9.1",
+    "@opentelemetry/context-async-hooks": "2.12.0",
+    "@opentelemetry/core": "2.12.0",
+    "@opentelemetry/exporter-metrics-otlp-http": "0.223.0",
+    "@opentelemetry/exporter-trace-otlp-http": "0.223.0",
+    "@opentelemetry/resources": "2.12.0",
+    "@opentelemetry/sdk-metrics": "2.12.0",
+    "@opentelemetry/sdk-trace-base": "2.12.0",
+    "@socket.io/bun-engine": "0.1.2",
+    "croner": "10.0.1",
     "hono": "^4.13.13",
     "hono-rate-limiter": "^0.5.4",
     "nanoid": "^6.0.2",
     "pino": "^10.4.0",
     "slang-ts": "^0.0.9",
+    "socket.io": "4.8.4",
     "zod": "4.6.7"
   },
   "devDependencies": {

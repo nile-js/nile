@@ -217,54 +217,35 @@ describe("createNileServer - onBoot", () => {
     logSpy.mockRestore();
   });
 
-  it("should exit process when onBoot fails", async () => {
-    const exitSpy = vi
-      .spyOn(process, "exit")
-      .mockImplementation(() => undefined as never);
-
-    await createNileServer({
-      serverName: "Test",
-      services: mockServices,
-      forceNewInstance: true,
-      onBoot: {
-        fn: () => Err("Boot failure"),
-      },
-    });
-
-    expect(exitSpy).toHaveBeenCalledWith(1);
-
-    exitSpy.mockRestore();
+  it("rejects failed boot after cleanup instead of terminating its host process", async () => {
+    const cleaned = vi.fn();
+    await expect(
+      createNileServer({
+        serverName: "Test",
+        services: mockServices,
+        forceNewInstance: true,
+        cleanup: [{ name: "resource", close: cleaned }],
+        onBoot: { fn: () => Err("Boot failure") },
+      })
+    ).rejects.toThrow("Boot failure");
+    expect(cleaned).toHaveBeenCalledOnce();
   });
 
-  it("should exit process when onBoot times out", async () => {
-    const exitSpy = vi
-      .spyOn(process, "exit")
-      .mockImplementation(() => undefined as never);
-    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {
-      // intentional no-op for test
-    });
-
-    await createNileServer({
-      serverName: "Test",
-      services: mockServices,
-      forceNewInstance: true,
-      diagnostics: true,
-      onBoot: {
-        fn: async () => {
-          await new Promise((r) => setTimeout(r, 500));
-          return Ok(null);
+  it("rejects boot timeout and clears its timer", async () => {
+    await expect(
+      createNileServer({
+        serverName: "Test",
+        services: mockServices,
+        forceNewInstance: true,
+        onBoot: {
+          fn: () =>
+            new Promise(() => {
+              /* Deliberately unresolved boot exercises the deadline. */
+            }),
+          maxWaitTime: 50,
         },
-        maxWaitTime: 50,
-      },
-    });
-
-    expect(exitSpy).toHaveBeenCalledWith(1);
-
-    const allLogs = logSpy.mock.calls.flat().join(" ");
-    expect(allLogs).toMatch(timedOutPattern);
-
-    exitSpy.mockRestore();
-    logSpy.mockRestore();
+      })
+    ).rejects.toThrow(timedOutPattern);
   });
 
   it("should log services table by default", async () => {

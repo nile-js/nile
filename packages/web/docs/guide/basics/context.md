@@ -1,181 +1,70 @@
-# Context
+# Share dependencies in a familiar place
 
-`NileContext` provides access to request context, session data, and shared resources throughout your application.
-
-## Accessing Context
-
-The context is passed as the second parameter to your action handler:
+A growing application often needs the same logger, database client or cache across many operations. Supply long-lived resources once and read them through Nile context instead of building a new dependency container for every action.
 
 ```typescript
-import { Ok } from "slang-ts";
-import { createAction, type Action } from "@nilejs/nile";
+import { createLogger, createNileServer } from "@nilejs/nile";
+import { services } from "./services/services.config";
 
-export const myAction: Action = createAction({
-  name: "myAction",
-  description: "Example action",
-  handler: (data, context) => {
-    // Use context here
-    return Ok({ result: "success" });
-  },
+const logger = createLogger("team-workspace", { mode: "dev" });
+
+const server = await createNileServer({
+  serverName: "Team workspace",
+  services,
+  resources: { logger },
+  runtime: "bun",
+  native: true,
+  rest: { baseUrl: "/api", allowedOrigins: ["http://localhost:3000"] },
 });
 ```
 
-You can also use `getContext()` to access context from anywhere:
+Handlers receive context as their optional second argument:
 
 ```typescript
-import { getContext } from "@nilejs/nile";
-
-const context = getContext();
-```
-
-## What's in Context
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `resources` | `Resources | undefined` | Shared resources (logger, database, cache), server-level |
-| `get` / `set` | `(key: string) => T` | General-purpose key-value store. `"rest"`, `"ws"`, `"rpc"` are request-scoped via AsyncLocalStorage |
-| `getSession` / `setSession` | `(name: keyof Sessions, ...) => ...` | Session access per interface, request-scoped |
-| `hookContext` | `HookContext` | Lifecycle state for the current action execution |
-
-## Accessing Resources
-
-Resources are provided at server startup and available via context:
-
-```typescript
-handler: (data, context) => {
-  const logger = context?.resources?.logger;
-  
-  // Access logger
-  logger?.info({
-    atFunction: "myAction",
-    message: "Action executed",
-    data: { timestamp: Date.now() },
+handler: (input, context) => {
+  context?.resources?.logger?.info({
+    atFunction: "createProject",
+    message: "Creating a project",
+    data: { name: input.name },
   });
-  
-  // Access database (passed in server config)
-  const db = context?.resources?.database;
-  
-  return Ok({ result: "done" });
-},
-```
-
-## Session Management
-
-Store and retrieve session data per interface:
-
-```typescript
-handler: (data, context) => {
-  // Set session data
-  context?.setSession("rest", { userId: "123", role: "admin" });
-  
-  // Get session data
-  const session = context?.getSession("rest");
-  console.log(session?.userId); // "123"
-  
-  return Ok({ session });
-},
-```
-
-## Type-Safe Context
-
-Pass a generic to get type safety for your database:
-
-```typescript
-import type { MyDatabase } from "./db";
-
-handler: (data, context) => {
-  const db = context?.resources?.database as MyDatabase | undefined;
-  // db is typed as MyDatabase
-  return Ok({});
+  return Ok({ project: { name: input.name } });
 }
 ```
 
-## Example: Full Context Usage
+This fragment assumes a typed input and `Ok` imported from `slang-ts`. Logging happens where you configure or call it; a logger resource does not automatically create an audit record for every request.
+
+## Shared resources and request identity are different
+
+| Context location | Scope |
+|---|---|
+| `resources` | Application-owned resources shared across requests. |
+| `set(key, value)` / `get(key)` for ordinary keys | Shared application key-value storage. |
+| `get("rest")` | Current request's Hono context, on the Hono adapter. |
+| `get("nativeRest")` | Current request's native HTTP context, on Bun native. |
+| `getSession("rest")` / `setSession("rest", value)` | Current request's session. Both HTTP adapters use this session key. |
+| `hookContext`, `updateHookState` | State and logs isolated to the current action execution. |
+
+Do not store the current user in a shared `set("user", ...)` key. Concurrent requests would observe the same application value. Use request sessions for identity and action hook state for per-execution work. Transport request contexts and sessions are carried through AsyncLocalStorage; nested/concurrent action executions get their own hook state.
 
 ```typescript
-// services/users/create.ts
-import { Ok, Err } from "slang-ts";
-import z from "zod";
-import { createAction, type Action } from "@nilejs/nile";
-
-const createUserSchema = z.object({
-  name: z.string().min(1),
-  email: z.string().email(),
-});
-
-const createUserHandler = (data: Record<string, unknown>, context) => {
-  const { name, email } = data as { name: string; email: string };
-  
-  // Log the action
-  context?.resources?.logger?.info({
-    atFunction: "createUser",
-    message: "Creating user",
-    data: { email },
-  });
-  
-  // Access database
-  // const db = context?.resources?.database;
-  // const user = await db.users.create({ name, email });
-  
-  const user = { id: crypto.randomUUID(), name, email };
-  return Ok({ user });
-};
-
-export const createUserAction: Action = createAction({
-  name: "create",
-  description: "Create a new user",
-  validation: createUserSchema,
-  handler: createUserHandler,
-});
+const session = context?.getSession("rest");
+const userId = session?.userId;
 ```
 
-## Why a Single Context?
+Outside a request scope, session access returns no session and session writes have no effect. For application helpers, passing the required dependency as a parameter often makes reuse and testing clearer than looking up context implicitly.
 
-`NileContext` is a **server-level singleton**. One instance is shared across all interfaces. But per-request data is **isolated via AsyncLocalStorage**, so concurrent requests never interfere with each other.
+## Get a typed resource when needed
 
-The design splits into two layers:
-
-- **Server-level (shared):** `resources` (logger, database, cache) and the general-purpose `_store` map are shared across all requests. Set once at boot, available everywhere.
-- **Request-level (isolated):** Interface contexts (`rest`, `ws`, `rpc`) and `sessions` are scoped per-request via `AsyncLocalStorage`. Each request gets its own `RequestStore`. Concurrent requests never see each other's Hono context or session data.
-
-This is intentional:
-
-- **No race conditions.** Two simultaneous REST requests won't overwrite each other's session or Hono context
-- **Simplicity.** One context object, no request-scoped DI containers. Per-request isolation is handled transparently
-- **Composition.** Hooks that reference other actions share the same request scope through AsyncLocalStorage continuations
-- **Resource sharing.** Database connections, loggers, and caches are attached once at boot and available everywhere
+`getContext<TDatabase>()` exposes the active Nile context with a typed database resource. Keep that use at an application boundary; a model factory can receive the database explicitly. No particular database is required.
 
 ```typescript
-// Per-request session data, isolated via AsyncLocalStorage
-handler: (data, context) => {
-  const session = context?.getSession("rest");  // This request's session only
-  // { userId: "usr_123", organizationId: "org_456", role: "admin", ... }
-  
-  return Ok({ userId: session?.userId });
-},
+import { getContext } from "@nilejs/nile";
+import type { AppDatabase } from "../db/types";
+
+const context = getContext<AppDatabase>();
+const database = context.resources?.database;
 ```
 
-## Server Configuration with Resources
+`AppDatabase` is your application's database type. `getContext` fails if no Nile instance is available, so initialize the application before calling it.
 
-Pass resources when creating the server:
-
-```typescript
-// server.ts
-import { createNileServer, createLogger } from "@nilejs/nile";
-import { services } from "./services";
-
-const logger = createLogger("my-api", { mode: "prod", chunking: "monthly" });
-
-const server = await createNileServer({
-  serverName: "my-app",
-  services,
-  resources: {
-    logger,
-    database: myDatabaseInstance,
-  },
-  rest: {
-    baseUrl: "/api",
-    port: 8000,
-  },
-});
-```
+Next: [authentication and access policy](/guide/basics/auth), [hooks](/guide/basics/hooks-and-pipelines), and [runtime-specific request access](/guide/start/runtime-adapters).

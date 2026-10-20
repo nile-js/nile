@@ -8,7 +8,19 @@ import type {
   HookContext,
   Services,
 } from "@/engine/types";
+import type { NativeRestApp, NativeRestConfig } from "@/native/types";
 import type { RestConfig } from "@/rest/types";
+import type {
+  ExecutionContext,
+  ExecutionOptions,
+  InvokeOptions,
+} from "../execution/types";
+import type { LifecycleResource, NileLifecycle } from "../lifecycle/types";
+import type { ProjectOptions } from "../project/types";
+import type { NileScheduler, SchedulerOptions } from "../scheduling/types";
+import type { NileSocket, SocketConfig } from "../websocket/socket-types";
+import type {} from "../websocket/types";
+import type { createSchemaExporter } from "./schema";
 
 export interface WebSocketContext {
   connection: unknown;
@@ -24,10 +36,12 @@ export interface RPCContext {
 export interface Sessions {
   rest?: Record<string, unknown>;
   ws?: Record<string, unknown>;
-  rpc?: Record<string, unknown>;
+  rpc?: { enabled?: boolean };
 }
 
 export interface NileLogger {
+  flush?: () => void | Promise<void>;
+  close?: () => void | Promise<void>;
   info: (input: {
     atFunction: string;
     message: string;
@@ -53,6 +67,9 @@ export interface Resources<TDB = unknown> {
 }
 
 export interface NileContext<TDB = unknown> {
+  websocket?: NileSocket;
+  /** Current invocation metadata; undefined outside an execution scope. */
+  readonly execution?: ExecutionContext;
   /** Global key-value store — intentionally shared across requests */
   readonly _store: Readonly<Map<string, unknown>>;
   /**
@@ -96,9 +113,12 @@ export type AfterActionHandler<T, E> = (params: {
 
 export type ServerRuntime = "bun" | "node";
 
-export interface ServerConfig {
+interface SharedServerConfig {
+  project?: ProjectOptions;
+  execution?: ExecutionOptions;
+  schedules?: SchedulerOptions;
+  cleanup?: LifecycleResource[];
   serverName: string;
-  runtime?: ServerRuntime;
   services: Services;
   diagnostics?: boolean;
   /** Print registration table and totals on boot (default: true). Stats remain available when false. */
@@ -108,10 +128,9 @@ export interface ServerConfig {
   resources?: Resources<unknown>;
   /** JWT auth configuration — enables built-in token verification for protected actions */
   auth?: AuthConfig;
-  rest?: RestConfig;
-  // websocket and rpc interfaces — types TBD when implemented
-  websocket?: Record<string, unknown>;
-  rpc?: Record<string, unknown>;
+  // Independent interfaces share the action engine.
+  websocket?: SocketConfig;
+  rpc?: { enabled?: boolean };
   onBeforeActionHandler?: BeforeActionHandler<unknown, unknown>;
   onAfterActionHandler?: AfterActionHandler<unknown, unknown>;
   onBoot?: {
@@ -122,6 +141,22 @@ export interface ServerConfig {
     maxWaitTime?: number;
   };
 }
+
+/** Existing applications keep Hono unless Bun native is explicitly selected. */
+export type ServerConfig = SharedServerConfig &
+  (
+    | {
+        runtime: "bun";
+        /** Use Bun native request, middleware and route APIs. */
+        native: true;
+        rest?: NativeRestConfig;
+      }
+    | {
+        runtime?: ServerRuntime;
+        native?: false;
+        rest?: RestConfig;
+      }
+  );
 
 export interface ExternalResponse {
   status: boolean;
@@ -140,6 +175,18 @@ export interface ExternalRequest {
 export type NileStats = EngineStats & { startupDurationMs: number };
 
 export interface NileServer {
+  schema: ReturnType<typeof createSchemaExporter>;
+  websocket?: NileSocket;
+  /** Combined HTTP/socket entry point. Bun supplies its server as the second argument. */
+  fetch: (
+    request: Request,
+    server?: Parameters<NileSocket["handleRequest"]>[1]
+  ) => Promise<Response | undefined>;
+  invoke: (options: InvokeOptions) => ReturnType<Engine["executeAction"]>;
+  lifecycle: NileLifecycle;
+  scheduler?: NileScheduler;
+  /** Native Bun transport; serve with Bun.serve({ fetch: server.nativeRest.fetch }). */
+  nativeRest?: NativeRestApp;
   /** Returns an independent startup snapshot without printing or executing actions. */
   stats: () => NileStats;
   config: ServerConfig;

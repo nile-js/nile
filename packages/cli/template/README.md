@@ -2,6 +2,8 @@
 
 Built with [Nile](https://github.com/nile-js/nile).
 
+New projects use Bun native: `runtime: "bun", native: true` in `src/index.ts`. REST settings remain under `rest`; native routes and middleware are available on `server.nativeRest`. Existing applications that omit `native` continue using the Hono adapter.
+
 ## Setup
 
 ```bash

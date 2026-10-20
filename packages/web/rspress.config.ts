@@ -3,42 +3,42 @@ import { defineConfig } from "@rspress/core";
 import { pluginLlms } from "@rspress/plugin-llms";
 
 export default defineConfig({
-  root: join(__dirname, "docs"),
-  base: "/nile/",
-  title: "Nile",
-  description:
-    "TypeScript-first, service and actions oriented backend framework",
-  icon: "/rspress-icon.png",
-  logoText: "🌊 Nile Js",
-  plugins: [
-    pluginLlms({
-      exclude: ({ page }) => {
-        // Exclude roadmap page from llms.txt generation
-        return page.routePath === "/guide/others/roadmap";
-      },
-    }),
-  ],
-  themeConfig: {
-    socialLinks: [
-      {
-        icon: "github",
-        mode: "link",
-        content: "https://github.com/nile-js/nile",
-      },
-    ],
-    // Built-in search is enabled by default
-    search: true,
-    llmsUI: true,
-  },
-  markdown: {
-    showLineNumbers: true,
-    shiki: {
-      theme: "material-theme-ocean",
-    },
-    link: {
-      checkDeadLinks: {
-        excludes: ["/llms.txt", "/llms-full.txt"],
-      },
-    },
-  },
+	root: join(__dirname, "docs"),
+	base: "/nile/",
+	title: "Nile",
+	description:
+		"A functional TypeScript backend for small teams. Keep shipping as your backend grows with services, actions and a familiar place for every operation.",
+	icon: "/nile-mark.svg",
+	logoText: "Nile",
+	plugins: [
+		pluginLlms({
+			exclude: ({ page }) => {
+				// Exclude roadmap page from llms.txt generation
+				return page.routePath === "/guide/roadmap";
+			},
+		}),
+	],
+	themeConfig: {
+		socialLinks: [
+			{
+				icon: "github",
+				mode: "link",
+				content: "https://github.com/nile-js/nile",
+			},
+		],
+		// Built-in search is enabled by default
+		search: true,
+		llmsUI: true,
+	},
+	markdown: {
+		showLineNumbers: true,
+		shiki: {
+			theme: "material-theme-ocean",
+		},
+		link: {
+			checkDeadLinks: {
+				excludes: ["/llms.txt", "/llms-full.txt"],
+			},
+		},
+	},
 });

@@ -1,4 +1,5 @@
 import { type Log, type LoggerConfig, createLog as newLog } from "./logger";
+import { closeLoggers, flushLoggers } from "./transports";
 
 type LogInput = Omit<Log, "appName">;
 
@@ -10,6 +11,8 @@ type LogInput = Omit<Log, "appName">;
  */
 export const createLogger = (appName: string, config: LoggerConfig) => {
   return {
+    flush: () => flushLoggers(appName),
+    close: () => closeLoggers(appName),
     info: (input: LogInput) =>
       newLog({ ...input, appName, level: "info" }, config),
     warn: (input: LogInput) =>

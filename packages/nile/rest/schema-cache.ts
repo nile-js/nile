@@ -59,6 +59,18 @@ export function createRestIntentHandlers({
   });
   return {
     ...intentHandlers,
-    schema: (engine, request) => handleSchema(engine, request, readSchema),
+    schema: async (engine, request, context) => {
+      if (request.payload?.kind === "topics") {
+        const result = context?.websocket
+          ? await context.websocket.schema()
+          : null;
+        return {
+          status: result?.isOk ?? false,
+          message: result?.isOk ? "Topic schemas" : "Topic schemas unavailable",
+          data: result?.isOk ? result.value : {},
+        };
+      }
+      return handleSchema(engine, request, readSchema);
+    },
   };
 }

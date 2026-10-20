@@ -1,6 +1,7 @@
 import type { Context } from "hono";
 import type { Store } from "hono-rate-limiter";
 import type { CorsConfig } from "@/cors/types";
+import type { HttpProtectionOptions } from "../protection/types";
 
 /** A user-registered middleware entry for the services pipeline */
 export interface MiddlewareEntry {
@@ -28,6 +29,7 @@ export interface DiscoveryConfig {
 }
 
 export interface RestConfig {
+  protection?: HttpProtectionOptions;
   baseUrl: string;
   host?: string;
   port?: number;

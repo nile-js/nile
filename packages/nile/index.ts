@@ -6,6 +6,8 @@ export type {
   AuthResult,
   TokenSource,
 } from "./auth/types";
+// Functional work controls and lifecycle-managed schedules.
+export * from "./controls";
 // CORS types — origin control, per-route rules, and resolver functions
 export type {
   CorsConfig,
@@ -35,7 +37,8 @@ export type {
   ServiceSummary,
   Services,
 } from "./engine/types";
-
+export * from "./execution";
+export * from "./lifecycle";
 // Logging — structured log persistence with chunking support
 export {
   createLog,
@@ -45,6 +48,21 @@ export {
   type LogFilter,
   type LoggerConfig,
 } from "./logging";
+export * from "./messaging";
+export type {
+  NativeCorsConfig,
+  NativeCorsOptions,
+  NativeCorsRouteRule,
+  NativeHandler,
+  NativeMiddleware,
+  NativeRateLimitConfig,
+  NativeRateLimitStore,
+  NativeRequestContext,
+  NativeRestApp,
+  NativeRestConfig,
+} from "./native";
+// Optional Bun-native transport with explicit native request and middleware APIs.
+export { createNativeHttpError, createNativeRestApp } from "./native";
 export type { RequestStore } from "./nile/request-scope";
 // Request scope — per-request isolation via AsyncLocalStorage
 export { getRequestStore, runInRequestScope } from "./nile/request-scope";
@@ -67,6 +85,8 @@ export type {
   Sessions,
   WebSocketContext,
 } from "./nile/types";
+export * from "./project";
+export type { HttpProtectionOptions } from "./protection/types";
 export type { RestApp } from "./rest/rest";
 // REST types — REST interface and rate limiting configuration
 export type {
@@ -89,6 +109,9 @@ export {
   handleFormDataRequest,
   validateFiles,
 } from "./rest/uploads";
+export * from "./scheduling";
+export { createNileTelemetry } from "./telemetry/lazy";
+export type { TelemetryOptions } from "./telemetry/types";
 // Utilities — error handling, diagnostics, and database helpers
 export {
   type CursorPage,
@@ -104,3 +127,12 @@ export {
   type OffsetPage,
   type OffsetPaginationOptions,
 } from "./utils";
+export type {
+  NileSocket,
+  SocketConfig,
+  SocketPolicyContext,
+} from "./websocket/socket-types";
+export type {
+  WebSocketConfig,
+  WebSocketIdentity,
+} from "./websocket/types";

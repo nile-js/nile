@@ -5,6 +5,7 @@ import type {
   BeforeActionHandler,
   NileContext,
 } from "@/nile/types";
+import { runObservedHook } from "../execution/hook-tracing";
 import type { Action, HookDefinition, HookLogEntry } from "./types";
 
 /**
@@ -16,8 +17,12 @@ async function runHook(
   input: unknown,
   nileContext: NileContext
 ): Promise<{ result: Result<unknown, string>; logEntry: HookLogEntry }> {
-  const result = await safeTry(() =>
-    hookAction.handler(input as Record<string, unknown>, nileContext)
+  const result = await runObservedHook(
+    `${hookDef.service}.${hookDef.action}`,
+    () =>
+      safeTry(() =>
+        hookAction.handler(input as Record<string, unknown>, nileContext)
+      )
   );
   return {
     result,
@@ -97,7 +102,9 @@ export async function runGlobalBeforeHook(
     return Ok(true);
   }
 
-  const result = await safeTry(() => handler({ nileContext, action, payload }));
+  const result = await runObservedHook("global.before", () =>
+    safeTry(() => handler({ nileContext, action, payload }))
+  );
   if (result.isErr) {
     log(`Global before hook failed for ${action.name}`);
     nileContext.setHookError(result.error);
@@ -122,21 +129,23 @@ export async function runGlobalAfterHook(
     return Ok(currentResult);
   }
 
-  const result = await safeTry(() =>
-    handler({
-      nileContext,
-      action,
-      payload,
-      result: Ok(currentResult),
-    })
+  const result = await runObservedHook("global.after", () =>
+    safeTry(() =>
+      handler({
+        nileContext,
+        action,
+        payload,
+        result: Ok(currentResult),
+      })
+    )
   );
   if (result.isErr) {
     log(`Global after hook failed for ${action.name}`);
     nileContext.setHookError(result.error);
-    return Err(result.error);
+    return result;
   }
 
-  return Ok(result.value);
+  return result;
 }
 
 /**
@@ -179,9 +188,9 @@ export async function runHandler(
   if (result.isErr) {
     log(`Handler failed for ${action.name}`, result.error);
     nileContext.setHookError(result.error);
-    return Err(result.error);
+    return result;
   }
 
   nileContext.setHookOutput(result.value);
-  return Ok(result.value);
+  return result;
 }

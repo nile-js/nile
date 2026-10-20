@@ -1,215 +1,96 @@
-# Authentication
+# Apply access rules consistently
 
-Nile includes built-in JWT authentication via `hono/jwt`. Protected actions require a valid JWT token before the handler executes.
+As more operations are added, a common policy boundary helps the team avoid repeating authentication code. Nile includes JWT verification; role, organization and resource-level authorization remain explicit application rules.
 
-## Configuration
+## Built-in JWT verification
 
-Pass an `auth` object to your server config:
+Configure server `auth` and mark the action `isProtected: true`. **Both are required**: `isProtected` alone does not enable verification.
 
 ```typescript
-import { createNileServer } from "@nilejs/nile";
+import type { ServerConfig } from "@nilejs/nile";
+import { config } from "./config";
+import { services } from "./services/services.config";
 
-const server = await createNileServer({
-  serverName: "MyApp",
-  services: [/* ... */],
-  auth: {
-    secret: process.env.JWT_SECRET!,
-    method: "header", // "header" (default) or "cookie"
-  },
-  rest: {
-    baseUrl: "/api/v1",
-    allowedOrigins: ["http://localhost:3000"],
-  },
-});
+export const serverConfig: ServerConfig = {
+  serverName: "Team workspace",
+  runtime: "bun",
+  native: true,
+  services,
+  auth: { secret: config.jwtSecret, method: "header" },
+  rest: { baseUrl: "/api", allowedOrigins: ["https://app.example.com"] },
+};
 ```
 
-## Auth Config Options
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `secret` | `string` | *required* | JWT secret for token verification |
-| `method` | `"header" \| "cookie"` | `"header"` | Where to look for the token |
-| `headerName` | `string` | `"authorization"` | Header name (when method is `"header"`) |
-| `cookieName` | `string` | `"auth_token"` | Cookie name (when method is `"cookie"`) |
-| `algorithm` | `JwtAlgorithm` | `"HS256"` | JWT signing algorithm for token verification |
-
-### Supported JWT Algorithms
-
-The `algorithm` option accepts any algorithm supported by `hono/jwt`:
-
-| Family | Algorithms |
-|--------|------------|
-| HMAC | `HS256`, `HS384`, `HS512` |
-| RSA | `RS256`, `RS384`, `RS512` |
-| RSA-PSS | `PS256`, `PS384`, `PS512` |
-| ECDSA | `ES256`, `ES384`, `ES512` |
-| EdDSA | `EdDSA` |
+`config.jwtSecret` is supplied by your application's configuration module. Keep it server-side.
 
 ```typescript
-auth: {
-  secret: process.env.JWT_SECRET!,
-  algorithm: "RS256", // Use RSA-256 instead of default HMAC-256
-}
-```
+import { createAction } from "@nilejs/nile";
+import { Err, Ok } from "slang-ts";
 
-## Protecting Actions
-
-Set `isProtected: true` on any action that requires authentication:
-
-```typescript
-import { Ok, Err } from "slang-ts";
-import { createAction, type Action } from "@nilejs/nile";
-
-export const getProfile: Action = createAction({
-  name: "getProfile",
-  description: "Get the current user's profile",
+export const getProfile = createAction({
+  name: "profile",
+  description: "Read the authenticated identity",
   isProtected: true,
-  handler: (data, context) => {
+  handler: (_input, context) => {
     const session = context?.getSession("rest");
-    if (!session) return Err("Not authenticated");
-
-    return Ok({
-      userId: session.userId,
-      organizationId: session.organizationId,
-    });
+    if (!session) return Err("Sign in to continue");
+    return Ok({ userId: session.userId, organizationId: session.organizationId });
   },
 });
 ```
 
-When `isProtected` is `true` and `auth` is configured on the server:
+The verifier requires **both** identity fields as nonempty strings:
 
-1. The engine extracts the JWT from the request (header or cookie)
-2. Verifies the token signature using `hono/jwt`
-3. Extracts `userId` and `organizationId` from the claims
-4. Stores auth data in the session via `setSession("rest", { userId, organizationId, ...claims })`
-5. If verification fails, the action returns an error without executing
-
-Actions without `isProtected` (or with `isProtected: false`) skip auth entirely.
-
-## Accessing Auth Data
-
-Inside any handler or hook, use `getSession("rest")` to access auth data:
-
-```typescript
-// Auth session data (userId, organizationId, JWT claims)
-const session = context?.getSession("rest");
-// { userId: "usr_123", organizationId: "org_456", role: "admin", ... }
-```
-
-Returns `undefined` when no authentication occurred (e.g., unprotected actions).
-
-## JWT Claims Mapping
-
-The JWT handler extracts identity fields from standard and common claim names:
-
-| Field | Supported claim names |
-|-------|----------------------|
+| Session field | Accepted JWT claims |
+|---|---|
 | `userId` | `userId`, `id`, `sub` |
 | `organizationId` | `organizationId`, `organization_id`, `orgId` |
 
-All other claims are preserved in the session object.
+Other claims remain available on the request-local `rest` session. Unprotected actions skip built-in token verification; merely sending a token does not populate their session.
 
-## Token Sources
+| Auth setting | Default | Meaning |
+|---|---|---|
+| `secret` | Required | Verification key material. |
+| `method` | `"header"` | `"header"` or `"cookie"`. |
+| `headerName` | `"authorization"` | Header containing `Bearer <token>`. |
+| `cookieName` | `"auth_token"` | Cookie read when method is `"cookie"`. |
+| `algorithm` | `"HS256"` | Configured `hono/jwt` algorithm; match your issuer. |
 
-### Authorization Header (default)
+## Enforce your role policy
 
-```
-Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
-```
-
-```typescript
-auth: {
-  secret: "your-secret",
-  method: "header",
-  // headerName: "authorization" (default)
-}
-```
-
-### Cookie
+`accessControl` stores policy labels; it does not enforce them automatically. This example defines an **all-listed-roles** policy in a global before hook:
 
 ```typescript
-auth: {
-  secret: "your-secret",
-  method: "cookie",
-  cookieName: "session_token",
-}
+import type { BeforeActionHandler } from "@nilejs/nile";
+import { Err, Ok } from "slang-ts";
+
+/** Require every role listed on a protected action. */
+export const authorizeAction: BeforeActionHandler<boolean, string> = ({
+  nileContext,
+  action,
+}) => {
+  if (!action.isProtected) return Ok(true);
+
+  const session = nileContext.getSession("rest");
+  if (!session) return Err("Sign in to continue");
+
+  const roles = session.roles;
+  if (action.accessControl?.length && !Array.isArray(roles)) {
+    return Err("Access denied");
+  }
+  const isAllowed = (action.accessControl ?? []).every(
+    (role) => Array.isArray(roles) && roles.includes(role),
+  );
+  return isAllowed ? Ok(true) : Err("Access denied");
+};
 ```
 
-## Custom Auth with Hooks
+Pass `onBeforeActionHandler: authorizeAction` to the server, configure JWT auth, and use `isProtected: true, accessControl: ["project-admin"]` on the action. Adapt the policy to your actual role model. Check resource ownership and organization boundaries in the appropriate domain operation; a role label alone is insufficient.
 
-For auth logic beyond JWT (RBAC, API keys, OAuth sessions), use `onBeforeActionHandler` as a middleware gate:
+## Use an existing authentication provider
 
-```typescript
-const server = await createNileServer({
-  serverName: "MyApp",
-  services: [/* ... */],
-  auth: { secret: process.env.JWT_SECRET! },
-  onBeforeActionHandler: async ({ nileContext, action, payload }) => {
-    const session = nileContext.getSession("rest");
-    if (!session) return Ok(payload); // Unprotected action, let it through
+A global before hook can verify a Better Auth session, API key or another provider and call `nileContext.setSession("rest", identity)`. Enforce denial in that hook rather than relying on Nile's JWT switch. If using external sessions exclusively, omit built-in `auth` so its verifier does not reject the provider's credentials first.
 
-    // Custom RBAC check
-    const requiredRole = action.accessControl?.[0];
+Read the native Request through `get<NativeRequestContext>("nativeRest")` on Bun native, or Hono Context through `get<Context>("rest")` on Hono. Provider integration and RBAC are application code.
 
-    if (requiredRole && session.role !== requiredRole) {
-      return Err(`Requires role: ${requiredRole}`);
-    }
-
-    return Ok(payload);
-  },
-});
-```
-
-The hook runs after JWT verification but before the action handler, giving you access to the verified user data for custom authorization logic.
-
-## Example: Full Setup
-
-```typescript
-import { createNileServer, createAction, type Action } from "@nilejs/nile";
-import { Ok, Err } from "slang-ts";
-import z from "zod";
-
-// Public action, no auth required
-const listItems: Action = createAction({
-  name: "listItems",
-  description: "List all items",
-  handler: () => Ok({ items: [] }),
-});
-
-// Protected action, requires valid JWT
-const createItem: Action = createAction({
-  name: "createItem",
-  description: "Create a new item",
-  isProtected: true,
-  validation: z.object({ title: z.string().min(1) }),
-  handler: (data, context) => {
-    const session = context?.getSession("rest");
-    return Ok({
-      id: crypto.randomUUID(),
-      title: data.title,
-      createdBy: session?.userId,
-    });
-  },
-});
-
-const server = await createNileServer({
-  name: "ItemService",
-  services: [
-    {
-      name: "items",
-      description: "Item management",
-      actions: [listItems, createItem],
-    },
-  ],
-  auth: {
-    secret: process.env.JWT_SECRET!,
-    method: "header",
-  },
-  rest: {
-    baseUrl: "/api/v1",
-    allowedOrigins: ["http://localhost:3000"],
-  },
-});
-
-export default server.rest?.app;
-```
+Hooks run before input validation. Never trust a payload organization ID as the authenticated identity. Discovery has a [separate access gate](/guide/basics/discovery-and-agents), and CORS does not authorize an action.

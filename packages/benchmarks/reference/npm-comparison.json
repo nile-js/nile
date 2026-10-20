@@ -1,0 +1,996 @@
+{
+  "completed": true,
+  "timestamp": "2026-10-18T21:52:30.185Z",
+  "elapsedMs": 143533.302775,
+  "rounds": 3,
+  "entries": [
+    "nile-published",
+    "nile-current-native",
+    "nile-current-hono"
+  ],
+  "validationModes": [
+    "plain",
+    "validated"
+  ],
+  "actionCount": 300,
+  "concurrency": 32,
+  "warmupJourneys": 500,
+  "measuredJourneys": 5000,
+  "requestsPerJourney": 6,
+  "provenance": {
+    "bun": "1.4.2",
+    "hashes": {
+      "../../../../nile/dist/index.js": "609dd67c2dfe9a48e14d97cd2899b6d37eeee0b8555a26d123814b0e43211d00",
+      "../published/node_modules/@nilejs/nile/dist/index.js": "2e27615db6facb7d70e81e647fe21075c0ae4c41adf615c5e6e7bae0044ca402",
+      "../published/bun.lock": "cf45154098e2ff4632b5f0b3592ff1f9bdeadb2698122c7b5785622f16f53d9a",
+      "../workload.mjs": "db9219e0c7e025306971c628f8791ee492af582b71847dd73daf08771663ea5c",
+      "../client.mjs": "c3e16f32365dc3ca5481eab0e7469ed23b37affef85f1829499fd2c8857b638d",
+      "../full/admission.mjs": "69e58bc0cfab0918ce44a92d8f266ba9120941f719a446d83b7374010f2328c4",
+      "./fixture.mjs": "e3f195fa5c1887724bd965c1ed0e0ff69d2996c660c31721f2410bbcce14bb26",
+      "./server.mjs": "4f03e95a659a85843c4ec343887f76160a1b3738696800bde76e5c9804be31d1",
+      "./run.mjs": "08bc95cf032c8936fddb7795ccdf8f705e64ea3958beeb279aaec12ea34678a7",
+      "./lifecycle.mjs": "6f7c5f94b51d904f6b4bf8c3b4e35a9833b98bc853d7ea595d745f31b1df2002"
+    },
+    "publishedResolvedDependencies": {
+      "zod": "4.6.7",
+      "hono": "4.13.13",
+      "pino": "10.4.0",
+      "nanoid": "5.1.16",
+      "slang-ts": "0.0.7",
+      "@hono/node-server": "1.19.17",
+      "hono-rate-limiter": "0.5.4"
+    },
+    "currentResolvedDependencies": {
+      "zod": "4.6.7",
+      "hono": "4.13.13",
+      "pino": "10.4.0",
+      "nanoid": "6.0.2",
+      "slang-ts": "0.0.9",
+      "@hono/node-server": "2.1.5",
+      "hono-rate-limiter": "0.5.4"
+    },
+    "publishedMetadata": {
+      "bugs": {
+        "url": "https://github.com/nile-js/nile/issues"
+      },
+      "dist": {
+        "shasum": "a585fe8bd2e546b373be8658cf79ac45e6c83821",
+        "tarball": "https://registry.npmjs.org/@nilejs/nile/-/nile-0.0.17.tgz",
+        "fileCount": 11,
+        "integrity": "sha512-6+JrBAEDYnd4ZSgu2m6/uwMkfJ8eID9U44AQ3IOp2joMKzNQd5JN9d3MKUxL+RWltyJu0kA6rMMETLb92Mt5aA==",
+        "signatures": [
+          {
+            "sig": "MEUCIQCuUsHDvDOGA+QmMBY+uKNKRUyxP4Bp96REvh3VLUrrcgIgXR315It443+eUj6tWbDpKujAmk+BaO2Xs7HFnfsBIfg=",
+            "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+          }
+        ],
+        "unpackedSize": 755815
+      },
+      "main": "./dist/index.cjs",
+      "name": "@nilejs/nile",
+      "type": "module",
+      "types": "./dist/index.d.ts",
+      "author": {
+        "name": "Hussein Kizz"
+      },
+      "module": "./dist/index.js",
+      "exports": {
+        ".": {
+          "types": "./dist/index.d.ts",
+          "import": "./dist/index.js",
+          "require": "./dist/index.cjs"
+        }
+      },
+      "gitHead": "889245ca5fc7d3f2dfcf4ba68351c8541945e9fb",
+      "license": "MIT",
+      "scripts": {
+        "fix": "ultracite fix",
+        "test": "bunx vitest",
+        "build": "tsup",
+        "check": "ultracite check",
+        "export": "bun run check && bun run fix && bun run test:run && bun run build && bun run copy-docs",
+        "test:run": "bunx vitest run",
+        "copy-docs": "bash scripts/copy-docs.sh"
+      },
+      "_npmUser": {
+        "name": "husseinkizz",
+        "email": "hssnkizz@gmail.com"
+      },
+      "homepage": "https://github.com/nile-js/nile#readme",
+      "keywords": [
+        "framework",
+        "backend",
+        "api",
+        "hono",
+        "server",
+        "typescript",
+        "service",
+        "actions",
+        "post only",
+        "functional programming",
+        "rpc",
+        "bun",
+        "ai-backend"
+      ],
+      "repository": {
+        "url": "git+ssh://git@github.com/nile-js/nile.git",
+        "type": "git"
+      },
+      "_npmVersion": "11.12.1",
+      "description": "TypeScript-first, service and actions oriented backend framework",
+      "directories": {},
+      "maintainers": [
+        {
+          "name": "husseinkizz",
+          "email": "hssnkizz@gmail.com"
+        }
+      ],
+      "_nodeVersion": "24.15.0",
+      "dependencies": {
+        "zod": "^4.3.6",
+        "hono": "^4.11.9",
+        "pino": "^10.3.1",
+        "nanoid": "^5.1.6",
+        "slang-ts": "^0.0.7",
+        "@hono/node-server": "^1.19.9",
+        "hono-rate-limiter": "^0.5.3"
+      },
+      "_hasShrinkwrap": false,
+      "devDependencies": {
+        "tsup": "^8.5.1",
+        "vitest": "^4.0.18",
+        "ultracite": "7.1.5",
+        "@types/bun": "latest",
+        "drizzle-orm": "^0.45.2",
+        "drizzle-zod": "0.8.3",
+        "@biomejs/biome": "2.3.13",
+        "vite-tsconfig-paths": "^6.1.1",
+        "@electric-sql/pglite": "^0.2.5"
+      },
+      "peerDependencies": {
+        "typescript": "^5",
+        "drizzle-orm": "^0.45.2",
+        "drizzle-zod": "^0.8.3"
+      },
+      "_npmOperationalInternal": {
+        "tmp": "tmp/nile_0.0.17_1776643548564_0.9444888910308868",
+        "host": "s3://npm-registry-packages-npm-production"
+      },
+      "_id": "@nilejs/nile@0.0.17",
+      "version": "0.0.17"
+    }
+  },
+  "rows": [
+    {
+      "framework": "nile-published",
+      "runtime": "bun",
+      "mode": "plain",
+      "round": 1,
+      "elapsedMs": 6010.869914999999,
+      "journeys": 5000,
+      "requests": 30000,
+      "requestsPerSecond": 4990.958118247682,
+      "journeysPerSecond": 831.8263530412803,
+      "journeyP50Ms": 35.00160199999982,
+      "journeyP95Ms": 60.884994999999435,
+      "requestP95Ms": 11.628918999999769,
+      "state": {
+        "carts": 0,
+        "orders": 5000
+      },
+      "serverCpuMs": 7481.822,
+      "serverRssBytes": 88616960,
+      "hostBefore": {
+        "load": [
+          3.77,
+          3.63,
+          3.39
+        ],
+        "freeMemoryBytes": 4361175040,
+        "totalMemoryBytes": 16638767104,
+        "idle": 15738860,
+        "total": 31869650
+      },
+      "hostAfter": {
+        "load": [
+          3.95,
+          3.67,
+          3.41
+        ],
+        "freeMemoryBytes": 4361269248,
+        "totalMemoryBytes": 16638767104,
+        "idle": 15747460,
+        "total": 31893200
+      }
+    },
+    {
+      "framework": "nile-published",
+      "runtime": "bun",
+      "mode": "validated",
+      "round": 1,
+      "elapsedMs": 6115.154207,
+      "journeys": 5000,
+      "requests": 30000,
+      "requestsPerSecond": 4905.845214117264,
+      "journeysPerSecond": 817.640869019544,
+      "journeyP50Ms": 35.78139600000031,
+      "journeyP95Ms": 61.68153400000119,
+      "requestP95Ms": 11.436517000000094,
+      "state": {
+        "carts": 0,
+        "orders": 5000
+      },
+      "serverCpuMs": 7636.12,
+      "serverRssBytes": 90824704,
+      "hostBefore": {
+        "load": [
+          3.95,
+          3.67,
+          3.41
+        ],
+        "freeMemoryBytes": 4358705152,
+        "totalMemoryBytes": 16638767104,
+        "idle": 15749120,
+        "total": 31897630
+      },
+      "hostAfter": {
+        "load": [
+          4.2,
+          3.73,
+          3.43
+        ],
+        "freeMemoryBytes": 4456333312,
+        "totalMemoryBytes": 16638767104,
+        "idle": 15757490,
+        "total": 31921560
+      }
+    },
+    {
+      "framework": "nile-current-native",
+      "runtime": "bun",
+      "mode": "plain",
+      "round": 1,
+      "elapsedMs": 4171.566325999998,
+      "journeys": 5000,
+      "requests": 30000,
+      "requestsPerSecond": 7191.5433330209535,
+      "journeysPerSecond": 1198.5905555034922,
+      "journeyP50Ms": 24.132165999999415,
+      "journeyP95Ms": 42.788558000000194,
+      "requestP95Ms": 8.046440999998595,
+      "state": {
+        "carts": 0,
+        "orders": 5000
+      },
+      "serverCpuMs": 5356.76,
+      "serverRssBytes": 87658496,
+      "hostBefore": {
+        "load": [
+          4.1,
+          3.72,
+          3.42
+        ],
+        "freeMemoryBytes": 4494163968,
+        "totalMemoryBytes": 16638767104,
+        "idle": 15758790,
+        "total": 31924750
+      },
+      "hostAfter": {
+        "load": [
+          4.1,
+          3.72,
+          3.42
+        ],
+        "freeMemoryBytes": 4501483520,
+        "totalMemoryBytes": 16638767104,
+        "idle": 15764040,
+        "total": 31941080
+      }
+    },
+    {
+      "framework": "nile-current-native",
+      "runtime": "bun",
+      "mode": "validated",
+      "round": 1,
+      "elapsedMs": 4419.191823000001,
+      "journeys": 5000,
+      "requests": 30000,
+      "requestsPerSecond": 6788.571576337295,
+      "journeysPerSecond": 1131.4285960562158,
+      "journeyP50Ms": 25.227648000000045,
+      "journeyP95Ms": 45.442579999999,
+      "requestP95Ms": 8.713591000003362,
+      "state": {
+        "carts": 0,
+        "orders": 5000
+      },
+      "serverCpuMs": 5763.77,
+      "serverRssBytes": 88248320,
+      "hostBefore": {
+        "load": [
+          3.93,
+          3.69,
+          3.42
+        ],
+        "freeMemoryBytes": 4497965056,
+        "totalMemoryBytes": 16638767104,
+        "idle": 15765460,
+        "total": 31944350
+      },
+      "hostAfter": {
+        "load": [
+          3.93,
+          3.69,
+          3.42
+        ],
+        "freeMemoryBytes": 4442914816,
+        "totalMemoryBytes": 16638767104,
+        "idle": 15771220,
+        "total": 31961530
+      }
+    },
+    {
+      "framework": "nile-current-hono",
+      "runtime": "bun",
+      "mode": "plain",
+      "round": 1,
+      "elapsedMs": 7602.557033000001,
+      "journeys": 5000,
+      "requests": 30000,
+      "requestsPerSecond": 3946.040768886133,
+      "journeysPerSecond": 657.6734614810222,
+      "journeyP50Ms": 36.93030699999508,
+      "journeyP95Ms": 114.27507599999808,
+      "requestP95Ms": 20.833209000000352,
+      "state": {
+        "carts": 0,
+        "orders": 5000
+      },
+      "serverCpuMs": 6679.549,
+      "serverRssBytes": 90566656,
+      "hostBefore": {
+        "load": [
+          3.86,
+          3.68,
+          3.41
+        ],
+        "freeMemoryBytes": 4411015168,
+        "totalMemoryBytes": 16638767104,
+        "idle": 15771740,
+        "total": 31968020
+      },
+      "hostAfter": {
+        "load": [
+          5.07,
+          3.93,
+          3.5
+        ],
+        "freeMemoryBytes": 4451225600,
+        "totalMemoryBytes": 16638767104,
+        "idle": 15774330,
+        "total": 31998020
+      }
+    },
+    {
+      "framework": "nile-current-hono",
+      "runtime": "bun",
+      "mode": "validated",
+      "round": 1,
+      "elapsedMs": 6981.353955000006,
+      "journeys": 5000,
+      "requests": 30000,
+      "requestsPerSecond": 4297.160721741399,
+      "journeysPerSecond": 716.1934536235666,
+      "journeyP50Ms": 39.21926099999837,
+      "journeyP95Ms": 84.10158899999806,
+      "requestP95Ms": 16.070724999997765,
+      "state": {
+        "carts": 0,
+        "orders": 5000
+      },
+      "serverCpuMs": 6897.726,
+      "serverRssBytes": 90783744,
+      "hostBefore": {
+        "load": [
+          5.55,
+          4.05,
+          3.54
+        ],
+        "freeMemoryBytes": 4438339584,
+        "totalMemoryBytes": 16638767104,
+        "idle": 15775150,
+        "total": 32002910
+      },
+      "hostAfter": {
+        "load": [
+          5.58,
+          4.08,
+          3.55
+        ],
+        "freeMemoryBytes": 4312002560,
+        "totalMemoryBytes": 16638767104,
+        "idle": 15778060,
+        "total": 32030390
+      }
+    },
+    {
+      "framework": "nile-current-native",
+      "runtime": "bun",
+      "mode": "validated",
+      "round": 2,
+      "elapsedMs": 6166.284946,
+      "journeys": 5000,
+      "requests": 30000,
+      "requestsPerSecond": 4865.166021797398,
+      "journeysPerSecond": 810.8610036328996,
+      "journeyP50Ms": 35.91807400000107,
+      "journeyP95Ms": 67.50334799999837,
+      "requestP95Ms": 13.52107999999862,
+      "state": {
+        "carts": 0,
+        "orders": 5000
+      },
+      "serverCpuMs": 6442.572,
+      "serverRssBytes": 89415680,
+      "hostBefore": {
+        "load": [
+          5.58,
+          4.08,
+          3.55
+        ],
+        "freeMemoryBytes": 4297732096,
+        "totalMemoryBytes": 16638767104,
+        "idle": 15778720,
+        "total": 32035500
+      },
+      "hostAfter": {
+        "load": [
+          6.1,
+          4.21,
+          3.6
+        ],
+        "freeMemoryBytes": 4274757632,
+        "totalMemoryBytes": 16638767104,
+        "idle": 15781230,
+        "total": 32059690
+      }
+    },
+    {
+      "framework": "nile-current-native",
+      "runtime": "bun",
+      "mode": "plain",
+      "round": 2,
+      "elapsedMs": 5230.5366429999995,
+      "journeys": 5000,
+      "requests": 30000,
+      "requestsPerSecond": 5735.549150611314,
+      "journeysPerSecond": 955.924858435219,
+      "journeyP50Ms": 31.72975299999962,
+      "journeyP95Ms": 53.337885000000824,
+      "requestP95Ms": 10.583846000001358,
+      "state": {
+        "carts": 0,
+        "orders": 5000
+      },
+      "serverCpuMs": 5798.788,
+      "serverRssBytes": 87650304,
+      "hostBefore": {
+        "load": [
+          5.93,
+          4.21,
+          3.6
+        ],
+        "freeMemoryBytes": 4307247104,
+        "totalMemoryBytes": 16638767104,
+        "idle": 15782060,
+        "total": 32063540
+      },
+      "hostAfter": {
+        "load": [
+          5.62,
+          4.17,
+          3.59
+        ],
+        "freeMemoryBytes": 4338577408,
+        "totalMemoryBytes": 16638767104,
+        "idle": 15784180,
+        "total": 32083990
+      }
+    },
+    {
+      "framework": "nile-current-hono",
+      "runtime": "bun",
+      "mode": "validated",
+      "round": 2,
+      "elapsedMs": 5137.514301999996,
+      "journeys": 5000,
+      "requests": 30000,
+      "requestsPerSecond": 5839.399802414414,
+      "journeysPerSecond": 973.2333004024023,
+      "journeyP50Ms": 31.53077299999859,
+      "journeyP95Ms": 47.95118900000671,
+      "requestP95Ms": 9.673242000004393,
+      "state": {
+        "carts": 0,
+        "orders": 5000
+      },
+      "serverCpuMs": 6348.852,
+      "serverRssBytes": 91287552,
+      "hostBefore": {
+        "load": [
+          5.62,
+          4.17,
+          3.59
+        ],
+        "freeMemoryBytes": 4308668416,
+        "totalMemoryBytes": 16638767104,
+        "idle": 15785010,
+        "total": 32088040
+      },
+      "hostAfter": {
+        "load": [
+          5.73,
+          4.22,
+          3.61
+        ],
+        "freeMemoryBytes": 4316278784,
+        "totalMemoryBytes": 16638767104,
+        "idle": 15788590,
+        "total": 32108230
+      }
+    },
+    {
+      "framework": "nile-current-hono",
+      "runtime": "bun",
+      "mode": "plain",
+      "round": 2,
+      "elapsedMs": 6156.120105000009,
+      "journeys": 5000,
+      "requests": 30000,
+      "requestsPerSecond": 4873.199269720869,
+      "journeysPerSecond": 812.1998782868114,
+      "journeyP50Ms": 34.33195500000147,
+      "journeyP95Ms": 75.55512299999828,
+      "requestP95Ms": 13.45200200000545,
+      "state": {
+        "carts": 0,
+        "orders": 5000
+      },
+      "serverCpuMs": 6212.844,
+      "serverRssBytes": 89370624,
+      "hostBefore": {
+        "load": [
+          5.73,
+          4.22,
+          3.61
+        ],
+        "freeMemoryBytes": 4274085888,
+        "totalMemoryBytes": 16638767104,
+        "idle": 15789350,
+        "total": 32113040
+      },
+      "hostAfter": {
+        "load": [
+          5.91,
+          4.28,
+          3.63
+        ],
+        "freeMemoryBytes": 4298768384,
+        "totalMemoryBytes": 16638767104,
+        "idle": 15791920,
+        "total": 32137250
+      }
+    },
+    {
+      "framework": "nile-published",
+      "runtime": "bun",
+      "mode": "validated",
+      "round": 2,
+      "elapsedMs": 7690.102403000012,
+      "journeys": 5000,
+      "requests": 30000,
+      "requestsPerSecond": 3901.1184023110795,
+      "journeysPerSecond": 650.1864003851799,
+      "journeyP50Ms": 43.89782899999409,
+      "journeyP95Ms": 84.2920199999935,
+      "requestP95Ms": 16.00222500000382,
+      "state": {
+        "carts": 0,
+        "orders": 5000
+      },
+      "serverCpuMs": 8231.692,
+      "serverRssBytes": 90685440,
+      "hostBefore": {
+        "load": [
+          6.16,
+          4.36,
+          3.66
+        ],
+        "freeMemoryBytes": 4308926464,
+        "totalMemoryBytes": 16638767104,
+        "idle": 15792950,
+        "total": 32142130
+      },
+      "hostAfter": {
+        "load": [
+          6.79,
+          4.52,
+          3.72
+        ],
+        "freeMemoryBytes": 4307091456,
+        "totalMemoryBytes": 16638767104,
+        "idle": 15797300,
+        "total": 32172380
+      }
+    },
+    {
+      "framework": "nile-published",
+      "runtime": "bun",
+      "mode": "plain",
+      "round": 2,
+      "elapsedMs": 6080.263716000001,
+      "journeys": 5000,
+      "requests": 30000,
+      "requestsPerSecond": 4933.996517462894,
+      "journeysPerSecond": 822.3327529104823,
+      "journeyP50Ms": 37.142288000002736,
+      "journeyP95Ms": 55.535782999999356,
+      "requestP95Ms": 10.957482999991043,
+      "state": {
+        "carts": 0,
+        "orders": 5000
+      },
+      "serverCpuMs": 7471.16,
+      "serverRssBytes": 88920064,
+      "hostBefore": {
+        "load": [
+          6.79,
+          4.52,
+          3.72
+        ],
+        "freeMemoryBytes": 4314767360,
+        "totalMemoryBytes": 16638767104,
+        "idle": 15798330,
+        "total": 32176780
+      },
+      "hostAfter": {
+        "load": [
+          6.2,
+          4.47,
+          3.71
+        ],
+        "freeMemoryBytes": 4294660096,
+        "totalMemoryBytes": 16638767104,
+        "idle": 15803580,
+        "total": 32200690
+      }
+    },
+    {
+      "framework": "nile-current-hono",
+      "runtime": "bun",
+      "mode": "plain",
+      "round": 3,
+      "elapsedMs": 8938.652164999992,
+      "journeys": 5000,
+      "requests": 30000,
+      "requestsPerSecond": 3356.2106955528934,
+      "journeysPerSecond": 559.3684492588155,
+      "journeyP50Ms": 52.16061000000627,
+      "journeyP95Ms": 102.54347400000552,
+      "requestP95Ms": 20.58115500000713,
+      "state": {
+        "carts": 0,
+        "orders": 5000
+      },
+      "serverCpuMs": 6709.821,
+      "serverRssBytes": 89829376,
+      "hostBefore": {
+        "load": [
+          6.2,
+          4.47,
+          3.71
+        ],
+        "freeMemoryBytes": 4277374976,
+        "totalMemoryBytes": 16638767104,
+        "idle": 15804360,
+        "total": 32204950
+      },
+      "hostAfter": {
+        "load": [
+          7.48,
+          4.8,
+          3.83
+        ],
+        "freeMemoryBytes": 4106043392,
+        "totalMemoryBytes": 16638767104,
+        "idle": 15805470,
+        "total": 32240280
+      }
+    },
+    {
+      "framework": "nile-current-hono",
+      "runtime": "bun",
+      "mode": "validated",
+      "round": 3,
+      "elapsedMs": 8830.914915000001,
+      "journeys": 5000,
+      "requests": 30000,
+      "requestsPerSecond": 3397.1564994973114,
+      "journeysPerSecond": 566.1927499162185,
+      "journeyP50Ms": 53.38463900001079,
+      "journeyP95Ms": 86.93434300000081,
+      "requestP95Ms": 17.953043999994406,
+      "state": {
+        "carts": 0,
+        "orders": 5000
+      },
+      "serverCpuMs": 7296.613,
+      "serverRssBytes": 92090368,
+      "hostBefore": {
+        "load": [
+          7.48,
+          4.8,
+          3.83
+        ],
+        "freeMemoryBytes": 4204437504,
+        "totalMemoryBytes": 16638767104,
+        "idle": 15805640,
+        "total": 32248320
+      },
+      "hostAfter": {
+        "load": [
+          7.93,
+          4.99,
+          3.9
+        ],
+        "freeMemoryBytes": 4201492480,
+        "totalMemoryBytes": 16638767104,
+        "idle": 15806360,
+        "total": 32283060
+      }
+    },
+    {
+      "framework": "nile-published",
+      "runtime": "bun",
+      "mode": "plain",
+      "round": 3,
+      "elapsedMs": 9262.164441,
+      "journeys": 5000,
+      "requests": 30000,
+      "requestsPerSecond": 3238.9837376673713,
+      "journeysPerSecond": 539.8306229445618,
+      "journeyP50Ms": 56.928948999993736,
+      "journeyP95Ms": 93.32987400000275,
+      "requestP95Ms": 18.455598999993526,
+      "state": {
+        "carts": 0,
+        "orders": 5000
+      },
+      "serverCpuMs": 8140.804,
+      "serverRssBytes": 88162304,
+      "hostBefore": {
+        "load": [
+          7.93,
+          4.99,
+          3.9
+        ],
+        "freeMemoryBytes": 4162613248,
+        "totalMemoryBytes": 16638767104,
+        "idle": 15807060,
+        "total": 32288930
+      },
+      "hostAfter": {
+        "load": [
+          7.93,
+          5.09,
+          3.94
+        ],
+        "freeMemoryBytes": 3918032896,
+        "totalMemoryBytes": 16638767104,
+        "idle": 15808990,
+        "total": 32325410
+      }
+    },
+    {
+      "framework": "nile-published",
+      "runtime": "bun",
+      "mode": "validated",
+      "round": 3,
+      "elapsedMs": 7304.401087000006,
+      "journeys": 5000,
+      "requests": 30000,
+      "requestsPerSecond": 4107.112909420109,
+      "journeysPerSecond": 684.5188182366849,
+      "journeyP50Ms": 42.353160000013304,
+      "journeyP95Ms": 76.53239200000826,
+      "requestP95Ms": 14.245154000003822,
+      "state": {
+        "carts": 0,
+        "orders": 5000
+      },
+      "serverCpuMs": 8074.605,
+      "serverRssBytes": 90226688,
+      "hostBefore": {
+        "load": [
+          7.93,
+          5.09,
+          3.94
+        ],
+        "freeMemoryBytes": 3949527040,
+        "totalMemoryBytes": 16638767104,
+        "idle": 15809110,
+        "total": 32333570
+      },
+      "hostAfter": {
+        "load": [
+          7.62,
+          5.12,
+          3.97
+        ],
+        "freeMemoryBytes": 3967975424,
+        "totalMemoryBytes": 16638767104,
+        "idle": 15813410,
+        "total": 32362360
+      }
+    },
+    {
+      "framework": "nile-current-native",
+      "runtime": "bun",
+      "mode": "plain",
+      "round": 3,
+      "elapsedMs": 8429.338074,
+      "journeys": 5000,
+      "requests": 30000,
+      "requestsPerSecond": 3558.9983147708786,
+      "journeysPerSecond": 593.1663857951464,
+      "journeyP50Ms": 47.224686000001384,
+      "journeyP95Ms": 105.1393200000166,
+      "requestP95Ms": 20.13164200000756,
+      "state": {
+        "carts": 0,
+        "orders": 5000
+      },
+      "serverCpuMs": 6456.739,
+      "serverRssBytes": 87896064,
+      "hostBefore": {
+        "load": [
+          7.62,
+          5.12,
+          3.97
+        ],
+        "freeMemoryBytes": 3935764480,
+        "totalMemoryBytes": 16638767104,
+        "idle": 15814140,
+        "total": 32366290
+      },
+      "hostAfter": {
+        "load": [
+          7.54,
+          5.18,
+          4
+        ],
+        "freeMemoryBytes": 4033712128,
+        "totalMemoryBytes": 16638767104,
+        "idle": 15814940,
+        "total": 32399580
+      }
+    },
+    {
+      "framework": "nile-current-native",
+      "runtime": "bun",
+      "mode": "validated",
+      "round": 3,
+      "elapsedMs": 5634.350386999984,
+      "journeys": 5000,
+      "requests": 30000,
+      "requestsPerSecond": 5324.482493885783,
+      "journeysPerSecond": 887.4137489809638,
+      "journeyP50Ms": 32.93039999998291,
+      "journeyP95Ms": 60.51349900002242,
+      "requestP95Ms": 11.820590000017546,
+      "state": {
+        "carts": 0,
+        "orders": 5000
+      },
+      "serverCpuMs": 6149.48,
+      "serverRssBytes": 88932352,
+      "hostBefore": {
+        "load": [
+          7.54,
+          5.18,
+          4
+        ],
+        "freeMemoryBytes": 4047978496,
+        "totalMemoryBytes": 16638767104,
+        "idle": 15815700,
+        "total": 32403470
+      },
+      "hostAfter": {
+        "load": [
+          7.09,
+          5.13,
+          3.99
+        ],
+        "freeMemoryBytes": 4102184960,
+        "totalMemoryBytes": 16638767104,
+        "idle": 15818310,
+        "total": 32425660
+      }
+    }
+  ],
+  "summary": {
+    "nile-published/plain": {
+      "samples": 3,
+      "runtime": "bun",
+      "meanRequestsPerSecond": 4387.979457792649,
+      "meanJourneysPerSecond": 731.3299096321081,
+      "minRequestsPerSecond": 3238.9837376673713,
+      "maxRequestsPerSecond": 4990.958118247682,
+      "coefficientOfVariationPercent": 18.523226969924067,
+      "spreadPercent": 39.92667690066245,
+      "meanJourneyP95Ms": 69.91688400000051,
+      "meanRequestP95Ms": 13.680666999994779
+    },
+    "nile-published/validated": {
+      "samples": 3,
+      "runtime": "bun",
+      "meanRequestsPerSecond": 4304.6921752828175,
+      "meanJourneysPerSecond": 717.4486958804696,
+      "minRequestsPerSecond": 3901.1184023110795,
+      "maxRequestsPerSecond": 4905.845214117264,
+      "coefficientOfVariationPercent": 10.066186272064376,
+      "spreadPercent": 23.340270822969448,
+      "meanJourneyP95Ms": 74.16864866666765,
+      "meanRequestP95Ms": 13.894632000002579
+    },
+    "nile-current-native/plain": {
+      "samples": 3,
+      "runtime": "bun",
+      "meanRequestsPerSecond": 5495.363599467714,
+      "meanJourneysPerSecond": 915.893933244619,
+      "minRequestsPerSecond": 3558.9983147708786,
+      "maxRequestsPerSecond": 7191.5433330209535,
+      "coefficientOfVariationPercent": 27.16242123606091,
+      "spreadPercent": 66.10199584613339,
+      "meanJourneyP95Ms": 67.08858766667254,
+      "meanRequestP95Ms": 12.920643000002505
+    },
+    "nile-current-native/validated": {
+      "samples": 3,
+      "runtime": "bun",
+      "meanRequestsPerSecond": 5659.406697340158,
+      "meanJourneysPerSecond": 943.234449556693,
+      "minRequestsPerSecond": 4865.166021797398,
+      "maxRequestsPerSecond": 6788.571576337295,
+      "coefficientOfVariationPercent": 14.492044967384842,
+      "spreadPercent": 33.98599283285067,
+      "meanJourneyP95Ms": 57.81980900000659,
+      "meanRequestP95Ms": 11.351753666673176
+    },
+    "nile-current-hono/plain": {
+      "samples": 3,
+      "runtime": "bun",
+      "meanRequestsPerSecond": 4058.483578053298,
+      "meanJourneysPerSecond": 676.4139296755496,
+      "minRequestsPerSecond": 3356.2106955528934,
+      "maxRequestsPerSecond": 4873.199269720869,
+      "coefficientOfVariationPercent": 15.384834177850848,
+      "spreadPercent": 37.378211467240135,
+      "meanJourneyP95Ms": 97.45789100000063,
+      "meanRequestP95Ms": 18.28878866667098
+    },
+    "nile-current-hono/validated": {
+      "samples": 3,
+      "runtime": "bun",
+      "meanRequestsPerSecond": 4511.239007884375,
+      "meanJourneysPerSecond": 751.8731679807291,
+      "minRequestsPerSecond": 3397.1564994973114,
+      "maxRequestsPerSecond": 5839.399802414414,
+      "coefficientOfVariationPercent": 22.3545583783382,
+      "spreadPercent": 54.136863479162805,
+      "meanJourneyP95Ms": 72.99570700000186,
+      "meanRequestP95Ms": 14.565670333332188
+    }
+  },
+  "methodology": "All three contenders complete each round before next round. Rotated contender order and alternating validation-mode order. Both npm/current execute on the same Bun runtime, separate fresh application/client processes, same authenticated300-operation ecommerce workload, same Zodschemas and expected responses. Current Hono is a control; published has no native adapter. Default published runtime package is not patched. Dependency resolutions and artifact hashes retained."
+}
