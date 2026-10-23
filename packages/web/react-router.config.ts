@@ -20,7 +20,8 @@ export default {
 			"/llms.txt",
 			"/llms-full.txt",
 			...slugs.flatMap((parts) => [
-				`/guide/${parts.join("/")}`,
+				// The guide index has no slugs; React Router matches it as /guide, not /guide/.
+				["/guide", ...parts].join("/"),
 				`/markdown/${[...parts, "content.md"].join("/")}`,
 			]),
 		];
