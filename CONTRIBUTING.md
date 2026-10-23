@@ -206,7 +206,7 @@ The following conventions apply to all TypeScript and JavaScript files in this r
 - Maximum 400 lines of code per file. Extract into separate files when approaching this limit.
 - One function, one responsibility unless inevitable.
 - Pass dependencies as parameters, not as hard imports (dependency injection).
-- Use named parameters through an options object, not positional parameters (see AGENTS.md).
+- Use named parameters through an options object, not positional parameters.
 - Use early returns and guard clauses. Avoid nested conditionals.
 - Code should be readable without needing comments to explain what it does.
 

@@ -51,3 +51,18 @@ packages/*/bun.lock
 # Declarations emitted next to client sources by local type checks
 packages/client/src/**/*.d.ts
 packages/client/src/**/*.d.ts.map
+
+# Local development and AI assistant files (kept on your machine, not in the repository)
+.claude/
+CLAUDE.md
+AGENTS.md
+.github/copilot-instructions.md
+opencode.json
+.opencode/
+.cursor/
+.cursorrules
+.windsurf/
+.mcp.json
+.vscode/
+.zed/
+packages/web/writing-guide.md

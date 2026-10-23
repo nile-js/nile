@@ -28,7 +28,6 @@ The preview serves `http://127.0.0.1:4173/nile/`, or `http://127.0.0.1:4173/` fo
 - `docs/guide/` contains the human guides. Each directory's `meta.json` controls the reading order. Existing `/guide/...` URLs are preserved. Legacy `.html` bookmarks redirect to the canonical guide and retain the section anchor.
 - `app/lib/source.ts` loads the Fumadocs collection. Guide bodies load on demand; the homepage does not import the guide collection.
 - `scripts/home-examples.ts` holds homepage code and copy text. `scripts/generate-home-code.ts` highlights it into `home-code-blocks.ts` during the build.
-- [Writing conventions](./writing-guide.md) explain the expected voice, examples, accuracy checks and page structure.
 
 Keep copy grounded in small-team outcomes and shipped behavior. In-house production accounts come from the maintainers. Use the recorded evidence for performance claims.
 
