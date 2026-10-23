@@ -41,68 +41,68 @@ const services = [
 ];
 
 describe("Nile v1 integrated execution", () => {
-  it.each([true, false])(
-    "shares validation, correlation and quotas across RPC/HTTP (native=%s)",
-    async (native) => {
-      const limiter = createRateLimiter({
-        strategy: "fixed-window",
-        limit: 1,
-        windowMs: 60_000,
-      });
-      const server = await createNileServer({
-        serverName: "v1",
-        services,
-        runtime: "bun",
-        native,
-        forceNewInstance: true,
-        logServices: false,
-        execution: { rateLimit: { store: limiter, key: () => "shared" } },
-        rest: { baseUrl: "/api", allowedOrigins: [], enableStatus: true },
-      });
-      const direct = await server.invoke({
-        service: "orders",
-        action: "create",
-        payload: { name: "one" },
-        requestId: "direct-1",
-      });
-      expect(direct.isOk).toBe(true);
-      const response = await server.fetch(
-        new Request("http://localhost/api/services", {
-          method: "POST",
-          headers: {
-            "content-type": "application/json",
-            "x-request-id": "http-1",
-          },
-          body: JSON.stringify({
-            intent: "execute",
-            service: "orders",
-            action: "create",
-            payload: { name: "two" },
-          }),
-        })
-      );
-      expect(response?.headers.get("x-request-id")).toBe("http-1");
-      if (!response) {
-        throw new Error("HTTP response missing");
-      }
-      const envelope = (await response.json()) as ExternalResponse;
-      expect(envelope.status).toBe(false);
-      limiter.reset();
-      const invalid = await server.invoke({
-        service: "orders",
-        action: "create",
-        payload: { name: 5 },
-      });
-      expect(invalid.isErr ? invalid.error : "Unexpected success").toContain(
-        "Validation failed"
-      );
-      await server.lifecycle.shutdown();
-      expect(
-        (await server.fetch(new Request("http://localhost/ready")))?.status
-      ).toBe(503);
-      limiter.close?.();
+  it.each([
+    true,
+    false,
+  ])("shares validation, correlation and quotas across RPC/HTTP (native=%s)", async (native) => {
+    const limiter = createRateLimiter({
+      strategy: "fixed-window",
+      limit: 1,
+      windowMs: 60_000,
+    });
+    const server = await createNileServer({
+      serverName: "v1",
+      services,
+      runtime: "bun",
+      native,
+      forceNewInstance: true,
+      logServices: false,
+      execution: { rateLimit: { store: limiter, key: () => "shared" } },
+      rest: { baseUrl: "/api", allowedOrigins: [], enableStatus: true },
+    });
+    const direct = await server.invoke({
+      service: "orders",
+      action: "create",
+      payload: { name: "one" },
+      requestId: "direct-1",
+    });
+    expect(direct.isOk).toBe(true);
+    const response = await server.fetch(
+      new Request("http://localhost/api/services", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-request-id": "http-1",
+        },
+        body: JSON.stringify({
+          intent: "execute",
+          service: "orders",
+          action: "create",
+          payload: { name: "two" },
+        }),
+      })
+    );
+    expect(response?.headers.get("x-request-id")).toBe("http-1");
+    if (!response) {
+      throw new Error("HTTP response missing");
     }
-  );
+    const envelope = (await response.json()) as ExternalResponse;
+    expect(envelope.status).toBe(false);
+    limiter.reset();
+    const invalid = await server.invoke({
+      service: "orders",
+      action: "create",
+      payload: { name: 5 },
+    });
+    expect(invalid.isErr ? invalid.error : "Unexpected success").toContain(
+      "Validation failed"
+    );
+    await server.lifecycle.shutdown();
+    expect(
+      (await server.fetch(new Request("http://localhost/ready")))?.status
+    ).toBe(503);
+    limiter.close?.();
+  });
 
   it("keeps concurrent direct sessions and instance resources isolated", async () => {
     const first = await createNileServer({

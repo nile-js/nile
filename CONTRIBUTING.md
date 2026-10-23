@@ -1,8 +1,6 @@
-# Contributing to Nile
+# Contributing to Nile Js
 
-Thanks for your interest in contributing to Nile framework, its such a previledge that your here, we all trying to make world a better place.
-
-So below are some of the guidelines on what you need to know to effectively contribute to Nile.
+Thank you for helping improve Nile Js. This guide covers how the repository is set up, how to build and test each package, and what we look for in a pull request.
 
 ## Table of Contents
 
@@ -29,8 +27,8 @@ Participation in this project is governed by the [Code of Conduct](./CODE_OF_CON
 
 ## 2. Prerequisites
 
-- [Bun](https://bun.sh) v1.x or later
-- Node.js 20+ (required for some tooling compatibility)
+- [Bun](https://bun.sh) 1.4.2 or later
+- Node.js 22.23.4+, 24.22.1+ or 26.12.1+ for the core package build (tsdown does not support Node.js 23 or 25)
 - Git
 
 ---
@@ -58,7 +56,8 @@ nile/
     cli/        CLI tool (@nilejs/cli)
     client/     Frontend client (@nilejs/client)
     example/    Reference project
-    web/        Documentation site
+    web/        Website and documentation
+    benchmarks/ Framework comparison suite
 ```
 
 | Package | Path | Published |
@@ -66,11 +65,14 @@ nile/
 | `@nilejs/nile` | `packages/nile` | Yes |
 | `@nilejs/client` | `packages/client` | Yes |
 | `@nilejs/cli` | `packages/cli` | Yes |
-| docs site | `packages/web` | No |
+| website and docs | `packages/web` | No |
 | example app | `packages/example` | No |
+| benchmarks | `packages/benchmarks` | No |
 
 - `packages/example` depends on `@nilejs/nile` via `workspace:*`.
-- All other packages are independent of each other.
+- The CLI generates payload types that `@nilejs/client` accepts as a generic. Otherwise the packages are independent.
+- All packages are ESM (`"type": "module"`).
+- Husky runs the pre-commit hook configured at the root.
 - The root `package.json` is a workspace root only and contains no publishable code.
 
 ---
@@ -84,6 +86,8 @@ Build each package independently from its own directory.
 ```bash
 bun run --cwd packages/nile build
 ```
+
+The build uses tsdown with the TypeScript 7 declaration generator and writes ESM and CommonJS bundles, source maps and bundled declarations to `dist/`.
 
 Full export pipeline (lint, format, test, build):
 
@@ -115,17 +119,17 @@ Run locally without building:
 bun run --cwd packages/cli dev
 ```
 
-### Docs site (`packages/web`)
+### Website and docs (`packages/web`)
+
+The site is a React Router app with Fumadocs. Guides live in `packages/web/docs/guide/`.
 
 ```bash
-bun run --cwd packages/web build
+bun run --cwd packages/web dev       # dev server with hot reload
+bun run --cwd packages/web build     # check docs, pre-render and finalize the static site
+bun run --cwd packages/web preview   # serve the built site locally
 ```
 
-Dev server with hot reload:
-
-```bash
-bun run --cwd packages/web dev
-```
+The build reads `VITE_SITE_URL` and `VITE_BASE_PATH` to decide where the site is hosted. See `packages/web/README.md`.
 
 ### Example app (`packages/example`)
 
@@ -135,24 +139,30 @@ No build step. Runs directly:
 bun run --cwd packages/example dev
 ```
 
-Requires a running database. See `packages/example/README.md` for setup instructions.
+It uses an embedded PGlite database, so no database server is needed. See `packages/example/README.md`.
 
 ---
 
 ## 6. Testing
 
-Tests are located in `packages/nile` and run with Vitest:
+The core framework and the client have Vitest suites:
 
 ```bash
 bun run --cwd packages/nile test        # watch mode
 bun run --cwd packages/nile test:run    # single run
+bun run --cwd packages/client test:run
+```
+
+The website checks every guide page for broken links and frontmatter:
+
+```bash
+bun run --cwd packages/web docs:check
 ```
 
 - Write all assertions inside `it()` or `test()` blocks.
 - Use `async/await` instead of done callbacks in async tests.
 - Do not commit `.only` or `.skip` modifiers.
-- Tests must match the implementation. Do not adjust tests to force a pass; fix the implementation.
-- Same aspect do not just change the implementation to fit the tests, its possible the implementation was intentional and the tests are outdated, broken or something, investigate before you change one or the other, open a discussion if not certain.
+- Do not change a test just to make it pass, and do not change the implementation just to fit a test. When they disagree, find out which one reflects the intended behavior first. If you are unsure, ask in an issue.
 
 ---
 
@@ -174,10 +184,11 @@ bun x ultracite check
 bun x ultracite fix
 ```
 
-### Docs site
+### Website and docs
 
 ```bash
-bun run --cwd packages/web check
+bun run --cwd packages/web lint
+bun run --cwd packages/web types:check
 bun run --cwd packages/web format
 ```
 
@@ -195,7 +206,7 @@ The following conventions apply to all TypeScript and JavaScript files in this r
 - Maximum 400 lines of code per file. Extract into separate files when approaching this limit.
 - One function, one responsibility unless inevitable.
 - Pass dependencies as parameters, not as hard imports (dependency injection).
-- Use named parameters via an options or config or an object, not positional (see AGENTS.md)
+- Use named parameters through an options object, not positional parameters (see AGENTS.md).
 - Use early returns and guard clauses. Avoid nested conditionals.
 - Code should be readable without needing comments to explain what it does.
 
@@ -230,18 +241,18 @@ All operations that can fail must use the `safeTry` pattern from Slang Ts instea
 
 ### 8.5 Module Organization
 
-Group files by domain. Each domain directory contains focused single-responsibility files and an optional `index.ts` barrel export:
+Group files by domain. Each domain directory contains focused single-responsibility files. In a Nile Js project, each service keeps one action per file:
 
 ```
 services/
-  auth/
-    login.ts         # exports loginAction
-    logout.ts        # exports logoutAction
-    index.ts         # barrel exports
+  services.config.ts   # registers every service and its actions
   tasks/
-    create.ts
-    list.ts
-    index.ts
+    actions/
+      create.ts        # exports createTaskAction
+      list.ts          # exports listTaskAction
+  users/
+    actions/
+      get-user.ts      # exports getUserAction
 ```
 
 JSDoc is required for all public API functions. Comments should explain intent (why), not restate what the code does.
@@ -256,7 +267,7 @@ JSDoc is required for all public API functions. Comments should explain intent (
 
 ## 9. Documentation Standards
 
-All documentation in this repository follows the standards in [`documentation-guidelines.md`](./documentation-guidelines.md). The key requirements are:
+Documentation in this repository follows these rules:
 
 - Document only verified, implemented behavior. Do not document planned features without the label "Planned (Not Implemented)".
 - Technical accuracy takes priority over completeness. If uncertain about behavior, verify in the source before writing.
@@ -266,7 +277,7 @@ All documentation in this repository follows the standards in [`documentation-gu
 - Prefer structured bullets and short paragraphs over long prose.
 - Every changed behavior requires an immediate documentation update. Stale documentation must be removed or corrected.
 
-When adding new internal documentation, follow the format used in `packages/web/docs/guide/internals/`.
+Code examples in the guides use a named Zod schema, a type inferred from it and a named handler passed to `createAction`. When adding internal documentation, follow the format used in `packages/web/docs/guide/internals/`.
 
 ---
 
@@ -291,9 +302,7 @@ When adding new internal documentation, follow the format used in `packages/web/
 
 ### Commit messages
 
-Use better-commits cli, install it via npm i -g better-commits
-
-then run better-commits for making a commit, or just do as you see fit but follow conventional commits standard.
+Follow [Conventional Commits](https://www.conventionalcommits.org), for example `fix(rest): reject JSON bodies for multipart actions`. The [better-commits](https://github.com/Everduin94/better-commits) CLI can help you write them.
 
 Avoid vague messages like "fix stuff" or "update files".
 

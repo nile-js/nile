@@ -12,6 +12,20 @@ import type {
   WebSocketContext,
 } from "./types";
 
+/** One schema problem, addressed by its dotted field path (empty for the payload itself). */
+export interface ValidationIssue {
+  path: string;
+  message: string;
+}
+
+/**
+ * Details a transport can add to a failed response. Nested execution scopes copy the
+ * store shallowly, so they share this object with the request that created it.
+ */
+export interface RequestFailureDetails {
+  validationIssues?: ValidationIssue[];
+}
+
 /** Per-request state isolated via AsyncLocalStorage — never shared between concurrent requests */
 export interface RequestStore {
   context?: NileContext;
@@ -25,6 +39,7 @@ export interface RequestStore {
   rpc?: RPCContext;
   sessions: Sessions;
   hookContext?: HookContext;
+  failure?: RequestFailureDetails;
 }
 
 /** Single ALS instance shared across the entire Nile process */

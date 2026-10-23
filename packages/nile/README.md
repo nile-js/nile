@@ -1,89 +1,72 @@
-# 🌊 Nile
+# Nile Js
 
 [![NPM Version](https://img.shields.io/npm/v/@nilejs/nile.svg)](https://www.npmjs.com/package/@nilejs/nile)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
 
-![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
-![Hono](https://img.shields.io/badge/Hono-E36002?logo=hono&logoColor=white)
-![Zod](https://img.shields.io/badge/Zod-3E67B1?logo=zod&logoColor=white)
-![Drizzle](https://img.shields.io/badge/Drizzle-C5F74F?logo=drizzle&logoColor=black)
+A TypeScript backend framework for small teams. Keep shipping as your backend grows.
 
-TypeScript-first, service and actions oriented backend framework for building modern, fast, safe and AI-ready backends with simplest developer experience possible.
+You write actions, group them into services, and Nile Js gives you a predictable API with validation, error handling and schema export. There are no route trees, controllers or middleware chains to maintain: each business operation lives in one familiar place.
 
-You define actions, group them into services, and get a predictable API with validation, error handling, and schema export, no route definitions, no controllers, no middleware chains and rest api conventions to care about, just your business logic. And it's all AI agent-ready out of the box, progressively discoverable and tool calling ready with validation.
+[Documentation](https://nile-js.github.io/nile/) · [Getting started](https://nile-js.github.io/nile/guide/start/getting-started/) · [Features](https://nile-js.github.io/nile/guide/features/) · [Examples](https://nile-js.github.io/nile/guide/examples/)
 
 ## Install
 
-> Or View Full Docs -> [nile-js.github.io/nile](https://nile-js.github.io/nile)
-
-### Scaffold a project (recommended)
-
-The fastest way to start is with the CLI. It creates a working project with services, database, and dev tooling pre-configured:
+### Start from the CLI (recommended)
 
 ```bash
-npx @nilejs/cli new my-app
+bunx @nilejs/cli new my-app
+cd my-app
+bun install
+bun run dev
 ```
 
-```bash
-cd my-app && bun install && bun run dev
-```
+The starter runs on Bun's native HTTP server with an embedded PGlite database, a `tasks` service and generators for new services and actions. See [`@nilejs/cli`](https://www.npmjs.com/package/@nilejs/cli).
 
-The CLI also includes generators for adding services, actions, and extracting Zod schemas with TypeScript types. See [`@nilejs/cli`](https://github.com/nile-js/nile/tree/main/packages/cli) for details.
-
-### Client Library
-
-For frontend applications, use the standalone, type-safe client:
-
-```bash
-bun add @nilejs/client
-```
-
-See [`@nilejs/client`](https://github.com/nile-js/nile/tree/main/packages/client) for full usage and type-safe action invocation.
-
-### Manual install
+### Add to an existing project
 
 ```bash
 bun add @nilejs/nile zod slang-ts
 ```
 
-```bash
-npm install @nilejs/nile zod slang-ts
-```
-
-If using the database layer (`createModel`, `getZodSchema`):
+For the database helpers (`createModel`, `getZodSchema`), also add Drizzle:
 
 ```bash
 bun add drizzle-orm drizzle-zod
 ```
 
-## Quick Start
+For frontends, use [`@nilejs/client`](https://www.npmjs.com/package/@nilejs/client).
 
-### 1. Define an action
+## Quick start
 
-```typescript
-// services/tasks/create.ts
+### 1. Write an action
+
+An action is a named schema, the input type inferred from it and a handler that returns `Ok` or `Err`.
+
+```ts
+// src/services/tasks/actions/create.ts
+import { createAction } from "@nilejs/nile";
 import { Ok } from "slang-ts";
-import z from "zod";
-import { createAction, type Action } from "@nilejs/nile";
+import { z } from "zod";
 
 const createTaskSchema = z.object({
   title: z.string().min(1, "Title is required"),
-  status: z.enum(["pending", "in-progress", "done"]).default("pending"),
 });
 
-const createTaskHandler = (data: Record<string, unknown>) => {
+type CreateTaskInput = z.infer<typeof createTaskSchema>;
+
+const createTaskHandler = (input: CreateTaskInput) => {
   const task = {
     id: crypto.randomUUID(),
-    title: data.title as string,
-    status: (data.status as string) ?? "pending",
+    title: input.title,
+    status: "pending",
   };
-  return Ok({ task });
+
+  return Ok({ task: task });
 };
 
-export const createTaskAction: Action = createAction({
+export const createTaskAction = createAction<CreateTaskInput>({
   name: "create",
-  description: "Create a new task",
+  description: "Create a task",
   validation: createTaskSchema,
   handler: createTaskHandler,
 });
@@ -91,31 +74,32 @@ export const createTaskAction: Action = createAction({
 
 ### 2. Group actions into a service
 
-```typescript
-// services/config.ts
-import { type Services } from "@nilejs/nile";
-import { createTaskAction } from "./tasks/create";
-import { listTaskAction } from "./tasks/list";
+```ts
+// src/services/services.config.ts
+import { createServices } from "@nilejs/nile";
+import { createTaskAction } from "./tasks/actions/create";
 
-export const services: Services = [
+export const services = createServices([
   {
     name: "tasks",
     description: "Task management",
-    actions: [createTaskAction, listTaskAction],
+    actions: [createTaskAction],
   },
-];
+]);
 ```
 
 ### 3. Start the server
 
-```typescript
-// server.ts
+```ts
+// src/index.ts
 import { createNileServer } from "@nilejs/nile";
-import { services } from "./services/config";
+import { services } from "./services/services.config";
 
 const server = await createNileServer({
   serverName: "my-app",
-  services,
+  runtime: "bun",
+  native: true,
+  services: services,
   rest: {
     baseUrl: "/api",
     port: 8000,
@@ -123,24 +107,19 @@ const server = await createNileServer({
   },
 });
 
-if (server.rest) {
-  const { fetch } = server.rest.app;
-  Bun.serve({ fetch, port: 8000 });
-  console.log("Server running at http://localhost:8000");
+if (server.nativeRest) {
+  Bun.serve({ port: 8000, fetch: server.nativeRest.fetch });
 }
 ```
+
+Applications that leave out `native` use the Hono adapter on Bun or Node.js, available as `server.rest.app`. See [runtime adapters](https://nile-js.github.io/nile/guide/start/runtime-adapters/).
 
 ### 4. Call it
 
 ```bash
 curl -X POST http://localhost:8000/api/services \
   -H "Content-Type: application/json" \
-  -d '{
-    "intent": "execute",
-    "service": "tasks",
-    "action": "create",
-    "payload": { "title": "Ship it", "status": "pending" }
-  }'
+  -d '{"intent":"execute","service":"tasks","action":"create","payload":{"title":"Ship it"}}'
 ```
 
 ```json
@@ -148,298 +127,173 @@ curl -X POST http://localhost:8000/api/services \
   "status": true,
   "message": "Action 'tasks.create' executed",
   "data": {
-    "task": {
-      "id": "a1b2c3d4-...",
-      "title": "Ship it",
-      "status": "pending"
-    }
+    "task": { "id": "a1b2c3d4-...", "title": "Ship it", "status": "pending" }
   }
 }
 ```
 
-## Startup statistics
+From a frontend, `@nilejs/client` returns the same Result shape as your handlers:
 
-Nile prints a service table and total service/action counts during startup by default. Each row shows the service name, description, action count, and registration duration. Set `logServices: false` in `createNileServer` to suppress this table and its summary.
+```ts
+import { createNileClient } from "@nilejs/client";
 
-Inspect the same registration snapshot after creating your server:
+const nile = createNileClient({ baseUrl: "http://localhost:8000/api" });
 
-```typescript
-const stats = server.stats();
-console.log(stats);
-console.table(stats.services);
-// {
-//   totalServices, totalActions, registrationDurationMs, startupDurationMs,
-//   services: [{ name, description, actionCount, registrationDurationMs }]
-// }
-```
-
-All duration fields are milliseconds. Registration measures Nile indexing already-created service definitions; it does not include importing modules or constructing their schemas. `startupDurationMs` measures server initialization, including `onBoot` and REST setup when configured, and excludes imports performed before server creation.
-
-`stats()` is synchronous and does not print anything itself. Each call returns a fresh copy of the startup measurements, so changing it cannot change Nile's stored statistics. These measurements stay fixed after startup and do not track request traffic. `server.engine.stats()` returns the registration fields without `startupDurationMs`.
-
-## Lazy schema discovery
-
-JSON Schema conversion is cached by default and happens only when an allowed schema-discovery request first needs a schema. Startup does not convert every schema, and ordinary action execution does not convert schemas to JSON. Input validation still runs through Zod normally. This is on-demand conversion, not lazy module importing or deferred schema construction.
-
-**First discovery fixes the converted metadata for that schema object.** Later changes to descriptions, defaults, or custom conversion callbacks are not reflected automatically. Supply a new schema object to get a new conversion, or disable caching when conversion must reflect changing values. Visibility and discovery access checks still run for every request; complete responses and authorization decisions are not cached.
-
-```typescript
-import { createAction, createNileServer, createService } from "@nilejs/nile";
-import { Ok } from "slang-ts";
-import z from "zod";
-
-const readStatus = createAction({
-  name: "read-status",
-  description: "Read status",
-  validation: z.object({ label: z.string() }),
-  cacheSchema: false, // Reconvert this action's schema when discovery needs it.
-  handler: () => Ok({ ready: true }),
+const result = await nile.invoke({
+  service: "tasks",
+  action: "create",
+  payload: { title: "Ship it" },
 });
 
-const server = await createNileServer({
-  serverName: "status-app",
-  services: [createService({
-    name: "status",
-    description: "Status tools",
-    actions: [readStatus],
-  })],
-  rest: {
-    baseUrl: "/api",
-    allowedOrigins: [],
-    discovery: {
-      enabled: true,
-      cacheSchemas: false, // Disable conversion caching for this REST app.
-    },
-  },
-});
+if (result.isErr) {
+  console.error(result.error);
+} else {
+  console.log(result.value);
+}
 ```
 
-Omit both options to use the default lazy cache. `cacheSchema: false` opts out per action; `rest.discovery.cacheSchemas: false` disables it for the REST app. Cache entries are held per schema identity within that app. When the global disable is observed, existing entries are cleared before caching can be enabled again.
+## Requests and responses
 
-## Hook execution context
+Every request is a `POST` to `{baseUrl}/services` with the same body:
 
-Inside an action handler or hook, `context.hookContext` refers to that execution's state, output, errors, and logs. Direct engine calls also have their own execution context. Nested action calls get a separate context, then restore the parent's context when they finish. Global hook callbacks, configuration, and execution order stay unchanged. Existing REST, WebSocket, RPC, and session references remain available inside the execution.
-
-Outside action execution, `context.hookContext` refers to the context-local fallback. It is not the last completed request's state. To inspect completed hook logs, configure the action with `result: { pipeline: true }` and inspect the returned execution's `pipeline` field (inside the successful Result value for direct engine calls). `resetHookContext` remains available and resets the currently active execution context, or the fallback when called outside execution.
-
-## Why Nile
-
-**You write business logic. Nile handles the rest.**
-
-Most backend frameworks make you think about HTTP verbs, route trees, middleware ordering, and error serialization before you write a single line of domain logic. Nile removes that ceremony. You define actions, plain functions that take data and return results, and they become callable over a single POST endpoint or other protocols such as web sockets or rpc within your codebase.
-
-**Nothing crashes silently.** Every action handler returns `Ok(data)` or `Err(message)` using the Result pattern from [Slang Ts](github.com/Hussseinkizz/slang) Functional programming utilities library. So no unhandled exceptions, no try-catch spaghetti, no mystery 500s. Your control flow is predictable by design and safe.
-
-**AI agents can call your API without adapters.** Every action with a Zod validation schema automatically exports its parameters as JSON Schema. An LLM can discover your services, read the schemas, and make tool calls, no custom integration code required.
-
-**Your database, your choice.** Nile doesn't own your data layer. When you want structured DB access, nile works with drizzle orm and any databases it supports, postgres, pglite or sqlite and more, but also provides utilities like `createModel` for simplifying type-safe CRUD operations for any Drizzle table with auto-validation, error handling, and pagination built in to reduce boilerplate. You can also use any other database library or raw queries in your action handlers, it's all up to you.
-
-**There's more to Nile** than just the core server, you get service and action based architecture, powerful hook system, structured logging and enforced error handling, rate limiting, CORS control, uploads, single context for dependency injection or sharing, and more. And you don't need a Phd to understand how to use any of them.
-
-## Core Concepts
-
-Nile uses a single POST endpoint for everything. Instead of mapping HTTP verbs to routes, you send a JSON body with an **intent** that tells the server what you want to do.
-
-Every request has the same shape:
-
-```typescript
+```ts
 {
   intent: "explore" | "execute" | "schema",
-  service: string,    // service name, or "*" for all
-  action: string,     // action name, or "*" for all
-  payload: object     // data for the action (use {} when not needed)
+  service: string, // a service name, or "*" for all
+  action: string,  // an action name, or "*" for all
+  payload: object  // the action's input; use {} when there is none
 }
 ```
 
-Every response has the same shape:
+| Intent | What it does |
+|---|---|
+| `execute` | Validates the payload against the action's schema and runs the action. |
+| `explore` | Lists services, or the actions in one service. |
+| `schema` | Returns an action's input as JSON Schema, for clients, tools and AI agents. |
 
-```typescript
+Every response has the same envelope:
+
+```ts
 {
-  status: boolean,    // true = success, false = error
-  message: string,    // human-readable description
-  data: object        // result payload, or {} on error
+  status: boolean, // true on success
+  message: string, // a readable summary
+  data: object     // the action's value, or {} on failure
 }
 ```
 
-### Explore, discover what's available
-
-List all services:
-
-```bash
-curl -X POST http://localhost:8000/api/services \
-  -H "Content-Type: application/json" \
-  -d '{ "intent": "explore", "service": "*", "action": "*", "payload": {} }'
-```
-
-```json
-{
-  "status": true,
-  "message": "Available services",
-  "data": {
-    "result": [
-      {
-        "name": "tasks",
-        "description": "Task management",
-        "actions": ["create", "list"]
-      }
-    ]
-  }
-}
-```
-
-Drill into a service to see its actions:
-
-```bash
-curl -X POST http://localhost:8000/api/services \
-  -H "Content-Type: application/json" \
-  -d '{ "intent": "explore", "service": "tasks", "action": "*", "payload": {} }'
-```
-
-```json
-{
-  "status": true,
-  "message": "Actions for 'tasks'",
-  "data": {
-    "result": [
-      {
-        "name": "create",
-        "description": "Create a new task",
-        "isProtected": false,
-        "validation": true
-      }
-    ]
-  }
-}
-```
-
-### Execute, call an action
-
-This is the same call shown in Quick Start. Send `"intent": "execute"` with the service, action, and payload. The action's Zod schema validates the payload before the handler runs. If validation fails, you get a clear error:
+When validation fails, `data.issues` lists each failed field:
 
 ```json
 {
   "status": false,
-  "message": "Validation failed: title - Required",
-  "data": {}
-}
-```
-
-### Schema, get JSON Schema for actions
-
-Fetch the validation schema for any action as JSON Schema. This is what makes Nile AI-ready, an agent can read these schemas to know exactly what parameters an action accepts.
-
-```bash
-curl -X POST http://localhost:8000/api/services \
-  -H "Content-Type: application/json" \
-  -d '{ "intent": "schema", "service": "tasks", "action": "create", "payload": {} }'
-```
-
-```json
-{
-  "status": true,
-  "message": "Schema for 'tasks.create'",
+  "message": "Validation failed: ✖ Title is required\n  → at title",
   "data": {
-    "create": {
-      "type": "object",
-      "properties": {
-        "title": { "type": "string", "minLength": 1 },
-        "status": { "type": "string", "enum": ["pending", "in-progress", "done"], "default": "pending" }
-      },
-      "required": ["title"]
-    }
+    "issues": [{ "path": "title", "message": "Title is required" }]
   }
 }
 ```
 
-Use `"service": "*", "action": "*"` to get schemas for every action across all services in one call.
+Discovery (`explore` and `schema`) is off unless you enable it with `rest.discovery`, and can require a secret. See [API discovery](https://nile-js.github.io/nile/guide/features/api-discovery/).
 
-### Hooks, intercept and transform
+## Hooks
 
-Hooks let you run logic before or after an action executes. They work at two levels:
+A global before hook runs for every action. Use it for shared policy, such as role checks:
 
-**Per-action hooks** point to other registered actions. A hook definition is just a reference, `{ service, action, isCritical }`, so any action can serve as a hook for any other action.
+```ts
+import { type BeforeActionHandler, createNileServer } from "@nilejs/nile";
+import { Err, Ok, type Result } from "slang-ts";
+import { services } from "./services/services.config";
 
-```typescript
-export const createTaskAction: Action = createAction({
-  name: "create",
-  description: "Create a new task",
-  validation: createTaskSchema,
-  handler: createTaskHandler,
-  hooks: {
-    before: [
-      { service: "audit", action: "logAccess", isCritical: false }
-    ],
-    after: [
-      { service: "notifications", action: "notify", isCritical: false }
-    ]
-  },
-});
-```
+const requireSessionHook: BeforeActionHandler<boolean, string> = (
+  hookInput
+): Result<boolean, string> => {
+  if (!hookInput.action.isProtected) {
+    return Ok(true);
+  }
 
-Before hooks run sequentially and chain, each hook's output becomes the next hook's input. After hooks work the same way, receiving the handler's result.
+  const session = hookInput.nileContext.getSession("rest");
+  if (session === undefined) {
+    return Err("Sign in to continue");
+  }
 
-When `isCritical` is `true`, a hook failure stops the pipeline. When `false`, failures are logged and skipped.
+  return Ok(true);
+};
 
-**Global hooks** run on every action. Define them in your server config:
-
-```typescript
 const server = await createNileServer({
   serverName: "my-app",
-  services,
-  onBeforeActionHandler: ({ nileContext, action, payload }) => {
-    // runs before every action, auth checks, logging, etc.
-    return Ok(payload);
-  },
-  onAfterActionHandler: ({ nileContext, action, payload, result }) => {
-    // runs after every action, transforms, auditing, etc.
-    return result;
-  },
+  services: services,
+  onBeforeActionHandler: requireSessionHook,
 });
 ```
 
-The full execution pipeline runs in this order:
+Actions can also list local `hooks.before` and `hooks.after`, which reference other registered actions. For an executed action the order is:
 
-```txt
-Global Before Hook
-  -> Per-Action Before Hooks (sequential)
-    -> Validation (Zod)
-      -> Handler
-    -> Per-Action After Hooks (sequential)
-  -> Global After Hook
--> Response
+```text
+JWT check (protected actions)
+  -> global before hook
+    -> local before hooks
+      -> validation
+        -> handler
+      -> local after hooks
+  -> global after hook
+-> response
 ```
 
-Any step returning `Err` short-circuits the pipeline.
+Any failing step stops the rest, except a local hook marked `isCritical: false`. See [hooks and pipelines](https://nile-js.github.io/nile/guide/basics/hooks-and-pipelines/).
 
-## Project Structure
+## What else is included
 
-```txt
-my-api/
-  server.ts
-  services/
-    config.ts
-    tasks/
-      create.ts
-      list.ts
-      get.ts
-  db/
-    schema.ts
-    client.ts
-    models/
-      tasks.ts
+| Feature | Guide |
+|---|---|
+| JWT authentication and access policy | [Authentication and hooks](https://nile-js.github.io/nile/guide/features/authentication-and-hooks/) |
+| Calls over HTTP, from other actions and from tests with `server.invoke` | [Calling actions](https://nile-js.github.io/nile/guide/features/calling-actions/) |
+| Multipart file uploads with limits and type checks | [File uploads](https://nile-js.github.io/nile/guide/features/file-uploads/) |
+| Socket.IO actions and typed topics | [WebSockets](https://nile-js.github.io/nile/guide/features/websockets/) |
+| Rate limiting per action or per client | [Rate limiting](https://nile-js.github.io/nile/guide/features/rate-limiting/) |
+| Cron schedules | [Cron jobs](https://nile-js.github.io/nile/guide/features/cron-jobs/) |
+| Queues, debounce and throttle | [Queues, debounce and throttle](https://nile-js.github.io/nile/guide/features/queues-debounce-throttle/) |
+| Retries and shared utilities | [Retries and utilities](https://nile-js.github.io/nile/guide/features/retries-and-utilities/) |
+| Drizzle models with validation and pagination | [Database models](https://nile-js.github.io/nile/guide/features/database-models/) |
+| Structured logging and shared resources | [Context and logging](https://nile-js.github.io/nile/guide/features/context-and-logging/) |
+| Readiness checks and graceful shutdown | [Readiness and shutdown](https://nile-js.github.io/nile/guide/features/readiness-and-shutdown/) |
+| Telemetry | [Telemetry](https://nile-js.github.io/nile/guide/features/telemetry/) |
+
+## Startup statistics
+
+At startup Nile Js prints a table of services with their action counts and registration times. Set `logServices: false` in `createNileServer` to turn it off. The same numbers are available in code:
+
+```ts
+const stats = server.stats();
+console.table(stats.services);
+// { totalServices, totalActions, registrationDurationMs, startupDurationMs,
+//   services: [{ name, description, actionCount, registrationDurationMs }] }
 ```
+
+All durations are in milliseconds. `startupDurationMs` covers server initialization, including `onBoot` and REST setup, but not module imports. Each call returns a fresh copy, and the numbers do not change after startup.
+
+## Schema conversion
+
+Nile Js converts an action's Zod schema to JSON Schema only when a discovery request first needs it, then caches the result. Startup and ordinary execution never convert schemas; validation always runs through Zod.
+
+The cache is keyed by schema object, so later changes to a schema's descriptions or defaults are not picked up. To reconvert on every discovery request, set `cacheSchema: false` on an action or `rest.discovery.cacheSchemas: false` for the whole REST app.
+
+## Hook execution context
+
+Inside a handler or hook, `context.hookContext` holds that execution's state, output, errors and logs. Nested action calls get their own context and restore the parent's when they finish. Outside an execution, `context.hookContext` is a fallback, not the last request's state. To inspect hook logs after a call, set `result: { pipeline: true }` on the action and read the returned `pipeline` field.
+
+## Using with coding assistants
+
+The package ships `SKILL.md`, a guide for coding assistants that matches the installed version. After `bun install` it is at `node_modules/@nilejs/nile/SKILL.md`. See [the Nile Js skill](https://nile-js.github.io/nile/guide/agents/skill/) for setup.
+
+## Requirements
+
+- Bun 1.4.2 or later for the native transport and the CLI starter.
+- Node.js 22.23.4+, 24.22.1+ or 26.12.1+ when you run the Hono adapter on Node.js.
+- TypeScript 7 (a peer dependency). Zod 4 and slang-ts install with the package; list them in your own dependencies too, since your code imports them.
 
 ## Contributing
 
-> First developed by Hussein Kizz at [Nile Squad Labz](https://nilesquad.com) to power our own B2B saas products and services, and now open-sourced for the community. Over 1 year in the making, to now powering Agentic backends and open for community contributions.
-
-Contributions are welcome.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/your-feature`)
-3. Commit your changes (`git commit -m 'Add your feature'`)
-4. Push to the branch (`git push origin feature/your-feature`)
-5. Open a Pull Request
+Nile Js was first built by Hussein Kizz at [Nile Squad Labz](https://nilesquad.com) to power its own B2B products, and is now open source. Read [CONTRIBUTING.md](https://github.com/nile-js/nile/blob/main/CONTRIBUTING.md) to get started, and join the [community](https://chat.whatsapp.com/K0xkSiilbVtFf3QZoA1z5Z?mode=gi_t) to ask questions.
 
 ## License
 

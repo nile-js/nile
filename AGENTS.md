@@ -2,12 +2,12 @@
 
 ## Core Rules
 
-- ❌ No classes, No OOP - Use functions, factories and modern simple patterns
-- ✅ ES6+, max 400 LOC/file, functional composition
-- ✅ Group by domain, use barrel files where needed (`index.ts`)
-- ✅ Names: `verbNoun`, `isActive`, `CONSTANTS`, `kebab-case.ts`
-- All re-usable functions should have js docs and also useful comments should be provided in cases where intent of code block may not obvious to reviewer.
-- Any errors that are due to missing dependencies or because developer made an error or something critical to system should be thrown right away and fast but errors usually anticipated by guard clauses and runtime or due to user input should be handled gracefully following codebase erorr handling patterns, mostly not thrown but returned gracefully.
+- No classes, No OOP - Use functions, factories and modern simple patterns
+- ES6+, max 400 LOC/file, functional composition
+- Group by domain, use barrel files where needed (`index.ts`)
+- Names: `verbNoun`, `isActive`, `CONSTANTS`, `kebab-case.ts`
+- All re-usable functions should have js docs and also useful comments should be provided in cases where intent of code block may not be obvious to reviewer.
+- Any errors that are due to missing dependencies or because developer made an error or something critical to system should be thrown right away and fast but errors usually anticipated by guard clauses and runtime or due to user input should be handled gracefully following codebase error handling patterns, mostly not thrown but returned gracefully.
 
 ## Key Patterns
 
@@ -17,9 +17,9 @@
 - Error handling: Always use safeTry pattern for operations that can fail instead of try catch mess
 - Object lookups: Use objects instead of switch statements for cleaner dispatch
 - Result pattern: Always return `{ status: true; data: T }` or `{ status: false; message: string }`
-- Split modules into own seperate files, under a domain folder eg. /users and then in there you can have get-users.ts, update-users.ts etc and then finally an index.ts file which exports all of them, this helps keep code modular and maintainable.
-- Code for humans, make code readable and well composed small function vs one big monoliths, no complex code or so in sacrfice of readability and ease of maintenance.
-- Defensive programming: Anticipate potential errors and handle them gracefully, for critical issues that may do more harm or crush system, fail fast, throw right away, anticipate runtime errors and missing dependencies, anticipate failure so that nothing fails.
+- Split modules into own separate files, under a domain folder eg. /users and then in there you can have get-users.ts, update-users.ts etc and then finally an index.ts file which exports all of them, this helps keep code modular and maintainable.
+- Code for humans, make code readable and well composed small function vs one big monoliths, no complex code or so in sacrifice of readability and ease of maintenance.
+- Defensive programming: Anticipate potential errors and handle them gracefully, for critical issues that may do more harm or crash system, fail fast, throw right away, anticipate runtime errors and missing dependencies, anticipate failure so that nothing fails.
 - For any issues or errors that concern db, or affect architecture and change of core pieces or any additions in tech stack must be approved, don't install anything without permission or change any core files or stack or configurations without approval.
 
 ## Legacy Code
@@ -44,13 +44,13 @@
 
 ## Essential Utilities
 
-Use libraires like slang-ts (safe try utility and result pattern), z-fetch/fetch (fetching) and regist (regex) where needed, use context7 mcp to learn about how each works and use them effectively, usually they are already installed and used and you can also see thier source code in node modules to understand how they work and use them effectively, also you can ask me for more context on how to use them if needed. 
+Use libraries like slang-ts (safe try utility and result pattern), z-fetch/fetch (fetching) and regist (regex) where needed, use context7 mcp to learn about how each works and use them effectively, usually they are already installed and used and you can also see their source code in node modules to understand how they work and use them effectively, also you can ask me for more context on how to use them if needed. 
 
 - I am always the one to start servers, not you, you ask me!
 - Am also one to approve any db related commands
 - Use project package manager not npm
 - Always first copy files to /backup if your to make changes more than 10 lines
-- And for files where a backup is needed, there and then before starting task also create an accompanying intent.md which documents the purpose and scope of the changes that you intent to make and also include my orignal intent as well.
+- And for files where a backup is needed, there and then before starting task also create an accompanying intent.md which documents the purpose and scope of the changes that you intent to make and also include my original intent as well.
 - Always approach things systematically, step by step, use a todo if you should also always understand things from flow, not just the individual parts, trace an implementation before you make any assumptions.
 - Not all changes need creating new stuff all together or full replacing, first try to work with what is in place and then if not viable first suggest before full redo.
 - Always read files before making changes or ask user if they had changed anything since your last edit where such case makes sense.
@@ -66,10 +66,10 @@ Always examine existing codebase patterns before implementing new solutions - us
 • Reflection - Always critique yourself after task in terms of how did you approach the problem, what worked well, and what could be improved and how much did you follow my instructions and what did you learn moving forward you can even play Senior QA engineer role to get this well.
 • Tool use - know your tools and use any mcps available where needed
 • Planning - always plan first, create taskName-plan.md files if needed, break down complex tasks into small manageable tasks and phases.
-• Multi-agent collaboration - collaborate, and deligate tasks to other agents if possible where needed.
+• Multi-agent collaboration - collaborate, and delegate tasks to other agents if possible where needed.
 
 - Document all changes made to the codebase, including the reasoning behind them and any potential impacts on existing functionality especially for complex tasks or changes, use .md files as needed write the docs in plain markdown.
-- Ocam's Razor - Prefer the simplest solution that works. If you have two solutions, the simpler one is usually better. You can always add complexity later if needed.
+- Occam's Razor - Prefer the simplest solution that works. If you have two solutions, the simpler one is usually better. You can always add complexity later if needed.
 - For changes always first make copies in /backup and for deleting never use rm command, instead move things to /trash we shall count them as deleted and i will delete them myself manually -- this is the most important rule of all.
 - Always approach tasks systematically, you don't implement before planning, don't rush!
 - Don't implement wanna be and suggested and not approved features or code stubs and unneeded comments, just focus on current task and its scope only, don't include features not requested for and also comments should be thoughtful not just commenting everywhere unneeded.

@@ -1,4 +1,7 @@
-# Actions and messages over Socket.IO
+---
+title: "Sockets and typed messages"
+description: "Invoke actions and exchange validated topic messages through Socket.IO"
+---
 
 Nile keeps transport configuration under rest, rpc and websocket. REST and sockets can run together; action invocations use the same validation, hooks, authentication and execution pipeline. Socket.IO provides connection handling beneath the Nile API.
 
@@ -54,13 +57,15 @@ await server.websocket.send({
 });
 
 // Within an action, use the existing definitions to infer the scoped context.
-const { websocket } = getContext({ topics });
+const { websocket } = getContext({ topics: topics });
 const sent = await websocket.send({
   topic: "payments.updated",
   scope: { organizationId },
   data: { paymentId, status: "paid" },
 });
-if (sent.isErr) return sent;
+if (sent.isErr) {
+  return sent;
+}
 ```
 
 getContext({ topics }) infers from the actual definitions and verifies that they belong to the active Nile instance. No repeated payload interface or type cast is needed. Existing getContext<TDB>() remains supported. server.context.websocket also carries inferred topics. Local receive takes topic/scope/onMessage and returns a Result containing unsubscribe(). Trusted backend sends are not subjected to remote-client publishing policy; their schemas are still validated. Local listeners are instance-local, and one failed listener does not fail all other listeners.
@@ -85,26 +90,41 @@ const socket = createNileSocketClient<Actions, Topics>({
 const received = await socket.receive({
   topic: "payments.updated",
   scope: { organizationId },
-  onMessage: ({ data }) => renderStatus(data.status),
+  onMessage: (message) => renderStatus(message.data.status),
 });
+if (received.isErr) {
+  console.error(received.error);
+  return;
+}
 
-const result = await socket.invoke({
+const statusResult = await socket.invoke({
   service: "payments",
   action: "get-status",
   payload: { paymentId },
 });
+if (statusResult.isErr) {
+  console.error(statusResult.error, statusResult.details);
+  return;
+}
 
 const sent = await socket.send({
   topic: "payments.updated",
   scope: { organizationId },
   data: { paymentId, status: "paid" },
 });
+if (sent.isErr) {
+  console.error(sent.error);
+  return;
+}
 
-await received.data?.unsubscribe();
+const unsubscribed = await received.value.unsubscribe();
+if (unsubscribed.isErr) {
+  console.error(unsubscribed.error);
+}
 socket.close();
 ```
 
-Client Results preserve error/data. The first type parameter is the service/action payload map; the second is the topic contract map. Contracts can be shared, generated or defined independently on the frontend. A manually defined topic member uses { data: Payload, input?: PublishInput, scope?: Scope }; when input is omitted, publishing uses data. Backend InferTopics preserves transformed input/output automatically. Topic scope and publishing input must match the backend wire contract.
+Every socket client method returns the same Result as the HTTP client: check `isErr`, then read `value`, or `error` and `details` on failure. The first type parameter is the service/action payload map; the second is the topic contract map. Contracts can be shared, generated or defined independently on the frontend. A manually defined topic member uses { data: Payload, input?: PublishInput, scope?: Scope }; when input is omitted, publishing uses data. Backend InferTopics preserves transformed input/output automatically. Topic scope and publishing input must match the backend wire contract.
 
 receive registers a continuing listener, rather than resolving with the first message. Its Result acknowledges registration. Multiple local listeners can share a server subscription; unsubscribing one keeps the others. On reconnect the client resubscribes and reauthorizes; onSubscriptionError can report failed rejoining. Action calls and messages are not automatically retried or stored for offline delivery. Calls have a finite acknowledgement timeout, which cannot prove a timed-out write did not commit.
 
@@ -113,7 +133,9 @@ The client loads socket.io-client on use. Existing createNileClient remains the 
 ## Runtime setup and limits
 
 ```ts
-if (!server.websocket?.bun) throw new Error("Bun socket adapter unavailable");
+if (!server.websocket?.bun) {
+  throw new Error("Bun socket adapter unavailable");
+}
 const listener = Bun.serve({
   fetch: server.fetch,
   websocket: server.websocket.bun,

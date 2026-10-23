@@ -1,0 +1,62 @@
+---
+title: "Build with AI agents"
+description: "Work with a coding assistant on Nile Js services: why the structure suits agents, which documentation to give them, and a workflow that keeps changes safe"
+---
+
+Nile Js suits coding assistants because each operation is one named action with a schema, a handler and a Result. An agent can find the existing actions, read their input shapes, add one action and check the compiler, without guessing at an API. This page explains the setup and the workflow. The [Nile Js skill](/guide/agents/skill) gives the assistant the conventions in one file.
+
+## Why services and actions suit agents
+
+- **Named units.** A service groups one business area, and each action names one operation. An agent can list the services, see that `orders` already has `create`, and add `cancel` beside it.
+- **Typed input.** The Zod schema defines what an action accepts. The inferred type and the handler's signature come from it, so the compiler checks an agent's edits.
+- **Predictable results.** Every handler returns `Ok` or `Err`. Each caller, including a generated client, checks `isErr` the same way.
+- **A registry.** `services.config.ts` lists every action the server exposes. Reading that one file shows the surface.
+
+## Give the assistant documentation
+
+Two generated files describe the current guides:
+
+- [`llms.txt`](/llms.txt) lists the public guides with links.
+- [`llms-full.txt`](/llms-full.txt) contains the full documentation as plain text. Use it when the assistant needs the complete reference.
+
+The `@nilejs/nile` npm package also ships the same documentation under `node_modules/@nilejs/nile/docs/` and the [Nile Js skill](/guide/agents/skill) at `node_modules/@nilejs/nile/SKILL.md`. Those files match the installed version, so prefer them when your project pins an exact release.
+
+Context7 can supply library documentation to an assistant that has it configured. See the [coding assistants reference](/guide/reference/llms-txt) for what that does and does not cover.
+
+## Discover the running server
+
+Discovery lets a trusted tool list services and read input schemas at runtime. It uses the `explore` and `schema` intents on `POST /api/services`, and it needs a discovery secret. The [API discovery feature](/guide/features/api-discovery) has the request format.
+
+Discovery returns descriptions. It does not run protected actions or check roles. Give an agent a tool that calls only the operations you allow, and keep the secret on the tool's server.
+
+For the design of discovery and what it exposes, read [discovery and agents](/guide/basics/discovery-and-agents).
+
+## A recommended workflow
+
+1. Read `src/services/services.config.ts`, then the action files of the service you will change.
+2. Read the Nile Js skill or the documentation for the feature you need.
+3. Add the action with a named Zod schema, an inferred input type, a named handler and `createAction<T>`. The [getting started guide](/guide/start/getting-started) shows the pattern.
+4. Register the action in the service's `actions` list.
+5. Run `./node_modules/.bin/tsc --noEmit`, and fix every error before you go on.
+6. Call the action through `curl` or a test that uses `server.invoke`. The [testing actions page](/guide/advanced/testing-actions) shows the test form.
+7. Review the diff yourself. Check authentication, access rules and the data each action writes.
+
+Ask the assistant to stop after each step and report what it changed. Small steps are easier to review than one large generated file.
+
+## Prompt tips
+
+- Name the service and the action: "Add `orders.cancel` to `src/services/orders`, following `orders.create`."
+- State the rules: "Only the order's owner may cancel. Return `Err` when the order is already shipped."
+- Point to the example: "Use the pattern in `src/services/tasks/actions/create.ts`."
+- Ask for a check: "Run the type check and show me the output before you finish."
+- Forbid guesses: "If a Nile Js API is not in the documentation or the installed package, say so instead of inventing it."
+
+## Keep secrets and access out of prompts
+
+Do not paste JWT secrets, discovery secrets or database credentials into a prompt. Keep them in `.env` and in your deployment settings. Give the assistant the names of the variables, not their values.
+
+## See also
+
+- [Nile Js skill](/guide/agents/skill) describes the skill file and how to install it.
+- [Discovery and agents](/guide/basics/discovery-and-agents) covers runtime discovery.
+- [Coding assistants](/guide/reference/llms-txt) lists the documentation files.

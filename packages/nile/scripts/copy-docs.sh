@@ -15,5 +15,5 @@ if [ -f "$WEB_BUILD/llms.txt" ] && [ -f "$WEB_BUILD/llms-full.txt" ]; then
   echo "Copied llms.txt and llms-full.txt to $DOCS_DIR"
 else
   echo "Warning: llms.txt or llms-full.txt not found in $WEB_BUILD"
-  echo "Run 'pnpm build' in packages/web first to generate them."
+  echo "Run 'bun run build' in packages/web first to generate them."
 fi

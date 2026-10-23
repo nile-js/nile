@@ -1,38 +1,12 @@
+import { resolveClientAddress } from "./client-address";
+
+export { resolveClientAddress } from "./client-address";
+
 import { Err, Ok, type Result, safeTry } from "slang-ts";
 import { createRequestId } from "../execution/correlation";
 import type { NileLifecycle } from "../lifecycle/types";
 import { runInRequestScope } from "../nile/request-scope";
 import type { HttpProtectionOptions } from "./types";
-
-const UNSAFE_ADDRESS = /[\s\r\n]/;
-
-/** Derive identity only from a real peer and an explicit trusted-proxy chain. */
-export function resolveClientAddress(
-  request: Request,
-  options: HttpProtectionOptions
-): string | undefined {
-  const peer = options.getClientAddress?.(request);
-  if (!(peer && options.trustProxy?.(peer))) {
-    return peer;
-  }
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (!forwarded || forwarded.length > 4096) {
-    return peer;
-  }
-  const chain = forwarded.split(",").map((part) => part.trim());
-  let address = peer;
-  for (let index = chain.length - 1; index >= 0; index--) {
-    if (!options.trustProxy(address)) {
-      break;
-    }
-    const next = chain[index];
-    if (!next || next.length > 128 || UNSAFE_ADDRESS.test(next)) {
-      break;
-    }
-    address = next;
-  }
-  return address;
-}
 
 /** Enforce actual bytes even when Content-Length is missing or false; parsing receives the bounded body once. */
 export function createBodyGuard(

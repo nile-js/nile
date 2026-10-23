@@ -1,5 +1,6 @@
 import type { Result } from "slang-ts";
 import type { ZodTypeAny } from "zod";
+import type { NileLogger } from "../../nile/types";
 
 /**
  * Database instance or transaction pointer type.
@@ -137,4 +138,14 @@ export interface ModelOperations<TSelect, TInsert, TDB> {
   table: unknown;
   /** Auto-generated Zod schemas for insert/update/select validation */
   schemas: TableSchemas<unknown>;
+}
+
+export interface DbTryOptions {
+  /** Safe caller-facing message; thrown driver messages never become the public Result error. */
+  message?: string;
+  atFunction?: string;
+  /** Override the active Nile logger; standalone calls may omit logging. */
+  logger?: NileLogger;
+  /** Opt in only after considering whether driver messages contain application data. */
+  includeMessages?: boolean;
 }

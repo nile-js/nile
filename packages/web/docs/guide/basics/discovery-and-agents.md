@@ -1,4 +1,7 @@
-# Let tools inspect the operations you expose
+---
+title: "Discovery and agents"
+description: "Expose selected action schemas for tools and coding agents"
+---
 
 A predictable domain structure helps a coding agent find implementation files. Runtime discovery solves a different problem: an integration can inspect registered operations and their input descriptions before calling them.
 
@@ -8,7 +11,7 @@ Nile provides `explore` and `schema` intents. It does not include an MCP server,
 
 Discovery is **disabled by default**. This server-config fragment enables it with a secret supplied by your application's configuration module:
 
-```typescript
+```ts
 rest: {
   baseUrl: "/api",
   allowedOrigins: ["https://app.example.com"],
@@ -28,7 +31,7 @@ Discovery checks `payload.discoverySecret`; a request header or JWT alone does n
 
 This ordinary Fetch request works with secret-protected discovery. Keep the discovery secret on a trusted integration server rather than in a public browser bundle.
 
-```typescript
+```ts
 const response = await fetch("https://api.example.com/api/services", {
   method: "POST",
   headers: { "Content-Type": "application/json" },

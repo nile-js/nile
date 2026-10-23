@@ -1,0 +1,11 @@
+{
+  "title": "Start here",
+  "pages": [
+    "getting-started",
+    "application-structure",
+    "runtime-adapters",
+    "from-rest",
+    "migration",
+    "deploy"
+  ]
+}

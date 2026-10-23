@@ -122,8 +122,29 @@ export async function verifyJWT(
       claims: claims as Record<string, unknown>,
     });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "JWT verification failed";
-    return Err(`JWT authentication failed: ${message}`);
+    return Err(describeJwtFailure(error));
   }
+}
+
+/**
+ * Hono's JWT errors put the raw token, header or payload in their messages. Those
+ * messages reach responses and logs, so report a fixed reason chosen by error name.
+ */
+const JWT_FAILURE_REASONS: Record<string, string> = {
+  JwtTokenExpired: "token expired",
+  JwtTokenNotBefore: "token is not valid yet",
+  JwtTokenIssuedAt: "token issue time is invalid",
+  JwtTokenIssuer: "token issuer is not accepted",
+  JwtTokenAudience: "token audience is not accepted",
+  JwtPayloadRequiresAud: "token audience is not accepted",
+  JwtAlgorithmMismatch: "token algorithm is not accepted",
+  JwtAlgorithmNotAllowed: "token algorithm is not accepted",
+  JwtAlgorithmNotImplemented: "token algorithm is not accepted",
+};
+
+/** A safe failure message that never contains token, header or claim data. */
+function describeJwtFailure(error: unknown): string {
+  const name = error instanceof Error ? error.name : "";
+  const reason = JWT_FAILURE_REASONS[name] ?? "invalid token";
+  return `JWT authentication failed: ${reason}`;
 }

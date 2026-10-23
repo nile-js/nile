@@ -1,8 +1,11 @@
-# Serve public assets when needed
+---
+title: "Public assets"
+description: "Serve application assets through the selected HTTP adapter"
+---
 
 For a small application, Nile can expose a local public asset directory without another HTTP service. Both adapters support the same configuration:
 
-```typescript
+```ts
 rest: {
   baseUrl: "/api",
   allowedOrigins: ["https://app.example.com"],

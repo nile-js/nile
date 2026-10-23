@@ -45,6 +45,8 @@ const server = await createNileServer({
     discovery: { enabled: true },
   },
   onBoot: {
+    // The first PGlite start on a slow machine can take longer than the 10 second default.
+    maxWaitTime: 30_000,
     fn: async (ctx) => {
       await pushSchema();
       ctx.resources?.logger?.info({
@@ -65,6 +67,7 @@ server.nativeRest?.addMiddleware("/api", async (c, next) => {
     atFunction: "requestLog",
     message: `${c.request.method} ${c.path} - ${ms}ms`,
   });
+  return undefined;
 });
 
 if (server.nativeRest) {

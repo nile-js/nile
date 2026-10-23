@@ -1,0 +1,33 @@
+---
+title: Build with Nile
+description: Ship business operations with a consistent structure your team can follow as the application grows
+---
+
+Nile Js organizes your backend into **services** and **actions**. A service groups a business domain, such as billing. An action names one operation, validates its input and runs an ordinary function. The same structure gives teammates and coding agents a path through the next feature.
+
+## Start with one operation
+
+[Build your first service](/guide/start/getting-started), send it a request, then move the action into your application's domain structure. The complete example uses Bun native and returns a project you can inspect.
+
+| Your next task | Guide |
+| --- | --- |
+| See every built-in feature with an example | [Features](/guide/features) |
+| Build a complete feature step by step | [Examples](/guide/examples) |
+| Find a home for growing business logic | [Application structure](/guide/start/application-structure) |
+| Validate input and return useful failures | [Actions](/guide/basics/actions) and [errors and Results](/guide/basics/errors-and-results) |
+| Share resources and access policies | [Context](/guide/basics/context) and [authentication](/guide/basics/auth) |
+| Connect your frontend | [Frontend client](/guide/basics/client) |
+| Add live updates | [Sockets and typed messages](/guide/reference/realtime) |
+| Schedule work and control concurrency | [Production operations](/guide/reference/operations) |
+| Trace a failed operation | [Logging](/guide/internals/logging) |
+| Use the handler context, hooks and execution options | [Advanced](/guide/advanced) |
+
+## Keep the business logic yours
+
+Use ordinary TypeScript functions for domain rules and your chosen library for data access. Nile Js supplies the shared execution patterns: validation, Results, hooks, context and logging. Register your services explicitly so someone joining the project can see which operations it exposes.
+
+Choose [Bun native or the Hono adapter](/guide/start/runtime-adapters) for HTTP. Call the same action through `server.invoke` within your backend, or expose it over Socket.IO when your application needs a connected client.
+
+## Work with a coding assistant
+
+Give your assistant the [Nile Js skill](/guide/agents/skill) and the [documentation index](/guide/reference/llms-txt), and expose selected runtime schemas through [discovery](/guide/basics/discovery-and-agents). Documentation explains Nile Js conventions; your application's schemas describe its operations and input shapes. [Build with AI agents](/guide/agents) walks through the setup.

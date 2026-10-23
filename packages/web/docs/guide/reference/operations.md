@@ -1,4 +1,7 @@
-# Operating a Nile application
+---
+title: "Running Nile in production"
+description: "Run direct calls, schedules, controlled work and diagnostics in production"
+---
 
 Nile keeps business operations in services and actions. HTTP, direct calls and WebSockets use the same engine. Schedules and function controls support background work without requiring a second application architecture.
 
@@ -10,7 +13,9 @@ const result = await server.invoke({
   action: "create",
   payload: { name: "First order" },
 });
-if (result.isErr) return result;
+if (result.isErr) {
+  return result;
+}
 ```
 
 This executes normal hooks, validation and configured authentication. `visibility.rpc: false` disables direct access. Backend code can supply `session`, `credentials`, `signal`, `requestId` and `clientKey`. Session data does not bypass configured JWT verification; use `credentials` for it. Nested calls inherit cancellation and correlation, but receive isolated session containers and action state. Use `context.execution` for the current ID, transport, signal and optional trace IDs. `getContext()` resolves the active execution's instance.
@@ -19,7 +24,7 @@ This executes normal hooks, validation and configured authentication. `visibilit
 
 ## HTTP and sockets together
 
-Socket.IO now supplies Nile's websocket interface. Configure topics, authentication and access policies under websocket; use the dedicated client’s invoke/send/receive methods. REST and sockets share the action pipeline and listener. See [Actions and messages over Socket.IO](./realtime.md) for typed contracts, Bun/Node setup, limits, delivery semantics and schema export. The unpublished raw-JSON WebSocket prototype has been replaced.
+Socket.IO supplies Nile’s websocket interface. Configure topics, authentication and access policies under websocket; use the dedicated client’s invoke/send/receive methods. REST and sockets share the action pipeline and listener. See [Actions and messages over Socket.IO](/guide/reference/realtime) for typed contracts, Bun/Node setup, limits, delivery semantics and schema export.
 
 ## Deploy and shut down predictably
 
@@ -37,7 +42,7 @@ Register resources with `name`, optional `stop`, `drain` and `close(signal)` cal
 
 HTTP protection accepts `rest.protection.maxBodyBytes` (default 10 MiB; `false` disables it). Nile checks actual bytes, including bodies with missing or inaccurate Content-Length, before JSON/form parsing. This buffers the bounded request body; configure a suitable limit for uploads or implement a custom streaming route outside this parser.
 
-`getClientAddress(request)` supplies a listener-derived peer when using custom integrations. `trustProxy(address)` permits walking X-Forwarded-For only through trusted peers. Arbitrary forwarded headers are ignored by default. The legacy configurable rate-limiting header remains application-controlled; do not treat a client-chosen header as verified identity.
+Set `rest.protection.getClientAddress` to return the peer address from your listener, never from a request header. Set `rest.protection.trustProxy` to return `true` only for proxy addresses you operate. Nile reads `x-forwarded-for` only when the actual peer is trusted, and it ignores other forwarded headers by default. `utils.resolveClientIdentity(request, protection)` returns the resolved `address`, `peer` and `source`. The legacy rate-limiting header (`rest.rateLimiting.limitingHeader`) remains application-controlled; do not treat a client-chosen header as verified identity.
 
 `execution.timeoutMs` requests cancellation and returns a timeout failure to the caller. Handlers can pass `context.execution.signal` to compatible dependencies. Timed-out work stays tracked until it actually finishes. Cancellation does not roll back writes or interrupt code that ignores the signal.
 
@@ -72,19 +77,33 @@ Failures and slow executions are summarized when a logger is configured; success
 ## Schedule business work
 
 ```ts
-schedules: {
+import type { JobRunContext, JobRunEvent, SchedulerOptions } from "@nilejs/nile";
+
+const billingSummaryJob = async (run: JobRunContext) => {
+  return await buildBillingSummary({ signal: run.signal });
+};
+
+const recordRunEvent = async (event: JobRunEvent) => {
+  await recordJobEvent(event);
+};
+
+export const schedules: SchedulerOptions = {
   jobs: [
     {
       name: "billing-summary",
-      schedule: { weekly: "monday", at: "09:00", timezone: "Africa/Kampala" },
-      handler: async ({ signal }) => buildBillingSummary({ signal }),
+      schedule: {
+        weekly: "monday",
+        at: "09:00",
+        timezone: "Africa/Kampala",
+      },
+      handler: billingSummaryJob,
     },
   ],
-  onRunEvent: async (event) => recordJobEvent(event),
-}
+  onRunEvent: recordRunEvent,
+};
 ```
 
-`recordJobEvent` and `buildBillingSummary` above are application functions. The recorder receives started/completed/failed/skipped events, job/run IDs, timestamps and completion duration. Handler return values and raw errors are not persisted automatically. Recorder failures do not fail business work; `onRecorderError(job)` can report persistence trouble. Recorder capacity and timeout are bounded; stalled writers retain their capacity slot until they settle.
+Pass `schedules` to `createNileServer`. `recordJobEvent` and `buildBillingSummary` above are application functions. The recorder receives started/completed/failed/skipped events, job/run IDs, timestamps and completion duration. Handler return values and raw errors are not persisted automatically. Recorder failures do not fail business work; `onRecorderError(job)` can report persistence trouble. Recorder capacity and timeout are bounded; stalled writers retain their capacity slot until they settle.
 
 Schedules support:
 
@@ -112,12 +131,14 @@ Factories return `run(input, { signal? })`, `stop()`, `drain()` and `close()`:
 
 Tasks receive `(input, signal)` and can return ordinary values or Results. Output denotes the final unwrapped value. A batch task returns one Result per input, in the same order. Configuration errors throw; expected closed/full/replaced/cancelled outcomes return failures. Cancellation settles a caller but keeps running work's concurrency slot until the task settles.
 
-`createGroupedControl({ key, create, maxKeys })` isolates controls by an explicit key. Group capacity is bounded; keys remain registered until the grouped control is disposed. `createControlResource(name, control)` registers stop/drain/close lifecycle behavior. Stop admission before draining. These queues and buffers are in memory and do not survive process termination.
+`utils.createGroupedControl({ key, create, maxKeys, idleMs? })` isolates controls by an explicit key. Group capacity is bounded. With `idleMs` configured, idle queues release their keys after accepted work actually settles; see [idle keyed queues](/guide/reference/shared-utilities#reclaim-idle-keyed-queues). `createControlResource(name, control)` registers stop/drain/close lifecycle behavior. Stop admission before draining. These queues and buffers are in memory and do not survive process termination.
 
 ## Share action quotas across interfaces
 
 ```ts
-const limiter = createRateLimiter({
+import { utils } from "@nilejs/nile";
+
+const limiter = utils.createRateLimiter({
   strategy: "token-bucket",
   capacity: 20,
   refillPerSecond: 5,
@@ -144,8 +165,12 @@ A shared external store must atomically check and consume the full allowance thr
 
 ## Project structure
 
-Nile inspects recognized source layout once during boot. Existing projects receive warnings; project.structure can be warn, error or false. New CLI projects use error. Set project.root to the backend package root in a monorepo. Source-less bundles skip inspection unless a root is explicitly supplied. checkProjectStructure({ root }) exposes the same Result report without starting a server.
+Nile inspects recognized source layout once during boot. Existing projects receive warnings; `project.structure` can be `"warn"`, `"error"` or `false`. New CLI projects use `"error"`. Set `project.root` to the backend package root in a monorepo. Source-less bundles skip inspection unless a root is explicitly supplied. checkProjectStructure({ root }) exposes the same Result report without starting a server.
 
-Use src/services/services.config.ts and service/actions/<action>.ts. Larger actions can use service/actions/<action>/<action>.ts, index.ts and private modules/. Service-shared helpers belong in service/modules/. The registry stays explicit; filenames never automatically execute/register actions. Existing flat layouts remain compatible in warning mode. Action entry points above 400 lines receive refactoring guidance. Nile does not scan secrets or follow source symlinks.
+Use `src/services/services.config.ts` and `service/actions/<action>.ts`. Larger actions can use `service/actions/<action>/<action>.ts`, `index.ts` and private `modules/`. Service-shared helpers belong in `service/modules/`. The registry stays explicit; filenames never automatically execute/register actions. Existing flat layouts remain compatible in warning mode. Action entry points above 400 lines receive refactoring guidance. Nile does not scan secrets or follow source symlinks.
 
-The CLI generates action directories and supports nile generate action <service> <action> --folder. Schema, types and modules files should be created only when needed. No existing application is automatically moved/refactored.
+The CLI generates action directories with `nile generate action <service> <action> --folder`. Schema, types and modules files should be created only when needed. No existing application is automatically moved/refactored.
+
+## Shared backend helpers
+
+See [Shared backend utilities](/guide/reference/shared-utilities) for safe database diagnostics, explicit jittered retries, bounded TTL storage, idle grouped queues and client-IP normalization. These helpers use the existing Slang Result conventions; retries use superPromise for cooperative deadlines and cancellable waits. Grouped controls retain keys by default; queues can opt into idle cleanup without hiding running work.

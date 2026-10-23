@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "bun run src/index.ts",
+    "dev": "bun --watch src/index.ts",
     "gen": "bunx @nilejs/cli generate",
     "db:generate": "bunx drizzle-kit generate",
     "db:push": "bunx drizzle-kit push",
@@ -15,7 +15,7 @@
     "@electric-sql/pglite": "^0.2.5",
     "drizzle-orm": "^0.45.2",
     "pino": "^10.3.1",
-    "slang-ts": "^0.0.7",
+    "slang-ts": "^0.0.9",
     "zod": "^4.3.6"
   },
   "devDependencies": {

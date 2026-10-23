@@ -1,10 +1,13 @@
-# Logging
+---
+title: "Logging"
+description: "Follow related executions through structured logs and correlation IDs"
+---
 
 A consistent log format helps a small team follow a failure back to the operation that produced it. Nile includes a structured logger; supply it through resources so actions, hooks and error helpers can use the same convention.
 
 ## Configure a logger
 
-```typescript
+```ts
 import { createLogger, createNileServer } from "@nilejs/nile";
 import { services } from "./services";
 
@@ -44,10 +47,10 @@ Time-based chunking does not delete old logs, ship them to another system or pro
 
 For an expected business refusal, `Err("Project is archived")` may be enough. For a failure that needs investigation, `handleError` logs through an explicit logger or the current Nile resource and returns an Err:
 
-```typescript
-import { handleError } from "@nilejs/nile";
+```ts
+import { utils } from "@nilejs/nile";
 
-const failure = handleError({
+const failure = utils.handleError({
   logger,
   atFunction: "projects.create",
   message: "Could not save the project",
@@ -57,11 +60,13 @@ const failure = handleError({
 
 The returned message includes the logger’s returned identifier. In production mode this can be used to locate the corresponding record. `handleError` throws if no logger is available: missing logging configuration should be fixed rather than silently ignored.
 
-Nile does not automatically log every successful request or provide distributed tracing. Add application-specific audit or request logging through hooks/middleware when needed. Diagnostic flags control framework diagnostic output separately.
+Inside an HTTP request, direct action call or scheduled execution, Nile’s logger automatically includes the active `requestId` and any `traceId`, `spanId` or `runId`. Startup logs have no execution to attach. Plain `console.log` calls and arbitrary third-party loggers do not receive this metadata.
+
+Use `requestId`, `runId` and `traceId` in `getLogs` filters to follow related records. Failures and slow executions receive diagnostic summaries when a logger is configured; successful summaries are opt-in. For a hosted destination, configure [telemetry](/guide/reference/operations#read-logs-then-add-a-destination-when-useful). Nile exports traces and metrics through OTLP while file logs remain available.
 
 ## Read local records
 
-```typescript
+```ts
 import { getLogs } from "@nilejs/nile";
 
 const errors = getLogs(

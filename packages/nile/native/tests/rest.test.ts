@@ -246,6 +246,46 @@ describe("native public REST integration", () => {
       },
     });
   });
+  it("returns per-field issues and rejects JSON sent to a multipart action", async () => {
+    const app = await setup({
+      services: [
+        {
+          name: "test",
+          description: "Test",
+          actions: [
+            {
+              name: "main",
+              description: "Main",
+              validation: z.object({
+                title: z.string().min(1, "Title is required"),
+              }),
+              handler: () => Ok({}),
+            },
+            {
+              name: "upload",
+              description: "Upload",
+              isSpecial: { contentType: "multipart/form-data" },
+              handler: () => Ok({}),
+            },
+          ],
+        },
+      ],
+    });
+
+    const invalid = await app.fetch(request({ payload: { title: "" } }));
+    expect(invalid.status).toBe(400);
+    expect(await invalid.json()).toMatchObject({
+      status: false,
+      data: { issues: [{ path: "title", message: "Title is required" }] },
+    });
+
+    const json = await app.fetch(request({ action: "upload" }));
+    expect(json.status).toBe(400);
+    expect(await json.json()).toMatchObject({
+      status: false,
+      data: { expected: "multipart/form-data", received: "application/json" },
+    });
+  });
   it("rejects Bun native with a non-Bun runtime", async () => {
     // JavaScript callers still receive an early error for invalid configuration.
     // @ts-expect-error Bun native cannot be selected for Node.

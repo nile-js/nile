@@ -5,11 +5,32 @@ export interface ExternalResponse<T = Record<string, unknown>> {
   data: T;
 }
 
-/** Result pattern: { error, data } (graceful failure over throwing) */
-export interface ClientResult<T = Record<string, unknown>> {
-  error: string | null;
-  data: T | null;
+/** A successful call: read the action's data from `value`. */
+export interface ClientOk<T> {
+  isOk: true;
+  isErr: false;
+  value: T;
+  error: null;
+  /** @deprecated Read `value`. Kept so code written for earlier clients keeps working. */
+  data: T;
 }
+
+/** A failed call: `error` explains it and `details` holds any data the server attached. */
+export interface ClientErr {
+  isOk: false;
+  isErr: true;
+  value: null;
+  error: string;
+  details: unknown;
+  /** @deprecated Read `details` for failure data. Kept as `null` so code written for earlier clients keeps working. */
+  data: null;
+}
+
+/**
+ * The same Result pattern as the backend: check `isErr`, then read `error` or `value`.
+ * Calls never throw; network failures and server errors both arrive as `ClientErr`.
+ */
+export type ClientResult<T = Record<string, unknown>> = ClientOk<T> | ClientErr;
 
 /** Explore response for service listing (service: "*", action: "*") */
 export interface ExploreServicesResponse {

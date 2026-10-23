@@ -1,4 +1,7 @@
-# Execution engine
+---
+title: "Engine"
+description: "Understand action lookup, pipeline order and registration statistics"
+---
 
 The engine gives every business operation the same execution path. A team can review input checks, reusable policy and the handler without learning a different convention for each service.
 
@@ -36,7 +39,7 @@ Application resources and general context keys remain shared. Put a database cli
 
 Inside an application with a configured server and context:
 
-```typescript
+```ts
 const result = await server.engine.executeAction(
   "projects",
   "create",

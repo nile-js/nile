@@ -14,11 +14,16 @@ import type {
  *
  * @example
  * const nile = createNileClient<ServicePayloads>({ baseUrl: "/api" });
- * const { error, data } = await nile.invoke({
+ * const result = await nile.invoke({
  *   service: "tasks",
  *   action: "create",
  *   payload: { title: "Buy milk" }
  * });
+ * if (result.isErr) {
+ *   console.error(result.error);
+ * } else {
+ *   console.log(result.value);
+ * }
  */
 export function createNileClient<
   TPayloads = Record<string, Record<string, unknown>>,
@@ -45,7 +50,7 @@ export function createNileClient<
         payload,
         fetchOptions
       );
-      return result as ClientResult;
+      return result;
     },
 
     /** Discover available services and actions (supports "*" wildcard) */

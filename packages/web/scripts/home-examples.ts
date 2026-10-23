@@ -1,32 +1,39 @@
 /** One checked-in source for highlighted examples, copy text and executable verification. */
 export const sourceExamples = {
 	action: {
-		file: "services/projects/create-project.ts",
+		file: "services/projects/actions/create-project.ts",
 		language: "typescript",
 		raw: `import { createAction } from "@nilejs/nile";
 import { Ok } from "slang-ts";
 import { z } from "zod";
 
-const input = z.object({
+const createProjectSchema = z.object({
   name: z.string().trim().min(1),
 });
 
-export const createProject = createAction<
-  z.infer<typeof input>
->({
+type CreateProjectInput = z.infer<typeof createProjectSchema>;
+
+const createProjectHandler = (input: CreateProjectInput) => {
+  const project = {
+    id: crypto.randomUUID(),
+    name: input.name,
+  };
+
+  return Ok({ project: project });
+};
+
+export const createProject = createAction<CreateProjectInput>({
   name: "create",
   description: "Create a project",
-  validation: input,
-  handler: ({ name }) => Ok({
-    project: { id: crypto.randomUUID(), name },
-  }),
+  validation: createProjectSchema,
+  handler: createProjectHandler,
 });`,
 	},
 	service: {
 		file: "services/projects/index.ts",
 		language: "typescript",
 		raw: `import { createService } from "@nilejs/nile";
-import { createProject } from "./create-project";
+import { createProject } from "./actions/create-project";
 
 export const projects = createService({
   name: "projects",
@@ -57,29 +64,32 @@ if (!server.nativeRest) {
 
 Bun.serve({ port: 8000, fetch: server.nativeRest.fetch });`,
 	},
-	client: {
-		file: "client.ts",
-		language: "typescript",
+	react: {
+		file: "components/create-project-button.tsx",
+		language: "tsx",
 		raw: `import { createNileClient } from "@nilejs/client";
 
-type Inputs = {
-  projects: { create: { name: string } };
-};
-
-const api = createNileClient<Inputs>({
+const nile = createNileClient({
   baseUrl: "http://localhost:8000/api",
 });
 
-const result = await api.invoke({
-  service: "projects",
-  action: "create",
-  payload: { name: "Customer portal" },
-});
+export function CreateProjectButton() {
+  const handleClick = async () => {
+    const result = await nile.invoke({
+      service: "projects",
+      action: "create",
+      payload: { name: "Customer portal" },
+    });
 
-if (result.error) {
-  console.error(result.error);
-} else {
-  console.log(result.data);
+    if (result.isErr) {
+      console.error(result.error);
+      return;
+    }
+
+    console.log(result.value);
+  };
+
+  return <button onClick={handleClick}>Create project</button>;
 }`,
 	},
 } as const;

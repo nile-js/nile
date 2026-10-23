@@ -19,7 +19,7 @@ This executes normal hooks, validation and configured authentication. `visibilit
 
 ## HTTP and sockets together
 
-Socket.IO now supplies Nile's websocket interface. Configure topics, authentication and access policies under websocket; use the dedicated client’s invoke/send/receive methods. REST and sockets share the action pipeline and listener. See [Actions and messages over Socket.IO](./realtime.md) for typed contracts, Bun/Node setup, limits, delivery semantics and schema export. The unpublished raw-JSON WebSocket prototype has been replaced.
+Socket.IO supplies Nile’s websocket interface. Configure topics, authentication and access policies under websocket; use the dedicated client’s invoke/send/receive methods. REST and sockets share the action pipeline and listener. See [Actions and messages over Socket.IO](/guide/reference/realtime) for typed contracts, Bun/Node setup, limits, delivery semantics and schema export.
 
 ## Deploy and shut down predictably
 
@@ -112,12 +112,14 @@ Factories return `run(input, { signal? })`, `stop()`, `drain()` and `close()`:
 
 Tasks receive `(input, signal)` and can return ordinary values or Results. Output denotes the final unwrapped value. A batch task returns one Result per input, in the same order. Configuration errors throw; expected closed/full/replaced/cancelled outcomes return failures. Cancellation settles a caller but keeps running work's concurrency slot until the task settles.
 
-`createGroupedControl({ key, create, maxKeys })` isolates controls by an explicit key. Group capacity is bounded; keys remain registered until the grouped control is disposed. `createControlResource(name, control)` registers stop/drain/close lifecycle behavior. Stop admission before draining. These queues and buffers are in memory and do not survive process termination.
+`utils.createGroupedControl({ key, create, maxKeys, idleMs? })` isolates controls by an explicit key. Group capacity is bounded. With `idleMs` configured, idle queues release their keys after accepted work actually settles; see [idle keyed queues](/guide/reference/shared-utilities#reclaim-idle-keyed-queues). `createControlResource(name, control)` registers stop/drain/close lifecycle behavior. Stop admission before draining. These queues and buffers are in memory and do not survive process termination.
 
 ## Share action quotas across interfaces
 
 ```ts
-const limiter = createRateLimiter({
+import { utils } from "@nilejs/nile";
+
+const limiter = utils.createRateLimiter({
   strategy: "token-bucket",
   capacity: 20,
   refillPerSecond: 5,
@@ -144,8 +146,12 @@ A shared external store must atomically check and consume the full allowance thr
 
 ## Project structure
 
-Nile inspects recognized source layout once during boot. Existing projects receive warnings; project.structure can be warn, error or false. New CLI projects use error. Set project.root to the backend package root in a monorepo. Source-less bundles skip inspection unless a root is explicitly supplied. checkProjectStructure({ root }) exposes the same Result report without starting a server.
+Nile inspects recognized source layout once during boot. Existing projects receive warnings; `project.structure` can be `"warn"`, `"error"` or `false`. New CLI projects use `"error"`. Set `project.root` to the backend package root in a monorepo. Source-less bundles skip inspection unless a root is explicitly supplied. checkProjectStructure({ root }) exposes the same Result report without starting a server.
 
-Use src/services/services.config.ts and service/actions/<action>.ts. Larger actions can use service/actions/<action>/<action>.ts, index.ts and private modules/. Service-shared helpers belong in service/modules/. The registry stays explicit; filenames never automatically execute/register actions. Existing flat layouts remain compatible in warning mode. Action entry points above 400 lines receive refactoring guidance. Nile does not scan secrets or follow source symlinks.
+Use `src/services/services.config.ts` and `service/actions/<action>.ts`. Larger actions can use `service/actions/<action>/<action>.ts`, `index.ts` and private `modules/`. Service-shared helpers belong in `service/modules/`. The registry stays explicit; filenames never automatically execute/register actions. Existing flat layouts remain compatible in warning mode. Action entry points above 400 lines receive refactoring guidance. Nile does not scan secrets or follow source symlinks.
 
-The CLI generates action directories and supports nile generate action <service> <action> --folder. Schema, types and modules files should be created only when needed. No existing application is automatically moved/refactored.
+The CLI generates action directories with `nile generate action <service> <action> --folder`. Schema, types and modules files should be created only when needed. No existing application is automatically moved/refactored.
+
+## Shared backend helpers
+
+See [Shared backend utilities](/guide/reference/shared-utilities) for safe database diagnostics, explicit jittered retries, bounded TTL storage, idle grouped queues and client-IP normalization. These helpers use the existing Slang Result conventions; retries use superPromise for cooperative deadlines and cancellable waits. Grouped controls retain keys by default; queues can opt into idle cleanup without hiding running work.

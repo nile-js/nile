@@ -1,8 +1,8 @@
 # {{projectName}}
 
-Built with [Nile](https://github.com/nile-js/nile).
+Built with [Nile Js](https://nile-js.github.io/nile/). Read the [getting started guide](https://nile-js.github.io/nile/guide/start/getting-started/) for a walkthrough of this starter.
 
-New projects use Bun native: `runtime: "bun", native: true` in `src/index.ts`. REST settings remain under `rest`; native routes and middleware are available on `server.nativeRest`. Existing applications that omit `native` continue using the Hono adapter.
+The server runs on Bun's native HTTP server (`runtime: "bun", native: true` in `src/index.ts`). REST settings live under `rest`; custom routes and middleware are available on `server.nativeRest`.
 
 ## Setup
 
@@ -12,7 +12,7 @@ cp .env.example .env
 bun run dev
 ```
 
-The server starts at `http://localhost:8000`. PGLite creates an embedded Postgres database automatically, no external database required.
+The server starts at `http://localhost:8000`. PGlite creates an embedded Postgres database in `data/` on first start, so no database server is required. The first start can take up to 30 seconds.
 
 ## Scripts
 
@@ -26,13 +26,13 @@ The server starts at `http://localhost:8000`. PGLite creates an embedded Postgre
 | `bun run db:push` | Push schema changes directly to the database |
 | `bun run db:studio` | Open Drizzle Studio to browse your data |
 
-## Project Structure
+## Project structure
 
 ```
 src/
   index.ts                        # Server entry point
   db/
-    client.ts                     # PGLite + Drizzle client
+    client.ts                     # PGlite + Drizzle client
     schema.ts                     # Drizzle table definitions
     types.ts                      # Inferred types from schema
     index.ts                      # Barrel export
@@ -41,7 +41,7 @@ src/
       index.ts                    # Barrel export
   services/
     services.config.ts            # Service registry
-    tasks/
+    tasks/actions/
       create.ts                   # Create task action
       list.ts                     # List tasks action
       get.ts                      # Get task by ID action
@@ -77,7 +77,7 @@ curl -X POST http://localhost:8000/api/services \
   -d '{"intent":"schema","service":"tasks","action":"*","payload":{}}'
 ```
 
-## Adding Services
+## Adding services
 
 Generate a new service with the CLI:
 
@@ -85,9 +85,9 @@ Generate a new service with the CLI:
 bun run gen service users
 ```
 
-Or manually create a directory under `src/services/` with action files and register it in `src/services/services.config.ts`.
+The generator offers to register the service in `src/services/services.config.ts`. To add one by hand, create a folder under `src/services/` with an `actions/` folder and register its actions in `services.config.ts`.
 
-## Adding Actions
+## Adding actions
 
 Generate a new action in an existing service:
 
@@ -95,9 +95,9 @@ Generate a new action in an existing service:
 bun run gen action users get-user
 ```
 
-Each action file exports a single action created with `createAction`, which takes a Zod validation schema and a handler function that returns `Ok(data)` or `Err(message)`.
+This creates `src/services/users/actions/get-user.ts`. Each action file exports one action created with `createAction`: a named Zod schema, an input type inferred from it and a named handler that returns `Ok(data)` or `Err(message)`. Import the action in `src/services/services.config.ts` and add it to the service's `actions` list.
 
-## Generating Schemas & Types
+## Generating schemas and types
 
 Extract Zod validation schemas from your actions and generate TypeScript types:
 
@@ -107,8 +107,8 @@ bun run gen schema
 
 This auto-detects `src/services/services.config.ts`, reads validation schemas from all actions, and outputs two files:
 
-- `src/generated/schemas.ts` — named Zod schema exports
-- `src/generated/types.ts` — inferred TypeScript types via `z.infer`
+- `src/generated/schemas.ts`: named Zod schema exports
+- `src/generated/types.ts`: inferred TypeScript types via `z.infer`
 
 Options:
 
@@ -121,14 +121,14 @@ Actions without a validation schema are skipped and listed in the CLI output.
 
 ## Database
 
-This project ships with [PGLite](https://electric-sql.com/product/pglite) for zero-setup local development. For production, you can swap it for Postgres, MySQL, SQLite, or any other database supported by Drizzle. Update `src/db/client.ts` with your connection and driver.
+This project ships with [PGlite](https://electric-sql.com/product/pglite) for zero-setup local development. For production, you can swap it for Postgres, MySQL, SQLite, or any other database supported by Drizzle. Update `src/db/client.ts` with your connection and driver.
 
 See the [Drizzle getting started guide](https://orm.drizzle.team/docs/get-started) for setup instructions with each supported database.
 
-## Tech Stack
+## Tech stack
 
 - **Runtime:** [Bun](https://bun.sh)
-- **Framework:** [@nilejs/nile](https://github.com/nile-js/nile/tree/main/packages/nile)
-- **Database:** [PGLite](https://electric-sql.com/product/pglite) (embedded Postgres)
+- **Framework:** [Nile Js](https://nile-js.github.io/nile/) (`@nilejs/nile`)
+- **Database:** [PGlite](https://electric-sql.com/product/pglite) (embedded Postgres)
 - **ORM:** [Drizzle](https://orm.drizzle.team)
 - **Validation:** [Zod](https://zod.dev)

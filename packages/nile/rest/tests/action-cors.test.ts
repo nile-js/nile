@@ -110,21 +110,21 @@ function readCorsHeaders(response: Response): string[] {
 }
 
 describe("per-action CORS through the REST pipeline", () => {
-  it.each(["inherit", "explicit"])(
-    "%s inherits the global policy",
-    async (action) => {
-      const { app } = createFixture();
-      const response = await dispatch({ app, action });
-      expect(response.status).toBe(200);
-      expect(response.headers.get("access-control-allow-origin")).toBe(GLOBAL);
-      expect(response.headers.get("access-control-allow-credentials")).toBe(
-        "true"
-      );
-      expect(response.headers.get("access-control-expose-headers")).toBe(
-        "Content-Length"
-      );
-    }
-  );
+  it.each([
+    "inherit",
+    "explicit",
+  ])("%s inherits the global policy", async (action) => {
+    const { app } = createFixture();
+    const response = await dispatch({ app, action });
+    expect(response.status).toBe(200);
+    expect(response.headers.get("access-control-allow-origin")).toBe(GLOBAL);
+    expect(response.headers.get("access-control-allow-credentials")).toBe(
+      "true"
+    );
+    expect(response.headers.get("access-control-expose-headers")).toBe(
+      "Content-Length"
+    );
+  });
 
   it("false skips headers and every inherited dynamic CORS callback", async () => {
     const origin = vi.fn(() => GLOBAL);
@@ -196,33 +196,33 @@ describe("per-action CORS through the REST pipeline", () => {
     );
   });
 
-  it.each(["explore", "schema"] as const)(
-    "%s keeps global CORS even for a disabled action",
-    async (intent) => {
-      const { app } = createFixture();
-      const response = await dispatch({ app, action: "disabled", intent });
-      expect(response.status).toBe(200);
-      expect(response.headers.get("access-control-allow-origin")).toBe(GLOBAL);
-    }
-  );
+  it.each([
+    "explore",
+    "schema",
+  ] as const)("%s keeps global CORS even for a disabled action", async (intent) => {
+    const { app } = createFixture();
+    const response = await dispatch({ app, action: "disabled", intent });
+    expect(response.status).toBe(200);
+    expect(response.headers.get("access-control-allow-origin")).toBe(GLOBAL);
+  });
 
-  it.each([false, { origin: CUSTOM }] as const)(
-    "selected policy also covers action validation errors",
-    async (cors) => {
-      const action = makeAction({ name: "validated", cors });
-      action.validation = z.object({ required: z.string() });
-      const { app } = createFixture({ actions: [action] });
-      const response = await dispatch({
-        app,
-        action: "validated",
-        origin: CUSTOM,
-      });
-      expect(response.status).toBe(400);
-      expect(response.headers.get("access-control-allow-origin")).toBe(
-        cors === false ? null : CUSTOM
-      );
-    }
-  );
+  it.each([
+    false,
+    { origin: CUSTOM },
+  ] as const)("selected policy also covers action validation errors", async (cors) => {
+    const action = makeAction({ name: "validated", cors });
+    action.validation = z.object({ required: z.string() });
+    const { app } = createFixture({ actions: [action] });
+    const response = await dispatch({
+      app,
+      action: "validated",
+      origin: CUSTOM,
+    });
+    expect(response.status).toBe(400);
+    expect(response.headers.get("access-control-allow-origin")).toBe(
+      cors === false ? null : CUSTOM
+    );
+  });
 
   it("selects disabled CORS from valid routing before invalid payload-shape rejection", async () => {
     const { app } = createFixture();
@@ -266,22 +266,22 @@ describe("per-action CORS through the REST pipeline", () => {
     expect(response.headers.get("access-control-allow-origin")).toBe(GLOBAL);
   });
 
-  it.each(["disabled", "custom"])(
-    "multipart execute selects %s policy",
-    async (action) => {
-      const { app } = createFixture();
-      const response = await dispatch({
-        app,
-        action,
-        origin: CUSTOM,
-        multipart: true,
-      });
-      expect(response.status).toBe(200);
-      expect(response.headers.get("access-control-allow-origin")).toBe(
-        action === "disabled" ? null : CUSTOM
-      );
-    }
-  );
+  it.each([
+    "disabled",
+    "custom",
+  ])("multipart execute selects %s policy", async (action) => {
+    const { app } = createFixture();
+    const response = await dispatch({
+      app,
+      action,
+      origin: CUSTOM,
+      multipart: true,
+    });
+    expect(response.status).toBe(200);
+    expect(response.headers.get("access-control-allow-origin")).toBe(
+      action === "disabled" ? null : CUSTOM
+    );
+  });
 
   it("multipart content-type rejection uses the selected action policy", async () => {
     const action = makeAction({ name: "jsonOnly", cors: false });
@@ -356,43 +356,43 @@ describe("per-action CORS through the REST pipeline", () => {
     expect(response.headers.get("access-control-allow-origin")).toBeNull();
   });
 
-  it.each(["options", "resolver"] as const)(
-    "inherits legacy %s rule composition unchanged",
-    async (kind) => {
-      const config: Partial<RestConfig> = {
-        allowedOrigins: [],
-        cors: {
-          addCors: [
-            {
-              path: "/api/*",
-              ...(kind === "options"
-                ? { options: { origin: CUSTOM } }
-                : {
-                    resolver: (_origin, _context, helper) =>
-                      helper.allowOrigin(CUSTOM),
-                  }),
-            },
-          ],
-        },
-      };
-      const fixture = createFixture({ config });
-      const baseline = new Hono();
-      applyCorsConfig(baseline, fixture.config);
-      baseline.post(SERVICES, (c) => c.json({ status: true }));
-      const legacy = await baseline.request(SERVICES, {
-        method: "POST",
-        headers: { origin: CUSTOM },
-      });
-      const actual = await dispatch({ app: fixture.app, origin: CUSTOM });
-      for (const header of [
-        "access-control-allow-origin",
-        "access-control-allow-credentials",
-        "access-control-expose-headers",
-        "vary",
-      ]) {
-        expect(actual.headers.get(header)).toBe(legacy.headers.get(header));
-      }
-      expect(actual.headers.get("access-control-allow-origin")).toBe(CUSTOM);
+  it.each([
+    "options",
+    "resolver",
+  ] as const)("inherits legacy %s rule composition unchanged", async (kind) => {
+    const config: Partial<RestConfig> = {
+      allowedOrigins: [],
+      cors: {
+        addCors: [
+          {
+            path: "/api/*",
+            ...(kind === "options"
+              ? { options: { origin: CUSTOM } }
+              : {
+                  resolver: (_origin, _context, helper) =>
+                    helper.allowOrigin(CUSTOM),
+                }),
+          },
+        ],
+      },
+    };
+    const fixture = createFixture({ config });
+    const baseline = new Hono();
+    applyCorsConfig(baseline, fixture.config);
+    baseline.post(SERVICES, (c) => c.json({ status: true }));
+    const legacy = await baseline.request(SERVICES, {
+      method: "POST",
+      headers: { origin: CUSTOM },
+    });
+    const actual = await dispatch({ app: fixture.app, origin: CUSTOM });
+    for (const header of [
+      "access-control-allow-origin",
+      "access-control-allow-credentials",
+      "access-control-expose-headers",
+      "vary",
+    ]) {
+      expect(actual.headers.get(header)).toBe(legacy.headers.get(header));
     }
-  );
+    expect(actual.headers.get("access-control-allow-origin")).toBe(CUSTOM);
+  });
 });

@@ -129,6 +129,7 @@ export function createRestApp(params: CreateRestAppParams): RestApp {
         ...getRequestStore(),
         rest: c,
         sessions: getRequestStore()?.sessions ?? {},
+        failure: {},
       },
       async () => {
         const contentType = c.req.header("content-type") ?? "";

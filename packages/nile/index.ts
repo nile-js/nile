@@ -16,6 +16,7 @@ export type {
   CorsResolver,
   CorsRouteRule,
 } from "./cors/types";
+export * from "./diagnostics";
 // Engine utilities — action and service factory functions
 export { createAction, createActions } from "./engine/create-action";
 export { createService, createServices } from "./engine/create-service";
@@ -86,7 +87,12 @@ export type {
   WebSocketContext,
 } from "./nile/types";
 export * from "./project";
-export type { HttpProtectionOptions } from "./protection/types";
+export {
+  normalizeIp,
+  resolveClientAddress,
+  resolveClientIdentity,
+} from "./protection/client-address";
+export type { ClientAddress, HttpProtectionOptions } from "./protection/types";
 export type { RestApp } from "./rest/rest";
 // REST types — REST interface and rate limiting configuration
 export type {
@@ -110,6 +116,7 @@ export {
   validateFiles,
 } from "./rest/uploads";
 export * from "./scheduling";
+export * from "./storage";
 export { createNileTelemetry } from "./telemetry/lazy";
 export type { TelemetryOptions } from "./telemetry/types";
 // Utilities — error handling, diagnostics, and database helpers
@@ -127,6 +134,9 @@ export {
   type OffsetPage,
   type OffsetPaginationOptions,
 } from "./utils";
+export { dbTry } from "./utils/db/db-try";
+export type { DbTryOptions } from "./utils/db/types";
+export * as utils from "./utils/public";
 export type {
   NileSocket,
   SocketConfig,

@@ -1,4 +1,4 @@
-name: Deploy Nile Ts Docs
+name: Deploy Nile Js docs
 
 on:
   push:
@@ -21,22 +21,31 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
       - uses: oven-sh/setup-bun@v1
         with:
-          bun-version: latest
+          bun-version: 1.4.2
 
       - name: Install dependencies
         working-directory: ./packages/web
-        run: bun install
+        run: bun install --frozen-lockfile
 
+      # Set the DOCS_SITE_URL and DOCS_BASE_PATH repository variables to move the site,
+      # for example https://nilejs.dev and / for a custom domain root.
       - name: Build
         working-directory: ./packages/web
+        env:
+          VITE_SITE_URL: ${{ vars.DOCS_SITE_URL || 'https://nile-js.github.io' }}
+          VITE_BASE_PATH: ${{ vars.DOCS_BASE_PATH || '/nile' }}
         run: bun run build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: packages/web/doc_build
+          path: packages/web/doc_build/client${{ vars.DOCS_BASE_PATH || '/nile' }}
 
   deploy:
     environment:

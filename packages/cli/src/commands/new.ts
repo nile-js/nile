@@ -1,3 +1,4 @@
+import { rename } from "node:fs/promises";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -56,6 +57,12 @@ export const newCommand = async (projectName: string): Promise<void> => {
   const templateDir = resolveTemplateDir();
   await copyDir(templateDir, targetDir);
 
+  // npm never publishes files named .gitignore, so the template ships it without the dot.
+  const shippedGitignore = resolve(targetDir, "gitignore");
+  if (pathExists(shippedGitignore)) {
+    await rename(shippedGitignore, resolve(targetDir, ".gitignore"));
+  }
+
   const allFiles = await getFilesRecursive(targetDir);
   const replacements = { "{{projectName}}": projectName };
 
@@ -81,9 +88,9 @@ export const newCommand = async (projectName: string): Promise<void> => {
 
   console.log("");
   success("Generate with the CLI:");
-  hint("nile g service <name>          Add a new service");
-  hint("nile g action <service> <name> Add an action to a service");
-  hint("nile g schema                  Generate Zod schemas & types");
+  hint("bun run gen service <name>          Add a new service");
+  hint("bun run gen action <service> <name>  Add an action to a service");
+  hint("bun run gen schema                   Generate Zod schemas and types");
 
   outro();
 };

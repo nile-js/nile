@@ -15,6 +15,11 @@ interface FileLogRecord {
   runId?: string;
 }
 
+/** Whether records handed to a destination may still be on their way to disk. */
+interface WriteState {
+  pending: boolean;
+}
+
 const writers = new Map<
   string,
   {
@@ -22,6 +27,7 @@ const writers = new Map<
     logger: ReturnType<typeof pino>;
     destination: ReturnType<typeof pino.destination>;
     ready: Promise<Result<void, string>>;
+    state: WriteState;
   }
 >();
 let writeFailures = 0;
@@ -35,8 +41,17 @@ export function writeLogRecord(path: string, record: FileLogRecord): void {
       mkdir: true,
       sync: false,
     });
+    // sonic-boom emits drain once queued writes reach the file; error and close mean none will follow.
+    const state: WriteState = { pending: false };
+    destination.on("drain", () => {
+      state.pending = false;
+    });
+    destination.on("close", () => {
+      state.pending = false;
+    });
     destination.on("error", () => {
       writeFailures++;
+      state.pending = false;
     });
     const ready = safeTry(
       () =>
@@ -65,9 +80,11 @@ export function writeLogRecord(path: string, record: FileLogRecord): void {
         },
         destination
       ),
+      state,
     };
     writers.set(path, writer);
   }
+  writer.state.pending = true;
   writer.logger[record.level](record);
 }
 
@@ -85,6 +102,22 @@ export async function flushLoggers(appName: string): Promise<void> {
         const opened = await writer.ready;
         if (opened.isErr) {
           throw new Error("Log destination could not open");
+        }
+        // sonic-boom's flush() returns at once when minLength is 0, even with a write in
+        // flight, so wait for queued records to drain before reporting them as written.
+        if (writer.state.pending) {
+          await new Promise<void>((resolve, reject) => {
+            const onDrain = () => {
+              writer.destination.off("error", onError);
+              resolve();
+            };
+            const onError = (error: Error) => {
+              writer.destination.off("drain", onDrain);
+              reject(error);
+            };
+            writer.destination.once("drain", onDrain);
+            writer.destination.once("error", onError);
+          });
         }
         await new Promise<void>((resolve, reject) =>
           writer.destination.flush((error?: Error) =>

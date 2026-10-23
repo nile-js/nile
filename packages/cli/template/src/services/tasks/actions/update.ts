@@ -1,4 +1,4 @@
-import { type Action, createAction } from "@nilejs/nile";
+import { createAction } from "@nilejs/nile";
 import { Err, Ok } from "slang-ts";
 import z from "zod";
 import { taskModel } from "@/db/models";
@@ -10,22 +10,29 @@ const updateTaskSchema = z.object({
   status: z.enum(["pending", "in-progress", "done"]).optional(),
 });
 
-const updateTaskHandler = async (data: Record<string, unknown>) => {
-  const { id, ...updates } = data;
+type UpdateTaskInput = z.infer<typeof updateTaskSchema>;
 
+const updateTaskHandler = async (input: UpdateTaskInput) => {
+  // Fields left out of the request stay undefined and are not changed.
   const result = await taskModel.update({
-    id: id as string,
-    data: updates,
+    id: input.id,
+    data: {
+      title: input.title,
+      description: input.description,
+      status: input.status,
+    },
   });
+
   if (result.isErr) {
     return Err(result.error);
   }
+
   return Ok({ task: result.value });
 };
 
-export const updateTaskAction: Action = createAction({
+export const updateTaskAction = createAction<UpdateTaskInput>({
   name: "update",
   description: "Update an existing task",
-  handler: updateTaskHandler,
   validation: updateTaskSchema,
+  handler: updateTaskHandler,
 });

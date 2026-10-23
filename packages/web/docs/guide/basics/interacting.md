@@ -1,8 +1,11 @@
-# Invoke an operation
+---
+title: "HTTP interaction"
+description: "Send an action request and handle its HTTP response"
+---
 
 All action calls use `POST {baseUrl}/services`. With `rest.baseUrl: "/api"`, send:
 
-```bash
+```sh
 curl http://localhost:8000/api/services \
   -H 'Content-Type: application/json' \
   -d '{"intent":"execute","service":"projects","action":"create","payload":{"name":"Customer portal"}}'
@@ -29,15 +32,22 @@ An action failure has `status: false`, its error message and `data: {}`. Engine 
 
 ## Use the client for application calls
 
-```typescript
-const { error, data } = await nile.invoke({
+```ts
+const result = await nile.invoke({
   service: "projects",
   action: "create",
   payload: { name: "Customer portal" },
 });
+
+if (result.isErr) {
+  console.error(result.error);
+  return;
+}
+
+console.log(result.value);
 ```
 
-The [frontend client](/guide/basics/client) maps the envelope to `{ error, data }` and can check input types from a service/action map.
+The [frontend client](/guide/basics/client) maps the envelope to a Result: `isErr` is true for a failed envelope, and `value` holds the action's data on success.
 
 `explore` lists operation metadata and `schema` converts supported input schemas to JSON Schema. Both are disabled unless discovery is configured. See [discovery and agent integrations](/guide/basics/discovery-and-agents) before exposing them.
 

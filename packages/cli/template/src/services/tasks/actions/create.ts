@@ -1,4 +1,4 @@
-import { type Action, createAction } from "@nilejs/nile";
+import { createAction } from "@nilejs/nile";
 import { Err, Ok } from "slang-ts";
 import z from "zod";
 import { taskModel } from "@/db/models";
@@ -12,23 +12,27 @@ const createTaskSchema = z.object({
     .default("pending"),
 });
 
-const createTaskHandler = async (data: Record<string, unknown>) => {
+type CreateTaskInput = z.infer<typeof createTaskSchema>;
+
+const createTaskHandler = async (input: CreateTaskInput) => {
   const result = await taskModel.create({
     data: {
-      title: data.title as string,
-      description: (data.description as string) ?? "",
-      status: (data.status as "pending" | "in-progress" | "done") ?? "pending",
+      title: input.title,
+      description: input.description,
+      status: input.status,
     },
   });
+
   if (result.isErr) {
     return Err(result.error);
   }
+
   return Ok({ task: result.value });
 };
 
-export const createTaskAction: Action = createAction({
+export const createTaskAction = createAction<CreateTaskInput>({
   name: "create",
   description: "Create a new task",
-  handler: createTaskHandler,
   validation: createTaskSchema,
+  handler: createTaskHandler,
 });

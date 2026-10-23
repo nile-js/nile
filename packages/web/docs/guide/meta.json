@@ -1,0 +1,14 @@
+{
+  "title": "Nile guide",
+  "pages": [
+    "index",
+    "start",
+    "features",
+    "basics",
+    "advanced",
+    "examples",
+    "agents",
+    "internals",
+    "reference"
+  ]
+}

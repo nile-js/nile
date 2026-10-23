@@ -1,29 +1,40 @@
 {
-  "name": "nile-docs",
-  "description": "TypeScript-first, service and actions oriented backend framework",
-  "version": "0.0.6",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "build": "bun run scripts/generate-home-code.ts && rspress build",
-    "postbuild": "cp doc_build/llms.txt doc_build/llms-full.txt docs/public/",
-    "check": "biome check --write",
-    "dev": "bun run scripts/generate-home-code.ts && rspress dev",
-    "format": "biome format --write",
-    "preview": "rspress preview"
-  },
-  "dependencies": {
-    "@rspress/core": "^2.0.2",
-    "react-icons": "^5.5.0",
-    "shiki": "^3.23.0"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "2.3.8",
-    "@rspress/plugin-llms": "^2.0.3",
-    "@types/node": "^22.8.1",
-    "@types/react": "^19.2.13",
-    "@types/react-dom": "^19.2.3",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4"
-  }
+	"name": "nile-docs",
+	"description": "TypeScript-first, service and actions oriented backend framework",
+	"version": "0.0.6",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "react-router dev",
+		"build": "bun run docs:check && bun run scripts/generate-home-code.ts && react-router build && bun run scripts/finalize-build.ts",
+		"preview": "bun run scripts/preview.ts",
+		"lint": "biome check .",
+		"format": "biome format --write .",
+		"types:check": "react-router typegen && tsc --noEmit",
+		"docs:check": "bun run scripts/check-docs.ts"
+	},
+	"dependencies": {
+		"fumadocs-core": "16.17.7",
+		"fumadocs-mdx": "15.4.9",
+		"fumadocs-ui": "16.17.7",
+		"lucide-react": "^1.6.0",
+		"react": "^19.2.4",
+		"react-dom": "^19.2.4",
+		"react-router": "7.13.2",
+		"shiki": "^3.23.0",
+		"@react-router/node": "7.13.2",
+		"isbot": "^5"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.3.8",
+		"@react-router/dev": "7.13.2",
+		"@tailwindcss/vite": "4.2.2",
+		"@types/mdx": "^2.0.13",
+		"@types/node": "^25.5.0",
+		"@types/react": "^19.2.14",
+		"@types/react-dom": "^19.2.3",
+		"tailwindcss": "4.2.2",
+		"typescript": "^7.0.2",
+		"vite": "8.0.2"
+	}
 }

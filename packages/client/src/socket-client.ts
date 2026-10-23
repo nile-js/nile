@@ -7,9 +7,15 @@ import type {
   SocketTopics,
   TopicShape,
 } from "./socket-types.js";
+import { clientErr, clientOk } from "./result.js";
 import type { ClientResult } from "./types.js";
 
 type WireValue = object | string | number | boolean | null | undefined;
+/** Acknowledgements keep the server's `{ error, data }` wire shape; the client turns them into Results. */
+interface WireResult {
+  error: string | null;
+  data: unknown;
+}
 interface Listener {
   topic: string;
   scope?: WireValue;
@@ -32,7 +38,7 @@ export function createNileSocketClient<
   let closed = false;
   const listeners = new Set<Listener>();
   const pending = new Set<() => void>();
-  const fail = <T>(error: string): ClientResult<T> => ({ error, data: null });
+  const fail = (error: string) => clientErr(error);
   const settleCallback = (fn: () => void) => {
     Promise.resolve()
       .then(fn)
@@ -43,10 +49,10 @@ export function createNileSocketClient<
     input: WireValue
   ): Promise<ClientResult<T>> => {
     const connected = await connect();
-    if (!connected.data) {
-      return fail(connected.error ?? "Socket unavailable");
+    if (connected.isErr) {
+      return fail(connected.error);
     }
-    const current = connected.data;
+    const current = connected.value;
     if (!current.connected || closed) {
       return fail("Socket disconnected");
     }
@@ -68,7 +74,7 @@ export function createNileSocketClient<
       );
       pending.add(cancel);
       // The connection check and emit are synchronous; disconnected calls never enter the offline queue.
-      current.emit(event, input, (result: ClientResult<T>) => {
+      current.emit(event, input, (result: WireResult) => {
         if (
           !result ||
           typeof result !== "object" ||
@@ -78,7 +84,12 @@ export function createNileSocketClient<
           finish(fail("Invalid socket response"));
           return;
         }
-        finish(result);
+        if (typeof result.error === "string") {
+          finish(clientErr(result.error, result.data));
+          return;
+        }
+        // The server validated this acknowledgement for the requested event.
+        finish(clientOk(result.data as T));
       });
     });
   };
@@ -91,17 +102,17 @@ export function createNileSocketClient<
         topic: listener.topic,
         scope: listener.scope,
       });
-      if (!result.error) {
-        listener.normalizedScope = result.data?.scope;
+      if (result.isOk) {
+        listener.normalizedScope = result.value?.scope;
+        continue;
       }
-      if (result.error) {
-        settleCallback(() =>
-          config.onSubscriptionError?.({
-            topic: listener.topic,
-            error: result.error ?? "Subscription failed",
-          })
-        );
-      }
+      const message = result.error;
+      settleCallback(() =>
+        config.onSubscriptionError?.({
+          topic: listener.topic,
+          error: message,
+        })
+      );
     }
   };
   const connect = (): Promise<ClientResult<Socket>> => {
@@ -109,7 +120,7 @@ export function createNileSocketClient<
       return Promise.resolve(fail("Socket client is closed"));
     }
     if (socket?.connected) {
-      return Promise.resolve({ error: null, data: socket });
+      return Promise.resolve(clientOk(socket));
     }
     if (connecting) {
       return connecting;
@@ -166,7 +177,7 @@ export function createNileSocketClient<
               pending.delete(cancel);
               resolve(result);
             };
-            const ready = () => finish({ error: null, data: current });
+            const ready = () => finish(clientOk(current));
             const failed = () => finish(fail("Socket connection failed"));
             const cancel = () => finish(fail("Socket client closed"));
             const timer = setTimeout(
@@ -179,7 +190,7 @@ export function createNileSocketClient<
             current.connect();
           })
       )
-      .catch(() => fail<Socket>("Could not initialize socket client"))
+      .catch(() => fail("Could not initialize socket client"))
       .finally(() => {
         connecting = undefined;
       });
@@ -200,15 +211,13 @@ export function createNileSocketClient<
         "nile:receive",
         { topic: input.topic, scope: input.scope }
       );
-      if (result.error) {
+      if (result.isErr) {
         listeners.delete(listener);
         return fail(result.error);
       }
-      listener.normalizedScope = result.data?.scope;
-      return {
-        error: null,
-        data: {
-          unsubscribe: () => {
+      listener.normalizedScope = result.value?.scope;
+      return clientOk({
+        unsubscribe: () => {
             listener.active = false;
             listeners.delete(listener);
             const shared = [...listeners].some(
@@ -216,19 +225,15 @@ export function createNileSocketClient<
                 item.topic === listener.topic &&
                 stableScope(item.scope) === stableScope(listener.scope)
             );
-            if (shared || closed) {
-              return Promise.resolve({
-                error: null,
-                data: { subscribed: shared },
-              });
-            }
-            return request("nile:unsubscribe", {
-              topic: listener.topic,
-              scope: listener.scope,
-            });
-          },
+          if (shared || closed) {
+            return Promise.resolve(clientOk({ subscribed: shared }));
+          }
+          return request("nile:unsubscribe", {
+            topic: listener.topic,
+            scope: listener.scope,
+          });
         },
-      };
+      });
     },
     close() {
       closed = true;

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" preserveAspectRatio="none">
+  <defs>
+    <linearGradient id="shade" x1="0" y1="0" x2="1" y2="0">
+      <stop stop-color="#06101a" stop-opacity=".92"/>
+      <stop offset=".42" stop-color="#06101a" stop-opacity=".72"/>
+      <stop offset=".7" stop-color="#06101a" stop-opacity=".3"/>
+      <stop offset="1" stop-color="#06101a" stop-opacity=".18"/>
+    </linearGradient>
+    <linearGradient id="depth" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#06101a" stop-opacity=".45"/>
+      <stop offset=".22" stop-color="#06101a" stop-opacity="0"/>
+      <stop offset=".7" stop-color="#06101a" stop-opacity=".1"/>
+      <stop offset="1" stop-color="#06101a" stop-opacity=".5"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="900" cy="330" r="380" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#38bdf8" stop-opacity=".22"/>
+      <stop offset="1" stop-color="#38bdf8" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <path fill="url(#shade)" d="M0 0h1200v700H0z"/>
+  <path fill="url(#depth)" d="M0 0h1200v700H0z"/>
+  <path fill="url(#glow)" d="M0 0h1200v700H0z"/>
+</svg>

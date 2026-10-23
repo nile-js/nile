@@ -1,10 +1,13 @@
-# A measured shopping workflow
+---
+title: "Performance and methodology"
+description: "Read the recorded shopping-workflow results and reproduce the comparison"
+---
 
 A growing backend needs to do more than return hello world. This comparison runs an authenticated ecommerce workflow across 300 business operations: 50 shops with catalog, product, cart, quote, checkout and order operations.
 
 The results below describe one recorded workload on an actively used PC. They are not maximum-throughput measurements or a universal ranking of frameworks. Choose an application structure your team can maintain, and measure your own workload before making capacity decisions.
 
-!<a href="/nile/benchmarks/benchmark-validated.svg">Six-round ecommerce throughput averages with shared Zod payload validation enabled.</a>
+[Chart: six-round ecommerce throughput averages with shared Zod payload validation enabled](/benchmarks/benchmark-validated.svg)
 
 ## Recorded results
 
@@ -23,7 +26,7 @@ All six samples per selected framework and validation mode are retained. The tab
 | tRPC | 1,295 | 680–1,518 | 22.4% |
 | Encore | 668 | 635–680 | 2.3% |
 
-<a href="/nile/benchmarks/benchmark-no-payload-validation.svg">Payload validation off chart</a> · <a href="/nile/benchmarks/results.json">Raw measurements</a> · <a href="/nile/benchmarks/rankings.json">Derived rankings and ratios</a>
+[Payload validation off chart](/benchmarks/benchmark-no-payload-validation.svg) · [Raw measurements](/benchmarks/results.json) · [Derived rankings and ratios](/benchmarks/rankings.json)
 
 ## What happened
 
@@ -56,7 +59,7 @@ The [benchmark README and setup script](https://github.com/nile-js/nile/tree/mai
 
 From the repository root:
 
-```bash
+```sh
 bun packages/benchmarks/suite/setup.mjs
 bun packages/benchmarks/suite/setup.mjs --check
 NODE_ENV=production bun packages/benchmarks/suite/ecommerce/full/run.mjs --smoke
@@ -69,6 +72,6 @@ Generate rankings and charts using the commands in the benchmark README. Ranking
 
 ## Compared with the published package
 
-A separate <a href="/nile/benchmarks/npm-comparison.json">three-round comparison against npm 0.0.17</a> measured the current native build at about 1.25 times the published package's throughput without payload validation, and 1.31 times with validation. Both ran on Bun, using whole installed packages and their resolved dependencies. This is an observation on this PC, not a tenfold improvement or a code-only measurement.
+A separate [three-round comparison against npm 0.0.17](/benchmarks/npm-comparison.json) measured the current native build at about 1.25 times the published package's throughput without payload validation, and 1.31 times with validation. Both ran on Bun, using whole installed packages and their resolved dependencies. This is an observation on this PC, not a tenfold improvement or a code-only measurement.
 
 Performance supports the development workflow; it does not replace application design, database planning or production load testing. Continue with [application structure](/guide/start/application-structure) to see how growing business operations stay navigable.

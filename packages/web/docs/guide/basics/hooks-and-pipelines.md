@@ -1,4 +1,7 @@
-# Reuse a policy across operations
+---
+title: "Hooks and pipelines"
+description: "Compose shared policies and action-specific work in a defined execution order"
+---
 
 When several actions need the same check or transformation, put it in a recognizable pipeline step. That keeps the next operation small and makes the shared rule easier to review.
 
@@ -20,7 +23,7 @@ A before hook sees input **before validation**. Check the values it uses; do not
 
 This server-configuration fragment rejects a protected action without a session:
 
-```typescript
+```ts
 import { Err, Ok } from "slang-ts";
 
 const onBeforeActionHandler = ({ nileContext, action, payload }) => {
@@ -39,7 +42,7 @@ The global after hook receives `{ nileContext, action, payload, result }`. Its R
 
 Local hooks reference registered actions:
 
-```typescript
+```ts
 hooks: {
   before: [
     { service: "policies", action: "prepare-project", isCritical: true },

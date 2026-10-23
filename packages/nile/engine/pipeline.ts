@@ -1,5 +1,6 @@
 import { Err, Ok, type Result, safeTry } from "slang-ts";
 import { prettifyError } from "zod";
+import { getRequestStore } from "@/nile/request-scope";
 import type {
   AfterActionHandler,
   BeforeActionHandler,
@@ -166,6 +167,14 @@ export function validatePayload(
     const validationError = prettifyError(parseResult.error);
     log(`Validation failed for ${action.name}`, validationError);
     nileContext.setHookError(validationError);
+    // Transports that opted in return these per-field issues alongside the message.
+    const failure = getRequestStore()?.failure;
+    if (failure) {
+      failure.validationIssues = parseResult.error.issues.map((issue) => ({
+        path: issue.path.map(String).join("."),
+        message: issue.message,
+      }));
+    }
     return Err(`Validation failed: ${validationError}`);
   }
 

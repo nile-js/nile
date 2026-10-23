@@ -1,25 +1,39 @@
-# Make ordinary failure paths easy to follow
+---
+title: "Errors and Results"
+description: "Return expected failures and guard operations with Slang Results"
+---
 
 A team should be able to see how an operation can fail beside its business logic. Nile handlers return `Ok(data)` or `Err(message)` from `slang-ts`, so expected failures become explicit branches.
 
-```typescript
+```ts
 import { createAction } from "@nilejs/nile";
 import { Err, Ok } from "slang-ts";
 import { z } from "zod";
 
-const schema = z.object({ name: z.string().trim().min(1) });
-type CreateProjectInput = z.infer<typeof schema>;
+const createProjectSchema = z.object({
+  name: z.string().trim().min(1),
+});
+
+type CreateProjectInput = z.infer<typeof createProjectSchema>;
+
+const createProjectHandler = (input: CreateProjectInput) => {
+  if (input.name.toLowerCase() === "system") {
+    return Err("Choose a different project name");
+  }
+
+  const project = {
+    id: crypto.randomUUID(),
+    name: input.name,
+  };
+
+  return Ok({ project: project });
+};
 
 export const createProject = createAction<CreateProjectInput>({
   name: "create",
   description: "Create a project",
-  validation: schema,
-  handler: (input) => {
-    if (input.name.toLowerCase() === "system") {
-      return Err("Choose a different project name");
-    }
-    return Ok({ project: { id: crypto.randomUUID(), name: input.name } });
-  },
+  validation: createProjectSchema,
+  handler: createProjectHandler,
 });
 ```
 
@@ -29,7 +43,7 @@ The schema checks the input shape before the handler. The guard expresses an app
 
 Use `safeTry` around an external call or application function that can reject or throw. Inspect the Result, log useful internal context, and return an appropriate message to the caller.
 
-```typescript
+```ts
 import { Err, Ok, safeTry } from "slang-ts";
 
 const saved = await safeTry(() => saveProject(input));
@@ -52,7 +66,7 @@ This handler fragment uses your application's `saveProject` function. Current `s
 |---|---|---|
 | Handler | `Ok({ project })`, inspect with `isOk` / `value` | `Err(message)`, inspect with `isErr` / `error` |
 | HTTP | `{ status: true, message, data }` | `{ status: false, message, data: {} }` for engine failures |
-| Frontend client | `{ error: null, data }` | `{ error: message, data }`; data may be null or server error details |
+| Frontend client | `{ isOk: true, isErr: false, value, error: null }` | `{ isOk: false, isErr: true, value: null, error: message, details }`; `details` holds any data the server attached |
 
 Object handler values become HTTP `data` directly. Primitive, array or null values are wrapped as `{ result: value }`. Returning `{ project }` makes a frontend operation's shape explicit.
 

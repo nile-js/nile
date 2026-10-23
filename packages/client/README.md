@@ -1,12 +1,12 @@
 # @nilejs/client
 
-A standalone, type-safe client for the [Nile](https://github.com/nile-js/nile) backend framework.
+A type-safe frontend client for [Nile Js](https://nile-js.github.io/nile/) backends.
 
 ## Features
 
 - **Type-safe:** Generates and consumes types from your Nile backend for full compile-time payload validation.
-- **Graceful Error Handling:** Uses the result pattern `{ error, data }` instead of throwing exceptions.
-- **Zero Runtime Dependencies:** Built on raw `fetch` for maximum compatibility (uses `slang-ts` for safety).
+- **Graceful Error Handling:** Returns the same Result pattern as the Nile Js backend (`isOk`, `isErr`, `value`, `error`) instead of throwing exceptions.
+- **Small:** HTTP calls use the platform `fetch`. The only runtime dependency is `socket.io-client`, for the socket client.
 - **Flexible:** Supports custom headers, credentials, and timeouts per request.
 
 ## Installation
@@ -38,16 +38,16 @@ const nile = createNileClient({
 ### 2. Invoke Actions
 
 ```typescript
-const { error, data } = await nile.invoke({
+const result = await nile.invoke({
   service: "tasks",
   action: "create",
   payload: { title: "Buy milk" },
 });
 
-if (error) {
-  console.error("Action failed:", error);
+if (result.isErr) {
+  console.error("Action failed:", result.error);
 } else {
-  console.log("Success:", data);
+  console.log("Success:", result.value);
 }
 ```
 
@@ -78,10 +78,18 @@ await nile.invoke({
 
 ```typescript
 // Explore services and actions
-const { data: services } = await nile.explore({ service: "*", action: "*" });
+const services = await nile.explore({ service: "*", action: "*" });
+
+if (services.isOk) {
+  console.log(services.value);
+}
 
 // Fetch action schemas
-const { data: schemas } = await nile.schema({ service: "tasks", action: "*" });
+const schemas = await nile.schema({ service: "tasks", action: "*" });
+
+if (schemas.isOk) {
+  console.log(schemas.value);
+}
 ```
 
 ## API
@@ -97,7 +105,12 @@ Returns a Nile client instance.
 
 ### Methods
 
-All methods return a `Promise<ClientResult<T>>` where `ClientResult<T>` is `{ error: string | null, data: T | null }`.
+All methods return a `Promise<ClientResult<T>>`. Calls never throw:
+
+- Success: `{ isOk: true, isErr: false, value: T, error: null }`
+- Failure: `{ isOk: false, isErr: true, value: null, error: string, details }`, where `details` holds any data the server attached, such as validation issues. Network failures and timeouts arrive as failures too.
+
+Check `isErr` first, then read `error` or `value`. The older `data` field is still present as a deprecated alias (the value on success, `null` on failure) so existing code keeps working.
 
 - `invoke(params)`: Execute a specific service action.
 - `explore(params)`: Discover services/actions using wildcards.

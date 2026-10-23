@@ -83,53 +83,48 @@ for (const native of [false, true]) {
       { method: undefined, headerName: undefined },
       { method: "header" as const, headerName: undefined },
       { method: "header" as const, headerName: "x-session" },
-    ])(
-      "does not read cookies for header authentication %j",
-      async (options) => {
-        const fixture = await setup(native, { secret: SECRET, ...options });
-        const request = createRequest({
-          [options.headerName ?? "authorization"]:
-            `Bearer ${await createToken()}`,
-          cookie: "auth_token=invalid; unrelated=%broken",
-        });
-        const readHeader = vi.spyOn(request.headers, "get");
-        const response = await fixture.fetch(request);
-        expect(response.status).toBe(200);
-        expect(await response.json()).toMatchObject({
-          data: { userId: "buyer-1", organizationId: "store-1", role: "buyer" },
-        });
-        expect(fixture.events).toEqual(["before:buyer-1", "handler"]);
-        expect(
-          readHeader.mock.calls.some(
-            ([name]) => name.toLowerCase() === "cookie"
-          )
-        ).toBe(false);
-      }
-    );
+    ])("does not read cookies for header authentication %j", async (options) => {
+      const fixture = await setup(native, { secret: SECRET, ...options });
+      const request = createRequest({
+        [options.headerName ?? "authorization"]:
+          `Bearer ${await createToken()}`,
+        cookie: "auth_token=invalid; unrelated=%broken",
+      });
+      const readHeader = vi.spyOn(request.headers, "get");
+      const response = await fixture.fetch(request);
+      expect(response.status).toBe(200);
+      expect(await response.json()).toMatchObject({
+        data: { userId: "buyer-1", organizationId: "store-1", role: "buyer" },
+      });
+      expect(fixture.events).toEqual(["before:buyer-1", "handler"]);
+      expect(
+        readHeader.mock.calls.some(([name]) => name.toLowerCase() === "cookie")
+      ).toBe(false);
+    });
 
-    it.each([undefined, "custom_session"])(
-      "decodes the configured cookie %s and ignores a conflicting header",
-      async (cookieName) => {
-        const fixture = await setup(native, {
-          secret: SECRET,
-          method: "cookie",
-          cookieName,
-        });
-        const token = await createToken();
-        const encoded = `%${token.charCodeAt(0).toString(16)}${token.slice(1)}`;
-        const response = await fixture.fetch(
-          createRequest({
-            authorization: "Bearer invalid",
-            cookie: `unrelated=1; ${cookieName ?? "auth_token"}=${encoded}; trailing=2`,
-          })
-        );
-        expect(response.status).toBe(200);
-        expect(await response.json()).toMatchObject({
-          data: { userId: "buyer-1", organizationId: "store-1" },
-        });
-        expect(fixture.events).toEqual(["before:buyer-1", "handler"]);
-      }
-    );
+    it.each([
+      undefined,
+      "custom_session",
+    ])("decodes the configured cookie %s and ignores a conflicting header", async (cookieName) => {
+      const fixture = await setup(native, {
+        secret: SECRET,
+        method: "cookie",
+        cookieName,
+      });
+      const token = await createToken();
+      const encoded = `%${token.charCodeAt(0).toString(16)}${token.slice(1)}`;
+      const response = await fixture.fetch(
+        createRequest({
+          authorization: "Bearer invalid",
+          cookie: `unrelated=1; ${cookieName ?? "auth_token"}=${encoded}; trailing=2`,
+        })
+      );
+      expect(response.status).toBe(200);
+      expect(await response.json()).toMatchObject({
+        data: { userId: "buyer-1", organizationId: "store-1" },
+      });
+      expect(fixture.events).toEqual(["before:buyer-1", "handler"]);
+    });
 
     it("rejects missing/invalid cookies without falling back to valid header credentials", async () => {
       const fixture = await setup(native, { secret: SECRET, method: "cookie" });

@@ -1,0 +1,23 @@
+---
+title: "Examples"
+description: "Build complete Nile Js features step by step, with every file, the exact commands and the output you should see"
+---
+
+Each example starts from the starter project, adds one feature and runs it. Every file is shown in full, so you can copy the result, and each step ends with output you can compare against. The commands assume Bun 1.4.2 or later and a terminal in the project folder.
+
+| Example | What you build | Features used |
+| --- | --- | --- |
+| [Tasks API in React](/guide/examples/tasks-react) | A task list and form in a React component that calls the API through `@nilejs/client` | Actions, client Results, CORS |
+| [Protected profile](/guide/examples/protected-profile) | A JWT-protected profile action and a role-checked audit action | JWT, `accessControl`, global before hook |
+| [File upload](/guide/examples/file-upload) | A document action that accepts a file with size and type limits | Uploads, structured payload, client `upload` |
+| [Realtime order updates](/guide/examples/realtime-orders) | Typed order topics, a protected status action and a socket client | Topics, WebSocket policies, socket client |
+| [Weekly report](/guide/examples/weekly-report) | A Monday morning report built by a cron job and delivered through a queue | Cron jobs, queues, lifecycle |
+| [Rate-limited quote](/guide/examples/rate-limited-quote) | A public price action that allows a short burst per client | Rate limiting |
+
+## Before you start
+
+1. Install Bun 1.4.2 or later and check `bun --version`.
+2. Create the starter project with `bunx @nilejs/cli new my-app`, then `cd my-app` and `bun install`.
+3. Keep one terminal running `bun run dev` while you call the server from a second terminal.
+
+Each example says which files to create or replace. Files that are not mentioned stay as the starter generated them. Stop a running server with Ctrl+C before you run a script that starts its own server on port 8000.

@@ -1,10 +1,13 @@
-# Receive files through an action
+---
+title: "File uploads"
+description: "Receive and validate multipart files through an action"
+---
 
 Multipart uploads use the same `POST /api/services` endpoint as JSON operations. Nile parses fields and files and applies configured file limits; the action decides what the upload means and where it is stored.
 
 ## Set the limits your application needs
 
-```typescript
+```ts
 rest: {
   baseUrl: "/api",
   allowedOrigins: ["https://app.example.com"],
@@ -29,21 +32,35 @@ Limits cover file count, per-file and total size, filename length, and allowed M
 
 ## Receive a structured payload
 
-```typescript
-import { createAction, type StructuredPayload } from "@nilejs/nile";
+```ts
+import { createAction } from "@nilejs/nile";
+import type { StructuredPayload } from "@nilejs/nile";
 import { Err, Ok } from "slang-ts";
+
+const inspectDocumentHandler = (payload: StructuredPayload) => {
+  const document = payload.files.document;
+  const title = payload.fields.title;
+
+  if (!(document instanceof File)) {
+    return Err("Send one document");
+  }
+
+  if (typeof title !== "string") {
+    return Err("A title is required");
+  }
+
+  return Ok({
+    title: title,
+    filename: document.name,
+    size: document.size,
+  });
+};
 
 export const inspectDocument = createAction<StructuredPayload>({
   name: "inspect",
   description: "Inspect an uploaded document",
   isSpecial: { contentType: "multipart/form-data" },
-  handler: ({ fields, files }) => {
-    const document = files.document;
-    if (!(document instanceof File)) return Err("Send one document");
-    const title = fields.title;
-    if (typeof title !== "string") return Err("A title is required");
-    return Ok({ title, filename: document.name, size: document.size });
-  },
+  handler: inspectDocumentHandler,
 });
 ```
 
@@ -53,21 +70,27 @@ If supplying an action Zod schema, describe the **structured payload**, not the 
 
 ## Send from the frontend
 
-```typescript
+```ts
 const result = await nile.upload({
   service: "documents",
   action: "inspect",
   files: { document: selectedFile },
   fields: { title: "Project brief" },
 });
-if (result.error) console.error(result.error);
+
+if (result.isErr) {
+  console.error(result.error);
+  return;
+}
+
+console.log(result.value);
 ```
 
 Here `nile` is a [configured client](/guide/basics/client) and `selectedFile` is the File chosen by the user. The client creates FormData with the routing fields. Do not manually set a multipart Content-Type header; Fetch supplies its boundary.
 
 For a direct request:
 
-```bash
+```sh
 curl http://localhost:8000/api/services \
   -F 'intent=execute' -F 'service=documents' -F 'action=inspect' \
   -F 'title=Project brief' -F 'document=@./brief.pdf'

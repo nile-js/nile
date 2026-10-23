@@ -1,0 +1,12 @@
+{
+  "title": "Examples",
+  "pages": [
+    "index",
+    "tasks-react",
+    "protected-profile",
+    "file-upload",
+    "realtime-orders",
+    "weekly-report",
+    "rate-limited-quote"
+  ]
+}

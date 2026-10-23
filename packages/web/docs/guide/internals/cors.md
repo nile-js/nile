@@ -1,4 +1,7 @@
-# CORS
+---
+title: "CORS"
+description: "Choose allowed origins globally and for individual action routes"
+---
 
 CORS controls which browser origins may read responses. Configure it once for the application, then override it only where an operation needs a different policy. It does not prevent non-browser callers from invoking an action and must not replace authorization.
 
@@ -6,7 +9,7 @@ CORS controls which browser origins may read responses. Configure it once for th
 
 For either HTTP adapter, place CORS settings under `rest`:
 
-```typescript
+```ts
 rest: {
   baseUrl: "/api",
   allowedOrigins: ["https://office.example.com"],
@@ -26,15 +29,19 @@ Use explicit trusted origins when credentials are involved. Disabling CORS with 
 
 Static action policies work with both adapters:
 
-```typescript
+```ts
 import { createAction } from "@nilejs/nile";
 import { Ok } from "slang-ts";
+
+const readReportHandler = () => {
+  return Ok({ available: true });
+};
 
 const readReport = createAction({
   name: "read",
   description: "Read a report",
   cors: { origin: "https://office.example.com" },
-  handler: () => Ok({ available: true }),
+  handler: readReportHandler,
 });
 ```
 
@@ -44,7 +51,7 @@ Set `cors: false` on an action to omit its actual-response CORS headers. `cors: 
 
 Bun native callbacks receive `NativeRequestContext`. Define native-specific action policies through the server map:
 
-```typescript
+```ts
 rest: {
   baseUrl: "/api",
   allowedOrigins: ["https://office.example.com"],

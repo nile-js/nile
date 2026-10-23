@@ -1,10 +1,13 @@
-# Server setup
+---
+title: "Server"
+description: "Configure resources, interfaces, startup and registration statistics"
+---
 
 `createNileServer` registers your application, creates context and prepares the selected HTTP adapter. It does not start a network listener. This keeps application setup separate from deployment.
 
 ## Bun native
 
-```typescript
+```ts
 import { createNileServer } from "@nilejs/nile";
 import { services } from "./services";
 
@@ -21,12 +24,14 @@ const server = await createNileServer({
 });
 
 const native = server.nativeRest;
-if (!native) throw new Error("Native transport was not initialized");
+if (!native) {
+  throw new Error("Native transport was not initialized");
+}
 
 Bun.serve({ port: 3000, fetch: native.fetch });
 ```
 
-Bun native requires explicit `runtime: "bun"`. Existing applications that omit `native` retain Hono on Bun or Node. Its handler is `server.rest.app.fetch`; see [runtime adapters](/guide/start/runtime-adapters) for listeners and migration differences.
+Bun native requires explicit `runtime: "bun"`. Pass `server.nativeRest.fetch` to `Bun.serve`, as above. Applications that omit `native` use the Hono handler, `server.rest.app.fetch`, instead. See [runtime adapters](/guide/start/runtime-adapters) for listeners and migration differences.
 
 ## Shared resources
 
@@ -44,7 +49,7 @@ Nile reuses its existing instance unless `forceNewInstance: true` is set. Use th
 
 Nile prints service/action registration statistics by default. Disable that output with `logServices: false` and inspect the same startup measurements yourself:
 
-```typescript
+```ts
 console.log(server.stats());
 ```
 

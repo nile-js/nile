@@ -1,22 +1,35 @@
-# Give each operation a clear boundary
+---
+title: "Actions"
+description: "Define an operation with input validation, access rules and a Result"
+---
 
 An action is a named business operation. Keep its description, input schema and handler together so a teammate can understand what it accepts and how it finishes without tracing a chain of route definitions.
 
-```typescript
+```ts
 import { createAction } from "@nilejs/nile";
 import { Ok } from "slang-ts";
 import { z } from "zod";
 
-const createProjectSchema = z.object({ name: z.string().trim().min(1) });
+const createProjectSchema = z.object({
+  name: z.string().trim().min(1),
+});
+
 type CreateProjectInput = z.infer<typeof createProjectSchema>;
+
+const createProjectHandler = (input: CreateProjectInput) => {
+  const project = {
+    id: crypto.randomUUID(),
+    name: input.name,
+  };
+
+  return Ok({ project: project });
+};
 
 export const createProject = createAction<CreateProjectInput>({
   name: "create",
   description: "Create a team project",
   validation: createProjectSchema,
-  handler: (input) => Ok({
-    project: { id: crypto.randomUUID(), name: input.name },
-  }),
+  handler: createProjectHandler,
 });
 ```
 

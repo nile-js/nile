@@ -1,0 +1,240 @@
+@import "tailwindcss";
+@import "fumadocs-ui/css/neutral.css";
+@import "fumadocs-ui/css/preset.css";
+
+@source "../node_modules/fumadocs-ui/dist/**/*.js";
+@source "../components/**/*.tsx";
+@source "./**/*.tsx";
+
+@font-face {
+	font-family: "Nile Sans";
+	src: url("./fonts/FiraSans-Regular.woff2") format("woff2");
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+}
+@font-face {
+	font-family: "Nile Sans";
+	src: url("./fonts/FiraSans-SemiBold.woff2") format("woff2");
+	font-style: normal;
+	font-weight: 500 800;
+	font-display: swap;
+}
+@font-face {
+	font-family: "Nile Mono";
+	src: url("./fonts/FiraMono-Regular.woff2") format("woff2");
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+}
+
+@theme {
+	--font-sans: "Nile Sans", sans-serif;
+	--font-mono: "Nile Mono", monospace;
+}
+
+:root,
+.dark {
+	--color-fd-background: #0c1118;
+	--color-fd-foreground: #e6edf5;
+	--color-fd-muted: #131c27;
+	--color-fd-muted-foreground: #a0afbf;
+	--color-fd-card: #101923;
+	--color-fd-card-foreground: #e6edf5;
+	--color-fd-popover: #111a25;
+	--color-fd-popover-foreground: #e6edf5;
+	--color-fd-secondary: #182331;
+	--color-fd-secondary-foreground: #bccad7;
+	--color-fd-primary: #38bdf8;
+	--color-fd-primary-foreground: #082334;
+	--color-fd-accent: #122c3c;
+	--color-fd-accent-foreground: #7dd3fc;
+	--color-fd-border: #24313f;
+	--nile-brand-color: #38bdf8;
+	--nile-brand-tint: #38bdf812;
+	color-scheme: dark;
+}
+/* Balanced line breaks for all prose across the site; code keeps its own layout. */
+:where(
+		h1,
+		h2,
+		h3,
+		h4,
+		h5,
+		h6,
+		p,
+		li,
+		dt,
+		dd,
+		blockquote,
+		figcaption,
+		caption,
+		label,
+		summary,
+		th,
+		td
+	) {
+	text-wrap: balance;
+}
+
+/* Custom scrollbars: thin, dark track, river-blue thumb. */
+:root {
+	--nile-scrollbar-thumb: #24394d;
+	--nile-scrollbar-thumb-hover: #38bdf8;
+	--nile-scrollbar-track: #0a0f15;
+	scrollbar-color: var(--nile-scrollbar-thumb) var(--nile-scrollbar-track);
+}
+* {
+	scrollbar-width: thin;
+}
+:where(pre, code, nav, aside, [data-radix-scroll-area-viewport]) {
+	scrollbar-color: var(--nile-scrollbar-thumb) transparent;
+}
+::-webkit-scrollbar {
+	width: 10px;
+	height: 10px;
+}
+::-webkit-scrollbar-track {
+	background: var(--nile-scrollbar-track);
+}
+::-webkit-scrollbar-thumb {
+	border: 2px solid transparent;
+	border-radius: 2px;
+	background: var(--nile-scrollbar-thumb) padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+	background-color: var(--nile-scrollbar-thumb-hover);
+}
+::-webkit-scrollbar-corner {
+	background: transparent;
+}
+
+body {
+	font-family: var(--font-sans);
+	-webkit-font-smoothing: antialiased;
+	text-rendering: optimizeLegibility;
+}
+::selection {
+	background: #38bdf840;
+}
+.nile-brand {
+	display: inline-flex;
+	align-items: center;
+	gap: 9px;
+	font-size: 24px;
+	font-weight: 750;
+	letter-spacing: -0.055em;
+}
+.nile-brand img {
+	border-radius: 50%;
+	flex-shrink: 0;
+}
+#nd-nav {
+	background: var(--color-fd-background);
+	border-bottom: 1px solid var(--color-fd-border);
+}
+#nd-nav nav {
+	max-width: 1320px;
+	margin: auto;
+}
+#nd-sidebar {
+	background: var(--color-fd-background);
+}
+#nd-page h1 {
+	font-size: clamp(2rem, 3vw, 2.75rem);
+	font-weight: 750;
+	letter-spacing: -0.05em;
+	text-wrap: balance;
+}
+#nd-page h2 {
+	letter-spacing: -0.03em;
+	font-weight: 700;
+}
+#nd-page h3 {
+	letter-spacing: -0.015em;
+}
+#nd-page p,
+#nd-page li {
+	line-height: 1.85;
+}
+#nd-page pre {
+	font-size: 0.8rem;
+}
+#nd-page .prose {
+	max-width: 74ch;
+}
+#nd-page .prose a {
+	text-underline-offset: 4px;
+}
+.nile-doc-tools {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 14px;
+	margin: 22px 0 32px;
+	padding-bottom: 22px;
+	border-bottom: 1px solid var(--color-fd-border);
+	font-size: 12px;
+	color: var(--color-fd-muted-foreground);
+}
+.nile-doc-tools > a:hover {
+	color: var(--nile-brand-color);
+}
+.nile-skip-link {
+	position: fixed;
+	z-index: 100;
+	top: 12px;
+	left: 12px;
+	transform: translateY(-200%);
+	background: var(--color-fd-background);
+	color: var(--color-fd-foreground);
+	padding: 10px 18px;
+	border: 2px solid var(--color-fd-primary);
+	border-radius: 6px;
+}
+.nile-skip-link:focus {
+	transform: translateY(0);
+}
+.nile-not-found {
+	max-width: 680px;
+	margin: 15vh auto;
+	padding: 32px;
+}
+.nile-not-found h1 {
+	margin: 18px 0;
+	font-size: clamp(36px, 5vw, 56px);
+	letter-spacing: -0.05em;
+	font-weight: 700;
+}
+.nile-not-found p {
+	max-width: 48ch;
+	color: var(--color-fd-muted-foreground);
+	line-height: 1.8;
+}
+.nile-not-found > div {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 24px;
+	margin-top: 28px;
+}
+.nile-not-found a {
+	color: var(--color-fd-primary);
+}
+.nile-not-found-code {
+	font: 12px var(--font-mono);
+	color: var(--color-fd-muted-foreground);
+}
+a:focus-visible,
+button:focus-visible {
+	outline: 2px solid var(--color-fd-primary);
+	outline-offset: 4px;
+}
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		scroll-behavior: auto !important;
+		animation-duration: 0.01ms !important;
+		transition-duration: 0.01ms !important;
+	}
+}

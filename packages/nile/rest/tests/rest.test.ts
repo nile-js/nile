@@ -197,6 +197,31 @@ describe("REST Interface - Execute Intent", () => {
     expect(json.message).toContain("Validation failed");
   });
 
+  it("should return per-field issues for an invalid payload", async () => {
+    const { json } = await postServices(app, {
+      intent: "execute",
+      service: "users",
+      action: "createUser",
+      payload: { name: "Alice", email: "not-an-email" },
+    });
+
+    expect(json.data).toEqual({
+      issues: [{ path: "email", message: expect.any(String) }],
+    });
+  });
+
+  it("should keep data empty for failures that are not validation", async () => {
+    const { json } = await postServices(app, {
+      intent: "execute",
+      service: "users",
+      action: "missingAction",
+      payload: {},
+    });
+
+    expect(json.status).toBe(false);
+    expect(json.data).toEqual({});
+  });
+
   it("should reject wildcards in execute intent", async () => {
     const { status, json } = await postServices(app, {
       intent: "execute",

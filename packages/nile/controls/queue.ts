@@ -49,6 +49,12 @@ export function createQueue<Input, Output>({
     notify();
   };
 
+  const whenIdle = () => {
+    if (!(active.size || pending.length)) {
+      return Promise.resolve();
+    }
+    return new Promise<void>((resolve) => waiters.add(resolve));
+  };
   return {
     stop() {
       closed = true;
@@ -83,11 +89,7 @@ export function createQueue<Input, Output>({
       }
       notify();
     },
-    drain() {
-      if (!(active.size || pending.length)) {
-        return Promise.resolve();
-      }
-      return new Promise<void>((resolve) => waiters.add(resolve));
-    },
+    drain: whenIdle,
+    whenIdle,
   };
 }

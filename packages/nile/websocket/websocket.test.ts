@@ -110,8 +110,12 @@ describe("Socket.IO shared action and topic interface", () => {
           })
         )
       );
+      // Socket replies use the client's Result shape; `data` stays as the legacy alias.
       expect(replies).toEqual(
         [1, 2].map((value) => ({
+          isOk: true,
+          isErr: false,
+          value: { value, user: "one", transport: "ws" },
           error: null,
           data: { value, user: "one", transport: "ws" },
         }))

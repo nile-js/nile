@@ -11,6 +11,7 @@ export type {
   RateLimitStore,
   RateLimitStrategy,
 } from "./rate-limit-types";
+export * from "./retry";
 export { createThrottle } from "./throttle";
 export type {
   BatchOptions,

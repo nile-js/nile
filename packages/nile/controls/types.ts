@@ -11,6 +11,8 @@ export interface ControlCallOptions {
 }
 
 export interface ExecutionControl<Input, Output> {
+  /** Optional passive observation: unlike drain, this must never flush or change control timing. */
+  whenIdle?: () => Promise<void>;
   run: (
     input: Input,
     options?: ControlCallOptions

@@ -2,187 +2,112 @@
 
 [![NPM Version](https://img.shields.io/npm/v/@nilejs/cli.svg)](https://www.npmjs.com/package/@nilejs/cli)
 
-CLI for scaffolding and generating [Nile](https://github.com/nile-js/nile/tree/main/packages/nile) backend projects.
+Create [Nile Js](https://nile-js.github.io/nile/) projects and generate services, actions and schemas.
 
-## Install
-
-```bash
-bun add -g @nilejs/cli
-```
-
-```bash
-npm install -g @nilejs/cli
-```
-
-Or use without installing:
+## Create a project
 
 ```bash
 bunx @nilejs/cli new my-app
+cd my-app
+bun install
+cp .env.example .env
+bun run dev
 ```
+
+The server starts on `http://localhost:8000`. The starter stores its data in an embedded PGlite database, so there is no database server to install. The [getting started guide](https://nile-js.github.io/nile/guide/start/getting-started/) walks through the starter step by step.
+
+The starter includes:
+
+- `src/index.ts`: server entry point on Bun's native HTTP server, with a logger and an `onBoot` schema push
+- `src/db/`: PGlite and Drizzle client, the `tasks` table and a `taskModel` built with `createModel`
+- `src/services/`: a `tasks` service with create, list, get, update and delete actions
+- `Dockerfile`, `docker-compose.yml` and `docker-compose.dev.yml` for container deployments
+- `drizzle.config.ts`, `.env.example`, `tsconfig.json` and `package.json`
+
+## Generate code
+
+Run the generators from the project root. The starter's `gen` script calls the CLI for you.
+
+| Command | Description |
+|---|---|
+| `bun run gen service <name>` | Add a service with a sample action |
+| `bun run gen action <service> <name>` | Add an action to an existing service |
+| `bun run gen action <service> <name> --folder` | Add an action in its own folder, for private helper modules |
+| `bun run gen schema` | Generate Zod schemas and TypeScript types from your actions |
+
+`generate` also has the alias `gen`, so `bunx @nilejs/cli gen service users` works outside the starter.
+
+### Services
 
 ```bash
-npx @nilejs/cli new my-app
-```
-
-## Commands
-
-### `nile new <project-name>`
-
-Scaffold a new Nile project. Copies the project template, replaces placeholders with your project name, and prints next steps.
-
-```bash
-nile new my-app
-```
-
-Output:
-
-```
-Creating project: my-app
-
-  Copying project files...
-  Configuring project...
-  Project "my-app" created.
-
-Next steps:
-
-    cd my-app
-    bun install
-    cp .env.example .env
-    bun run dev
-```
-
-The scaffolded project includes:
-
-- `src/index.ts`, server entry with PGLite and Drizzle
-- `src/db/`, database client, schema, types, and a `tasks` model using `createModel`
-- `src/services/`, a `tasks` service with five CRUD actions
-- `drizzle.config.ts`, `.env.example`, `tsconfig.json`, `package.json`
-
-### `nile generate service <name>`
-
-Alias: `nile gen service <name>`
-
-Generate a new service directory under `src/services/` with a demo action and barrel export. Run this from the project root.
-
-```bash
-nile gen service users
+bun run gen service users
 ```
 
 Creates:
 
-```
+```text
 src/services/users/
-  sample.ts       # Demo action with Zod schema, handler, and createAction
-  index.ts        # Barrel export
+  actions/sample.ts   Sample action with a schema, an input type and a named handler
+  index.ts            Exports the sample action
 ```
 
-After creating the files, the CLI asks whether to auto-register the service in `src/services/services.config.ts`. If you accept, it adds the import and service entry. If you decline, it prints the snippet to add manually.
+The CLI then asks whether to register the service in `src/services/services.config.ts`. If you decline, it prints the lines to add yourself.
 
-### `nile generate action <service-name> <action-name>`
-
-Alias: `nile gen action <service-name> <action-name>`
-
-Generate a new action file in an existing service directory.
+### Actions
 
 ```bash
-nile gen action users get-user
+bun run gen action users get-user
 ```
 
-Creates `src/services/users/get-user.ts` with:
+Creates `src/services/users/actions/get-user.ts`:
 
-```typescript
-import { type Action, createAction } from "@nilejs/nile";
+```ts
+import { createAction } from "@nilejs/nile";
 import { Ok } from "slang-ts";
 import z from "zod";
 
 const getUserSchema = z.object({
-  // Define your validation schema here
+  // Describe the input this action accepts
 });
 
-const getUserHandler = async (data: Record<string, unknown>) => {
-  // Implement your users.get-user logic here
-  return Ok({ result: data });
+type GetUserInput = z.infer<typeof getUserSchema>;
+
+const getUserHandler = async (input: GetUserInput) => {
+  // Implement users.get-user here
+  return Ok({ result: input });
 };
 
-export const getUserAction: Action = createAction({
+export const getUserAction = createAction<GetUserInput>({
   name: "get-user",
   description: "GetUser action for users",
-  handler: getUserHandler,
   validation: getUserSchema,
+  handler: getUserHandler,
 });
 ```
 
-Kebab-case names are converted to camelCase for variables and PascalCase for types.
+Kebab-case names become camelCase variables and PascalCase types. Register the action by importing it in `src/services/services.config.ts` and adding it to the service's `actions` list.
 
-### `nile generate schema`
-
-Alias: `nile gen schema`
-
-Extract Zod validation schemas from your action definitions and generate TypeScript files with schema exports and inferred types.
+### Schemas and types
 
 ```bash
-nile gen schema
+bun run gen schema
 ```
 
-The command auto-detects `src/services/services.config.ts`. If the file is not found, it prompts for the path. It spawns a `bun` subprocess to import your services config, extracts JSON Schema from each action's validation field, and converts them back to Zod code strings.
+Reads every action's validation schema from `src/services/services.config.ts` and writes:
 
-Output (default `src/generated/`):
-
-- `schemas.ts` — named Zod schema exports (`tasksCreateSchema`, `tasksUpdateSchema`, etc.)
-- `types.ts` — TypeScript types via `z.infer` (`TasksCreatePayload`, `TasksUpdatePayload`, etc.)
-
-Options:
+- `src/generated/schemas.ts`: named Zod schemas, such as `tasksCreateSchema`
+- `src/generated/types.ts`: inferred types, such as `TasksCreatePayload`
 
 | Flag | Description |
 |---|---|
-| `-e, --entry <path>` | Path to services config (auto-detected by default) |
+| `-e, --entry <path>` | Path to the services config (detected by default) |
 | `-o, --output <path>` | Output directory (default: `src/generated`) |
 
-Actions without a `validation` schema are skipped and listed in the CLI output.
-
-Requires [Bun](https://bun.sh) installed for the extraction subprocess.
-
-### Quick Reference
-
-| Command | Description |
-|---|---|
-| `nile new <name>` | Scaffold a new project |
-| `nile gen service <name>` | Add a service with a demo action |
-| `nile gen action <service> <name>` | Add an action to an existing service |
-| `nile gen schema` | Generate Zod schemas and TypeScript types |
-
-## Generated Project Structure
-
-```
-my-app/
-  package.json
-  tsconfig.json
-  drizzle.config.ts
-  .env.example
-  src/
-    index.ts
-    db/
-      client.ts
-      schema.ts
-      types.ts
-      index.ts
-      models/
-        tasks.ts
-        index.ts
-    services/
-      services.config.ts
-      tasks/
-        create.ts
-        list.ts
-        get.ts
-        update.ts
-        delete.ts
-```
+Actions without a validation schema are skipped and listed in the output. Share the generated files with a frontend to validate forms with the same rules as the server.
 
 ## Requirements
 
-- Node.js 18+ or Bun
-- The scaffolded project uses Bun as its runtime (`Bun.serve`, `bun run`)
+- [Bun](https://bun.sh) 1.4.2 or later. The starter runs on Bun, and `gen schema` imports your services with Bun.
 
 ## License
 

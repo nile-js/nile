@@ -2,6 +2,22 @@ import { useState } from "react";
 import benchmark from "../../../benchmarks/reference/rankings.json";
 import { withBase } from "./links";
 
+const METHOD = [
+	{
+		term: "Workload",
+		detail:
+			"Up to 32 shoppers · 5,000 six-request journeys a sample · 6 rounds",
+	},
+	{
+		term: "Checks",
+		detail: "Responses and order counts verified · in-memory data, no database",
+	},
+	{
+		term: "Machine",
+		detail: "Intel Core i5-6300U · 4 logical CPUs · 15.5 GiB · October 2026",
+	},
+] as const;
+
 /** Display recorded means directly from the audited rankings; never synthesize throughput. */
 export function Performance() {
 	const [mode, setMode] = useState<"validated" | "plain">("validated");
@@ -13,21 +29,20 @@ export function Performance() {
 			id="performance"
 			aria-labelledby="performance-title"
 		>
-			<div className="nile-section-heading nile-wide-heading">
+			<header className="nile-heading nile-heading-split" data-reveal>
 				<div>
-					<p className="nile-eyebrow">Performance behind the workflow</p>
 					<h2 id="performance-title">
 						Measured with
 						<br />a 300-action backend.
 					</h2>
 				</div>
 				<p>
-					The same authenticated shopping workflow across ten frameworks. These
-					are observed results from our everyday PC, with every measured round
-					retained.
+					We measured the same authenticated shopping workflow in ten frameworks
+					on an everyday PC, to see how Nile Js holds up under realistic load.
+					Your numbers will depend on your application and hardware.
 				</p>
-			</div>
-			<div className="nile-benchmark">
+			</header>
+			<div className="nile-benchmark" data-reveal>
 				<div className="nile-benchmark-heading">
 					<div>
 						<strong>Ecommerce API</strong>
@@ -75,10 +90,13 @@ export function Performance() {
 										: ""
 								}
 							>
-								<th scope="row">{row.label}</th>
+								<th scope="row">
+									{row.framework === "nile-native" ? "Nile Js" : row.label}
+								</th>
 								<td>
 									<div className="nile-bar-track" aria-hidden="true">
 										<span
+											className="nile-bar-fill"
 											style={{
 												width: `${(row.meanRequestsPerSecond / maximum) * 100}%`,
 											}}
@@ -98,29 +116,21 @@ export function Performance() {
 						))}
 					</tbody>
 				</table>
-				<div className="nile-benchmark-method">
-					<div>
-						<span className="nile-small-label">How we tested</span>
-						<p>
-							Up to 32 shoppers browsed, filled carts and placed orders. Each
-							sample warmed 500 journeys, then measured 5,000 six-request
-							journeys. Every framework ran in each of six rounds. Responses and
-							order counts were checked. Data stayed in memory, with no
-							database.
-						</p>
-					</div>
-					<div>
-						<span className="nile-small-label">Machine and scope</span>
-						<p>
-							Intel Core i5-6300U · 4 logical CPUs · 15.5 GiB RAM. App and
-							client shared the PC; other apps were running. Recorded October
-							2026. Adapter choices and desktop variation affect these results.
-						</p>
-					</div>
-				</div>
+				<dl className="nile-benchmark-method">
+					{METHOD.map((item) => (
+						<div key={item.term}>
+							<dt>{item.term}</dt>
+							<dd>{item.detail}</dd>
+						</div>
+					))}
+				</dl>
+				<p className="nile-benchmark-note">
+					App and client shared a desktop with other apps running. Adapter
+					choice and machine variation affect these results.
+				</p>
 				<div className="nile-benchmark-links">
 					<a href={withBase("/guide/reference/performance")}>
-						Methodology, variation and adapter details ↗
+						Methodology and variation ↗
 					</a>
 					<a href={withBase("/benchmarks/results.json")}>Raw measurements ↗</a>
 					<a href="https://github.com/nile-js/nile/tree/main/packages/benchmarks">

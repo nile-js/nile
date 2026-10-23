@@ -47,3 +47,7 @@ packages/*/bun.lock
 # Local working records and package manager cache
 /docs/internal/
 .pnpm-store/
+
+# Declarations emitted next to client sources by local type checks
+packages/client/src/**/*.d.ts
+packages/client/src/**/*.d.ts.map

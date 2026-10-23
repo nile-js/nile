@@ -64,6 +64,7 @@ export function createNativeRestApp({
         ...getRequestStore(),
         nativeRest: context,
         sessions: getRequestStore()?.sessions ?? {},
+        failure: {},
       },
       async () => {
         if (

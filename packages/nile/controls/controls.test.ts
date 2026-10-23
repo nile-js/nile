@@ -111,26 +111,26 @@ describe("functional execution controls", () => {
 });
 
 describe("rate limit strategies", () => {
-  it.each(["fixed-window", "sliding-window"] as const)(
-    "recovers %s allowance without evicting an active key",
-    (strategy) => {
-      let now = 0;
-      const limiter = createRateLimiter({
-        strategy,
-        limit: 2,
-        windowMs: 100,
-        maxKeys: 1,
-        clock: () => now,
-      });
-      expect(limiter.consume({ key: "a" }).expect().allowed).toBe(true);
-      expect(limiter.consume({ key: "a" }).expect().allowed).toBe(true);
-      expect(limiter.consume({ key: "a" }).expect().allowed).toBe(false);
-      expect(limiter.consume({ key: "b" }).expect().reason).toBe("capacity");
-      now = 101;
-      expect(limiter.consume({ key: "b" }).expect().allowed).toBe(true);
-      limiter.close?.();
-    }
-  );
+  it.each([
+    "fixed-window",
+    "sliding-window",
+  ] as const)("recovers %s allowance without evicting an active key", (strategy) => {
+    let now = 0;
+    const limiter = createRateLimiter({
+      strategy,
+      limit: 2,
+      windowMs: 100,
+      maxKeys: 1,
+      clock: () => now,
+    });
+    expect(limiter.consume({ key: "a" }).expect().allowed).toBe(true);
+    expect(limiter.consume({ key: "a" }).expect().allowed).toBe(true);
+    expect(limiter.consume({ key: "a" }).expect().allowed).toBe(false);
+    expect(limiter.consume({ key: "b" }).expect().reason).toBe("capacity");
+    now = 101;
+    expect(limiter.consume({ key: "b" }).expect().allowed).toBe(true);
+    limiter.close?.();
+  });
 
   it("refills tokens and bounds escalating cooldown", () => {
     let now = 0;

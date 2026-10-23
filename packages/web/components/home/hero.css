@@ -1,0 +1,277 @@
+.nile-hero {
+	--nile-ink: #f2f8fd;
+	--nile-muted: #c5d4e2;
+	container: hero / inline-size;
+	position: relative;
+	isolation: isolate;
+	padding: calc(var(--nile-nav-height) + 112px) 40px 180px;
+}
+.nile-hero-art {
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	overflow: hidden;
+	background: #0b1622;
+	pointer-events: none;
+	/* A wide ellipse gives the river a curved lower edge that fades into the page. */
+	-webkit-mask-image: radial-gradient(
+		90% 100% at 50% 0%,
+		#000 0%,
+		#000 80%,
+		#0009 91%,
+		transparent 100%
+	);
+	mask-image: radial-gradient(
+		90% 100% at 50% 0%,
+		#000 0%,
+		#000 80%,
+		#0009 91%,
+		transparent 100%
+	);
+}
+.nile-hero-art img {
+	position: absolute;
+	inset: 0;
+	display: block;
+	width: 100%;
+	height: 100%;
+	max-width: none;
+	object-fit: cover;
+	object-position: center 55%;
+}
+.nile-hero-inner {
+	display: grid;
+	grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+	align-items: center;
+	gap: 48px;
+	max-width: 1160px;
+	margin: 0 auto;
+}
+.nile-hero-copy {
+	position: relative;
+	max-width: 640px;
+}
+.nile-hero-copy h1 span {
+	background: linear-gradient(100deg, #bae6fd, #38bdf8 55%, #60a5fa);
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
+}
+.nile-home .nile-lead {
+	max-width: 500px;
+	margin-top: 26px;
+	font-size: 20px;
+	line-height: 1.6;
+}
+.nile-install {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	max-width: 440px;
+	margin-top: 30px;
+	padding: 8px 8px 8px 16px;
+	border-radius: 14px;
+	background: #07111bb3;
+	box-shadow:
+		0 0 0 1px #c6e2fb1f,
+		inset 0 1px 0 #ffffff0d;
+	backdrop-filter: blur(10px);
+	-webkit-backdrop-filter: blur(10px);
+	text-align: left;
+	transition: box-shadow 0.25s;
+}
+.nile-install:hover {
+	box-shadow:
+		0 0 0 1px #7dd3fc4d,
+		inset 0 1px 0 #ffffff14;
+}
+.nile-install-prompt {
+	font-family: "Nile Mono", monospace;
+	color: var(--nile-accent);
+}
+.nile-install code {
+	flex: 1;
+	min-width: 0;
+	overflow-x: auto;
+	font-size: 13px;
+	white-space: nowrap;
+	scrollbar-width: none;
+}
+.nile-hero-mark {
+	position: relative;
+	display: grid;
+	place-items: center;
+	aspect-ratio: 1;
+}
+.nile-hero-ripples {
+	position: absolute;
+	inset: -22%;
+	width: 144%;
+	height: 144%;
+	max-width: none;
+	opacity: 0.9;
+}
+.nile-hero-logo {
+	position: relative;
+	width: min(100%, 360px);
+	height: auto;
+	opacity: 0.95;
+	filter: drop-shadow(0 34px 60px #02132bcc) drop-shadow(0 0 42px #38bdf840);
+}
+
+/* Entrance: the river settles, then the copy and logo arrive in sequence. */
+@media (prefers-reduced-motion: no-preference) {
+	.nile-hero-river {
+		animation: nile-river-settle 2.4s var(--nile-ease-out) backwards;
+	}
+	.nile-hero-copy > * {
+		animation: nile-rise 0.9s var(--nile-ease-out) backwards;
+	}
+	.nile-hero-copy > :nth-child(2) {
+		animation-delay: 0.1s;
+	}
+	.nile-hero-copy > :nth-child(3) {
+		animation-delay: 0.2s;
+	}
+	.nile-hero-copy > :nth-child(4) {
+		animation-delay: 0.3s;
+	}
+	.nile-hero-mark {
+		animation: nile-mark-arrive 1.3s var(--nile-ease-out) 0.25s backwards;
+	}
+	.nile-hero-logo {
+		animation: nile-float 9s ease-in-out infinite;
+	}
+	.nile-hero-ripples {
+		animation: nile-breathe 9s ease-in-out infinite;
+	}
+	@keyframes nile-river-settle {
+		from {
+			opacity: 0;
+			scale: 1.08;
+		}
+	}
+	@keyframes nile-rise {
+		from {
+			opacity: 0;
+			translate: 0 18px;
+		}
+	}
+	@keyframes nile-mark-arrive {
+		from {
+			opacity: 0;
+			scale: 0.86;
+		}
+	}
+	@keyframes nile-float {
+		0%,
+		100% {
+			transform: translateY(0);
+		}
+		50% {
+			transform: translateY(-12px);
+		}
+	}
+	@keyframes nile-breathe {
+		0%,
+		100% {
+			transform: scale(1);
+			opacity: 0.9;
+		}
+		50% {
+			transform: scale(1.04);
+			opacity: 0.7;
+		}
+	}
+}
+
+/* Hero layout follows the hero's own width. */
+@container hero (max-width: 1000px) {
+	.nile-hero-inner {
+		grid-template-columns: minmax(0, 1fr) minmax(0, 0.62fr);
+		gap: 28px;
+	}
+	.nile-hero h1 {
+		font-size: clamp(40px, 5.6cqi, 56px);
+	}
+}
+@container hero (max-width: 760px) {
+	.nile-hero-inner {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0;
+	}
+	.nile-hero-copy {
+		max-width: 520px;
+		margin-inline: auto;
+		text-align: center;
+	}
+	.nile-home .nile-lead {
+		margin-inline: auto;
+	}
+	.nile-actions {
+		justify-content: center;
+	}
+	.nile-hero-mark {
+		order: -1;
+		justify-self: center;
+		width: 132px;
+		margin: 0 0 28px;
+	}
+	.nile-hero-art::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+		background: linear-gradient(180deg, #06101a59, #06101a8c 60%, #06101a40);
+	}
+	.nile-hero-ripples {
+		inset: -40%;
+		width: 180%;
+		height: 180%;
+	}
+	.nile-hero h1 {
+		font-size: clamp(36px, 10.5cqi, 54px);
+	}
+	.nile-home .nile-lead {
+		margin-top: 20px;
+		font-size: 17px;
+	}
+	.nile-actions {
+		gap: 20px;
+		margin-top: 28px;
+	}
+	.nile-install {
+		max-width: none;
+	}
+	.nile-install code {
+		font-size: 12px;
+	}
+	.nile-hero-art img {
+		object-position: 62% center;
+	}
+	.nile-hero-art {
+		-webkit-mask-image: radial-gradient(
+			190% 100% at 50% 0%,
+			#000 0%,
+			#000 74%,
+			#0008 88%,
+			transparent 100%
+		);
+		mask-image: radial-gradient(
+			190% 100% at 50% 0%,
+			#000 0%,
+			#000 74%,
+			#0008 88%,
+			transparent 100%
+		);
+	}
+}
+@media (max-width: 1000px) {
+	.nile-hero {
+		padding: calc(var(--nile-nav-height) + 80px) 28px 160px;
+	}
+}
+@media (max-width: 760px) {
+	.nile-hero {
+		padding: calc(var(--nile-nav-height) + 40px) 16px 140px;
+	}
+}

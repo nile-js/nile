@@ -1,4 +1,7 @@
-# From routes to business operations
+---
+title: "From REST to Nile"
+description: "Map familiar HTTP operations to services and named actions"
+---
 
 A growing product adds operations such as approving a submission, archiving a project or refunding a payment. Nile names those operations directly: `projects.archive`, `submissions.approve`, `payments.refund`.
 

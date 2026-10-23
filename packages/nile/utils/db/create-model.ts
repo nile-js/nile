@@ -1,9 +1,11 @@
-import { count, desc, eq, lt, type SQL } from "drizzle-orm";
-import { Ok, safeTry } from "slang-ts";
+import { count, desc, eq, lt } from "drizzle-orm";
+import { Ok } from "slang-ts";
 import { getContext } from "@/nile/server";
 import { handleError } from "../handle-error";
 import { createTransactionVariant } from "./create-transaction-variant";
+import { dbTry } from "./db-try";
 import { getZodSchema } from "./get-zod-schema";
+import type { DrizzleDbLike } from "./model-query-types";
 import type {
   CursorPage,
   ModelOperations,
@@ -15,43 +17,6 @@ import type {
   PaginationOptions,
   TableSchemas,
 } from "./types";
-
-/**
- * Minimal shape of a Drizzle database instance for dynamic query building.
- * Covers the select/insert/update/delete chains used by createModel internals.
- * Avoids using the `Function` type while remaining compatible with both
- * Neon and PGLite Drizzle drivers.
- */
-interface DrizzleDbLike {
-  select(fields?: Record<string, unknown>): {
-    from(table: unknown): DrizzleSelectQuery;
-  };
-  insert(table: unknown): {
-    values(data: unknown): {
-      returning(): Promise<unknown[]>;
-    };
-  };
-  update(table: unknown): {
-    set(data: unknown): {
-      where(condition: SQL): {
-        returning(): Promise<unknown[]>;
-      };
-    };
-  };
-  delete(table: unknown): {
-    where(condition: SQL): {
-      returning(): Promise<unknown[]>;
-    };
-  };
-}
-
-/** Chainable select query shape — supports where/orderBy/limit/offset in any valid order */
-interface DrizzleSelectQuery extends Promise<unknown[]> {
-  where(condition: SQL): DrizzleSelectQuery;
-  orderBy(...cols: SQL[]): DrizzleSelectQuery;
-  limit(n: number): DrizzleSelectQuery;
-  offset(n: number): DrizzleSelectQuery;
-}
 
 /** Cast db to our minimal interface — safe because Drizzle drivers all expose these methods */
 function asDb(db: unknown): DrizzleDbLike {
@@ -143,6 +108,10 @@ export function createModel<
   /** Resolve and cast db for the current call */
   const getDb = () => asDb(resolveDb<TDB>(options.db));
 
+  /** Preserve driver causes before Slang normalizes errors, using this model's log attribution. */
+  const tryQuery = <T>(fn: () => T | Promise<T>) =>
+    dbTry(fn, { atFunction: `${name}.query` });
+
   // -- Core CRUD --
 
   const create = async ({ data, dbx }: ModelWriteParams<TInsert, TDB>) => {
@@ -156,7 +125,7 @@ export function createModel<
     }
 
     const db = dbx ? asDb(dbx) : getDb();
-    const result = await safeTry(() =>
+    const result = await tryQuery(() =>
       db.insert(table).values(data).returning()
     );
     if (result.isErr) {
@@ -189,7 +158,7 @@ export function createModel<
 
     const db = dbx ? asDb(dbx) : getDb();
     const idCol = tableRef.id as Parameters<typeof eq>[0];
-    const result = await safeTry(() =>
+    const result = await tryQuery(() =>
       db.update(table).set(data).where(eq(idCol, id)).returning()
     );
     if (result.isErr) {
@@ -222,7 +191,7 @@ export function createModel<
   const findById = async (id: string) => {
     const db = getDb();
     const idCol = tableRef.id as Parameters<typeof eq>[0];
-    const result = await safeTry(() =>
+    const result = await tryQuery(() =>
       db.select().from(table).where(eq(idCol, id))
     );
     if (result.isErr) {
@@ -247,7 +216,7 @@ export function createModel<
   const deleteFn = async (id: string) => {
     const db = getDb();
     const idCol = tableRef.id as Parameters<typeof eq>[0];
-    const result = await safeTry(() =>
+    const result = await tryQuery(() =>
       db.delete(table).where(eq(idCol, id)).returning()
     );
     if (result.isErr) {
@@ -273,7 +242,7 @@ export function createModel<
     const db = getDb();
     const tsCol = findTimestampColumn(tableRef);
 
-    const result = await safeTry(() => {
+    const result = await tryQuery(() => {
       const query = db.select().from(table);
       if (!tsCol) {
         return query;
@@ -296,7 +265,7 @@ export function createModel<
     const db = getDb();
     const tsCol = findTimestampColumn(tableRef);
 
-    const itemsResult = await safeTry(() => {
+    const itemsResult = await tryQuery(() => {
       const query = db.select().from(table);
       const ordered = tsCol
         ? query.orderBy(desc(tableRef[tsCol] as Parameters<typeof desc>[0]))
@@ -311,7 +280,7 @@ export function createModel<
       });
     }
 
-    const countResult = await safeTry(() =>
+    const countResult = await tryQuery(() =>
       db.select({ total: count() }).from(table)
     );
     if (countResult.isErr) {
@@ -351,7 +320,7 @@ export function createModel<
     const typedColumn = column as Parameters<typeof lt>[0];
 
     // Fetch one extra row to determine hasMore without a separate count query
-    const result = await safeTry(() =>
+    const result = await tryQuery(() =>
       db
         .select()
         .from(table)

@@ -1,8 +1,11 @@
-# Group work by domain
+---
+title: "Services"
+description: "Group related actions into an explicitly registered business domain"
+---
 
 A service gives related actions a recognizable home. Use domain names the team already uses: projects, tickets, billing or collaboration. As more operations arrive, people can start with the domain rather than search an unfamiliar route map.
 
-```typescript
+```ts
 import { createService, createServices } from "@nilejs/nile";
 import { createProject } from "./projects/create-project";
 import { archiveProject } from "./projects/archive-project";
@@ -26,7 +29,7 @@ Put the registry in a predictable file, such as `services/services.config.ts`. G
 
 Nile logs service/action totals and per-service registration timings at startup by default. Inspect the same snapshot without printing:
 
-```typescript
+```ts
 console.log(server.stats());
 ```
 

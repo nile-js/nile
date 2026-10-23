@@ -37,7 +37,7 @@ const generateActionContent = (serviceName: string): string => {
   const camel = toCamelCase(serviceName);
   const pascal = toPascalCase(serviceName);
 
-  return `import { type Action, createAction } from "@nilejs/nile";
+  return `import { createAction } from "@nilejs/nile";
 import { Ok } from "slang-ts";
 import z from "zod";
 
@@ -45,15 +45,17 @@ const sample${pascal}Schema = z.object({
   name: z.string().min(1, "Name is required"),
 });
 
-const sample${pascal}Handler = async (data: Record<string, unknown>) => {
-  return Ok({ ${camel}: { name: data.name } });
+type Sample${pascal}Input = z.infer<typeof sample${pascal}Schema>;
+
+const sample${pascal}Handler = async (input: Sample${pascal}Input) => {
+  return Ok({ ${camel}: { name: input.name } });
 };
 
-export const sample${pascal}Action: Action = createAction({
+export const sample${pascal}Action = createAction<Sample${pascal}Input>({
   name: "sample",
   description: "Sample ${serviceName} action",
-  handler: sample${pascal}Handler,
   validation: sample${pascal}Schema,
+  handler: sample${pascal}Handler,
 });
 `;
 };
@@ -113,8 +115,10 @@ const autoRegisterService = async (
     actions: [sample${pascal}Action],
   },`;
 
-    // Insert before the last ]; in the services array
-    const closingIndex = content.lastIndexOf("];");
+    // Insert before the array's closing bracket: `]);` for createServices([...]), `];` for a plain array.
+    const wrappedClosingIndex = content.lastIndexOf("]);");
+    const plainClosingIndex = content.lastIndexOf("];");
+    const closingIndex = Math.max(wrappedClosingIndex, plainClosingIndex);
     if (closingIndex === -1) {
       return false;
     }

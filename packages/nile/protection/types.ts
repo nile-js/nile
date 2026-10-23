@@ -6,3 +6,9 @@ export interface HttpProtectionOptions {
   /** Only peers accepted here can contribute trusted forwarded addresses. */
   trustProxy?: (address: string) => boolean;
 }
+
+export interface ClientAddress {
+  address?: string;
+  peer?: string;
+  source: "peer" | "forwarded" | "unknown";
+}

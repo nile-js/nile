@@ -1,4 +1,7 @@
-# Data access
+---
+title: "Data access"
+description: "Keep data access in application models and use the optional Drizzle helpers"
+---
 
 Keep business operations easy to follow: an action handles its input and application policy, an ordinary domain function implements the rule, and a model/repository owns data access. This is a useful convention, not a runtime restriction. Nile does not require a particular ORM or database.
 
@@ -12,15 +15,15 @@ You can instead pass dependencies directly to your functions. A repository does 
 
 ## Optional Drizzle helpers
 
-Nile exports helpers for applications already using Drizzle:
+Access the Drizzle helpers through `import { utils } from "@nilejs/nile"`:
 
 | Helper | Purpose |
 | --- | --- |
-| `createModel` | Basic CRUD methods, validation and pagination around a table. |
-| `getZodSchema` | Insert, update and select Zod schemas from a real Drizzle table. |
-| `createTransactionVariant` | Run a Result-returning function with explicit transaction/rollback behavior. |
+| `utils.createModel` | Basic CRUD methods, validation and pagination around a table. |
+| `utils.getZodSchema` | Insert, update and select Zod schemas from a real Drizzle table. |
+| `utils.createTransactionVariant` | Run a Result-returning function with explicit transaction/rollback behavior. |
 | `DBX<TDB>`, `DBParams<TDB>` | Describe a database or transaction dependency. |
-| `handleError` | Log an investigable failure and return an Err. |
+| `utils.handleError` | Log an investigable failure and return an Err. |
 
 Install and configure the relevant Drizzle packages/driver in your application before choosing these helpers. They do not provision a database or run migrations.
 
@@ -34,6 +37,6 @@ For multi-step writes, decide transaction boundaries explicitly. Calling several
 
 Expected missing data can return `Err`. Driver failures should be guarded with `safeTry` and handled according to the operation. `handleError` needs a configured or explicit logger and throws if one is absent. Missing database configuration also fails rather than silently continuing.
 
-`createTransactionVariant` deliberately throws when the wrapped function returns an Err so a database transaction can roll back. It does not convert the rejection back into an Err. Guard the whole transaction call with `safeTry` when the caller needs a Result. If no `dbx` is supplied, the wrapper calls the function without starting a transaction and still throws on Err. Supply a root database with a `transaction` method when a new transaction is required; supplying an existing transaction executes inside that scope.
+`createTransactionVariant` deliberately throws when the wrapped function returns an Err so a database transaction can roll back. It does not convert the rejection back into an Err. Guard the whole transaction call with `safeTry` when the caller needs a Result. If no `dbx` is supplied, the wrapper calls the function without starting a transaction and still throws on Err. Supply a root database with a `transaction` method when a new transaction is required; an existing Drizzle transaction can create a nested transaction or savepoint when it exposes the same method.
 
 See [createModel](/guide/internals/db/create-model) for the exact method boundaries, and [errors and Results](/guide/basics/errors-and-results) for application error handling.

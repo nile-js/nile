@@ -1,3 +1,6 @@
 @import "../components/home/base.css";
+@import "../components/home/hero.css";
 @import "../components/home/sections.css";
+@import "../components/home/features.css";
 @import "../components/home/benchmark.css";
+@import "../components/home/motion.css";

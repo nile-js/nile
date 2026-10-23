@@ -1,4 +1,7 @@
-# Apply access rules consistently
+---
+title: "Authentication and access"
+description: "Verify credentials and apply access policies before business work runs"
+---
 
 As more operations are added, a common policy boundary helps the team avoid repeating authentication code. Nile includes JWT verification; role, organization and resource-level authorization remain explicit application rules.
 
@@ -6,7 +9,7 @@ As more operations are added, a common policy boundary helps the team avoid repe
 
 Configure server `auth` and mark the action `isProtected: true`. **Both are required**: `isProtected` alone does not enable verification.
 
-```typescript
+```ts
 import type { ServerConfig } from "@nilejs/nile";
 import { config } from "./config";
 import { services } from "./services/services.config";
@@ -23,19 +26,32 @@ export const serverConfig: ServerConfig = {
 
 `config.jwtSecret` is supplied by your application's configuration module. Keep it server-side.
 
-```typescript
+```ts
 import { createAction } from "@nilejs/nile";
-import { Err, Ok } from "slang-ts";
+import type { NileContext } from "@nilejs/nile";
+import { Err, Ok, type Result } from "slang-ts";
+
+const getProfileHandler = (
+  input: unknown,
+  context?: NileContext<unknown>
+): Result<unknown, string> => {
+  const session = context?.getSession("rest");
+
+  if (session === undefined) {
+    return Err("Sign in to continue");
+  }
+
+  return Ok({
+    userId: session.userId,
+    organizationId: session.organizationId,
+  });
+};
 
 export const getProfile = createAction({
   name: "profile",
   description: "Read the authenticated identity",
   isProtected: true,
-  handler: (_input, context) => {
-    const session = context?.getSession("rest");
-    if (!session) return Err("Sign in to continue");
-    return Ok({ userId: session.userId, organizationId: session.organizationId });
-  },
+  handler: getProfileHandler,
 });
 ```
 
@@ -56,23 +72,55 @@ Other claims remain available on the request-local `rest` session. Unprotected a
 | `cookieName` | `"auth_token"` | Cookie read when method is `"cookie"`. |
 | `algorithm` | `"HS256"` | Configured `hono/jwt` algorithm; match your issuer. |
 
+## Verify a token outside an action
+
+Custom routes and webhooks do not pass through an action's `isProtected` check. Call `verifyJWT` with the same `auth` settings when such a route needs the verified identity:
+
+```ts
+import { type AuthConfig, verifyJWT } from "@nilejs/nile";
+import { Err, Ok, type Result } from "slang-ts";
+import { config } from "./config";
+
+const jwtConfig: AuthConfig = {
+  secret: config.jwtSecret,
+  method: "header",
+};
+
+export const verifyRequestToken = (request: Request) => {
+  return verifyJWT({ headers: request.headers }, jwtConfig);
+};
+```
+
+`verifyJWT(context, config)` returns `Ok(AuthResult)` with `userId`, `organizationId` and the raw `claims`, or `Err(message)`. It applies the same identity-field rules as the table above. Check the Result before you use the identity:
+
+```ts
+const verified = await verifyRequestToken(request);
+if (verified.isErr) {
+  return new Response("Sign in to continue", { status: 401 });
+}
+```
+
 ## Enforce your role policy
 
 `accessControl` stores policy labels; it does not enforce them automatically. This example defines an **all-listed-roles** policy in a global before hook:
 
-```typescript
+```ts
 import type { BeforeActionHandler } from "@nilejs/nile";
-import { Err, Ok } from "slang-ts";
+import { Err, Ok, type Result } from "slang-ts";
 
 /** Require every role listed on a protected action. */
 export const authorizeAction: BeforeActionHandler<boolean, string> = ({
   nileContext,
   action,
-}) => {
-  if (!action.isProtected) return Ok(true);
+}): Result<boolean, string> => {
+  if (!action.isProtected) {
+    return Ok(true);
+  }
 
   const session = nileContext.getSession("rest");
-  if (!session) return Err("Sign in to continue");
+  if (!session) {
+    return Err("Sign in to continue");
+  }
 
   const roles = session.roles;
   if (action.accessControl?.length && !Array.isArray(roles)) {

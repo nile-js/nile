@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="9000" viewBox="0 0 1600 9000" fill="none" preserveAspectRatio="none">
+  <defs>
+    <radialGradient id="sky">
+      <stop stop-color="#38bdf8" stop-opacity=".2"/>
+      <stop offset=".55" stop-color="#38bdf8" stop-opacity=".06"/>
+      <stop offset="1" stop-color="#38bdf8" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="deep">
+      <stop stop-color="#3b82f6" stop-opacity=".16"/>
+      <stop offset=".6" stop-color="#3b82f6" stop-opacity=".04"/>
+      <stop offset="1" stop-color="#3b82f6" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="teal">
+      <stop stop-color="#2dd4bf" stop-opacity=".1"/>
+      <stop offset=".6" stop-color="#2dd4bf" stop-opacity=".025"/>
+      <stop offset="1" stop-color="#2dd4bf" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="indigo">
+      <stop stop-color="#818cf8" stop-opacity=".1"/>
+      <stop offset=".6" stop-color="#818cf8" stop-opacity=".025"/>
+      <stop offset="1" stop-color="#818cf8" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="river" x1="0" y1="0" x2="0" y2="9000" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#38bdf8" stop-opacity="0"/>
+      <stop offset=".08" stop-color="#38bdf8" stop-opacity=".05"/>
+      <stop offset=".5" stop-color="#60a5fa" stop-opacity=".045"/>
+      <stop offset=".92" stop-color="#38bdf8" stop-opacity=".05"/>
+      <stop offset="1" stop-color="#38bdf8" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="current" x1="0" y1="0" x2="0" y2="9000" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7dd3fc" stop-opacity="0"/>
+      <stop offset=".1" stop-color="#7dd3fc" stop-opacity=".16"/>
+      <stop offset=".5" stop-color="#93c5fd" stop-opacity=".1"/>
+      <stop offset=".9" stop-color="#7dd3fc" stop-opacity=".16"/>
+      <stop offset="1" stop-color="#7dd3fc" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <ellipse cx="1260" cy="1250" rx="760" ry="620" fill="url(#sky)"/>
+  <ellipse cx="220" cy="2350" rx="700" ry="620" fill="url(#deep)"/>
+  <ellipse cx="1380" cy="3350" rx="760" ry="700" fill="url(#teal)"/>
+  <ellipse cx="260" cy="3600" rx="620" ry="560" fill="url(#sky)"/>
+  <ellipse cx="180" cy="4800" rx="820" ry="760" fill="url(#indigo)"/>
+  <ellipse cx="1420" cy="5600" rx="760" ry="700" fill="url(#sky)"/>
+  <ellipse cx="500" cy="6500" rx="800" ry="600" fill="url(#deep)"/>
+  <ellipse cx="1300" cy="7350" rx="700" ry="620" fill="url(#teal)"/>
+  <ellipse cx="800" cy="8550" rx="1100" ry="640" fill="url(#sky)"/>
+
+  <g stroke="url(#river)" stroke-linecap="round">
+    <path stroke-width="340" d="M980 0C1380 700 260 1250 700 2050S1380 3350 820 4050 160 5350 700 6050 1460 7450 900 9000"/>
+    <path stroke-width="150" d="M980 0C1380 700 260 1250 700 2050S1380 3350 820 4050 160 5350 700 6050 1460 7450 900 9000"/>
+  </g>
+  <g stroke="url(#current)" stroke-width="1.2">
+    <path d="M1040 0C1440 700 320 1250 760 2050S1440 3350 880 4050 220 5350 760 6050 1520 7450 960 9000"/>
+    <path d="M920 0C1320 700 200 1250 640 2050S1320 3350 760 4050 100 5350 640 6050 1400 7450 840 9000" stroke-opacity=".7"/>
+    <path d="M1100 0C1500 700 380 1250 820 2050S1500 3350 940 4050 280 5350 820 6050 1580 7450 1020 9000" stroke-opacity=".4"/>
+  </g>
+</svg>

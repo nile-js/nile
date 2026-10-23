@@ -1,11 +1,13 @@
 import { Ok, type Result } from "slang-ts";
 import z from "zod";
 import type { Action, Engine } from "@/engine/types";
+import { getRequestStore } from "@/nile/request-scope";
 import type {
   ExternalRequest,
   ExternalResponse,
   NileContext,
 } from "@/nile/types";
+import { rejectJsonForMultipartAction } from "./uploads";
 
 // --- Response mapping ---
 
@@ -102,6 +104,18 @@ export function handleExplore(
   );
 }
 
+/** The content type of the HTTP request in scope, or undefined outside the HTTP transports. */
+function httpContentType(): string | undefined {
+  const store = getRequestStore();
+  if (store?.nativeRest) {
+    return store.nativeRest.request.headers.get("content-type") ?? "";
+  }
+  if (store?.rest) {
+    return store.rest.req.header("content-type") ?? "";
+  }
+  return;
+}
+
 /**
  * Handles the "execute" intent by running an action through the engine pipeline.
  */
@@ -121,12 +135,45 @@ export async function handleExecute(
     };
   }
 
+  // A JSON body cannot carry files; answer clearly instead of running a multipart action without them.
+  const contentType = httpContentType();
+  if (
+    contentType !== undefined &&
+    !contentType.includes("multipart/form-data")
+  ) {
+    const multipartCheck = rejectJsonForMultipartAction(
+      engine,
+      request,
+      contentType
+    );
+    if (!multipartCheck.status) {
+      return {
+        status: false,
+        message: multipartCheck.message ?? "Unsupported content type",
+        data: multipartCheck.data ?? {},
+      };
+    }
+  }
+
+  // Start clean so issues recorded by an earlier execution in this scope never leak in.
+  const failure = getRequestStore()?.failure;
+  if (failure) {
+    failure.validationIssues = undefined;
+  }
+
   const result = await engine.executeAction(
     service,
     action,
     payload,
     nileContext
   );
+
+  const issues = failure?.validationIssues;
+  const failedValidation =
+    result.isErr && result.error.startsWith("Validation failed");
+  if (failedValidation && issues !== undefined) {
+    return { status: false, message: result.error, data: { issues } };
+  }
 
   return toExternalResponse(result, `Action '${service}.${action}' executed`);
 }

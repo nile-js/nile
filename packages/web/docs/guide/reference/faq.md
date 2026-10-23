@@ -1,4 +1,7 @@
-# FAQ
+---
+title: "FAQ"
+description: "Answers to common questions about Nile applications and their tradeoffs"
+---
 
 ## Who is Nile for?
 
@@ -65,4 +68,4 @@ Choose your own database and data-access modules. Nile’s Drizzle helpers are o
 
 ## What about performance and future features?
 
-The [performance page](/guide/reference/performance) includes recorded measurements, methodology and reproducible sources. They describe a specific workload and machine. The [roadmap](/guide/roadmap) distinguishes future work from shipped behavior.
+The [performance page](/guide/reference/performance) includes recorded measurements, methodology and reproducible sources. They describe a specific workload and machine. Follow [repository issues](https://github.com/nile-js/nile/issues) for current discussion.

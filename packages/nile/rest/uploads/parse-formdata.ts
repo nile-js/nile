@@ -7,7 +7,7 @@
  * Uses Hono's parseBody({ all: true }) for robust multipart parsing across HTTP clients.
  */
 
-import type { Action } from "@/engine/types";
+import type { Action, Engine } from "@/engine/types";
 import type {
   FormDataResult,
   StructuredPayload,
@@ -260,4 +260,36 @@ export async function handleFormDataRequest(
   }
 
   return { status: true, data: payload };
+}
+
+/**
+ * Reject a JSON request to an action that declares multipart/form-data. A JSON body
+ * cannot carry files, so the handler would otherwise run without the files it expects.
+ * Unknown actions pass through so the intent handler reports them as usual.
+ */
+export function rejectJsonForMultipartAction(
+  engine: Pick<Engine, "getAction">,
+  request: { intent: string; service: string; action: string },
+  contentType: string
+): UploadValidationResult {
+  if (request.intent !== "execute") {
+    return { status: true };
+  }
+  const actionResult = engine.getAction(request.service, request.action);
+  if (actionResult.isErr) {
+    return { status: true };
+  }
+  if (actionResult.value.isSpecial?.contentType !== "multipart/form-data") {
+    return { status: true };
+  }
+  return {
+    status: false,
+    statusCode: 415,
+    message: `Action '${request.service}.${request.action}' expects multipart/form-data. Send the request as form data with its files.`,
+    data: {
+      error_category: "validation",
+      expected: "multipart/form-data",
+      received: contentType === "" ? "none" : contentType,
+    },
+  };
 }

@@ -1,118 +1,389 @@
 ---
-title: Getting started
-description: Build your first business operation with Nile.
+title: "Getting started"
+description: "Create a Nile Js project, call its first action, add an action that changes data and call it from a client"
 ---
 
-# Build your first service
+This walkthrough creates a Nile Js project, runs it and calls its starter action with curl. Then you add an action that changes data and call it from a small TypeScript client. Each step says what you should see when it worked.
 
-Start with one useful operation. A Nile **service** groups a domain's work, and an **action** exposes one operation with its input checks and handler. The same pattern gives the next teammate somewhere familiar to start.
+Nile Js uses Bun's native HTTP server. The starter stores its data in an embedded PGlite database, so you do not install or run a database server.
 
-## Start from the template
+## Check the prerequisites
 
-```bash
+1. Install [Bun](https://bun.sh). Check the version:
+
+```sh
+bun --version
+```
+
+You should see `1.4.2` or a later 1.4 release. This guide was verified with Bun 1.4.2. Older versions were not tested.
+
+2. Check that curl is available:
+
+```sh
+curl --version
+```
+
+You should see a first line that starts with `curl`.
+
+## Create the project
+
+```sh
 bunx @nilejs/cli new my-app
 cd my-app
+```
+
+You should see `Created my-app` and a short list of next commands. The command copies the starter files. It does not install packages yet.
+
+## Install the packages
+
+```sh
 bun install
+grep '"version"' node_modules/@nilejs/nile/package.json
+```
+
+You should see `"version": "1.0.0",`. If the version is older, stop here and read the last troubleshooting item on this page.
+
+## Look at what you got
+
+The starter has this structure. The comments describe what each file is for.
+
+```text
+my-app/
+├── .dockerignore              Files left out of the Docker build
+├── .env.example               Environment variable template (no variables yet)
+├── .gitignore                 Keeps node_modules, .env, data and logs out of git
+├── Dockerfile                 Container build (not covered in this guide)
+├── docker-compose.yml         Compose file (not covered in this guide)
+├── docker-compose.dev.yml     Development compose file (not covered in this guide)
+├── drizzle.config.ts          Drizzle Kit settings for database migrations
+├── package.json               Scripts and dependencies
+├── README.md                  Project notes and request examples
+├── tsconfig.json              TypeScript settings, including the @/ import alias
+└── src/
+    ├── index.ts               Server entry point: Nile setup, port and logger
+    ├── db/
+    │   ├── client.ts          PGlite database and Drizzle client
+    │   ├── index.ts           Barrel export for database code
+    │   ├── schema.ts          The tasks table definition
+    │   ├── types.ts           Task and NewTask types
+    │   └── models/
+    │       ├── index.ts       Barrel export for models
+    │       └── tasks.ts       taskModel with create, find, update and delete helpers
+    └── services/
+        ├── services.config.ts Registry of services and their actions
+        └── tasks/actions/
+            ├── create.ts      tasks.create
+            ├── list.ts        tasks.list
+            ├── get.ts         tasks.get
+            ├── update.ts      tasks.update
+            └── delete.ts      tasks.delete
+```
+
+`bun install` also creates `node_modules/` and `bun.lock`. Running the server creates a `data/` folder for the database. The starter's `.gitignore` already keeps `node_modules/`, `.env` and `data/` out of git.
+
+## Start the server
+
+```sh
+cp .env.example .env
 bun run dev
 ```
 
-The current template selects Bun native, registers a tasks service, and includes PGLite with Drizzle. Its startup hook creates the example tasks table. It explicitly enables discovery for development; discovery is otherwise off by default.
+The `.env` file only contains a comment for now. Keep it so that later variables have a home.
 
-Generate the next service or action from the project directory:
+You should see a table with the `tasks` service and five actions, then the startup lines. The timing numbers vary:
 
-```bash
-bunx @nilejs/cli generate service projects
-bunx @nilejs/cli generate action projects archive
+```text
+Registered 1 service and 5 actions in 0.2ms
+00:35:06.275 INFO  onBoot my-app booted - PGLite schema ready
+Booted in 13650.2ms
+my-app server ready in 13.7s
+my-app listening on http://localhost:8000
 ```
 
-Prefer your own data layer? The manual example below has no database dependency.
+The first start can take between 10 and 30 seconds because PGlite creates the `data/` folder. Later starts are faster. Wait for the `listening` line before you send requests. Keep this terminal open. Press Ctrl+C to stop the server.
 
-## A complete first operation
+## Make your first request
 
-Install the core package and the two libraries used in this example:
+Open a second terminal in the `my-app` folder and run:
 
-```bash
-bun add @nilejs/nile zod slang-ts
+```sh
+curl -s -X POST http://localhost:8000/api/services \
+  -H "Content-Type: application/json" \
+  -d '{"intent":"execute","service":"tasks","action":"create","payload":{"title":"My first task"}}'
 ```
 
-Create `server.ts`:
-
-```typescript
-import { createAction, createNileServer, createServices } from "@nilejs/nile";
-import { Ok } from "slang-ts";
-import { z } from "zod";
-
-const createProjectSchema = z.object({
-  name: z.string().trim().min(1),
-});
-
-type CreateProjectInput = z.infer<typeof createProjectSchema>;
-
-const createProject = createAction<CreateProjectInput>({
-  name: "create",
-  description: "Create a project",
-  validation: createProjectSchema,
-  handler: (input) => Ok({
-    project: { id: crypto.randomUUID(), name: input.name },
-  }),
-});
-
-const services = createServices([
-  {
-    name: "projects",
-    description: "Organize the team's projects",
-    actions: [createProject],
-  },
-]);
-
-const server = await createNileServer({
-  serverName: "Team workspace",
-  runtime: "bun",
-  native: true,
-  services,
-  rest: {
-    baseUrl: "/api",
-    allowedOrigins: ["http://localhost:3000"],
-    enableStatus: true,
-  },
-});
-
-const native = server.nativeRest;
-if (!native) throw new Error("Bun native transport was not initialized");
-
-Bun.serve({ port: 8000, fetch: native.fetch });
-```
-
-This example returns a new project without persisting it. Add storage through your application's model or repository when you need it.
-
-`createNileServer` builds the engine and transport; it does **not** start a listener. `Bun.serve` starts this application's listener. Existing Hono applications remain supported; see [runtime adapters](/guide/start/runtime-adapters).
-
-```bash
-bun run server.ts
-```
-
-## Call the operation
-
-```bash
-curl http://localhost:8000/api/services \
-  -H 'Content-Type: application/json' \
-  -d '{"intent":"execute","service":"projects","action":"create","payload":{"name":"Customer portal"}}'
-```
-
-The response contains the project in a consistent envelope:
+You should see a JSON response with `"status": true`. The `id`, `created_at` and `updated_at` values change on every run:
 
 ```json
 {
   "status": true,
-  "message": "Action 'projects.create' executed",
+  "message": "Action 'tasks.create' executed",
   "data": {
-    "project": { "id": "generated-id", "name": "Customer portal" }
+    "task": {
+      "id": "9b4be379-a2e5-4edb-b7df-8654536b629d",
+      "title": "My first task",
+      "description": "",
+      "status": "pending",
+      "created_at": "2026-10-21T00:26:46.342Z",
+      "updated_at": "2026-10-21T00:26:46.342Z"
+    }
   }
 }
 ```
 
-Send an empty name and validation stops the handler with a failure response. You can call the same action from the [frontend client](/guide/basics/client).
+Copy the `id` value. You need it in the next section.
 
-## Keep the next change easy to find
+Now send a payload that fails validation:
 
-Move this operation into a `projects` domain as the application grows. Read [application structure](/guide/start/application-structure), then [errors and Results](/guide/basics/errors-and-results) to give new operations the same recognizable shape.
+```sh
+curl -s -X POST http://localhost:8000/api/services \
+  -H "Content-Type: application/json" \
+  -d '{"intent":"execute","service":"tasks","action":"create","payload":{"title":""}}'
+```
+
+You should see `"status": false`, a message that names the field and one entry per failed field in `data.issues`:
+
+```json
+{
+  "status": false,
+  "message": "Validation failed: ✖ Title is required\n  → at title",
+  "data": {
+    "issues": [{ "path": "title", "message": "Title is required" }]
+  }
+}
+```
+
+Every request goes to `POST /api/services`. The `intent` field selects the operation: `execute` runs an action, `explore` lists services and actions, and `schema` returns an action's input schema.
+
+## Add an action that changes data
+
+You will add `tasks.complete`. It marks one task as `done` and returns the saved task.
+
+### Generate the action file
+
+```sh
+bun run gen action tasks complete
+```
+
+You should see `Action created at src/services/tasks/actions/complete.ts` and a hint to import `completeAction`. The generator does not change `services.config.ts`; you register the action yourself in the next step.
+
+### Replace the generated code
+
+Open `src/services/tasks/actions/complete.ts` and replace its contents with this file:
+
+```ts
+import { createAction } from "@nilejs/nile";
+import { Err, Ok } from "slang-ts";
+import { z } from "zod";
+import { taskModel } from "@/db/models";
+
+const completeTaskSchema = z.object({
+  id: z.uuid(),
+});
+
+type CompleteTaskInput = z.infer<typeof completeTaskSchema>;
+
+const completeTaskHandler = async (input: CompleteTaskInput) => {
+  const result = await taskModel.update({
+    id: input.id,
+    data: { status: "done" },
+  });
+
+  if (result.isErr) {
+    return Err(result.error);
+  }
+
+  return Ok({ task: result.value });
+};
+
+export const completeAction = createAction<CompleteTaskInput>({
+  name: "complete",
+  description: "Mark a task as done",
+  validation: completeTaskSchema,
+  handler: completeTaskHandler,
+});
+```
+
+The schema checks the input before the handler runs. The handler returns `Ok` with the saved task or `Err` with a message. The Results section in [errors and Results](/guide/basics/errors-and-results) explains that pattern.
+
+### Register the action
+
+Open `src/services/services.config.ts`, add the import, and add `completeAction` to the `tasks` actions list. The complete file should read:
+
+```ts
+import { createServices, type Services } from "@nilejs/nile";
+import { completeAction } from "./tasks/actions/complete";
+import { createTaskAction } from "./tasks/actions/create";
+import { deleteTaskAction } from "./tasks/actions/delete";
+import { getTaskAction } from "./tasks/actions/get";
+import { listTaskAction } from "./tasks/actions/list";
+import { updateTaskAction } from "./tasks/actions/update";
+
+export const services: Services = createServices([
+  {
+    name: "tasks",
+    description: "Task management with CRUD operations",
+    meta: { version: "1.0.0" },
+    actions: [
+      createTaskAction,
+      listTaskAction,
+      getTaskAction,
+      updateTaskAction,
+      deleteTaskAction,
+      completeAction,
+    ],
+  },
+]);
+```
+
+### Call it
+
+`bun run dev` watches your files and restarts the server when you save. Wait for the `listening` line to appear again in the server terminal.
+
+Replace `PASTE_TASK_ID` with the `id` from your first request:
+
+```sh
+curl -s -X POST http://localhost:8000/api/services \
+  -H "Content-Type: application/json" \
+  -d '{"intent":"execute","service":"tasks","action":"complete","payload":{"id":"PASTE_TASK_ID"}}'
+```
+
+You should see `"status": true` and the task with `"status": "done"`.
+
+## Call the action from a client
+
+`@nilejs/client` is a small typed client for Nile Js. It works in a browser app and in server-side TypeScript. In your project folder, install it:
+
+```sh
+bun add @nilejs/client
+```
+
+Create `client-check.ts` in the project root, next to `package.json`:
+
+```ts
+import { createNileClient } from "@nilejs/client";
+import { z } from "zod";
+
+interface ServicePayloads {
+  tasks: {
+    create: { title: string };
+    complete: { id: string };
+  };
+}
+
+const createdTaskSchema = z.object({
+  task: z.object({
+    id: z.string(),
+    status: z.string(),
+  }),
+});
+
+const nile = createNileClient<ServicePayloads>({
+  baseUrl: "http://localhost:8000/api",
+});
+
+const runClientCheck = async (): Promise<void> => {
+  const created = await nile.invoke({
+    service: "tasks",
+    action: "create",
+    payload: { title: "Written from the client" },
+  });
+
+  if (created.isErr) {
+    console.error(created.error);
+    return;
+  }
+
+  const createdTask = createdTaskSchema.parse(created.value);
+
+  const completed = await nile.invoke({
+    service: "tasks",
+    action: "complete",
+    payload: { id: createdTask.task.id },
+  });
+
+  if (completed.isErr) {
+    console.error(completed.error);
+    return;
+  }
+
+  console.log("created", createdTask.task.id, createdTask.task.status);
+  console.log("completed", JSON.stringify(completed.value));
+};
+
+await runClientCheck();
+```
+
+With the server still running, run the file in your second terminal:
+
+```sh
+bun run client-check.ts
+```
+
+You should see one line for the created task (with `pending`) and one line for the completed task with `"status":"done"`. Every client method returns a Result, the same pattern the server uses. Check `isErr` first, then read `value` on success or `error` on failure.
+
+A browser app that runs on another origin, such as `http://localhost:5173`, must be listed in `rest.allowedOrigins` in `src/index.ts`:
+
+```ts
+  rest: {
+    baseUrl: "/api",
+    host: "localhost",
+    port: 8000,
+    allowedOrigins: ["http://localhost:8000", "http://localhost:5173"],
+    enableStatus: true,
+    discovery: { enabled: true },
+  },
+```
+
+Without the origin, the server does not send an `Access-Control-Allow-Origin` header, and the browser blocks the response. The server restarts by itself when you save this file.
+
+## Check the status endpoints
+
+`enableStatus: true` adds two `GET` endpoints at the root of the server, outside `/api`:
+
+```sh
+curl -s http://localhost:8000/status
+curl -s http://localhost:8000/ready
+```
+
+You should see `{"status":true,"message":"my-app is running","data":{}}` from `/status` and `{"status":true,"message":"Ready","data":{}}` from `/ready`. Use `/ready` to check that the server finished booting. Use `/status` for a simple liveness check.
+
+## What to read next
+
+- [Application structure](/guide/start/application-structure) explains how to group services and actions as the project grows.
+- [Services](/guide/basics/services) and [actions](/guide/basics/actions) describe the registration and definition rules.
+- [Frontend client](/guide/basics/client) covers errors, request options and generated input types.
+- [Errors and Results](/guide/basics/errors-and-results) explains the three response shapes.
+- [Runtime adapters](/guide/start/runtime-adapters) explains how to move an existing Hono application.
+
+## Troubleshooting
+
+- **`curl: (7) Failed to connect to localhost port 8000`.** The server has not finished booting, or it stopped. Wait for the `listening` line. If the server exited, read the error printed just above the prompt.
+
+- **`Failed to start server. Is port 8000 in use?`** Another process is using port 8000. Stop that process and start `bun run dev` again. To use a different port, change `port` in the `rest` block of `src/index.ts`, then update the URLs in your requests and in `baseUrl`.
+
+- **`Route not found. Use POST /api/services for all operations.` with HTTP 404.** The request used the wrong method or path. Operations use `POST /api/services`. Only `/status` and `/ready` use `GET` at the root.
+
+- **`Action 'complete' not found in service 'tasks'`.** The server does not know the action yet. Check that `completeAction` is imported and listed in the `actions` list in `services.config.ts`, then save the file. `bun run dev` restarts the server when you save.
+
+- **A new action is missing after you edit a file.** Check that the server terminal printed the `listening` line again after you saved. If you started the server with `bun run src/index.ts` instead of `bun run dev`, it does not watch files; stop it and run `bun run dev`.
+
+- **`Could not auto-register. Add manually:`** This message appears after `generate service` when `services.config.ts` no longer ends with the services list, for example after you reorganized it. Copy the printed import and the service entry into that file yourself.
+
+- **`Group action entry points under actions/` at startup.** The server stops before it listens. A file was placed directly in a service folder, such as `src/services/documents/inspect.ts`. Move it to `src/services/documents/actions/inspect.ts` and update its import in `services.config.ts`. The CLI already creates the `actions/` folder.
+
+- **`Dependencies not installed.`** The CLI generators stop when `node_modules` is missing. Run `bun install` in the project root, then run the generator again.
+
+- **The browser prints `No 'Access-Control-Allow-Origin' header`.** Add the page's origin to `rest.allowedOrigins` and save the file. See [Call the action from a client](#call-the-action-from-a-client).
+
+- **`Validation failed` in the response.** The request reached the action, and its input did not match the schema. Read the field named after `→ at`, correct the payload and send the request again.
+
+- **TypeScript reports that two `Result` types are not compatible.** Two copies of `slang-ts` are installed. Run `bun pm ls | grep slang-ts`; if you see more than one version, run `bun add slang-ts@0.0.9` so your code and Nile Js share one copy.
+
+- **`@nilejs/nile` shows a version older than `1.0.0`.** This guide documents Nile Js 1.0.0. Earlier releases have a different starter and different commands. Install the 1.0.0 release, then start again from `bunx @nilejs/cli new`.
+
+## See also
+
+- [Runtime adapters](/guide/start/runtime-adapters)
+- [HTTP interaction](/guide/basics/interacting)
+- [Deployment](/guide/start/deploy)

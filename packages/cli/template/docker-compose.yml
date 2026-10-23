@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   nile:
     build:
@@ -9,28 +7,10 @@ services:
       - "8000:8000"
     environment:
       - NODE_ENV=production
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=nile
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-  postgres:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_DB: nile
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      # The starter keeps its PGlite database in ./data; this volume keeps it across restarts.
+      - nile_data:/app/data
+    restart: unless-stopped
 
 volumes:
-  postgres_data:
+  nile_data:

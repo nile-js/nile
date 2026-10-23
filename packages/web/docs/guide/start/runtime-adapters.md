@@ -1,4 +1,7 @@
-# Choose a runtime adapter
+---
+title: "Runtime adapters"
+description: "Choose Bun native or the Hono adapter and connect your HTTP listener"
+---
 
 Your services, actions, validation and Result handling stay the same across Nile's two HTTP adapters. Choose the adapter for the environment and HTTP integrations your application needs.
 
@@ -12,7 +15,7 @@ Hono remains the default compatibility path. Updating Nile does not opt an exist
 
 ## Bun native
 
-```typescript
+```ts
 import { createNileServer } from "@nilejs/nile";
 import { services } from "./services/services.config";
 
@@ -25,7 +28,9 @@ const server = await createNileServer({
 });
 
 const native = server.nativeRest;
-if (!native) throw new Error("Bun native transport was not initialized");
+if (!native) {
+  throw new Error("Bun native transport was not initialized");
+}
 Bun.serve({ port: 8000, fetch: native.fetch });
 ```
 
@@ -33,19 +38,23 @@ Bun.serve({ port: 8000, fetch: native.fetch });
 
 Use the same server configuration with `native` omitted. For Bun, start the Hono handler with:
 
-```typescript
+```ts
 const app = server.rest?.app;
-if (!app) throw new Error("Hono transport was not initialized");
+if (!app) {
+  throw new Error("Hono transport was not initialized");
+}
 Bun.serve({ port: 8000, fetch: app.fetch });
 ```
 
 For Node.js, select `runtime: "node"` when constructing the server, then start its Hono handler with the Node adapter:
 
-```typescript
+```ts
 import { serve } from "@hono/node-server";
 
 const app = server.rest?.app;
-if (!app) throw new Error("Hono transport was not initialized");
+if (!app) {
+  throw new Error("Hono transport was not initialized");
+}
 serve({ port: 8000, fetch: app.fetch });
 ```
 

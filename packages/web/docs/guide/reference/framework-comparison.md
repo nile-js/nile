@@ -1,4 +1,7 @@
-# Choosing Nile
+---
+title: "Choosing Nile"
+description: "Choose an application model around the work your team needs to ship"
+---
 
 Choose Nile when a small team wants a consistent place for growing business operations, while keeping its business logic in ordinary TypeScript functions.
 
@@ -31,7 +34,7 @@ For flexible consumer-defined data queries, evaluate whether a GraphQL API fits 
 - Built-in action input validation uses Zod. Keep the handler’s declared input type aligned with its schema.
 - Expected failures use Results, but invalid setup and some lower-level utilities can throw.
 - Discovery is off by default. It helps build tool integrations; it does not provide an agent runtime.
-- Direct calls and WebSocket action calls share the engine with HTTP. See [production operations](/guide/reference/operations) for transport setup, lifecycle, scheduling and observability. Custom HTTP responses can stream; action-level streaming/SSE and subscriptions are not supplied.
+- Direct calls and WebSocket action calls share the engine with HTTP. See [production operations](/guide/reference/operations) for transport setup, lifecycle, scheduling and observability. Use typed Socket.IO topics for live subscriptions. Custom HTTP routes can return streaming responses.
 - General context keys and resources are shared. Request sessions and action hook state are isolated; they are not persistent storage.
 
 ## Try a representative operation

@@ -1,0 +1,15 @@
+---
+title: "Advanced"
+description: "Go beyond a single action: use handler context, compose hooks, set execution limits and test actions"
+---
+
+The pages in this section assume you have built an action with the [getting started guide](/guide/start/getting-started) or the [basics](/guide/basics/actions). Each page covers one advanced topic with a complete, type-checked example.
+
+| Page | Read it when |
+| --- | --- |
+| [Handler context](/guide/advanced/handler-context) | Your handler needs the logger, database, session, request identifiers, a topic message or another action |
+| [Composing hooks](/guide/advanced/composing-hooks) | An action needs steps before or after its handler, or a check that runs for every action |
+| [Execution options](/guide/advanced/execution-options) | You need a timeout, or a rate limit that differs by service or action |
+| [Testing actions](/guide/advanced/testing-actions) | You want to test an action's rules without starting an HTTP server |
+
+Every handler in this section receives two arguments: the validated input and the execution context. The [handler context page](/guide/advanced/handler-context) explains the second argument.

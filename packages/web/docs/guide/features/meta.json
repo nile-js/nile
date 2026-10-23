@@ -1,0 +1,20 @@
+{
+  "title": "Features",
+  "pages": [
+    "index",
+    "validation-and-errors",
+    "authentication-and-hooks",
+    "context-and-logging",
+    "queues-debounce-throttle",
+    "telemetry",
+    "websockets",
+    "cron-jobs",
+    "database-models",
+    "api-discovery",
+    "calling-actions",
+    "retries-and-utilities",
+    "rate-limiting",
+    "file-uploads",
+    "readiness-and-shutdown"
+  ]
+}

@@ -1,0 +1,96 @@
+/*
+ * Entry animations. `HomeMotion` adds `.nile-motion` after hydration, so content
+ * is never hidden without JavaScript or for visitors who prefer reduced motion.
+ * Reveals animate `translate`/`scale`, leaving `transform` free for hover states.
+ */
+@media (prefers-reduced-motion: no-preference) {
+	.nile-motion [data-reveal]:not(.is-revealed) {
+		opacity: 0;
+	}
+	.nile-motion [data-reveal].is-revealed {
+		animation: nile-reveal-up 0.9s var(--nile-ease-out)
+			var(--nile-reveal-delay, 0ms) backwards;
+	}
+	.nile-motion [data-reveal="left"].is-revealed {
+		animation-name: nile-reveal-left;
+	}
+	.nile-motion [data-reveal="right"].is-revealed {
+		animation-name: nile-reveal-right;
+	}
+	.nile-motion [data-reveal="scale"].is-revealed {
+		animation-name: nile-reveal-scale;
+	}
+
+	/* Siblings that enter together arrive one after another. */
+	.nile-how-grid > .nile-how-step:last-child,
+	.nile-explorer > :last-child,
+	.nile-story-layout > :last-child {
+		--nile-reveal-delay: 120ms;
+	}
+	.nile-how-grid > .nile-how-bridge {
+		--nile-reveal-delay: 260ms;
+	}
+	.nile-bento > :nth-child(3n + 2),
+	.nile-eco-grid > :nth-child(3n + 2),
+	.nile-story-stats > :nth-child(2) {
+		--nile-reveal-delay: 90ms;
+	}
+	.nile-bento > :nth-child(3n),
+	.nile-eco-grid > :nth-child(3n),
+	.nile-story-stats > :nth-child(3) {
+		--nile-reveal-delay: 180ms;
+	}
+
+	.nile-eco-libraries > :nth-child(2) {
+		--nile-reveal-delay: 80ms;
+	}
+	.nile-eco-libraries > :nth-child(3) {
+		--nile-reveal-delay: 160ms;
+	}
+	.nile-eco-libraries > :nth-child(4) {
+		--nile-reveal-delay: 240ms;
+	}
+	.nile-credits-list > :nth-child(2) {
+		--nile-reveal-delay: 60ms;
+	}
+	.nile-credits-list > :nth-child(3) {
+		--nile-reveal-delay: 120ms;
+	}
+	.nile-credits-list > :nth-child(4) {
+		--nile-reveal-delay: 180ms;
+	}
+	.nile-credits-list > :nth-child(5) {
+		--nile-reveal-delay: 240ms;
+	}
+	.nile-credits-list > :nth-child(6) {
+		--nile-reveal-delay: 300ms;
+	}
+	.nile-credits-list > :nth-child(7) {
+		--nile-reveal-delay: 360ms;
+	}
+
+	@keyframes nile-reveal-up {
+		from {
+			opacity: 0;
+			translate: 0 28px;
+		}
+	}
+	@keyframes nile-reveal-left {
+		from {
+			opacity: 0;
+			translate: -36px 0;
+		}
+	}
+	@keyframes nile-reveal-right {
+		from {
+			opacity: 0;
+			translate: 36px 0;
+		}
+	}
+	@keyframes nile-reveal-scale {
+		from {
+			opacity: 0;
+			scale: 0.94;
+		}
+	}
+}

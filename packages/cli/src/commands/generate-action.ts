@@ -26,24 +26,26 @@ const generateActionContent = (
   const camel = toCamelCase(actionName);
   const pascal = toPascalCase(actionName);
 
-  return `import { type Action, createAction } from "@nilejs/nile";
+  return `import { createAction } from "@nilejs/nile";
 import { Ok } from "slang-ts";
 import z from "zod";
 
 const ${camel}Schema = z.object({
-  // Define your validation schema here
+  // Describe the input this action accepts
 });
 
-const ${camel}Handler = async (data: Record<string, unknown>) => {
-  // Implement your ${serviceName}.${actionName} logic here
-  return Ok({ result: data });
+type ${pascal}Input = z.infer<typeof ${camel}Schema>;
+
+const ${camel}Handler = async (input: ${pascal}Input) => {
+  // Implement ${serviceName}.${actionName} here
+  return Ok({ result: input });
 };
 
-export const ${camel}Action: Action = createAction({
+export const ${camel}Action = createAction<${pascal}Input>({
   name: "${actionName}",
   description: "${pascal} action for ${serviceName}",
-  handler: ${camel}Handler,
   validation: ${camel}Schema,
+  handler: ${camel}Handler,
 });
 `;
 };

@@ -1,274 +1,372 @@
 .nile-home {
 	--nile-accent: #38bdf8;
-	--nile-ink: var(--rp-c-text-1);
-	--nile-muted: var(--rp-c-text-2);
-	--nile-line: var(--rp-c-divider);
-	--nile-surface: var(--rp-c-bg-soft);
-	max-width: 1240px;
-	margin: 0 auto;
-	padding: 0 40px;
+	--nile-accent-soft: #7dd3fc;
+	--nile-ink: #e9f1f8;
+	--nile-muted: #a3b4c6;
+	--nile-faint: #71859a;
+	--nile-edge: #a5cdf214;
+	--nile-edge-strong: #a5cdf22b;
+	--nile-code: #0a121b;
+	--nile-nav-height: 56px;
+	--nile-inner-radius: 3px;
+	/* One spacing rhythm for the whole page, scaling smoothly with the viewport. */
+	--nile-section-gap: clamp(80px, 8.5vw, 120px);
+	--nile-heading-gap: clamp(32px, 3.6vw, 52px);
+	--nile-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+	position: relative;
+	isolation: isolate;
+	overflow: clip;
+	margin-top: calc(var(--nile-nav-height) * -1);
 	color: var(--nile-ink);
 	font-family: "Nile Sans", sans-serif;
 }
-.nile-home * {
+.nile-home *,
+.nile-home *::before,
+.nile-home *::after {
 	box-sizing: border-box;
 }
+.nile-home > :where(section, footer) {
+	width: min(1160px, calc(100% - 80px));
+	margin-inline: auto;
+}
+.nile-home > .nile-hero {
+	width: 100%;
+}
+.nile-home > .nile-features {
+	width: min(1280px, calc(100% - 80px));
+}
+@media (prefers-reduced-motion: no-preference) {
+	html:has(.nile-home) {
+		scroll-behavior: smooth;
+	}
+}
+
+/* The home header floats over the hero and firms up as the page scrolls. */
+#nd-home-layout > #nd-nav {
+	background: transparent;
+	border-bottom-color: transparent;
+}
+#nd-home-layout > #nd-nav > div {
+	background: linear-gradient(180deg, #060e17e0, #060e1773);
+	border-bottom-color: transparent;
+}
+@supports (animation-timeline: scroll()) {
+	@media (prefers-reduced-motion: no-preference) {
+		#nd-home-layout > #nd-nav > div {
+			animation: nile-nav-settle linear both;
+			animation-timeline: scroll(root);
+			animation-range: 0 240px;
+		}
+		@keyframes nile-nav-settle {
+			to {
+				background-color: #070e16f2;
+				border-bottom-color: #a5cdf214;
+			}
+		}
+	}
+}
+
+/* Typography */
 .nile-home h1,
 .nile-home h2,
 .nile-home h3,
-.nile-home p {
+.nile-home p,
+.nile-home dl,
+.nile-home dd,
+.nile-home figure {
 	margin: 0;
 }
 .nile-home h1,
 .nile-home h2 {
-	font-weight: 600;
-	letter-spacing: -0.045em;
-	text-wrap: balance;
+	font-weight: 650;
+	letter-spacing: -0.05em;
 }
 .nile-home h1 {
-	font-size: clamp(44px, 4.55vw, 66px);
-	line-height: 1.06;
+	font-size: clamp(40px, 5vw, 74px);
+	line-height: 1.04;
 }
 .nile-home h2 {
-	font-size: clamp(34px, 3.5vw, 49px);
-	line-height: 1.12;
+	font-size: clamp(30px, 3.6vw, 50px);
+	line-height: 1.08;
 }
 .nile-home h3 {
-	font-size: 24px;
-	font-weight: 600;
+	font-size: 21px;
+	font-weight: 650;
 	line-height: 1.25;
 	letter-spacing: -0.025em;
 }
 .nile-home p {
 	font-size: 17px;
-	line-height: 1.7;
+	line-height: 1.65;
 	color: var(--nile-muted);
-	text-wrap: pretty;
 }
 .nile-home code {
 	font-family: "Nile Mono", monospace;
 }
 .nile-home a {
+	color: inherit;
 	text-decoration: none;
 	transition:
-		color 0.18s,
-		background-color 0.18s,
-		transform 0.18s;
-}
-.nile-home a:hover {
-	text-decoration: underline;
-	text-underline-offset: 5px;
+		color 0.2s,
+		background-color 0.2s,
+		box-shadow 0.2s,
+		transform 0.2s;
 }
 .nile-home a:focus-visible,
 .nile-home button:focus-visible {
 	outline: 3px solid var(--nile-accent);
-	outline-offset: 5px;
+	outline-offset: 4px;
 }
 .nile-home button {
 	font: inherit;
 	cursor: pointer;
-}
-.nile-home a,
-.nile-home button {
 	-webkit-tap-highlight-color: transparent;
 }
 .nile-home a:active,
 .nile-home button:active {
-	transform: translateY(1px);
+	transform: translateY(1px) scale(0.985);
 }
-.nile-home .nile-eyebrow {
+
+/* Shared section shell: every section is a size container for its own layout. */
+.nile-section {
+	container: section / inline-size;
+	position: relative;
+	padding: var(--nile-section-gap) 0 0;
+	scroll-margin-top: 80px;
+}
+.nile-heading {
+	margin-bottom: var(--nile-heading-gap);
+}
+.nile-heading > p {
+	margin-top: 18px;
+}
+.nile-heading-center {
+	max-width: 760px;
+	margin-inline: auto;
+	text-align: center;
+}
+.nile-heading-split {
 	display: flex;
-	align-items: center;
-	gap: 9px;
-	color: var(--nile-muted);
-	font-size: 12px;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: 40px;
+}
+.nile-heading-split > p {
+	max-width: 380px;
+	margin: 0 0 6px;
+	font-size: 16px;
+}
+@container section (max-width: 720px) {
+	.nile-heading-split {
+		display: block;
+	}
+	.nile-heading-split > p {
+		max-width: 520px;
+		margin-top: 18px;
+	}
+}
+.nile-home .nile-footnote {
+	max-width: 760px;
+	margin: 28px auto 0;
+	font-size: 13px;
 	line-height: 1.6;
-	letter-spacing: 0.035em;
-	margin-bottom: 24px;
+	text-align: center;
+	color: var(--nile-faint);
 }
-.nile-status-dot {
-	width: 6px;
-	height: 6px;
-	flex: 0 0 6px;
-	background: var(--nile-accent);
-	border-radius: 50%;
+.nile-home .nile-center-link {
+	margin-top: 36px;
+	text-align: center;
 }
-.nile-hero {
-	display: grid;
-	grid-template-columns: 1.08fr 1fr;
-	gap: 52px;
-	align-items: center;
-	padding: 78px 0 76px;
+.nile-home .nile-inline-link {
+	color: var(--nile-accent-soft);
+	white-space: nowrap;
 }
-.nile-hero-copy h1 span,
-.nile-structure h2 span {
-	color: var(--rp-c-brand);
+.nile-home .nile-inline-link:hover {
+	color: #bae6fd;
 }
-.nile-home .nile-lead {
-	max-width: 480px;
-	font-size: 19px;
-	line-height: 1.65;
-	margin-top: 25px;
-}
+
+/* Actions and their micro-interactions */
 .nile-actions {
 	display: flex;
 	align-items: center;
 	flex-wrap: wrap;
-	gap: 24px;
-	margin-top: 30px;
+	gap: 26px;
+	margin-top: 34px;
 }
 .nile-home .nile-button {
+	position: relative;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	gap: 24px;
-	background: var(--nile-accent);
-	color: #082334;
-	padding: 14px 19px;
-	border-radius: 5px;
-	font-size: 14px;
-	font-weight: 600;
+	gap: 18px;
+	min-height: 50px;
+	padding: 14px 22px;
+	overflow: hidden;
+	border-radius: 12px;
+	background: linear-gradient(135deg, #7dd3fc, #38bdf8 55%, #0ea5e9);
+	color: #03213a;
+	font-size: 15px;
+	font-weight: 650;
 	white-space: nowrap;
-	text-decoration: none;
-	min-height: 48px;
+	box-shadow:
+		0 12px 34px -12px #38bdf8b3,
+		inset 0 1px 0 #ffffff66;
+}
+.nile-home .nile-button::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(
+		110deg,
+		transparent 30%,
+		#ffffff73 50%,
+		transparent 70%
+	);
+	translate: -120% 0;
+	transition: translate 0.7s var(--nile-ease-out);
+	pointer-events: none;
 }
 .nile-home .nile-button:hover {
-	background: #7dd3fc;
-	transform: translateY(-1px);
+	transform: translateY(-2px);
+	box-shadow:
+		0 18px 42px -14px #38bdf8d9,
+		inset 0 1px 0 #ffffff80;
+}
+.nile-home .nile-button:hover::after {
+	translate: 120% 0;
+}
+.nile-home :is(.nile-button, .nile-text-link) > span {
+	display: inline-block;
+	transition: translate 0.25s var(--nile-ease-out);
+}
+.nile-home .nile-button:hover > span {
+	translate: 2px -2px;
 }
 .nile-home .nile-text-link {
-	font-size: 14px;
-	font-weight: 600;
-	color: var(--nile-ink);
 	display: inline-flex;
 	align-items: center;
 	gap: 10px;
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--nile-ink);
 }
 .nile-home .nile-text-link:hover {
-	color: var(--rp-c-brand);
+	color: var(--nile-accent-soft);
 }
-.nile-install {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 14px;
-	margin-top: 24px;
-	max-width: 438px;
-	padding: 10px 13px;
-	border: 1px solid var(--nile-line);
-	border-radius: 5px;
+.nile-home .nile-text-link:hover > span {
+	translate: 4px 0;
 }
-.nile-install code {
-	font-size: 12px;
-	white-space: nowrap;
+.nile-home .nile-text-link[href^="#"]:hover > span {
+	translate: 0 3px;
 }
 .nile-copy {
 	flex-shrink: 0;
-	border: 0;
-	border-radius: 3px;
-	background: transparent;
-	padding: 7px 9px;
-	color: inherit;
-	font-size: 11px !important;
 	min-height: 32px;
+	padding: 7px 11px;
+	border: 0;
+	border-radius: var(--nile-inner-radius);
+	background: #ffffff0d;
+	color: var(--nile-muted);
+	font-size: 11px !important;
+	transition:
+		background-color 0.2s,
+		color 0.2s;
 }
 .nile-copy:hover {
-	background: #7f87951a;
+	background: #38bdf826;
+	color: var(--nile-ink);
 }
-.nile-home .nile-hero-note {
-	font-size: 12px;
-	margin-top: 15px;
-	max-width: 420px;
+.nile-copy[data-state="copied"] {
+	background: #7dd3fc;
+	color: #03213a;
+	animation: nile-pop 0.35s var(--nile-ease-out);
 }
-.nile-hero-example {
-	min-width: 0;
+@keyframes nile-pop {
+	40% {
+		scale: 1.08;
+	}
 }
-.nile-example-label {
-	display: flex;
-	justify-content: space-between;
-	margin: 0 0 12px;
-	font-size: 11px;
-	color: var(--nile-muted);
-}
-.nile-example-label span:last-child {
-	font-family: "Nile Mono", monospace;
-	color: var(--rp-c-brand);
-}
+
+/* Code panels are size containers so their text can respond to their own width. */
 .nile-code-panel {
-	background: #0e1721;
-	border: 1px solid #263646;
-	color: #cbd5e1;
-	border-radius: 7px;
-	overflow: hidden;
+	container: code / inline-size;
+	display: flex;
+	flex-direction: column;
 	min-width: 0;
+	overflow: hidden;
+	border-radius: 18px;
+	background: linear-gradient(180deg, #0e1823, var(--nile-code));
+	box-shadow:
+		0 0 0 1px var(--nile-edge),
+		0 36px 80px -44px #000000,
+		inset 0 1px 0 #ffffff0d;
+	color: var(--nile-ink);
 }
 .nile-code-heading {
 	display: flex;
+	align-items: center;
 	justify-content: space-between;
 	gap: 12px;
+	padding: 9px 10px 9px 18px;
+	background: #ffffff06;
+	font:
+		11.5px / 1.4 "Nile Mono",
+		monospace;
+	color: var(--nile-faint);
+}
+.nile-code-heading > span {
+	display: inline-flex;
 	align-items: center;
-	min-height: 48px;
-	padding: 8px 17px;
-	border-bottom: 1px solid #263646;
-	font-family: "Nile Mono", monospace;
-	font-size: 11px;
-	color: #b5c4d4;
+	gap: 10px;
+	min-width: 0;
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+.nile-code-heading > span::before {
+	content: "";
+	flex-shrink: 0;
+	width: 6px;
+	height: 6px;
+	border-radius: 1px;
+	background: var(--nile-accent);
+}
+.nile-highlight {
+	flex: 1;
+	min-height: 0;
 }
 .nile-highlight pre {
+	height: 100%;
 	margin: 0 !important;
-	padding: 23px 20px !important;
+	padding: 20px 22px 24px !important;
 	background: transparent !important;
 	overflow-x: auto;
-	font-size: 12px;
-	line-height: 1.85;
+	font-size: 12.5px;
+	line-height: 1.75;
+	tab-size: 2;
 }
 .nile-highlight code {
 	font-family: "Nile Mono", monospace !important;
 }
-.nile-home .nile-code-caption {
-	font-size: 11px;
-	line-height: 1.6;
-	margin-top: 13px;
-	padding-left: 1px;
+.nile-highlight pre,
+.nile-highlight span {
+	color: var(--shiki-dark) !important;
 }
-.nile-section {
-	padding: 88px 0;
-	border-top: 1px solid var(--nile-line);
-	scroll-margin-top: 84px;
+@container code (max-width: 520px) {
+	.nile-highlight pre {
+		padding: 18px 16px 20px !important;
+		font-size: 12px;
+	}
 }
-.nile-section-heading {
-	margin-bottom: 38px;
+@container code (max-width: 400px) {
+	.nile-highlight pre {
+		font-size: 11.5px;
+	}
+	.nile-code-heading {
+		padding-left: 14px;
+	}
 }
-.nile-section-heading .nile-eyebrow {
-	margin-bottom: 19px;
-}
-.nile-wide-heading {
-	display: flex;
-	align-items: flex-end;
-	justify-content: space-between;
-	gap: 35px;
-}
-.nile-wide-heading > p {
-	max-width: 350px;
-	font-size: 16px;
-}
-.nile-home .nile-section-intro {
-	margin-top: 25px;
-	font-size: 19px;
-	max-width: 470px;
-}
-.nile-section-footnote {
-	font-size: 12px !important;
-	margin-top: 20px !important;
-}
-.nile-section-footnote a {
-	color: var(--rp-c-brand);
-}
-.nile-small-label {
-	font-size: 11px;
-	line-height: 1.6;
-	color: var(--nile-muted);
-}
+
 .nile-sr-only {
 	position: absolute;
 	width: 1px;
@@ -279,77 +377,39 @@
 	white-space: nowrap;
 	border: 0;
 }
-@media (min-width: 1440px) {
-	.nile-hero {
-		padding-top: 95px;
-		padding-bottom: 95px;
-	}
+
+/* Page-length decoration */
+.nile-ambient {
+	position: absolute;
+	inset: 0;
+	z-index: -2;
+	width: 100%;
+	height: 100%;
+	max-width: none;
+	object-fit: fill;
+	pointer-events: none;
 }
+
+/* Page gutters follow the viewport; component layouts follow their containers. */
 @media (max-width: 1000px) {
-	.nile-home {
-		padding: 0 28px;
+	.nile-home > :where(section, footer),
+	.nile-home > .nile-features {
+		width: calc(100% - 56px);
 	}
-	.nile-hero {
-		gap: 28px;
-		padding-top: 60px;
-	}
-	.nile-hero .nile-actions {
-		gap: 17px;
-	}
-	.nile-home h1 {
-		font-size: 47px;
-	}
-	.nile-highlight pre {
-		font-size: 11px;
-		padding: 18px 14px !important;
+	.nile-home > .nile-hero {
+		width: 100%;
 	}
 }
 @media (max-width: 760px) {
-	.nile-home {
-		padding: 0 22px;
+	.nile-home > :where(section, footer),
+	.nile-home > .nile-features {
+		width: calc(100% - 32px);
 	}
-	.nile-hero {
-		grid-template-columns: 1fr;
-		gap: 40px;
-		padding: 43px 0 55px;
+	.nile-home > .nile-hero {
+		width: 100%;
 	}
-	.nile-home h1 {
-		font-size: clamp(42px, 8vw, 57px);
-		max-width: 530px;
-	}
-	.nile-home .nile-lead {
-		font-size: 17px;
-		margin-top: 20px;
-	}
-	.nile-home .nile-eyebrow {
-		font-size: 11px;
-		margin-bottom: 20px;
-	}
-	.nile-actions {
-		gap: 21px;
-		margin-top: 24px;
-	}
-	.nile-section {
-		padding: 58px 0;
-	}
-	.nile-wide-heading {
-		display: block;
-	}
-	.nile-wide-heading > p {
-		margin-top: 22px;
-		max-width: 480px;
-	}
-	.nile-highlight pre {
-		font-size: 11px;
-	}
-	.nile-section-heading {
-		margin-bottom: 28px;
-	}
-	.nile-install {
-		max-width: none;
-	}
-	.nile-install code {
-		font-size: 11px;
+	.nile-home p {
+		font-size: 16px;
 	}
 }
 @media (prefers-reduced-motion: reduce) {
@@ -360,16 +420,4 @@
 		transition: none !important;
 		scroll-behavior: auto !important;
 	}
-}
-
-.nile-install code,
-.nile-code-heading > span {
-	min-width: 0;
-	overflow-x: auto;
-}
-
-.nile-code-heading > span {
-	white-space: nowrap;
-	text-overflow: ellipsis;
-	overflow: hidden;
 }

@@ -7,6 +7,7 @@ export {
   parseBodyToStructured,
   parseFormData,
   parseFormDataFlat,
+  rejectJsonForMultipartAction,
 } from "./parse-formdata";
 export type {
   FormDataResult,

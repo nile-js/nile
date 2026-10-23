@@ -1,0 +1,11 @@
+{
+  "title": "Configuration",
+  "pages": [
+    "server",
+    "db",
+    "logging",
+    "engine",
+    "rest",
+    "cors"
+  ]
+}

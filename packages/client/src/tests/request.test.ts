@@ -47,6 +47,51 @@ describe("sendNileRequest", () => {
     });
   });
 
+  it("should return an Ok result with the action data as value", async () => {
+    vi.mocked(fetch).mockReturnValue(
+      mockFetchResponse({ status: true, message: "ok", data: { id: 1 } })
+    );
+
+    const result = await sendNileRequest(config, "execute", "users", "create", {});
+
+    expect(result.isOk).toBe(true);
+    expect(result.isErr).toBe(false);
+    expect(result.value).toEqual({ id: 1 });
+    expect(result.error).toBeNull();
+  });
+
+  it("should return an Err result with the server's details", async () => {
+    vi.mocked(fetch).mockReturnValue(
+      mockFetchResponse({
+        status: false,
+        message: "Invalid input",
+        data: { issues: ["name is required"] },
+      })
+    );
+
+    const result = await sendNileRequest(config, "execute", "users", "create", {});
+
+    expect(result.isErr).toBe(true);
+    expect(result.isOk).toBe(false);
+    expect(result.value).toBeNull();
+    if (result.isErr) {
+      expect(result.error).toBe("Invalid input");
+      expect(result.details).toEqual({ issues: ["name is required"] });
+    }
+  });
+
+  it("should return an Err result without details on network failure", async () => {
+    vi.mocked(fetch).mockRejectedValue(new Error("Network error"));
+
+    const result = await sendNileRequest(config, "execute", "x", "y", {});
+
+    expect(result.isErr).toBe(true);
+    if (result.isErr) {
+      expect(result.error).toBe("Network error");
+      expect(result.details).toBeNull();
+    }
+  });
+
   it("should return error when server returns status: false", async () => {
     vi.mocked(fetch).mockReturnValue(
       mockFetchResponse({ status: false, message: "Not found", data: null })

@@ -1,3 +1,4 @@
+import { clientErr, clientOk } from "./result.js";
 import { safeTry } from "./safe-try.js";
 import type {
   ClientResult,
@@ -8,7 +9,7 @@ import type {
 
 /**
  * Handles JSON communication with the Nile /services endpoint.
- * Uses fetch + safeTry for crash safety and consistent { error, data } results.
+ * Uses fetch + safeTry for crash safety and returns a Result that never throws.
  */
 export async function sendNileRequest<T = Record<string, unknown>>(
   config: NileClientConfig,
@@ -55,10 +56,10 @@ export async function sendNileRequest<T = Record<string, unknown>>(
   const result = requestResult.value;
 
   if (!result.status) {
-    return { error: result.message, data: result.data };
+    return clientErr(result.message, result.data ?? null);
   }
 
-  return { error: null, data: result.data };
+  return clientOk(result.data);
 }
 
 /**
@@ -115,10 +116,10 @@ export async function sendUploadRequest<T = Record<string, unknown>>(
   const result = requestResult.value;
 
   if (!result.status) {
-    return { error: result.message, data: result.data };
+    return clientErr(result.message, result.data ?? null);
   }
 
-  return { error: null, data: result.data };
+  return clientOk(result.data);
 }
 
 /**
@@ -160,7 +161,7 @@ export function buildFormData(
 }
 
 /** Resolve error from safeTry into a ClientResult */
-function resolveError<T>(error: unknown): ClientResult<T> {
+function resolveError(error: unknown): ClientResult<never> {
   let errorMsg = "An unknown error occurred";
 
   if (error instanceof Error) {
@@ -170,5 +171,5 @@ function resolveError<T>(error: unknown): ClientResult<T> {
     errorMsg = String(error);
   }
 
-  return { error: errorMsg, data: null };
+  return clientErr(errorMsg);
 }

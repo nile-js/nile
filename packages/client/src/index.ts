@@ -11,6 +11,8 @@ export type {
   SocketTopics,
 } from "./socket-types.js";
 export type {
+  ClientErr,
+  ClientOk,
   ClientResult,
   ExploreActionsResponse,
   ExploreServicesResponse,

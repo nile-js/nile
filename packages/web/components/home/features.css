@@ -1,0 +1,155 @@
+.nile-bento {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 18px;
+}
+.nile-card {
+	--tone: #38bdf8;
+	position: relative;
+	isolation: isolate;
+	display: flex;
+	flex-direction: column;
+	gap: 22px;
+	min-width: 0;
+	padding: 20px;
+	border-radius: 22px;
+	background: linear-gradient(170deg, #111b26f2, #0c141df2);
+	box-shadow:
+		0 0 0 1px #a5cdf214,
+		inset 0 1px 0 #ffffff0a;
+	transition:
+		transform 0.3s var(--nile-ease-out),
+		box-shadow 0.3s ease;
+}
+.nile-card[data-tone="blue"] {
+	--tone: #60a5fa;
+}
+.nile-card[data-tone="teal"] {
+	--tone: #2dd4bf;
+}
+.nile-card[data-tone="cyan"] {
+	--tone: #22d3ee;
+}
+.nile-card[data-tone="indigo"] {
+	--tone: #818cf8;
+}
+.nile-card:hover {
+	transform: translateY(-3px);
+	box-shadow:
+		0 0 0 1px #a5cdf229,
+		inset 0 1px 0 #ffffff0d;
+}
+.nile-card-copy {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 10px;
+	min-width: 0;
+}
+/* The icon sits in a water droplet, Nile Js's shape for a unit of work. */
+.nile-drop {
+	display: grid;
+	place-items: center;
+	width: 42px;
+	height: 42px;
+	margin: 4px 0 10px 4px;
+	border-radius: 50% 0 50% 50%;
+	transform: rotate(-45deg);
+	background: color-mix(in srgb, var(--tone) 14%, #0d1620);
+	box-shadow: 0 0 0 1px color-mix(in srgb, var(--tone) 26%, transparent);
+	color: color-mix(in srgb, var(--tone) 55%, #ffffff);
+	transition:
+		translate 0.3s var(--nile-ease-out),
+		background-color 0.3s;
+}
+.nile-drop svg {
+	transform: rotate(45deg);
+}
+.nile-card:hover .nile-drop {
+	translate: 0 -2px;
+	background: color-mix(in srgb, var(--tone) 22%, #0d1620);
+}
+.nile-card h3 {
+	font-size: 21px;
+}
+.nile-card p {
+	font-size: 14.5px;
+	line-height: 1.6;
+}
+.nile-home .nile-card-guide {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin-top: 4px;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--nile-accent-soft);
+}
+.nile-home .nile-card-guide:hover {
+	color: #e0f2fe;
+}
+.nile-card-guide > svg {
+	transition: translate 0.25s var(--nile-ease-out);
+}
+.nile-card-guide:hover > svg {
+	translate: 2px -2px;
+}
+.nile-card .nile-code-panel {
+	flex: 1;
+	border-radius: var(--nile-inner-radius);
+	background: #070d14;
+	box-shadow: 0 0 0 1px #a5cdf20f;
+}
+.nile-card .nile-code-heading {
+	padding: 6px 6px 6px 14px;
+	font-size: 11px;
+}
+.nile-card .nile-code-heading > span::before {
+	background: var(--tone);
+}
+/* Size the code to its own panel so card snippets fit without sideways scrolling. */
+.nile-card .nile-highlight pre {
+	padding: 14px 14px 18px !important;
+	font-size: clamp(10.5px, calc((100cqi - 28px) / 31.5), 11.5px);
+	line-height: 1.7;
+}
+/* Wide cards place code beside the copy and wrap below it when the card gets narrow. */
+.nile-card-wide {
+	grid-column: span 2;
+	flex-flow: row wrap;
+	align-items: stretch;
+	gap: 26px;
+}
+.nile-card-wide > .nile-card-copy {
+	flex: 1 1 230px;
+	padding: 4px 0;
+}
+.nile-card-wide > .nile-code-panel {
+	flex: 1.8 1 420px;
+}
+.nile-card-wide .nile-card-guide {
+	margin-top: auto;
+}
+@container section (max-width: 1180px) {
+	.nile-bento {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		grid-auto-flow: dense;
+	}
+}
+@container section (max-width: 800px) {
+	.nile-bento {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 14px;
+	}
+	.nile-card-wide {
+		grid-column: auto;
+	}
+	.nile-card {
+		border-radius: 18px;
+	}
+}
+@media (hover: none) {
+	.nile-card:hover {
+		transform: none;
+	}
+}

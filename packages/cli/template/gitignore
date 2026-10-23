@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# Local environment
+.env
+.env.*
+!.env.example
+
+# Local PGlite database and logs
+data/
+logs/
+*.log
+
+# Build output and generated files
+dist/
+.DS_Store

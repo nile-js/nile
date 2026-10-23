@@ -127,6 +127,47 @@ function buildFormRequest(
 
 // --- Tests ---
 
+describe("REST JSON requests to multipart actions", () => {
+  it("rejects a JSON body before the handler runs without its files", async () => {
+    const { app } = createTestApp();
+    const response = await app.request("/api/v1/services", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        intent: "execute",
+        service: "documents",
+        action: "uploadDoc",
+        payload: { title: "Brief" },
+      }),
+    });
+    const json = (await response.json()) as ExternalResponse;
+
+    expect(response.status).toBe(400);
+    expect(json.status).toBe(false);
+    expect(json.message).toContain("expects multipart/form-data");
+    expect(json.data).toMatchObject({
+      expected: "multipart/form-data",
+      received: "application/json",
+    });
+  });
+
+  it("still runs JSON requests for ordinary actions", async () => {
+    const { app } = createTestApp();
+    const response = await app.request("/api/v1/services", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        intent: "execute",
+        service: "documents",
+        action: "getDoc",
+        payload: { docId: "d1" },
+      }),
+    });
+
+    expect(response.status).toBe(200);
+  });
+});
+
 describe("REST Form-Data Path - Routing Extraction", () => {
   const { app } = createTestApp();
 

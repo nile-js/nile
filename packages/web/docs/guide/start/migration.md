@@ -1,4 +1,7 @@
-# Migrate one domain at a time
+---
+title: "Migration guide"
+description: "Introduce services and actions alongside an existing application"
+---
 
 Start with an operation your team understands. Keep its business logic and data layer, give it a Nile action boundary, and verify its existing behavior before moving more traffic.
 
@@ -16,19 +19,26 @@ The client must switch to `POST /api/services` with the service/action envelope.
 
 This action adapts an existing application function that already returns a Result:
 
-```typescript
+```ts
 import { createAction } from "@nilejs/nile";
 import { z } from "zod";
 import { archiveProject } from "../../business/projects/archive-project";
 
-const inputSchema = z.object({ projectId: z.string().min(1) });
-type ArchiveInput = z.infer<typeof inputSchema>;
+const archiveProjectSchema = z.object({
+  projectId: z.string().min(1),
+});
 
-export const archiveProjectAction = createAction<ArchiveInput>({
+type ArchiveProjectInput = z.infer<typeof archiveProjectSchema>;
+
+const archiveProjectHandler = (input: ArchiveProjectInput) => {
+  return archiveProject(input);
+};
+
+export const archiveProjectAction = createAction<ArchiveProjectInput>({
   name: "archive",
   description: "Archive a project",
-  validation: inputSchema,
-  handler: (input) => archiveProject(input),
+  validation: archiveProjectSchema,
+  handler: archiveProjectHandler,
 });
 ```
 

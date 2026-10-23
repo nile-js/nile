@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="640" viewBox="0 0 640 640" fill="none">
+  <defs>
+    <radialGradient id="pool" cx="320" cy="320" r="320" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#38bdf8" stop-opacity=".22"/>
+      <stop offset=".45" stop-color="#38bdf8" stop-opacity=".07"/>
+      <stop offset="1" stop-color="#38bdf8" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ring" x1="80" y1="40" x2="560" y2="600" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#bae6fd"/>
+      <stop offset=".5" stop-color="#38bdf8" stop-opacity=".4"/>
+      <stop offset="1" stop-color="#60a5fa" stop-opacity=".1"/>
+    </linearGradient>
+  </defs>
+  <circle cx="320" cy="320" r="320" fill="url(#pool)"/>
+  <g stroke="url(#ring)">
+    <circle cx="320" cy="320" r="168" stroke-opacity=".34" stroke-width="1.4"/>
+    <circle cx="320" cy="320" r="206" stroke-opacity=".24" stroke-width="1.2"/>
+    <circle cx="320" cy="320" r="246" stroke-opacity=".15"/>
+    <circle cx="320" cy="320" r="288" stroke-opacity=".08"/>
+  </g>
+</svg>

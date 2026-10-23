@@ -4,41 +4,41 @@ import { createNileServer } from "../nile/server";
 import { resolveClientAddress } from "./http";
 
 describe("production protection", () => {
-  it.each([true, false])(
-    "bounds actual body bytes despite a false Content-Length (native=%s)",
-    async (native) => {
-      const handler = vi.fn(() => Ok(null));
-      const server = await createNileServer({
-        serverName: "protected",
-        services: [
-          {
-            name: "s",
-            description: "s",
-            actions: [{ name: "a", description: "a", handler }],
-          },
-        ],
-        runtime: "bun",
-        native,
-        forceNewInstance: true,
-        logServices: false,
-        rest: {
-          baseUrl: "/api",
-          allowedOrigins: [],
-          protection: { maxBodyBytes: 20 },
+  it.each([
+    true,
+    false,
+  ])("bounds actual body bytes despite a false Content-Length (native=%s)", async (native) => {
+    const handler = vi.fn(() => Ok(null));
+    const server = await createNileServer({
+      serverName: "protected",
+      services: [
+        {
+          name: "s",
+          description: "s",
+          actions: [{ name: "a", description: "a", handler }],
         },
-      });
-      const response = await server.fetch(
-        new Request("http://localhost/api/services", {
-          method: "POST",
-          headers: { "content-length": "1" },
-          body: "a".repeat(30),
-        })
-      );
-      expect(response?.status).toBe(413);
-      expect(handler).not.toHaveBeenCalled();
-      await server.lifecycle.shutdown();
-    }
-  );
+      ],
+      runtime: "bun",
+      native,
+      forceNewInstance: true,
+      logServices: false,
+      rest: {
+        baseUrl: "/api",
+        allowedOrigins: [],
+        protection: { maxBodyBytes: 20 },
+      },
+    });
+    const response = await server.fetch(
+      new Request("http://localhost/api/services", {
+        method: "POST",
+        headers: { "content-length": "1" },
+        body: "a".repeat(30),
+      })
+    );
+    expect(response?.status).toBe(413);
+    expect(handler).not.toHaveBeenCalled();
+    await server.lifecycle.shutdown();
+  });
 
   it("walks forwarded addresses only through explicitly trusted peers", () => {
     const request = new Request("http://localhost", {

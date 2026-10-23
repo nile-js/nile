@@ -1,8 +1,11 @@
-# Know where the next feature belongs
+---
+title: "Application structure"
+description: "Give each service, action and business rule a predictable place as your team grows"
+---
 
 A small team should be able to open an unfamiliar feature and follow it. Use domains to give that work a home, services to list its public operations, and ordinary functions for the business rules behind them.
 
-This is a recommended organization, not a folder scanner. Nile executes the services and actions you explicitly register; it does not assign behavior to directory names.
+Register services and actions explicitly. At startup, Nile checks the source structure once and reports misplaced or oversized action files, helping the team keep the same conventions as the application grows.
 
 ## Start with one domain
 
@@ -14,9 +17,15 @@ src/
     services.config.ts
     projects/
       index.ts
-      create-project.ts
-      archive-project.ts
-      types.ts
+      actions/
+        create-project.ts
+        archive-project/
+          archive-project.ts
+          index.ts
+          modules/
+            check-archive-policy.ts
+      modules/
+        types.ts
   business/
     projects/
       calculate-project-progress.ts
@@ -31,9 +40,19 @@ src/
     types.ts
 ```
 
-Keep the same domain names across the frontend operation, service, action and model. A teammate looking for project creation can follow `projects.create` to `create-project.ts`, then to the project model. A coding agent has the same explicit registration map and named modules to follow.
+Keep the same domain names across the frontend operation, service, action and model. A teammate looking for project creation can follow `projects.create` to `actions/create-project.ts`, then to the project model. A coding agent has the same explicit registration map and named modules to follow.
 
 For a smaller project, keep the business functions and model inside the domain directory instead. Pick one convention and apply it consistently. The CLI template uses `src/services/services.config.ts` as its registry.
+
+## Grow an action into a folder
+
+Start a small operation at `service/actions/create-project.ts`. When it needs several private helpers, use `service/actions/create-project/create-project.ts`, export it from `index.ts` and keep its helpers under `modules/`. Code shared by several actions belongs in the service's `modules/` directory.
+
+```sh
+bunx @nilejs/cli generate action projects archive --folder
+```
+
+Configure `project: { root: ".", structure: "error" }` on the server to fail startup when the structure check finds an error. Existing applications default to `"warn"`; `false` disables checking. In a monorepo, set `root` to the backend package. Source-less bundles skip the check unless a root is explicit. Action entry points above 400 lines receive refactoring guidance.
 
 ## Give each layer one job
 
@@ -50,11 +69,11 @@ An action does not need a model if it has no persistence. A helper does not need
 
 ## Register the domain explicitly
 
-```typescript
+```ts
 // services/projects/index.ts
 import { createService } from "@nilejs/nile";
-import { createProject } from "./create-project";
-import { archiveProject } from "./archive-project";
+import { createProject } from "./actions/create-project";
+import { archiveProject } from "./actions/archive-project";
 
 export const projectsService = createService({
   name: "projects",
@@ -63,7 +82,7 @@ export const projectsService = createService({
 });
 ```
 
-```typescript
+```ts
 // services/services.config.ts
 import { createServices } from "@nilejs/nile";
 import { projectsService } from "./projects";
@@ -78,7 +97,7 @@ Service names must be unique, and action names must be unique within their servi
 To add project archiving:
 
 1. Find the `projects` service and read a neighboring action.
-2. Define the archive input schema beside `archive-project.ts`.
+2. Define the archive input schema beside `actions/archive-project/archive-project.ts`.
 3. Check the caller's access before changing project state.
 4. Put data access in the project model and reusable domain rules in ordinary functions.
 5. Return an explicit Result for success and expected failures.

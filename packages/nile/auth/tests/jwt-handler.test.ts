@@ -347,6 +347,46 @@ describe("verifyJWT - Invalid Tokens", () => {
     }
   });
 
+  it("should report an expired token without echoing it", async () => {
+    const expiredAt = Math.floor(Date.now() / 1000) - 60;
+    const token = await createToken({
+      userId: "user-1",
+      organizationId: "org-1",
+      exp: expiredAt,
+    });
+
+    const result = await verifyJWT(withBearerToken(token), defaultConfig);
+
+    expect(result.isErr).toBe(true);
+    if (result.isErr) {
+      expect(result.error).toBe("JWT authentication failed: token expired");
+      expect(result.error).not.toContain(token);
+    }
+  });
+
+  it("should never include token text in invalid-token failures", async () => {
+    const token = await createToken({
+      userId: "user-1",
+      organizationId: "org-1",
+    });
+    const parts = token.split(".");
+    parts[2] = `${parts[2]}x`;
+    const badSignature = parts.join(".");
+    const wrongSecret = await createToken(
+      { userId: "user-1", organizationId: "org-1" },
+      "wrong-secret"
+    );
+
+    for (const candidate of [badSignature, wrongSecret, "not.a.valid.jwt"]) {
+      const result = await verifyJWT(withBearerToken(candidate), defaultConfig);
+      expect(result.isErr).toBe(true);
+      if (result.isErr) {
+        expect(result.error).toBe("JWT authentication failed: invalid token");
+        expect(result.error).not.toContain(candidate);
+      }
+    }
+  });
+
   it("should return Err for an empty Bearer token", async () => {
     const headers = new Headers();
     headers.set("authorization", "Bearer ");

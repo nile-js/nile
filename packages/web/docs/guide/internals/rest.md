@@ -1,4 +1,7 @@
-# HTTP transport
+---
+title: "REST"
+description: "Configure the HTTP action endpoint, discovery and adapter behavior"
+---
 
 Nile exposes registered business operations through `POST {baseUrl}/services`. The transport parses input, applies configured HTTP policies and sends an operation to the engine. The same action organization works with Bun native and the Hono adapter.
 
@@ -57,9 +60,11 @@ Multipart requests carry `intent`, `service` and `action` fields alongside their
 
 After creating a Bun-native server:
 
-```typescript
+```ts
 const native = server.nativeRest;
-if (!native) throw new Error("Native transport was not initialized");
+if (!native) {
+  throw new Error("Native transport was not initialized");
+}
 
 native.addMiddleware("/api", async (context, next) => {
   context.setHeader("X-Application", "back-office");
@@ -83,7 +88,7 @@ See [custom routes](/guide/basics/custom-routes), [CORS](/guide/internals/cors) 
 
 When an application needs a request quota, configure it alongside the transport rather than repeating a counter in each action. This server-config fragment applies a per-client limit:
 
-```typescript
+```ts
 rest: {
   baseUrl: "/api",
   allowedOrigins: ["https://app.example.com"],

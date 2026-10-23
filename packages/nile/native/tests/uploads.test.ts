@@ -142,24 +142,24 @@ describe("native multipart uploads", () => {
       message: "Failed to parse multipart form data",
     });
   });
-  it.each(["flat", "structured"] as const)(
-    "retains existing mixed-key rejection in %s mode",
-    async (uploadMode) => {
-      const body = form();
-      body.append("shared", "field");
-      body.append("shared", file());
-      const response = await setup({
-        action: {
-          isSpecial: { contentType: "multipart/form-data", uploadMode },
-        },
-      }).send(body);
-      expect(response.status).toBe(400);
-      expect(await response.json()).toMatchObject({
-        message: "mixed key types not allowed",
-        data: { conflicts: ["shared"] },
-      });
-    }
-  );
+  it.each([
+    "flat",
+    "structured",
+  ] as const)("retains existing mixed-key rejection in %s mode", async (uploadMode) => {
+    const body = form();
+    body.append("shared", "field");
+    body.append("shared", file());
+    const response = await setup({
+      action: {
+        isSpecial: { contentType: "multipart/form-data", uploadMode },
+      },
+    }).send(body);
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({
+      message: "mixed key types not allowed",
+      data: { conflicts: ["shared"] },
+    });
+  });
   it("enforces the action's content type and selects CORS before failure", async () => {
     let selected = "";
     const response = await setup({
@@ -198,18 +198,19 @@ describe("native multipart uploads", () => {
       expected: "empty file not allowed",
       files: [file("empty.png", "")],
     },
-  ])(
-    "applies existing file validation: $expected $limits",
-    async ({ limits, expected, files }) => {
-      const body = form();
-      for (const entry of files) {
-        body.append("files", entry);
-      }
-      const response = await setup({ uploads: { limits } }).send(body);
-      expect(response.status).toBe(400);
-      expect(await response.json()).toMatchObject({ message: expected });
+  ])("applies existing file validation: $expected $limits", async ({
+    limits,
+    expected,
+    files,
+  }) => {
+    const body = form();
+    for (const entry of files) {
+      body.append("files", entry);
     }
-  );
+    const response = await setup({ uploads: { limits } }).send(body);
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({ message: expected });
+  });
   it("requires both MIME and extension allowlists", async () => {
     for (const entry of [
       file("image.exe"),

@@ -69,22 +69,22 @@ describe("compileCorsPolicy", () => {
     },
   ];
 
-  it.each(cases)(
-    "matches Hono actual-response headers: $name",
-    async ({ options, origin }) => {
-      const request: RequestInit = {
-        method: "POST",
-        headers: origin ? { Origin: origin } : {},
-      };
-      const expected = await createApp(options, false).request("/", request);
-      const actual = await createApp(options, true).request("/", request);
-      expect([...actual.headers]).toEqual([...expected.headers]);
-      expect(actual.status).toBe(201);
-      expect(await actual.json()).toEqual({ ok: true });
-      expect(actual.headers.has("Access-Control-Allow-Methods")).toBe(false);
-      expect(actual.headers.has("Access-Control-Max-Age")).toBe(false);
-    }
-  );
+  it.each(cases)("matches Hono actual-response headers: $name", async ({
+    options,
+    origin,
+  }) => {
+    const request: RequestInit = {
+      method: "POST",
+      headers: origin ? { Origin: origin } : {},
+    };
+    const expected = await createApp(options, false).request("/", request);
+    const actual = await createApp(options, true).request("/", request);
+    expect([...actual.headers]).toEqual([...expected.headers]);
+    expect(actual.status).toBe(201);
+    expect(await actual.json()).toEqual({ ok: true });
+    expect(actual.headers.has("Access-Control-Allow-Methods")).toBe(false);
+    expect(actual.headers.has("Access-Control-Max-Age")).toBe(false);
+  });
 
   it("preserves existing Vary values when applied to a finished response", async () => {
     const app = new Hono();
