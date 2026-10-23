@@ -3,9 +3,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
 
-A TypeScript backend framework for small teams. Keep shipping as your backend grows.
+TypeScript-first, service and actions oriented backend framework.
 
-You define actions, group them into services, and get a predictable API with validation, error handling and schema export. No route definitions, no controllers and no middleware chains: just your business operations, each in a familiar place.
+A backend framework for small teams and agents suited for fast iteration, predicatable scaling via domain driven architecture, error handling with erros as values and data validation and depedency injection via single shared context, and open telemetry, background jobs, and global gates as builtin primitives. Nile keeps you shipping as your backend grows.
+
+You define actions, group them into services, and get a predictable API with validation, error handling and schema export. No route definitions, no controllers and no middleware chains, no hard plumbing, just your business operations, each in a place your team remembers and can reason about.
 
 [Documentation](https://nile-js.github.io/nile/) · [Getting started](https://nile-js.github.io/nile/guide/start/getting-started/) · [Features](https://nile-js.github.io/nile/guide/features/) · [Examples](https://nile-js.github.io/nile/guide/examples/)
 

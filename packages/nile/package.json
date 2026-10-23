@@ -44,6 +44,7 @@
     "fix": "ultracite fix",
     "test": "bunx vitest",
     "test:run": "bunx vitest run",
+    "test:security": "bunx vitest run security/tests",
     "test:bun": "bun test ./scripts/verify-bun-runtime.spec.ts",
     "build": "tsdown",
     "copy-docs": "bash scripts/copy-docs.sh",
@@ -80,7 +81,7 @@
     "typescript": "^7.0.2",
     "ultracite": "7.1.5",
     "vite-tsconfig-paths": "^6.1.1",
-    "vitest": "^4.0.18"
+    "vitest": "^4.1.12"
   },
   "peerDependencies": {
     "drizzle-orm": "^0.45.4",
