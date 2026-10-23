@@ -13,7 +13,7 @@ export function loader() {
 		[
 			"# Nile Js",
 			"",
-			"A functional TypeScript backend for small teams.",
+			"TypeScript-first, service and actions oriented backend framework.",
 			"",
 			`Full text: ${SITE_URL}${withBase("/llms-full.txt")}`,
 			"",

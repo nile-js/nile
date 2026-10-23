@@ -30,11 +30,13 @@ export function Hero() {
 			<div className="nile-hero-inner">
 				<div className="nile-hero-copy">
 					<h1 id="hero-title">
-						Keep shipping as your <span>backend grows.</span>
+						<span className="nile-nowrap">TypeScript-first,</span> service and
+						actions oriented{" "}
+						<span className="nile-accent">backend framework.</span>
 					</h1>
 					<p className="nile-lead">
 						Services and actions give every feature a familiar home, so your
-						team keeps adding work without losing its way.
+						team keeps shipping as the backend grows.
 					</p>
 					<div className="nile-actions">
 						<a

@@ -69,7 +69,10 @@ export function Layout({ children }: { children: ReactNode }) {
 }
 
 export const meta: Route.MetaFunction = () => [
-	{ title: "Nile Js | Keep shipping as your backend grows" },
+	{
+		title:
+			"Nile Js | TypeScript-first, service and actions oriented backend framework",
+	},
 	{ name: "description", content: SITE_DESCRIPTION },
 ];
 

@@ -29,7 +29,7 @@ The preview serves `http://127.0.0.1:4173/nile/`, or `http://127.0.0.1:4173/` fo
 - `app/lib/source.ts` loads the Fumadocs collection. Guide bodies load on demand; the homepage does not import the guide collection.
 - `scripts/home-examples.ts` holds homepage code and copy text. `scripts/generate-home-code.ts` highlights it into `home-code-blocks.ts` during the build.
 
-Keep copy grounded in small-team outcomes and shipped behavior. In-house production accounts come from the maintainers. Use the recorded evidence for performance claims.
+Nile Js describes itself as a "TypeScript-first, service and actions oriented backend framework". Lead with that line wherever the site introduces Nile Js, in the same plain, technical voice. Keep supporting copy grounded in small-team outcomes and shipped behavior. In-house production accounts come from the maintainers. Use the recorded evidence for performance claims.
 
 ## Choose where the site is hosted
 

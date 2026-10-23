@@ -22,7 +22,8 @@ import {
 } from "../lib/site";
 import "../../docs/home.css";
 
-const HOME_TITLE = "Nile Js | Keep shipping as your backend grows";
+const HOME_TITLE =
+	"Nile Js | TypeScript-first, service and actions oriented backend framework";
 const HOME_URL = absoluteUrl("/");
 const REPOSITORY_URL = "https://github.com/nile-js/nile";
 const LICENSE_URL = `${REPOSITORY_URL}/blob/main/LICENSE`;

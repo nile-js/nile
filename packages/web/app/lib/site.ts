@@ -8,7 +8,7 @@ export const BASE_PATH = siteLocation.basePath;
 /** Origin of the published site, used for canonical, social and sitemap URLs. */
 export const SITE_URL = siteLocation.siteUrl;
 export const SITE_DESCRIPTION =
-	"A functional TypeScript backend for small teams. Keep shipping as your backend grows with services, actions and a familiar place for every operation.";
+	"TypeScript-first, service and actions oriented backend framework. Define actions, group them into services and keep shipping as your backend grows.";
 
 /** Keep public assets, downloads and source URLs on the configured base path. */
 export function withBase(path: string): string {
@@ -33,4 +33,4 @@ export const OG_IMAGE_URL = absoluteUrl(OG_IMAGE_PATH);
 export const OG_IMAGE_WIDTH = "1200";
 export const OG_IMAGE_HEIGHT = "630";
 export const OG_IMAGE_ALT =
-	"Nile Js: Keep shipping as your backend grows. A functional TypeScript backend for small teams.";
+	"Nile Js: TypeScript-first, service and actions oriented backend framework. Keep shipping as your backend grows.";

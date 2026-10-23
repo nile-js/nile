@@ -3,9 +3,9 @@
 [![NPM Version](https://img.shields.io/npm/v/@nilejs/nile.svg)](https://www.npmjs.com/package/@nilejs/nile)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A TypeScript backend framework for small teams. Keep shipping as your backend grows.
+TypeScript-first, service and actions oriented backend framework.
 
-You write actions, group them into services, and Nile Js gives you a predictable API with validation, error handling and schema export. There are no route trees, controllers or middleware chains to maintain: each business operation lives in one familiar place.
+You write actions, group them into services, and Nile Js gives you a predictable API with validation, error handling and schema export. There are no route trees, controllers or middleware chains to maintain: each business operation lives in one familiar place, so small teams keep shipping as the backend grows.
 
 [Documentation](https://nile-js.github.io/nile/) · [Getting started](https://nile-js.github.io/nile/guide/start/getting-started/) · [Features](https://nile-js.github.io/nile/guide/features/) · [Examples](https://nile-js.github.io/nile/guide/examples/)
 
