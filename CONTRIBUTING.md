@@ -107,6 +107,12 @@ Watch mode for development:
 bun run --cwd packages/client dev
 ```
 
+Full export pipeline (type check, test, build):
+
+```bash
+bun run --cwd packages/client export
+```
+
 ### CLI (`@nilejs/cli`)
 
 ```bash
@@ -118,6 +124,16 @@ Run locally without building:
 ```bash
 bun run --cwd packages/cli dev
 ```
+
+Full export pipeline (type check, build, then run the built CLI):
+
+```bash
+bun run --cwd packages/cli export
+```
+
+### Publishing
+
+Run each package's `export` before `npm publish`, and publish in this order: `@nilejs/nile`, then `@nilejs/client`, then `@nilejs/cli`. The CLI starter installs `@nilejs/nile@latest`, so the framework release must be on npm first.
 
 ### Website and docs (`packages/web`)
 

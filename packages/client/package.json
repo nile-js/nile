@@ -20,7 +20,9 @@
     "build": "tsdown",
     "dev": "tsdown --watch",
     "test": "vitest",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "export": "bun run typecheck && bun run test:run && bun run build"
   },
   "devDependencies": {
     "tsdown": "^0.23.1",

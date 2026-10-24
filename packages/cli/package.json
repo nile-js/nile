@@ -12,7 +12,9 @@
   ],
   "scripts": {
     "build": "bun run scripts/build.ts",
-    "dev": "bun run src/index.ts"
+    "dev": "bun run src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "export": "bun run typecheck && bun run build && node dist/index.js --version"
   },
   "dependencies": {
     "commander": "^13.1.0",
