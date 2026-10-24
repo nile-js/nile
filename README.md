@@ -1,9 +1,15 @@
 # Nile Js
 
+[![npm version](https://img.shields.io/npm/v/@nilejs/nile.svg?label=@nilejs%2Fnile)](https://www.npmjs.com/package/@nilejs/nile)
+[![npm downloads](https://img.shields.io/npm/dm/@nilejs/nile.svg)](https://www.npmjs.com/package/@nilejs/nile)
+[![GitHub repo](https://img.shields.io/badge/GitHub-nile--js%2Fnile-blue?logo=github)](https://github.com/nile-js/nile)
+[![GitHub stars](https://img.shields.io/github/stars/nile-js/nile.svg?style=social&label=Star)](https://github.com/nile-js/nile)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
 
 TypeScript-first, service and actions oriented backend framework.
+
+**Repository:** https://github.com/nile-js/nile (archived original: https://github.com/nile-squad/nile)
 
 You define actions, group them into services, and get a predictable API with validation, error handling and schema export. No route definitions, controllers or middleware chains: each business operation lives in one place your team remembers and can reason about.
 
