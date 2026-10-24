@@ -84,7 +84,7 @@
     "drizzle-zod": "0.8.3",
     "tsdown": "^0.23.1",
     "typescript": "^7.0.2",
-    "ultracite": "7.1.5",
+    "ultracite": "7.12.4",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.12"
   },
