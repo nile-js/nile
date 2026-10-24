@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { resolve } from "node:path";
 import { Command } from "commander";
+import { version } from "../package.json";
 import { generateActionCommand } from "./commands/generate-action.js";
 import { generateSchemaCommand } from "./commands/generate-schema.js";
 import { generateServiceCommand } from "./commands/generate-service.js";
@@ -26,7 +27,7 @@ const program = new Command();
 program
   .name("nile")
   .description("CLI for the Nile backend framework")
-  .version("0.0.1");
+  .version(version);
 
 program
   .command("new")
