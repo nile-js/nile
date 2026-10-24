@@ -16,7 +16,7 @@ This test file creates a server for the `notes` service and runs two cases with 
 ```ts
 import { describe, expect, test } from "bun:test";
 import { createAction, createNileServer, createServices } from "@nilejs/nile";
-import { Err, Ok } from "slang-ts";
+import { Err, Ok } from "@nilejs/nile/fp";
 import { z } from "zod";
 
 const addNoteSchema = z.object({

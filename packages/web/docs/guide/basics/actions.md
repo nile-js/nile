@@ -7,7 +7,7 @@ An action is a named business operation. Keep its description, input schema and 
 
 ```ts
 import { createAction } from "@nilejs/nile";
-import { Ok } from "slang-ts";
+import { Ok } from "@nilejs/nile/fp";
 import { z } from "zod";
 
 const createProjectSchema = z.object({
@@ -42,6 +42,7 @@ The example returns a project without persistence. In a real application, coordi
 | `name`, `description` | Name and explain the operation. |
 | `validation` | A Zod schema parsed before the main handler. Omit it only when no schema validation is needed. |
 | `handler` | Receive parsed input and optional Nile context; return a Result or a promise of a Result. |
+| `successMessage` | The response message for a successful call. A handler's `Ok(value, message)` takes precedence. See [errors and Results](/guide/basics/errors-and-results). |
 | `isProtected` | Request built-in JWT verification **when server `auth` is also configured**. |
 | `hooks.before`, `hooks.after` | Reference registered actions for reusable pipeline steps. |
 | `accessControl` | Application-defined policy metadata; Nile does not enforce role strings automatically. |

@@ -33,4 +33,4 @@ export const OG_IMAGE_URL = absoluteUrl(OG_IMAGE_PATH);
 export const OG_IMAGE_WIDTH = "1200";
 export const OG_IMAGE_HEIGHT = "630";
 export const OG_IMAGE_ALT =
-	"Nile Js: TypeScript-first, service and actions oriented backend framework. Keep shipping as your backend grows.";
+	"Nile Js: Keep shipping as your backend grows. TypeScript-first, service and actions oriented backend framework.";

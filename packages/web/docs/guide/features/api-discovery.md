@@ -15,7 +15,7 @@ This server enables discovery with a secret. The helper function runs on a trust
 
 ```ts
 import { createNileServer, createServices } from "@nilejs/nile";
-import { Err, Ok, safeTry, type Result } from "slang-ts";
+import { Err, Ok, safeTry, type Result } from "@nilejs/nile/fp";
 
 export const services = createServices([
   {

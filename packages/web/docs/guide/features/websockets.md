@@ -23,7 +23,7 @@ import {
   getContext,
   type InferTopics,
 } from "@nilejs/nile";
-import { Err, Ok } from "slang-ts";
+import { Err, Ok } from "@nilejs/nile/fp";
 import { z } from "zod";
 
 export const topics = createTopics({

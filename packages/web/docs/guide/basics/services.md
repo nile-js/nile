@@ -35,4 +35,4 @@ console.log(server.stats());
 
 The snapshot contains `totalServices`, `totalActions`, `registrationDurationMs`, `startupDurationMs` and a `services` array with each service's `actionCount` and `registrationDurationMs`. It measures registration after modules have been constructed, not module import time or database loading per service. Set `logServices: false` to suppress the startup table.
 
-See [application structure](/guide/start/application-structure) for a domain layout that gives new teammates a familiar path through the code.
+See [application structure](/guide/start/application-structure) for a domain layout that gives new teammates a well known path through the code.

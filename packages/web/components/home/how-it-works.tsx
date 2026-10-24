@@ -13,9 +13,9 @@ export function HowItWorks() {
 		>
 			<header className="nile-heading nile-heading-center" data-reveal>
 				<h2 id="how-title">
-					TypeScript backend,
+					TypeScript Backend,
 					<br />
-					Any JavaScript frontend
+					Any JavaScript Frontend
 				</h2>
 			</header>
 			<div className="nile-how-grid">

@@ -66,7 +66,7 @@ Full text: https://nile-js.github.io/nile/llms-full.txt
 - [Shared backend utilities](https://nile-js.github.io/nile/guide/reference/shared-utilities): Use database, retry, storage and execution helpers through the utils namespace
 - [Application structure](https://nile-js.github.io/nile/guide/start/application-structure): Give each service, action and business rule a predictable place as your team grows
 - [Deployment](https://nile-js.github.io/nile/guide/start/deploy): Build, check readiness and shut down a Nile application
-- [From REST to Nile](https://nile-js.github.io/nile/guide/start/from-rest): Map familiar HTTP operations to services and named actions
+- [From REST to Nile](https://nile-js.github.io/nile/guide/start/from-rest): Map well known HTTP operations to services and named actions
 - [Getting started](https://nile-js.github.io/nile/guide/start/getting-started): Create a Nile Js project, call its first action, add an action that changes data and call it from a client
 - [Migration guide](https://nile-js.github.io/nile/guide/start/migration): Introduce services and actions alongside an existing application
 - [Runtime adapters](https://nile-js.github.io/nile/guide/start/runtime-adapters): Choose Bun native or the Hono adapter and connect your HTTP listener

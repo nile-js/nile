@@ -38,7 +38,7 @@ const generateActionContent = (serviceName: string): string => {
   const pascal = toPascalCase(serviceName);
 
   return `import { createAction } from "@nilejs/nile";
-import { Ok } from "slang-ts";
+import { Ok } from "@nilejs/nile/fp";
 import z from "zod";
 
 const sample${pascal}Schema = z.object({

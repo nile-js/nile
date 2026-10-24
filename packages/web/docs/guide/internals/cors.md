@@ -31,7 +31,7 @@ Static action policies work with both adapters:
 
 ```ts
 import { createAction } from "@nilejs/nile";
-import { Ok } from "slang-ts";
+import { Ok } from "@nilejs/nile/fp";
 
 const readReportHandler = () => {
   return Ok({ available: true });

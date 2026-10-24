@@ -15,7 +15,7 @@ This server enables the status endpoints, registers its HTTP listener as a lifec
 
 ```ts
 import { createNileServer, createServices } from "@nilejs/nile";
-import { Ok } from "slang-ts";
+import { Ok } from "@nilejs/nile/fp";
 
 const services = createServices([
   {

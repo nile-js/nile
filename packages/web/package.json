@@ -14,16 +14,18 @@
 		"docs:check": "bun run scripts/check-docs.ts"
 	},
 	"dependencies": {
+		"@fontsource-variable/source-sans-3": "^5.3.1",
+		"@fontsource/fira-mono": "^5.3.0",
+		"@react-router/node": "7.18.2",
 		"fumadocs-core": "16.17.7",
 		"fumadocs-mdx": "15.4.9",
 		"fumadocs-ui": "16.17.7",
+		"isbot": "^5",
 		"lucide-react": "^1.6.0",
 		"react": "^19.2.4",
 		"react-dom": "^19.2.4",
 		"react-router": "7.18.2",
-		"shiki": "^3.23.0",
-		"@react-router/node": "7.18.2",
-		"isbot": "^5"
+		"shiki": "^3.23.0"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.3.8",

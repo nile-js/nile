@@ -1,6 +1,6 @@
 import { createLogger, createNileServer } from "@nilejs/nile";
 import { sql } from "drizzle-orm";
-import { Ok, safeTry } from "slang-ts";
+import { Ok, safeTry } from "@nilejs/nile/fp";
 import { db } from "@/db/client";
 import { services } from "@/services/services.config";
 

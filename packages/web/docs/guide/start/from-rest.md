@@ -1,6 +1,6 @@
 ---
 title: "From REST to Nile"
-description: "Map familiar HTTP operations to services and named actions"
+description: "Map well known HTTP operations to services and named actions"
 ---
 
 A growing product adds operations such as approving a submission, archiving a project or refunding a payment. Nile names those operations directly: `projects.archive`, `submissions.approve`, `payments.refund`.
@@ -20,7 +20,7 @@ The goal is a consistent place for the team to work. You still design the operat
 
 Send this to `POST /api/services` when `rest.baseUrl` is `/api`.
 
-| Familiar HTTP concept | Nile application concept |
+| Well known HTTP concept | Nile application concept |
 |---|---|
 | A domain route group | A service such as `projects` |
 | An operation handler | A named action such as `archive` |

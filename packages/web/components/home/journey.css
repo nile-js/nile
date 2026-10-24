@@ -1,0 +1,823 @@
+/* How It Works: six numbered parts directly under the hero, whose fade already provides the gap. */
+.nile-journey {
+	padding-top: 0;
+	padding-bottom: var(--nile-section-gap);
+}
+.nile-journey-parts {
+	display: grid;
+	gap: clamp(72px, 8vw, 120px);
+}
+.nile-part {
+	container: part / inline-size;
+	min-width: 0;
+}
+.nile-part-header {
+	max-width: 760px;
+	margin-bottom: clamp(24px, 3vw, 36px);
+}
+.nile-home .nile-part-header h3 {
+	margin-top: 14px;
+	font-size: clamp(1.625rem, 1.1rem + 1.6vw, 2.375rem);
+	line-height: 1.12;
+	letter-spacing: -0.035em;
+}
+.nile-part-header > p:last-child {
+	max-width: 680px;
+	margin-top: 14px;
+}
+/* Inline code in running text only; diagram labels style their own code. */
+.nile-slang p code,
+.nile-faq p code,
+.nile-journey :is(.nile-part-header p, .nile-domain-legend > p) code {
+	padding: 1px 6px;
+	border-radius: 4px;
+	background: #38bdf814;
+	font-size: 0.88em;
+	color: var(--nile-accent-soft);
+}
+
+/* Shared layouts */
+.nile-part-split {
+	display: grid;
+	grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+	gap: 24px;
+	align-items: start;
+}
+.nile-part-split-even {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.nile-part-code {
+	display: grid;
+	grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+	gap: 20px;
+	align-items: start;
+}
+.nile-part-code-even {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.nile-part-stack {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	min-width: 0;
+}
+@container part (max-width: 900px) {
+	.nile-part-split,
+	.nile-part-split-even,
+	.nile-part-code,
+	.nile-part-code-even {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+/* Diagram surfaces */
+.nile-diagram,
+.nile-cloud,
+.nile-prompt {
+	margin: 0;
+	padding: clamp(18px, 2.4vw, 28px);
+	border-radius: 18px;
+	background: linear-gradient(170deg, #111b26f2, #0c141df2);
+	box-shadow:
+		0 0 0 1px var(--nile-edge),
+		inset 0 1px 0 #ffffff0a;
+}
+
+/* 01 Architecture: one call names a service and an action; services hold their actions. */
+.nile-arch {
+	--service: #38bdf8;
+	--action: #2dd4bf;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 12px;
+}
+.nile-arch ul,
+.nile-arch ol {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.nile-arch small {
+	font:
+		600 var(--nile-text-2xs) / 1 "Fira Mono",
+		monospace;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+.nile-arch-call {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+	padding: 10px 14px;
+	border-radius: 12px;
+	background: #070d14;
+	box-shadow: 0 0 0 1px var(--nile-edge);
+}
+.nile-arch-call small {
+	color: var(--nile-faint);
+}
+.nile-arch-call code {
+	font-size: var(--nile-text-code-sm);
+	color: var(--nile-muted);
+}
+.nile-arch-call .is-service {
+	color: var(--service);
+}
+.nile-arch-call .is-action {
+	color: var(--action);
+}
+.nile-arch-arrow {
+	color: var(--nile-faint);
+}
+.nile-arch-services {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 10px;
+	width: 100%;
+}
+.nile-arch-service {
+	padding: 12px;
+	border-radius: 14px;
+	background: color-mix(in srgb, var(--service) 4%, transparent);
+	box-shadow: inset 0 0 0 1px
+		color-mix(in srgb, var(--service) 20%, transparent);
+	opacity: 0.62;
+}
+.nile-arch-service[data-active] {
+	background: color-mix(in srgb, var(--service) 10%, transparent);
+	box-shadow:
+		inset 0 0 0 1px color-mix(in srgb, var(--service) 55%, transparent),
+		0 0 36px -14px var(--service);
+	opacity: 1;
+}
+.nile-home .nile-arch-service > p {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+	margin: 0 0 10px;
+}
+.nile-arch-service > p small {
+	color: var(--service);
+}
+.nile-arch-service strong {
+	font:
+		600 var(--nile-text-code) / 1.2 "Fira Mono",
+		monospace;
+	color: var(--nile-ink);
+}
+.nile-arch-service ul {
+	display: grid;
+	gap: 6px;
+}
+.nile-arch-service li {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	padding: 7px 9px;
+	border-radius: 8px;
+	background: color-mix(in srgb, var(--action) 7%, #070d14);
+	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--action) 20%, transparent);
+}
+.nile-arch-service li small {
+	color: color-mix(in srgb, var(--action) 80%, #ffffff);
+}
+.nile-arch-service li code {
+	font-size: var(--nile-text-code-sm);
+	color: var(--nile-ink);
+}
+.nile-arch-service li[data-active] {
+	background: color-mix(in srgb, var(--action) 22%, #070d14);
+	box-shadow:
+		inset 0 0 0 1px var(--action),
+		0 0 26px -8px var(--action);
+}
+.nile-arch-run {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	gap: 8px 24px;
+}
+.nile-arch-run li {
+	position: relative;
+	padding: 7px 12px;
+	border-radius: 999px;
+	background: #ffffff08;
+	box-shadow: inset 0 0 0 1px var(--nile-edge);
+	font-size: var(--nile-text-xs);
+	color: var(--nile-ink);
+}
+.nile-arch-run li:not(:last-child)::after {
+	content: "›";
+	position: absolute;
+	top: 50%;
+	right: -16px;
+	translate: 0 -50%;
+	color: var(--nile-faint);
+}
+.nile-arch-run .nile-arch-outcome {
+	display: inline-flex;
+	gap: 6px;
+	padding: 0;
+	background: transparent;
+	box-shadow: none;
+}
+.nile-arch-outcome span {
+	padding: 6px 14px;
+	border-radius: 999px;
+	font:
+		600 var(--nile-text-code-sm) / 1.3 "Fira Mono",
+		monospace;
+}
+.nile-arch-outcome .is-ok {
+	background: #4ade801f;
+	box-shadow: inset 0 0 0 1px #4ade8066;
+	color: #86efac;
+}
+.nile-arch-outcome .is-err {
+	background: #f871711f;
+	box-shadow: inset 0 0 0 1px #f8717166;
+	color: #fca5a5;
+}
+@container part (max-width: 560px) {
+	.nile-arch-services {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+/* 01 Feature cloud */
+.nile-home .nile-cloud h4 {
+	margin: 0;
+	font-size: var(--nile-text-md);
+	font-weight: 650;
+	letter-spacing: -0.02em;
+	color: var(--nile-ink);
+}
+.nile-home .nile-cloud > p {
+	margin-top: 8px;
+	font-size: var(--nile-text-sm);
+}
+.nile-cloud ul {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin: 20px 0;
+	padding: 0;
+	list-style: none;
+}
+.nile-cloud li {
+	--tone: #38bdf8;
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	padding: 7px 12px;
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--tone) 10%, transparent);
+	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tone) 24%, transparent);
+	font-size: var(--nile-text-xs);
+	color: var(--nile-ink);
+}
+.nile-cloud li[data-tone="blue"] {
+	--tone: #60a5fa;
+}
+.nile-cloud li[data-tone="teal"] {
+	--tone: #2dd4bf;
+}
+.nile-cloud li[data-tone="cyan"] {
+	--tone: #22d3ee;
+}
+.nile-cloud li[data-tone="indigo"] {
+	--tone: #818cf8;
+}
+.nile-cloud li svg {
+	color: color-mix(in srgb, var(--tone) 70%, #ffffff);
+}
+
+/* Code panels: where the code runs, success or failure, and highlighted paths. */
+.nile-code-side {
+	flex-shrink: 0;
+	margin-left: auto;
+	padding: 3px 8px;
+	border-radius: 999px;
+	font:
+		600 var(--nile-text-2xs) / 1.2 "Fira Mono",
+		monospace;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+}
+.nile-code-side[data-side="Backend"] {
+	background: #38bdf81f;
+	color: #7dd3fc;
+}
+.nile-code-side[data-side="Frontend"] {
+	background: #a78bfa1f;
+	color: #c4b5fd;
+}
+.nile-code-side[data-side="Agent"] {
+	background: #fbbf241f;
+	color: #fcd34d;
+}
+.nile-code-panel[data-tone="ok"] {
+	box-shadow:
+		0 0 0 1px #4ade8040,
+		0 36px 80px -44px #000000;
+}
+.nile-code-panel[data-tone="err"] {
+	box-shadow:
+		0 0 0 1px #f8717140,
+		0 36px 80px -44px #000000;
+}
+.nile-code-panel[data-tone="ok"] .nile-code-heading > span {
+	color: #86efac;
+}
+.nile-code-panel[data-tone="err"] .nile-code-heading > span {
+	color: #fca5a5;
+}
+.nile-code-panel[data-tone="ok"] .nile-code-heading > span::before {
+	background: #4ade80;
+}
+.nile-code-panel[data-tone="err"] .nile-code-heading > span::before {
+	background: #f87171;
+}
+/* The highlight extends left with a shadow and an overlaid bar, so the code never shifts. */
+.nile-highlight .line.is-ok,
+.nile-highlight .line.is-err {
+	position: relative;
+	display: inline-block;
+	min-width: 100%;
+}
+.nile-highlight .line.is-ok::before,
+.nile-highlight .line.is-err::before {
+	content: "";
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: -12px;
+	width: 2px;
+}
+.nile-highlight .line.is-err {
+	background: #f8717117;
+	box-shadow: -12px 0 0 #f8717117;
+}
+.nile-highlight .line.is-err::before {
+	background: #f87171;
+}
+.nile-highlight .line.is-ok {
+	background: #4ade8017;
+	box-shadow: -12px 0 0 #4ade8017;
+}
+.nile-highlight .line.is-ok::before {
+	background: #4ade80;
+}
+
+/* 02 Errors as values */
+.nile-legend {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px 20px;
+	margin-top: 16px;
+}
+.nile-home .nile-legend span {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	font-size: var(--nile-text-xs);
+	color: var(--nile-muted);
+}
+.nile-legend span::before {
+	content: "";
+	width: 10px;
+	height: 10px;
+	border-radius: 2px;
+}
+.nile-legend .is-err::before {
+	background: #f87171;
+}
+.nile-legend .is-ok::before {
+	background: #4ade80;
+}
+
+/* 03 Intent tabs */
+.nile-intent-tabs {
+	display: inline-flex;
+}
+.nile-intent-tabs [role="tab"] {
+	min-height: 42px;
+	padding: 10px 18px;
+	font-size: var(--nile-text-sm);
+}
+.nile-intent-tabs [role="tab"][aria-selected="true"] {
+	background: #38bdf826;
+	color: #e0f2fe;
+	box-shadow: inset 0 0 0 1px #38bdf840;
+}
+.nile-home .nile-intent-panel > .nile-intent-situation {
+	margin: 16px 0;
+	font-size: var(--nile-text-sm);
+	color: var(--nile-ink);
+}
+.nile-intent-panel[hidden] {
+	display: none;
+}
+
+/* 04 Domain map: colored folders on the left, what each color means on the right. */
+:is(.nile-domain, .nile-domain-flow) [data-layer="root"] {
+	--layer: #94a3b8;
+}
+:is(.nile-domain, .nile-domain-flow) [data-layer="services"] {
+	--layer: #38bdf8;
+}
+:is(.nile-domain, .nile-domain-flow) [data-layer="actions"] {
+	--layer: #2dd4bf;
+}
+:is(.nile-domain, .nile-domain-flow) [data-layer="modules"] {
+	--layer: #818cf8;
+}
+:is(.nile-domain, .nile-domain-flow) [data-layer="business"] {
+	--layer: #fbbf24;
+}
+:is(.nile-domain, .nile-domain-flow) [data-layer="models"] {
+	--layer: #4ade80;
+}
+:is(.nile-domain, .nile-domain-flow) [data-layer="hooks"] {
+	--layer: #fb7185;
+}
+.nile-domain {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 24px;
+	align-items: center;
+}
+.nile-domain-tree {
+	display: grid;
+	gap: 5px;
+	list-style: none;
+}
+.nile-domain-tree li {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding-left: calc(var(--depth, 0) * 20px);
+	color: var(--layer);
+}
+.nile-domain-tree code {
+	padding: 4px 9px;
+	border-radius: 7px;
+	background: color-mix(in srgb, var(--layer) 12%, transparent);
+	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--layer) 30%, transparent);
+	font-size: var(--nile-text-code-sm);
+	color: var(--nile-ink);
+}
+.nile-domain-legend dl {
+	display: grid;
+	gap: 14px;
+	margin: 0;
+}
+.nile-domain-legend dl > div {
+	display: grid;
+	grid-template-columns: 12px minmax(0, 1fr);
+	column-gap: 12px;
+}
+.nile-domain-legend dl > div::before {
+	content: "";
+	grid-row: 1 / span 2;
+	width: 12px;
+	height: 12px;
+	margin-top: 5px;
+	border-radius: 3px;
+	background: var(--layer);
+}
+.nile-domain-legend dt,
+.nile-domain-legend dd {
+	grid-column: 2;
+}
+.nile-domain-legend dt {
+	font-size: var(--nile-text-sm);
+	font-weight: 600;
+	color: var(--nile-ink);
+}
+.nile-domain-legend dd {
+	margin: 0;
+	font-size: var(--nile-text-sm);
+	color: var(--nile-muted);
+}
+.nile-home .nile-domain-legend > p {
+	margin-top: 20px;
+	font-size: var(--nile-text-xs);
+	color: var(--nile-faint);
+}
+.nile-domain-flow {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	margin: 24px 0 0;
+	padding: 0;
+	list-style: none;
+}
+.nile-domain-flow li {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+.nile-domain-flow svg {
+	color: var(--nile-faint);
+}
+.nile-domain-flow span {
+	padding: 6px 12px;
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--layer) 14%, transparent);
+	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--layer) 35%, transparent);
+	font-size: var(--nile-text-xs);
+	color: var(--nile-ink);
+}
+@container part (max-width: 760px) {
+	.nile-domain {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+/* 05 Agents */
+.nile-agent-copy {
+	display: flex;
+	flex-direction: column;
+	gap: 22px;
+	min-width: 0;
+}
+.nile-prompt-heading {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: 14px;
+}
+.nile-home .nile-prompt-heading p {
+	margin: 0;
+	font-size: var(--nile-text-sm);
+	font-weight: 600;
+	color: var(--nile-ink);
+}
+.nile-home .nile-prompt-copy {
+	min-height: 42px;
+	padding: 10px 18px;
+	border: 0;
+}
+.nile-home .nile-prompt-copy[data-state="copied"] {
+	background: #7dd3fc;
+}
+.nile-prompt pre {
+	margin: 0;
+	padding: 14px 16px;
+	overflow: auto;
+	border-radius: 10px;
+	background: #070d14;
+	white-space: pre-wrap;
+	font:
+		var(--nile-text-code-sm) / 1.65 "Fira Mono",
+		monospace;
+	color: var(--nile-muted);
+}
+.nile-agent-steps {
+	display: grid;
+	gap: 14px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.nile-agent-steps li {
+	display: flex;
+	gap: 14px;
+}
+.nile-agent-steps li > span {
+	display: grid;
+	flex-shrink: 0;
+	place-items: center;
+	width: 28px;
+	height: 28px;
+	border-radius: 50%;
+	background: #38bdf81f;
+	box-shadow: 0 0 0 1px #38bdf840;
+	font:
+		500 var(--nile-text-2xs) / 1 "Fira Mono",
+		monospace;
+	color: var(--nile-accent-soft);
+}
+.nile-agent-steps strong {
+	font-size: var(--nile-text-sm);
+	color: var(--nile-ink);
+}
+.nile-home .nile-agent-steps p {
+	margin-top: 2px;
+	font-size: var(--nile-text-xs);
+}
+
+/* 06 One sliding row of logos; hovering pauses it and reduced motion keeps it still. */
+.nile-marquee {
+	overflow: hidden;
+	-webkit-mask-image: linear-gradient(
+		90deg,
+		transparent,
+		#000 8%,
+		#000 92%,
+		transparent
+	);
+	mask-image: linear-gradient(
+		90deg,
+		transparent,
+		#000 8%,
+		#000 92%,
+		transparent
+	);
+}
+.nile-marquee-track {
+	display: flex;
+	width: max-content;
+	animation: nile-marquee 48s linear infinite;
+}
+.nile-marquee:hover .nile-marquee-track,
+.nile-marquee:focus-within .nile-marquee-track {
+	animation-play-state: paused;
+}
+.nile-marquee-list {
+	display: flex;
+	gap: 12px;
+	margin: 0;
+	padding: 4px 12px 4px 0;
+	list-style: none;
+}
+.nile-home .nile-marquee-list a {
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	padding: 12px 18px;
+	border-radius: 14px;
+	background: linear-gradient(165deg, #121d29e6, #0b141de6);
+	box-shadow: 0 0 0 1px var(--nile-edge);
+	font-size: var(--nile-text-sm);
+	font-weight: 600;
+	white-space: nowrap;
+	color: var(--nile-muted);
+}
+.nile-home .nile-marquee-list a:hover {
+	box-shadow: 0 0 0 1px var(--nile-edge-strong);
+	color: var(--nile-ink);
+}
+.nile-marquee-list :is(img, svg) {
+	flex-shrink: 0;
+	width: 28px;
+	height: 28px;
+	object-fit: contain;
+	opacity: 0.8;
+	filter: grayscale(1) brightness(1.6);
+	transition:
+		filter 0.3s,
+		opacity 0.3s;
+}
+.nile-marquee-list svg {
+	color: var(--nile-accent-soft);
+}
+.nile-marquee-list a:hover :is(img, svg) {
+	opacity: 1;
+	filter: none;
+}
+@keyframes nile-marquee {
+	to {
+		transform: translateX(-50%);
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.nile-marquee {
+		overflow-x: auto;
+	}
+}
+
+/* Go full functional programming with slang-ts */
+.nile-slang-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 24px;
+	align-items: start;
+}
+.nile-slang-utilities {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 12px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.nile-slang-utilities li {
+	padding: 16px;
+	border-radius: 14px;
+	background: linear-gradient(165deg, #121d29e6, #0b141de6);
+	box-shadow: 0 0 0 1px var(--nile-edge);
+}
+.nile-home .nile-slang-name {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	margin: 0 0 6px;
+}
+.nile-slang-name strong {
+	font-size: var(--nile-text-md);
+	color: var(--nile-ink);
+}
+.nile-slang-name span {
+	padding: 2px 8px;
+	border-radius: 999px;
+	background: #38bdf81f;
+	font-size: var(--nile-text-2xs);
+	color: var(--nile-accent-soft);
+}
+.nile-slang-utilities li > code {
+	font-size: var(--nile-text-code-sm);
+	color: var(--nile-accent-soft);
+}
+.nile-home .nile-slang-utilities li > p:last-child {
+	margin-top: 8px;
+	font-size: var(--nile-text-sm);
+	line-height: 1.55;
+}
+.nile-slang-code {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 18px;
+	min-width: 0;
+}
+.nile-slang-code .nile-code-panel {
+	align-self: stretch;
+}
+@container section (max-width: 900px) {
+	.nile-slang-grid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+@container section (max-width: 520px) {
+	.nile-slang-utilities {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+/* Frequently asked questions: native disclosure widgets in a two-column grid. */
+.nile-faq-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 12px;
+	align-items: start;
+}
+.nile-faq details {
+	border-radius: 14px;
+	background: linear-gradient(165deg, #121d29e6, #0b141de6);
+	box-shadow: 0 0 0 1px var(--nile-edge);
+	transition: box-shadow 0.2s;
+}
+.nile-faq details[open] {
+	box-shadow: 0 0 0 1px var(--nile-edge-strong);
+}
+.nile-faq summary {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 18px 20px;
+	cursor: pointer;
+	list-style: none;
+	font-size: var(--nile-text-base);
+	font-weight: 600;
+	color: var(--nile-ink);
+}
+.nile-faq summary::-webkit-details-marker {
+	display: none;
+}
+.nile-faq summary:focus-visible {
+	outline: 3px solid var(--nile-accent);
+	outline-offset: 2px;
+	border-radius: 14px;
+}
+.nile-faq summary svg {
+	flex-shrink: 0;
+	color: var(--nile-faint);
+	transition: rotate 0.25s var(--nile-ease-out);
+}
+.nile-faq details[open] summary svg {
+	rotate: 180deg;
+	color: var(--nile-accent-soft);
+}
+.nile-home .nile-faq details p {
+	padding: 0 20px 18px;
+	font-size: var(--nile-text-sm);
+}
+@container section (max-width: 760px) {
+	.nile-faq-grid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}

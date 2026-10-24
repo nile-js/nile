@@ -24,7 +24,7 @@ A before hook sees input **before validation**. Check the values it uses; do not
 This server-configuration fragment rejects a protected action without a session:
 
 ```ts
-import { Err, Ok } from "slang-ts";
+import { Err, Ok } from "@nilejs/nile/fp";
 
 const onBeforeActionHandler = ({ nileContext, action, payload }) => {
   if (action.isProtected && !nileContext.getSession("rest")) {

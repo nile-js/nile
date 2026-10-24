@@ -52,6 +52,7 @@ Every client method returns the same Result pattern the server uses. Check `isEr
 | `isOk`, `isErr` | `true`, `false` | `false`, `true` |
 | `value` | The action's data | `null` |
 | `error` | `null` | A message string |
+| `message` | The server's success message for HTTP calls, such as the action's `successMessage` | Not present |
 | `details` | Not present | Any data the server attached to the failure. Validation and lookup failures currently send an empty object, so read `error` for the message. |
 
 Calls do not throw for expected failures. A validation error, a denied action, a timeout and a network failure all arrive as failed Results.

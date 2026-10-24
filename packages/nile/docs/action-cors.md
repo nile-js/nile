@@ -16,7 +16,7 @@ Add the setting to the action definition inside a service:
 
 ```ts
 import type { Action } from "@nilejs/nile";
-import { Ok } from "slang-ts";
+import { Ok } from "@nilejs/nile/fp";
 
 const actions: Action[] = [
   {

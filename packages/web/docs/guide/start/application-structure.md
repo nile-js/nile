@@ -109,6 +109,6 @@ Keep database selection, migrations and transactions in your application. Nile o
 
 The maintainer's fintech backend has over 500 actions and continues to grow. The in-house Back Office tool was shipped in days; the reviewed version had 15 services and 78 actions. These are examples of a small team applying the same organization repeatedly, not guarantees about delivery time or request capacity.
 
-The useful constraint is consistency: once someone understands one operation, the next operation has a familiar place to start.
+The useful constraint is consistency: once someone understands one operation, the next operation has a well known place to start.
 
 Next: [share dependencies through context](/guide/basics/context), [handle failures consistently](/guide/basics/errors-and-results), and [reuse access policies](/guide/basics/auth).

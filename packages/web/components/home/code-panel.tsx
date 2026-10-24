@@ -5,9 +5,14 @@ import type { CodeExample } from "./types";
 /** Render only build-generated Shiki markup, never visitor-provided HTML. */
 export function CodePanel({ example }: { example: CodeExample }) {
 	return (
-		<div className="nile-code-panel">
+		<div className="nile-code-panel" data-tone={example.tone}>
 			<div className="nile-code-heading">
 				<span title={example.file}>{example.file}</span>
+				{example.side ? (
+					<small className="nile-code-side" data-side={example.side}>
+						{example.side}
+					</small>
+				) : null}
 				<CopyButton text={example.raw} />
 			</div>
 			<div

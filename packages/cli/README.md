@@ -63,7 +63,7 @@ Creates `src/services/users/actions/get-user.ts`:
 
 ```ts
 import { createAction } from "@nilejs/nile";
-import { Ok } from "slang-ts";
+import { Ok } from "@nilejs/nile/fp";
 import z from "zod";
 
 const getUserSchema = z.object({

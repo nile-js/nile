@@ -57,14 +57,14 @@ export function Structure() {
 			<header className="nile-heading nile-heading-split" data-reveal>
 				<div>
 					<h2 id="structure-title">
-						Open the domain.
+						Open The Domain.
 						<br />
-						Find the action. <span>Get to work.</span>
+						Find The Action. <span>Get To Work.</span>
 					</h2>
 				</div>
 				<p>
-					Every operation has a familiar place, so a new teammate knows where to
-					start.{" "}
+					Every operation has a well known place, so a new teammate knows where
+					to start.{" "}
 					<a
 						className="nile-inline-link"
 						href={withBase("/guide/start/application-structure")}

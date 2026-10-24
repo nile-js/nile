@@ -20,7 +20,7 @@ This module defines a receipt queue with two workers, a draft debounce and a cac
 
 ```ts
 import { utils } from "@nilejs/nile";
-import { type Result, Ok } from "slang-ts";
+import { type Result, Ok } from "@nilejs/nile/fp";
 
 type ReceiptEmail = {
   orderId: string;

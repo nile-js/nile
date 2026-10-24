@@ -71,7 +71,7 @@ The homepage chart imports `../benchmarks/reference/rankings.json`. `docs/public
 
 ## Fonts and assets
 
-`app/fonts/` contains self-hosted Fira Sans and Fira Mono as WOFF2 files subset to Latin, punctuation, arrows and box drawing (about 67 KB in total, down from 850 KB of OTF). Their open font license is in `docs/public/fonts/Fira-LICENSE.txt`. The two Fira Sans weights are preloaded in `app/root.tsx`. The Nile mark and social sharing image live in `docs/public/`. No external font request is needed to render the site.
+Text uses Source Sans 3 from `@fontsource-variable/source-sans-3`, imported in `app/root.tsx`. Its variable Latin file (about 29 KB) carries every weight and is preloaded there; other scripts load only when a page needs them. `font-size-adjust` in `app/app.css` renders it at a larger x-height so text keeps the size the type scale sets. Code uses Fira Mono from `@fontsource/fira-mono`, also imported there; its box-drawing subset keeps file trees aligned. The open font licenses are in `docs/public/fonts/`. The Nile mark and social sharing image live in `docs/public/`. No external font request is needed to render the site.
 
 ## Landing artwork and video
 

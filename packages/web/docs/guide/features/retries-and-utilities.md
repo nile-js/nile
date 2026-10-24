@@ -15,7 +15,7 @@ This module polls a delivery provider with up to eight attempts and a 60-second 
 
 ```ts
 import { utils } from "@nilejs/nile";
-import { Err, Ok, type Result } from "slang-ts";
+import { Err, Ok, type Result } from "@nilejs/nile/fp";
 
 type DeliveryStatus = {
   state: "queued" | "delivered" | "failed";

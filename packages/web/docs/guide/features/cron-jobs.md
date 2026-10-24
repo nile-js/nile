@@ -21,7 +21,7 @@ import {
   type JobRunEvent,
   type SchedulerOptions,
 } from "@nilejs/nile";
-import { Err, Ok } from "slang-ts";
+import { Err, Ok } from "@nilejs/nile/fp";
 
 type WeeklySummary = {
   orderCount: number;

@@ -30,7 +30,7 @@ Every action uses a named schema, an inferred input type, a separately written n
 
 ```ts
 import { createAction } from "@nilejs/nile";
-import { Err, Ok } from "slang-ts";
+import { Err, Ok } from "@nilejs/nile/fp";
 import { z } from "zod";
 
 const createProjectSchema = z.object({
@@ -89,7 +89,9 @@ const handler = (input: Input, context?: NileContext<unknown>) => {
 
 ## Results
 
-Handlers return `Ok(value)` or `Err(message)` from `slang-ts`. Check `isErr` before reading `value`. Use `safeTry` around a call that can throw or reject.
+Handlers return `Ok(value)` or `Err(message)` from `@nilejs/nile/fp`, which re-exports `slang-ts`. Check `isErr` before reading `value`. Use `safeTry` around a call that can throw or reject. Use `handleError({ message, data })` from `@nilejs/nile` to log an error and return it as an `Err` in one step.
+
+The success `message` defaults to `Action 'service.action' executed`. Set `successMessage` on the action, or return `Ok(value, message)` to choose one per call; the handler's message wins.
 
 HTTP envelope: success is `{ status: true, message, data }`. Failure is `{ status: false, message, data }` with HTTP 400. Validation failures put field paths in `data.issues`, for example `[{ "path": "address.city", "message": "City is required" }]`.
 
@@ -149,4 +151,4 @@ Advanced pages cover handler context, composed hooks, execution options and test
 - A rate limit or topic policy that is missing denies or does not apply. Read the feature page for the default.
 - Multiple replicas each keep their own queues, schedules, rate-limit counters and WebSocket subscriptions.
 - JWT failures return fixed messages such as `JWT authentication failed: token expired` or `JWT authentication failed: invalid token`. They never include the token or its claims, so do not add them back in your own logs.
-- Two copies of `slang-ts` produce type errors. Keep one copy in the project.
+- Import Results from `@nilejs/nile/fp`, not a separately installed `slang-ts`. Two copies of `slang-ts` produce type errors.

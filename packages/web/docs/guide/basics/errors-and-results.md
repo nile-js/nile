@@ -3,11 +3,11 @@ title: "Errors and Results"
 description: "Return expected failures and guard operations with Slang Results"
 ---
 
-A team should be able to see how an operation can fail beside its business logic. Nile handlers return `Ok(data)` or `Err(message)` from `slang-ts`, so expected failures become explicit branches.
+A team should be able to see how an operation can fail beside its business logic. Nile handlers return `Ok(data)` or `Err(message)` from `@nilejs/nile/fp`, Nile's re-export of [slang-ts](https://www.npmjs.com/package/slang-ts), so expected failures become explicit branches. Import every slang-ts helper from there; your code then shares Nile's copy and needs no separate dependency.
 
 ```ts
 import { createAction } from "@nilejs/nile";
-import { Err, Ok } from "slang-ts";
+import { Err, Ok } from "@nilejs/nile/fp";
 import { z } from "zod";
 
 const createProjectSchema = z.object({
@@ -44,7 +44,7 @@ The schema checks the input shape before the handler. The guard expresses an app
 Use `safeTry` around an external call or application function that can reject or throw. Inspect the Result, log useful internal context, and return an appropriate message to the caller.
 
 ```ts
-import { Err, Ok, safeTry } from "slang-ts";
+import { Err, Ok, safeTry } from "@nilejs/nile/fp";
 
 const saved = await safeTry(() => saveProject(input));
 if (saved.isErr) {
@@ -59,6 +59,30 @@ return Ok({ project: saved.value });
 ```
 
 This handler fragment uses your application's `saveProject` function. Current `slang-ts` recursively unwraps nested Results, including a Result returned by that function. Do not wrap an existing successful Result merely to pass it through; returning it directly is often clearer.
+
+## Send a success message
+
+Every successful HTTP response carries a `message`. By default it reads `Action 'projects.archive' executed`. Set `successMessage` on the action for a fixed message, or pass a message as the second argument to `Ok` to choose one per call. The handler's message wins.
+
+```ts
+import { createAction } from "@nilejs/nile";
+import { Ok } from "@nilejs/nile/fp";
+
+export const archiveProject = createAction<ArchiveProjectInput>({
+  name: "archive",
+  description: "Archive a project",
+  successMessage: "Project archived",
+  validation: archiveProjectSchema,
+  handler: (input) => {
+    if (input.notifyTeam) {
+      return Ok({ id: input.id }, "Project archived and the team notified");
+    }
+    return Ok({ id: input.id });
+  },
+});
+```
+
+Import `Ok` from `@nilejs/nile/fp`; Nile Js installs slang-ts 0.1.1 or later, which adds the message argument. The [frontend client](/guide/basics/client) exposes the message as `result.message`. WebSocket calls return the data only.
 
 ## Keep the three boundaries distinct
 

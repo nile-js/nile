@@ -11,6 +11,8 @@ export interface ClientOk<T> {
   isErr: false;
   value: T;
   error: null;
+  /** The server's success message for HTTP calls, such as an action's `successMessage`. */
+  message?: string;
   /** @deprecated Read `value`. Kept so code written for earlier clients keeps working. */
   data: T;
 }

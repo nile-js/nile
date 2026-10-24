@@ -14,7 +14,7 @@ export function Features() {
 		>
 			<header className="nile-heading nile-heading-split" data-reveal>
 				<div>
-					<h2 id="features-title">Built-in features</h2>
+					<h2 id="features-title">Built-In Features</h2>
 				</div>
 				<p>
 					The pieces a small backend team reaches for. Use only what your

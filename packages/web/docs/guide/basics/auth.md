@@ -29,7 +29,7 @@ export const serverConfig: ServerConfig = {
 ```ts
 import { createAction } from "@nilejs/nile";
 import type { NileContext } from "@nilejs/nile";
-import { Err, Ok, type Result } from "slang-ts";
+import { Err, Ok, type Result } from "@nilejs/nile/fp";
 
 const getProfileHandler = (
   input: unknown,
@@ -78,7 +78,7 @@ Custom routes and webhooks do not pass through an action's `isProtected` check. 
 
 ```ts
 import { type AuthConfig, verifyJWT } from "@nilejs/nile";
-import { Err, Ok, type Result } from "slang-ts";
+import { Err, Ok, type Result } from "@nilejs/nile/fp";
 import { config } from "./config";
 
 const jwtConfig: AuthConfig = {
@@ -106,7 +106,7 @@ if (verified.isErr) {
 
 ```ts
 import type { BeforeActionHandler } from "@nilejs/nile";
-import { Err, Ok, type Result } from "slang-ts";
+import { Err, Ok, type Result } from "@nilejs/nile/fp";
 
 /** Require every role listed on a protected action. */
 export const authorizeAction: BeforeActionHandler<boolean, string> = ({

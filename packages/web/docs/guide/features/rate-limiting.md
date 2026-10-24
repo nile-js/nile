@@ -15,7 +15,7 @@ This server allows a burst of 20 quote requests per client and refills 5 per sec
 
 ```ts
 import { createAction, createNileServer, createServices, utils } from "@nilejs/nile";
-import { Ok } from "slang-ts";
+import { Ok } from "@nilejs/nile/fp";
 import { z } from "zod";
 
 const quoteSchema = z.object({

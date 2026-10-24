@@ -15,7 +15,7 @@ This action validates a project and then applies a reserved-name rule in its han
 
 ```ts
 import { createAction, createServices } from "@nilejs/nile";
-import { Err, Ok } from "slang-ts";
+import { Err, Ok } from "@nilejs/nile/fp";
 import { z } from "zod";
 
 const createProjectSchema = z.object({

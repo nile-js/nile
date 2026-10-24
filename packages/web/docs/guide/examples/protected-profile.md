@@ -50,7 +50,7 @@ Create `src/auth/role-hook.ts`. It runs before every action. Protected actions m
 
 ```ts
 import type { BeforeActionHandler } from "@nilejs/nile";
-import { Err, Ok, type Result } from "slang-ts";
+import { Err, Ok, type Result } from "@nilejs/nile/fp";
 
 /** Requires every role listed in a protected action's accessControl. */
 export const requireRolesHook: BeforeActionHandler<boolean, string> = ({
@@ -90,7 +90,7 @@ Create `src/services/account/actions/profile.ts`. It is protected, so the server
 
 ```ts
 import { type NileContext, createAction } from "@nilejs/nile";
-import { Err, Ok } from "slang-ts";
+import { Err, Ok } from "@nilejs/nile/fp";
 import { z } from "zod";
 
 const profileSchema = z.object({
@@ -131,7 +131,7 @@ Create `src/services/account/actions/audit.ts`. It lists `admin` in `accessContr
 
 ```ts
 import { createAction } from "@nilejs/nile";
-import { Ok } from "slang-ts";
+import { Ok } from "@nilejs/nile/fp";
 
 const listAuditHandler = () => {
   return Ok({
@@ -190,7 +190,7 @@ Replace `src/index.ts`. It adds the `auth` block, the `onBeforeActionHandler` an
 ```ts
 import { createLogger, createNileServer } from "@nilejs/nile";
 import { sql } from "drizzle-orm";
-import { Ok, safeTry } from "slang-ts";
+import { Ok, safeTry } from "@nilejs/nile/fp";
 import { requireRolesHook } from "@/auth/role-hook";
 import { config } from "@/config";
 import { db } from "@/db/client";

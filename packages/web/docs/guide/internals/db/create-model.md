@@ -3,7 +3,7 @@ title: "Model helpers"
 description: "Create a Drizzle-backed model with typed CRUD methods and Result failures"
 ---
 
-Use `createModel` when a Drizzle-backed domain needs familiar CRUD operations. Keep custom business queries in ordinary model functions rather than forcing every operation through a generic helper.
+Use `createModel` when a Drizzle-backed domain needs well known CRUD operations. Keep custom business queries in ordinary model functions rather than forcing every operation through a generic helper.
 
 ## Create a model
 

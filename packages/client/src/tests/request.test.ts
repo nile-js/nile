@@ -60,6 +60,16 @@ describe("sendNileRequest", () => {
     expect(result.error).toBeNull();
   });
 
+  it("should expose the server's success message", async () => {
+    vi.mocked(fetch).mockReturnValue(
+      mockFetchResponse({ status: true, message: "Project created", data: { id: 1 } })
+    );
+
+    const result = await sendNileRequest(config, "execute", "projects", "create", {});
+
+    expect(result.isOk && result.message).toBe("Project created");
+  });
+
   it("should return an Err result with the server's details", async () => {
     vi.mocked(fetch).mockReturnValue(
       mockFetchResponse({

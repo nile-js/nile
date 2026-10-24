@@ -59,7 +59,7 @@ export async function sendNileRequest<T = Record<string, unknown>>(
     return clientErr(result.message, result.data ?? null);
   }
 
-  return clientOk(result.data);
+  return clientOk(result.data, result.message);
 }
 
 /**
@@ -119,7 +119,7 @@ export async function sendUploadRequest<T = Record<string, unknown>>(
     return clientErr(result.message, result.data ?? null);
   }
 
-  return clientOk(result.data);
+  return clientOk(result.data, result.message);
 }
 
 /**

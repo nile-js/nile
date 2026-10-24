@@ -11,6 +11,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
+    },
+    "./fp": {
+      "types": "./dist/fp.d.ts",
+      "import": "./dist/fp.js",
+      "require": "./dist/fp.cjs"
     }
   },
   "files": [
@@ -67,7 +72,7 @@
     "hono-rate-limiter": "^0.5.4",
     "nanoid": "^6.0.2",
     "pino": "^10.4.0",
-    "slang-ts": "^0.0.9",
+    "slang-ts": "^0.1.1",
     "socket.io": "4.8.4",
     "zod": "4.6.7"
   },

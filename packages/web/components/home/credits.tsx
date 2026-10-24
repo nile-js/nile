@@ -30,7 +30,7 @@ export function Credits() {
 			aria-labelledby="credits-title"
 		>
 			<header className="nile-heading nile-heading-center" data-reveal>
-				<h2 id="credits-title">Made possible by open source.</h2>
+				<h2 id="credits-title">Made Possible By Open Source.</h2>
 				<p>
 					Nile Js stands on these projects. Thank you to everyone who builds and
 					maintains them.

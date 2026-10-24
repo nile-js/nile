@@ -18,13 +18,13 @@
 }
 .nile-benchmark-heading strong {
 	display: block;
-	font-size: 18px;
+	font-size: var(--nile-text-md);
 	font-weight: 650;
 }
 .nile-benchmark-heading > div > span {
 	display: block;
 	margin-top: 6px;
-	font-size: 13px;
+	font-size: var(--nile-text-xs);
 	color: var(--nile-muted);
 }
 .nile-segmented {
@@ -45,7 +45,7 @@
 	border-radius: 2px;
 	background: transparent;
 	color: var(--nile-muted);
-	font-size: 12px;
+	font-size: var(--nile-text-2xs);
 	transition:
 		background-color 0.25s,
 		color 0.25s,
@@ -64,13 +64,13 @@
 	margin: 26px 0 30px;
 	border-collapse: separate;
 	border-spacing: 0 6px;
-	font-size: 14px;
+	font-size: var(--nile-text-sm);
 	font-variant-numeric: tabular-nums;
 }
 .nile-benchmark-table thead th {
 	padding-bottom: 6px;
 	font:
-		10.5px / 2 "Nile Mono",
+		var(--nile-text-2xs) / 2 "Fira Mono",
 		monospace;
 	font-weight: 400;
 	letter-spacing: 0.08em;
@@ -93,7 +93,7 @@
 	width: 90px;
 	text-align: right;
 	font:
-		14px / 1.6 "Nile Mono",
+		var(--nile-text-sm) / 1.6 "Fira Mono",
 		monospace;
 	color: var(--nile-muted);
 }
@@ -133,7 +133,7 @@
 }
 .nile-benchmark-method dt {
 	font:
-		10.5px / 1.4 "Nile Mono",
+		var(--nile-text-2xs) / 1.4 "Fira Mono",
 		monospace;
 	letter-spacing: 0.08em;
 	text-transform: uppercase;
@@ -141,13 +141,13 @@
 }
 .nile-benchmark-method dd {
 	margin-top: 8px;
-	font-size: 13px;
+	font-size: var(--nile-text-xs);
 	line-height: 1.55;
 	color: var(--nile-muted);
 }
 .nile-home .nile-benchmark-note {
 	margin-top: 18px;
-	font-size: 12.5px;
+	font-size: var(--nile-text-xs);
 	color: var(--nile-faint);
 }
 .nile-benchmark-links {
@@ -155,7 +155,7 @@
 	flex-wrap: wrap;
 	gap: 10px 26px;
 	margin-top: 14px;
-	font-size: 13px;
+	font-size: var(--nile-text-xs);
 }
 .nile-benchmark-links a {
 	color: var(--nile-accent-soft);
@@ -188,18 +188,17 @@
 @container benchmark (max-width: 520px) {
 	.nile-benchmark-table th:first-child {
 		width: 78px;
-		font-size: 12px;
+		font-size: var(--nile-text-2xs);
 	}
 	.nile-benchmark-table td:last-child {
 		width: 58px;
-		font-size: 12px;
+		font-size: var(--nile-text-2xs);
 	}
 	.nile-bar-track {
 		height: 14px;
 	}
 	.nile-segmented button {
 		padding: 8px 10px;
-		font-size: 11px;
 	}
 }
 @media (max-width: 760px) {

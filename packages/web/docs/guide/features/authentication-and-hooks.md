@@ -21,7 +21,7 @@ import {
   createServices,
 } from "@nilejs/nile";
 import type { NileContext } from "@nilejs/nile";
-import { Err, Ok, type Result } from "slang-ts";
+import { Err, Ok, type Result } from "@nilejs/nile/fp";
 import { z } from "zod";
 
 const requireRolesHook: BeforeActionHandler<boolean, string> = ({

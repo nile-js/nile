@@ -28,9 +28,9 @@ export function ProductionStory() {
 				</figure>
 				<div className="nile-story-body" data-reveal="right">
 					<h2 id="story-title">
-						More to ship,
+						More To Ship,
 						<br />
-						but still a small team.
+						But Still A Small Team.
 					</h2>
 					<blockquote className="nile-story-quote">
 						<p>

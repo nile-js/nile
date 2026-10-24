@@ -20,7 +20,7 @@ import {
   createServices,
   type StructuredPayload,
 } from "@nilejs/nile";
-import { Err, Ok } from "slang-ts";
+import { Err, Ok } from "@nilejs/nile/fp";
 
 const inspectDocumentHandler = (payload: StructuredPayload) => {
   const document = payload.files.document;

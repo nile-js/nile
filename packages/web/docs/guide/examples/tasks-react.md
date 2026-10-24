@@ -26,7 +26,7 @@ Browsers block responses from another origin unless the server lists it. Replace
 ```ts
 import { createLogger, createNileServer } from "@nilejs/nile";
 import { sql } from "drizzle-orm";
-import { Ok, safeTry } from "slang-ts";
+import { Ok, safeTry } from "@nilejs/nile/fp";
 import { db } from "@/db/client";
 import { services } from "@/services/services.config";
 
@@ -135,7 +135,7 @@ Create `src/web/nile-client.ts`. The payload map gives each action a type, and t
 
 ```ts
 import { createNileClient } from "@nilejs/client";
-import { Err, Ok, type Result } from "slang-ts";
+import { Err, Ok, type Result } from "@nilejs/nile/fp";
 import { z } from "zod";
 
 export interface TaskPayloads {
@@ -210,7 +210,7 @@ export const createTask = async (
 };
 ```
 
-Each function returns a Result from `slang-ts`. Callers check `isErr` first, then read `value`.
+Each function returns a Result from `@nilejs/nile/fp`. Callers check `isErr` first, then read `value`.
 
 ## 5. Write the component
 

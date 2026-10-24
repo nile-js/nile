@@ -13,8 +13,19 @@ function safeTry<T>(operation: () => Promise<T>) {
 }
 
 /** Keep copying optional: code remains selectable when clipboard permission is unavailable. */
-export function CopyButton({ text }: { text: string }) {
-	const [feedback, setFeedback] = useState("Copy");
+export function CopyButton({
+	text,
+	label = "Copy",
+	subject = "code",
+	className = "nile-copy",
+}: {
+	text: string;
+	label?: string;
+	/** Names what is copied for screen readers; empty when the label already says it. */
+	subject?: string;
+	className?: string;
+}) {
+	const [feedback, setFeedback] = useState(label);
 	const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
 
 	useEffect(() => {
@@ -23,12 +34,12 @@ export function CopyButton({ text }: { text: string }) {
 		}
 		const timer = window.setTimeout(() => {
 			setState("idle");
-			setFeedback("Copy");
+			setFeedback(label);
 		}, RESET_AFTER_MS);
 		return () => {
 			window.clearTimeout(timer);
 		};
-	}, [state]);
+	}, [state, label]);
 
 	const copy = async () => {
 		const result = await safeTry(() => navigator.clipboard.writeText(text));
@@ -43,12 +54,12 @@ export function CopyButton({ text }: { text: string }) {
 
 	return (
 		<button
-			className="nile-copy"
+			className={className}
 			onClick={copy}
 			type="button"
 			data-state={state}
 			aria-live="polite"
-			aria-label={`${feedback} code`}
+			aria-label={subject ? `${feedback} ${subject}` : feedback}
 		>
 			{feedback}
 		</button>

@@ -29,7 +29,7 @@ Create `src/reports/weekly-report.ts`. It has four parts: the report builder, a 
 
 ```ts
 import { type JobRunContext, type JobRunEvent, type SchedulerOptions, utils } from "@nilejs/nile";
-import { Err, Ok, type Result } from "slang-ts";
+import { Err, Ok, type Result } from "@nilejs/nile/fp";
 import { taskModel } from "@/db/models";
 import { logger } from "@/observability";
 
@@ -137,7 +137,7 @@ Replace `src/index.ts`. The only change from the starter is the `schedules` opti
 ```ts
 import { createNileServer } from "@nilejs/nile";
 import { sql } from "drizzle-orm";
-import { Ok, safeTry } from "slang-ts";
+import { Ok, safeTry } from "@nilejs/nile/fp";
 import { db } from "@/db/client";
 import { schedules } from "@/reports/weekly-report";
 import { logger } from "@/observability";

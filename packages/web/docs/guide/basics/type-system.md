@@ -9,7 +9,7 @@ A growing team benefits when the action schema, TypeScript input and frontend ca
 
 ```ts
 import { createAction, type ActionHandler } from "@nilejs/nile";
-import { Ok } from "slang-ts";
+import { Ok } from "@nilejs/nile/fp";
 import { z } from "zod";
 
 export const createProjectSchema = z.object({

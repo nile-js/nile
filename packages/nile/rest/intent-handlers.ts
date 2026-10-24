@@ -155,10 +155,14 @@ export async function handleExecute(
     }
   }
 
-  // Start clean so issues recorded by an earlier execution in this scope never leak in.
+  // Start clean so details recorded by an earlier execution in this scope never leak in.
   const failure = getRequestStore()?.failure;
   if (failure) {
     failure.validationIssues = undefined;
+  }
+  const success = getRequestStore()?.success;
+  if (success) {
+    success.message = undefined;
   }
 
   const result = await engine.executeAction(
@@ -175,7 +179,10 @@ export async function handleExecute(
     return { status: false, message: result.error, data: { issues } };
   }
 
-  return toExternalResponse(result, `Action '${service}.${action}' executed`);
+  return toExternalResponse(
+    result,
+    success?.message ?? `Action '${service}.${action}' executed`
+  );
 }
 
 /**

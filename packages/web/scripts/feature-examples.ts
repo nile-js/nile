@@ -3,7 +3,7 @@ export const featureExamples = {
 	results: {
 		file: "actions/rename-project.ts",
 		language: "typescript",
-		raw: `import { Err, Ok } from "slang-ts";
+		raw: `import { Err, Ok } from "@nilejs/nile/fp";
 import { z } from "zod";
 
 const renameSchema = z.object({
@@ -25,7 +25,7 @@ const renameHandler = (input: RenameInput) => {
 		language: "typescript",
 		raw: `import { createNileServer } from "@nilejs/nile";
 import type { BeforeActionHandler } from "@nilejs/nile";
-import { Err, Ok } from "slang-ts";
+import { Err, Ok } from "@nilejs/nile/fp";
 
 type AccessHook = BeforeActionHandler<unknown, string>;
 

@@ -3,6 +3,7 @@ import { runInActionScope } from "@/nile/request-scope";
 import { authenticateAction } from "./authenticate-action";
 import {
   processHooks,
+  recordSuccessMessage,
   runGlobalAfterHook,
   runGlobalBeforeHook,
   runHandler,
@@ -101,7 +102,7 @@ export function compileActionExecutor({
     }
 
     // Handler crash safety and isolated hook state apply even when no optional phases exist.
-    const handlerResult = await runHandler(
+    const { result: handlerResult, successMessage } = await runHandler(
       action,
       validatedPayload,
       nileContext,
@@ -146,6 +147,7 @@ export function compileActionExecutor({
       output = globalAfterResult.value;
     }
 
+    recordSuccessMessage(successMessage ?? action.successMessage);
     return action.result?.pipeline
       ? Ok({ data: output, pipeline: nileContext.hookContext.log })
       : outputResult;

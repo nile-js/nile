@@ -6,31 +6,40 @@
 @source "../components/**/*.tsx";
 @source "./**/*.tsx";
 
-@font-face {
-	font-family: "Nile Sans";
-	src: url("./fonts/FiraSans-Regular.woff2") format("woff2");
-	font-style: normal;
-	font-weight: 400;
-	font-display: swap;
-}
-@font-face {
-	font-family: "Nile Sans";
-	src: url("./fonts/FiraSans-SemiBold.woff2") format("woff2");
-	font-style: normal;
-	font-weight: 500 800;
-	font-display: swap;
-}
-@font-face {
-	font-family: "Nile Mono";
-	src: url("./fonts/FiraMono-Regular.woff2") format("woff2");
-	font-style: normal;
-	font-weight: 400;
-	font-display: swap;
+@theme {
+	--font-sans: "Source Sans 3 Variable", sans-serif;
+	--font-mono: "Fira Mono", monospace;
+	/* Fumadocs UI (sidebar, navigation, callouts, tables) follows the fluid scale below. */
+	--text-xs: var(--nile-text-2xs);
+	--text-sm: var(--nile-text-sm);
+	--text-base: var(--nile-text-base);
 }
 
-@theme {
-	--font-sans: "Nile Sans", sans-serif;
-	--font-mono: "Nile Mono", monospace;
+/*
+ * One fluid type scale for the homepage and the docs. Each step grows linearly
+ * from a 360px to a 1440px viewport and stays in rem, so browser font settings apply.
+ */
+:root {
+	/* 13-14px */
+	--nile-text-2xs: clamp(0.8125rem, 0.792rem + 0.093vw, 0.875rem);
+	/* 14-15.5px */
+	--nile-text-xs: clamp(0.875rem, 0.844rem + 0.139vw, 0.96875rem);
+	/* 15.5-17px */
+	--nile-text-sm: clamp(0.96875rem, 0.938rem + 0.139vw, 1.0625rem);
+	/* 16-18px */
+	--nile-text-base: clamp(1rem, 0.958rem + 0.185vw, 1.125rem);
+	/* 17.5-20px */
+	--nile-text-md: clamp(1.09375rem, 1.042rem + 0.231vw, 1.25rem);
+	/* 19-23px */
+	--nile-text-lg: clamp(1.1875rem, 1.104rem + 0.37vw, 1.4375rem);
+	/* 22-28px */
+	--nile-text-xl: clamp(1.375rem, 1.25rem + 0.556vw, 1.75rem);
+	/* 28-38px */
+	--nile-text-2xl: clamp(1.75rem, 1.542rem + 0.926vw, 2.375rem);
+	/* 13-15px */
+	--nile-text-code: clamp(0.8125rem, 0.771rem + 0.185vw, 0.9375rem);
+	/* 12.5-14px */
+	--nile-text-code-sm: clamp(0.78125rem, 0.75rem + 0.139vw, 0.875rem);
 }
 
 :root,
@@ -111,6 +120,8 @@
 
 body {
 	font-family: var(--font-sans);
+	/* Source Sans 3 has a small x-height; render it at a 0.53 ratio so text keeps the size the type scale sets. */
+	font-size-adjust: 0.53;
 	-webkit-font-smoothing: antialiased;
 	text-rendering: optimizeLegibility;
 }
@@ -158,10 +169,14 @@ body {
 	line-height: 1.85;
 }
 #nd-page pre {
-	font-size: 0.8rem;
+	font-size: var(--nile-text-code);
 }
 #nd-page .prose {
 	max-width: 74ch;
+	font-size: var(--nile-text-base);
+}
+#nd-toc a {
+	font-size: var(--nile-text-xs);
 }
 #nd-page .prose a {
 	text-underline-offset: 4px;
@@ -174,7 +189,7 @@ body {
 	margin: 22px 0 32px;
 	padding-bottom: 22px;
 	border-bottom: 1px solid var(--color-fd-border);
-	font-size: 12px;
+	font-size: var(--nile-text-xs);
 	color: var(--color-fd-muted-foreground);
 }
 .nile-doc-tools > a:hover {
@@ -221,7 +236,7 @@ body {
 	color: var(--color-fd-primary);
 }
 .nile-not-found-code {
-	font: 12px var(--font-mono);
+	font: var(--nile-text-code-sm) var(--font-mono);
 	color: var(--color-fd-muted-foreground);
 }
 a:focus-visible,

@@ -36,7 +36,7 @@
 	display: flex;
 	align-items: center;
 	gap: 12px;
-	font-size: 16px;
+	font-size: var(--nile-text-base);
 	font-weight: 600;
 	color: var(--nile-ink);
 }
@@ -49,7 +49,7 @@
 	background: #38bdf81f;
 	box-shadow: 0 0 0 1px #38bdf840;
 	font:
-		500 11px / 1 "Nile Mono",
+		500 var(--nile-text-2xs) / 1 "Fira Mono",
 		monospace;
 	color: var(--nile-accent-soft);
 }
@@ -164,12 +164,12 @@
 	-webkit-backdrop-filter: blur(14px);
 }
 .nile-founder strong {
-	font-size: 18px;
+	font-size: var(--nile-text-md);
 	font-weight: 650;
 	letter-spacing: -0.02em;
 }
 .nile-founder span {
-	font-size: 13px;
+	font-size: var(--nile-text-xs);
 	color: var(--nile-accent-soft);
 }
 .nile-story-body {
@@ -193,7 +193,7 @@
 	color: #38bdf84d;
 }
 .nile-story-quote > p {
-	font-size: 17.5px;
+	font-size: var(--nile-text-md);
 	line-height: 1.7;
 	color: #c8d6e4;
 }
@@ -221,7 +221,7 @@
 		inset 0 1px 0 #ffffff14;
 }
 .nile-story-stats dt {
-	font-size: 36px;
+	font-size: var(--nile-text-2xl);
 	font-weight: 650;
 	line-height: 1;
 	letter-spacing: -0.04em;
@@ -232,7 +232,7 @@
 }
 .nile-story-stats dd {
 	margin-top: 12px;
-	font-size: 14px;
+	font-size: var(--nile-text-sm);
 	line-height: 1.5;
 	color: var(--nile-muted);
 }
@@ -249,7 +249,6 @@
 	}
 	.nile-story-stats dt {
 		flex-shrink: 0;
-		font-size: 32px;
 	}
 	.nile-story-stats dd {
 		margin-top: 0;
@@ -282,9 +281,6 @@
 		top: -40px;
 		left: -2px;
 		font-size: 56px;
-	}
-	.nile-story-quote > p {
-		font-size: 16.5px;
 	}
 }
 
@@ -369,7 +365,7 @@
 }
 .nile-explorer {
 	display: grid;
-	grid-template-columns: minmax(0, 380px) minmax(0, 1fr);
+	grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
 	gap: 22px;
 	align-items: stretch;
 }
@@ -392,7 +388,9 @@
 	padding: 0;
 	list-style: none;
 }
-.nile-tree-row {
+/* Naming the button form outranks `.nile-home button { font: inherit }`, so clickable rows stay monospaced. */
+.nile-tree-row,
+button.nile-tree-row {
 	display: flex;
 	align-items: center;
 	gap: 9px;
@@ -403,7 +401,7 @@
 	border-radius: var(--nile-inner-radius);
 	background: transparent;
 	font:
-		13px / 1.4 "Nile Mono",
+		var(--nile-text-code-sm) / 1.4 "Fira Mono",
 		monospace;
 	color: var(--nile-faint);
 	text-align: left;
@@ -436,7 +434,7 @@ button.nile-tree-row > svg {
 	margin-left: auto;
 	padding-left: 10px;
 	font:
-		10.5px / 1 "Nile Sans",
+		var(--nile-text-2xs) / 1 "Source Sans 3 Variable",
 		sans-serif;
 	letter-spacing: 0.02em;
 	white-space: nowrap;
@@ -508,10 +506,10 @@ button.nile-tree-row[aria-pressed="true"] .nile-tree-step {
 		0 30px 60px -36px #38bdf880;
 }
 .nile-eco-card h3 {
-	font-size: 18px;
+	font-size: var(--nile-text-md);
 }
 .nile-eco-card p {
-	font-size: 14px;
+	font-size: var(--nile-text-sm);
 	line-height: 1.55;
 }
 .nile-eco-top {
@@ -522,8 +520,7 @@ button.nile-tree-row[aria-pressed="true"] .nile-tree-step {
 	color: var(--nile-accent);
 }
 .nile-eco-top > svg,
-.nile-eco-cta > svg,
-.nile-eco-community > svg {
+.nile-eco-cta > svg {
 	transition:
 		translate 0.3s var(--nile-ease-out),
 		color 0.2s;
@@ -549,22 +546,27 @@ button.nile-tree-row[aria-pressed="true"] .nile-tree-step {
 		url("../../docs/public/images/nile-ripples.svg") no-repeat 140% -40% / 420px,
 		linear-gradient(165deg, #12271ff0, #0b141df0);
 }
-.nile-eco-community > svg {
-	margin-bottom: auto;
-	color: #4ade80;
+/* The WhatsApp mark sits large and centered in the space above the card's text. */
+.nile-eco-community > .nile-eco-whatsapp {
+	align-self: center;
+	width: clamp(88px, 9vw, 120px);
+	height: auto;
+	margin: auto 0;
+	filter: drop-shadow(0 18px 40px #25d36640);
+	transition: translate 0.3s var(--nile-ease-out);
 }
-.nile-eco-community:hover > svg {
+.nile-eco-community:hover > .nile-eco-whatsapp {
 	translate: 0 -3px;
 }
 .nile-eco-community h3 {
-	font-size: 26px;
+	font-size: var(--nile-text-xl);
 }
 .nile-eco-cta {
 	display: inline-flex;
 	align-items: center;
 	gap: 8px;
 	margin-top: 8px;
-	font-size: 14px;
+	font-size: var(--nile-text-sm);
 	font-weight: 600;
 	color: #86efac;
 }
@@ -573,7 +575,7 @@ button.nile-tree-row[aria-pressed="true"] .nile-tree-step {
 }
 .nile-home .nile-eco-subtitle {
 	margin: 52px 0 18px;
-	font-size: 17px;
+	font-size: var(--nile-text-base);
 	font-weight: 600;
 	text-align: center;
 	color: var(--nile-muted);
@@ -584,7 +586,7 @@ button.nile-tree-row[aria-pressed="true"] .nile-tree-step {
 	gap: 16px;
 }
 .nile-eco-library h3 code {
-	font-size: 15px;
+	font-size: 0.85em;
 	color: var(--nile-accent-soft);
 }
 @container section (max-width: 940px) {
@@ -634,7 +636,7 @@ button.nile-tree-row[aria-pressed="true"] .nile-tree-step {
 	box-shadow:
 		0 0 0 1px #a5cdf20f,
 		inset 0 1px 0 #ffffff0a;
-	font-size: 14px;
+	font-size: var(--nile-text-sm);
 	font-weight: 600;
 	color: var(--nile-muted);
 }
@@ -671,7 +673,7 @@ button.nile-tree-row[aria-pressed="true"] .nile-tree-step {
 		gap: 10px;
 		padding: 16px 4px 12px;
 		border-radius: 14px;
-		font-size: 11.5px;
+		font-size: var(--nile-text-2xs);
 		text-align: center;
 	}
 	.nile-credits-list img {
@@ -707,11 +709,11 @@ button.nile-tree-row[aria-pressed="true"] .nile-tree-step {
 	max-width: 580px;
 }
 .nile-contribute h3 {
-	font-size: 24px;
+	font-size: var(--nile-text-xl);
 }
 .nile-home .nile-contribute p {
 	margin-top: 10px;
-	font-size: 15.5px;
+	font-size: var(--nile-text-sm);
 }
 .nile-contribute-actions {
 	display: flex;
@@ -758,7 +760,7 @@ button.nile-tree-row[aria-pressed="true"] .nile-tree-step {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 12px 24px;
-	font-size: 13px;
+	font-size: var(--nile-text-xs);
 }
 .nile-footer nav a {
 	color: var(--nile-muted);

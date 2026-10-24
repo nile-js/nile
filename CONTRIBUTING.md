@@ -233,7 +233,7 @@ The following conventions apply to all TypeScript and JavaScript files in this r
 
 All operations that can fail must use the `safeTry` pattern from Slang Ts instead of raw `try/catch` blocks.
 
-- Action handlers must return a `Result` type using `Ok` / `Err` from `slang-ts`.
+- Action handlers must return a `Result` type using `Ok` / `Err` from `@nilejs/nile/fp` (Nile's re-export of slang-ts).
 - Throw immediately for critical configuration errors (missing dependencies, invalid startup state).
 - Handle anticipated runtime errors (user input, external services) gracefully, returning `Err` rather than throwing.
 - Remove all `console.log`, `debugger`, and `alert` statements before submitting.

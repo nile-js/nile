@@ -21,7 +21,7 @@ Create `src/services/documents/actions/inspect.ts`. The `isSpecial` setting tell
 
 ```ts
 import { createAction, type StructuredPayload } from "@nilejs/nile";
-import { Err, Ok } from "slang-ts";
+import { Err, Ok } from "@nilejs/nile/fp";
 
 const inspectDocumentHandler = (payload: StructuredPayload) => {
   const document = payload.files.document;
@@ -92,7 +92,7 @@ Replace `src/index.ts`. The `uploads` block in `rest` sets the file count, the s
 ```ts
 import { createLogger, createNileServer } from "@nilejs/nile";
 import { sql } from "drizzle-orm";
-import { Ok, safeTry } from "slang-ts";
+import { Ok, safeTry } from "@nilejs/nile/fp";
 import { db } from "@/db/client";
 import { services } from "@/services/services.config";
 

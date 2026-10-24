@@ -17,7 +17,7 @@ import {
   createNileServer,
   createServices,
 } from "@nilejs/nile";
-import { Err, Ok } from "slang-ts";
+import { Err, Ok } from "@nilejs/nile/fp";
 import { z } from "zod";
 
 const prepareOrderSchema = z.object({
@@ -329,7 +329,7 @@ import {
   type NileContext,
   type NileLogger,
 } from "@nilejs/nile";
-import { Err, Ok } from "slang-ts";
+import { Err, Ok } from "@nilejs/nile/fp";
 import { z } from "zod";
 
 type AppDatabase = {
@@ -519,7 +519,7 @@ This test file creates a server for the `notes` service and runs two cases with 
 ```ts
 import { describe, expect, test } from "bun:test";
 import { createAction, createNileServer, createServices } from "@nilejs/nile";
-import { Err, Ok } from "slang-ts";
+import { Err, Ok } from "@nilejs/nile/fp";
 import { z } from "zod";
 
 const addNoteSchema = z.object({
@@ -778,7 +778,7 @@ An action is a named business operation. Keep its description, input schema and 
 
 ```ts
 import { createAction } from "@nilejs/nile";
-import { Ok } from "slang-ts";
+import { Ok } from "@nilejs/nile/fp";
 import { z } from "zod";
 
 const createProjectSchema = z.object({
@@ -813,6 +813,7 @@ The example returns a project without persistence. In a real application, coordi
 | `name`, `description` | Name and explain the operation. |
 | `validation` | A Zod schema parsed before the main handler. Omit it only when no schema validation is needed. |
 | `handler` | Receive parsed input and optional Nile context; return a Result or a promise of a Result. |
+| `successMessage` | The response message for a successful call. A handler's `Ok(value, message)` takes precedence. See [errors and Results](/guide/basics/errors-and-results). |
 | `isProtected` | Request built-in JWT verification **when server `auth` is also configured**. |
 | `hooks.before`, `hooks.after` | Reference registered actions for reusable pipeline steps. |
 | `accessControl` | Application-defined policy metadata; Nile does not enforce role strings automatically. |
@@ -858,7 +859,7 @@ export const serverConfig: ServerConfig = {
 ```ts
 import { createAction } from "@nilejs/nile";
 import type { NileContext } from "@nilejs/nile";
-import { Err, Ok, type Result } from "slang-ts";
+import { Err, Ok, type Result } from "@nilejs/nile/fp";
 
 const getProfileHandler = (
   input: unknown,
@@ -907,7 +908,7 @@ Custom routes and webhooks do not pass through an action's `isProtected` check. 
 
 ```ts
 import { type AuthConfig, verifyJWT } from "@nilejs/nile";
-import { Err, Ok, type Result } from "slang-ts";
+import { Err, Ok, type Result } from "@nilejs/nile/fp";
 import { config } from "./config";
 
 const jwtConfig: AuthConfig = {
@@ -935,7 +936,7 @@ if (verified.isErr) {
 
 ```ts
 import type { BeforeActionHandler } from "@nilejs/nile";
-import { Err, Ok, type Result } from "slang-ts";
+import { Err, Ok, type Result } from "@nilejs/nile/fp";
 
 /** Require every role listed on a protected action. */
 export const authorizeAction: BeforeActionHandler<boolean, string> = ({
@@ -1026,6 +1027,7 @@ Every client method returns the same Result pattern the server uses. Check `isEr
 | `isOk`, `isErr` | `true`, `false` | `false`, `true` |
 | `value` | The action's data | `null` |
 | `error` | `null` | A message string |
+| `message` | The server's success message for HTTP calls, such as the action's `successMessage` | Not present |
 | `details` | Not present | Any data the server attached to the failure. Validation and lookup failures currently send an empty object, so read `error` for the message. |
 
 Calls do not throw for expected failures. A validation error, a denied action, a timeout and a network failure all arrive as failed Results.
@@ -1121,7 +1123,7 @@ Handlers receive context as their optional second argument:
 
 ```ts
 import type { NileContext } from "@nilejs/nile";
-import { Ok } from "slang-ts";
+import { Ok } from "@nilejs/nile/fp";
 
 const createProjectHandler = (
   input: CreateProjectInput,
@@ -1350,11 +1352,11 @@ JSON Schema cannot express every Zod refinement, transform or runtime default. U
 
 # Errors and Results
 
-A team should be able to see how an operation can fail beside its business logic. Nile handlers return `Ok(data)` or `Err(message)` from `slang-ts`, so expected failures become explicit branches.
+A team should be able to see how an operation can fail beside its business logic. Nile handlers return `Ok(data)` or `Err(message)` from `@nilejs/nile/fp`, Nile's re-export of [slang-ts](https://www.npmjs.com/package/slang-ts), so expected failures become explicit branches. Import every slang-ts helper from there; your code then shares Nile's copy and needs no separate dependency.
 
 ```ts
 import { createAction } from "@nilejs/nile";
-import { Err, Ok } from "slang-ts";
+import { Err, Ok } from "@nilejs/nile/fp";
 import { z } from "zod";
 
 const createProjectSchema = z.object({
@@ -1391,7 +1393,7 @@ The schema checks the input shape before the handler. The guard expresses an app
 Use `safeTry` around an external call or application function that can reject or throw. Inspect the Result, log useful internal context, and return an appropriate message to the caller.
 
 ```ts
-import { Err, Ok, safeTry } from "slang-ts";
+import { Err, Ok, safeTry } from "@nilejs/nile/fp";
 
 const saved = await safeTry(() => saveProject(input));
 if (saved.isErr) {
@@ -1406,6 +1408,30 @@ return Ok({ project: saved.value });
 ```
 
 This handler fragment uses your application's `saveProject` function. Current `slang-ts` recursively unwraps nested Results, including a Result returned by that function. Do not wrap an existing successful Result merely to pass it through; returning it directly is often clearer.
+
+## Send a success message [#send-a-success-message]
+
+Every successful HTTP response carries a `message`. By default it reads `Action 'projects.archive' executed`. Set `successMessage` on the action for a fixed message, or pass a message as the second argument to `Ok` to choose one per call. The handler's message wins.
+
+```ts
+import { createAction } from "@nilejs/nile";
+import { Ok } from "@nilejs/nile/fp";
+
+export const archiveProject = createAction<ArchiveProjectInput>({
+  name: "archive",
+  description: "Archive a project",
+  successMessage: "Project archived",
+  validation: archiveProjectSchema,
+  handler: (input) => {
+    if (input.notifyTeam) {
+      return Ok({ id: input.id }, "Project archived and the team notified");
+    }
+    return Ok({ id: input.id });
+  },
+});
+```
+
+Import `Ok` from `@nilejs/nile/fp`; Nile Js installs slang-ts 0.1.1 or later, which adds the message argument. The [frontend client](/guide/basics/client) exposes the message as `result.message`. WebSocket calls return the data only.
 
 ## Keep the three boundaries distinct [#keep-the-three-boundaries-distinct]
 
@@ -1483,7 +1509,7 @@ A before hook sees input **before validation**. Check the values it uses; do not
 This server-configuration fragment rejects a protected action without a session:
 
 ```ts
-import { Err, Ok } from "slang-ts";
+import { Err, Ok } from "@nilejs/nile/fp";
 
 const onBeforeActionHandler = ({ nileContext, action, payload }) => {
   if (action.isProtected && !nileContext.getSession("rest")) {
@@ -1622,7 +1648,7 @@ console.log(server.stats());
 
 The snapshot contains `totalServices`, `totalActions`, `registrationDurationMs`, `startupDurationMs` and a `services` array with each service's `actionCount` and `registrationDurationMs`. It measures registration after modules have been constructed, not module import time or database loading per service. Set `logServices: false` to suppress the startup table.
 
-See [application structure](/guide/start/application-structure) for a domain layout that gives new teammates a familiar path through the code.
+See [application structure](/guide/start/application-structure) for a domain layout that gives new teammates a well known path through the code.
 
 
 ---
@@ -1635,7 +1661,7 @@ A growing team benefits when the action schema, TypeScript input and frontend ca
 
 ```ts
 import { createAction, type ActionHandler } from "@nilejs/nile";
-import { Ok } from "slang-ts";
+import { Ok } from "@nilejs/nile/fp";
 import { z } from "zod";
 
 export const createProjectSchema = z.object({
@@ -1738,7 +1764,7 @@ Limits cover file count, per-file and total size, filename length, and allowed M
 ```ts
 import { createAction } from "@nilejs/nile";
 import type { StructuredPayload } from "@nilejs/nile";
-import { Err, Ok } from "slang-ts";
+import { Err, Ok } from "@nilejs/nile/fp";
 
 const inspectDocumentHandler = (payload: StructuredPayload) => {
   const document = payload.files.document;
@@ -1824,7 +1850,7 @@ Create `src/services/documents/actions/inspect.ts`. The `isSpecial` setting tell
 
 ```ts
 import { createAction, type StructuredPayload } from "@nilejs/nile";
-import { Err, Ok } from "slang-ts";
+import { Err, Ok } from "@nilejs/nile/fp";
 
 const inspectDocumentHandler = (payload: StructuredPayload) => {
   const document = payload.files.document;
@@ -1895,7 +1921,7 @@ Replace `src/index.ts`. The `uploads` block in `rest` sets the file count, the s
 ```ts
 import { createLogger, createNileServer } from "@nilejs/nile";
 import { sql } from "drizzle-orm";
-import { Ok, safeTry } from "slang-ts";
+import { Ok, safeTry } from "@nilejs/nile/fp";
 import { db } from "@/db/client";
 import { services } from "@/services/services.config";
 
@@ -2213,7 +2239,7 @@ Create `src/auth/role-hook.ts`. It runs before every action. Protected actions m
 
 ```ts
 import type { BeforeActionHandler } from "@nilejs/nile";
-import { Err, Ok, type Result } from "slang-ts";
+import { Err, Ok, type Result } from "@nilejs/nile/fp";
 
 /** Requires every role listed in a protected action's accessControl. */
 export const requireRolesHook: BeforeActionHandler<boolean, string> = ({
@@ -2253,7 +2279,7 @@ Create `src/services/account/actions/profile.ts`. It is protected, so the server
 
 ```ts
 import { type NileContext, createAction } from "@nilejs/nile";
-import { Err, Ok } from "slang-ts";
+import { Err, Ok } from "@nilejs/nile/fp";
 import { z } from "zod";
 
 const profileSchema = z.object({
@@ -2294,7 +2320,7 @@ Create `src/services/account/actions/audit.ts`. It lists `admin` in `accessContr
 
 ```ts
 import { createAction } from "@nilejs/nile";
-import { Ok } from "slang-ts";
+import { Ok } from "@nilejs/nile/fp";
 
 const listAuditHandler = () => {
   return Ok({
@@ -2353,7 +2379,7 @@ Replace `src/index.ts`. It adds the `auth` block, the `onBeforeActionHandler` an
 ```ts
 import { createLogger, createNileServer } from "@nilejs/nile";
 import { sql } from "drizzle-orm";
-import { Ok, safeTry } from "slang-ts";
+import { Ok, safeTry } from "@nilejs/nile/fp";
 import { requireRolesHook } from "@/auth/role-hook";
 import { config } from "@/config";
 import { db } from "@/db/client";
@@ -2588,7 +2614,7 @@ Create `src/services/catalog/actions/quote.ts`. It is not protected, so anyone w
 
 ```ts
 import { createAction } from "@nilejs/nile";
-import { Err, Ok } from "slang-ts";
+import { Err, Ok } from "@nilejs/nile/fp";
 import { z } from "zod";
 
 const quoteSchema = z.object({
@@ -2665,7 +2691,7 @@ Replace `src/index.ts`. The `execution.rateLimit` policy applies to every action
 ```ts
 import { createLogger, createNileServer, utils } from "@nilejs/nile";
 import { sql } from "drizzle-orm";
-import { Ok, safeTry } from "slang-ts";
+import { Ok, safeTry } from "@nilejs/nile/fp";
 import { db } from "@/db/client";
 import { services } from "@/services/services.config";
 
@@ -2897,7 +2923,7 @@ Create `src/realtime/socket-auth.ts`. The socket client sends its token in the c
 
 ```ts
 import { type AuthConfig, verifyJWT, type WebSocketIdentity } from "@nilejs/nile";
-import { Err, Ok, type Result } from "slang-ts";
+import { Err, Ok, type Result } from "@nilejs/nile/fp";
 import { config } from "@/config";
 
 const jwtConfig: AuthConfig = {
@@ -2971,7 +2997,7 @@ Create `src/services/orders/actions/set-status.ts`. The action checks that the o
 
 ```ts
 import { createAction, type NileContext, getContext } from "@nilejs/nile";
-import { Err, Ok } from "slang-ts";
+import { Err, Ok } from "@nilejs/nile/fp";
 import { z } from "zod";
 import { topics } from "@/realtime/topics";
 import { findOrder, updateOrderStatus } from "@/services/orders/store";
@@ -3066,7 +3092,7 @@ Replace `src/index.ts`. It adds the `websocket` block, which uses the topics and
 ```ts
 import { createLogger, createNileServer } from "@nilejs/nile";
 import { sql } from "drizzle-orm";
-import { Ok, safeTry } from "slang-ts";
+import { Ok, safeTry } from "@nilejs/nile/fp";
 import { config } from "@/config";
 import { db } from "@/db/client";
 import { authenticateSocket } from "@/realtime/socket-auth";
@@ -3336,7 +3362,7 @@ Browsers block responses from another origin unless the server lists it. Replace
 ```ts
 import { createLogger, createNileServer } from "@nilejs/nile";
 import { sql } from "drizzle-orm";
-import { Ok, safeTry } from "slang-ts";
+import { Ok, safeTry } from "@nilejs/nile/fp";
 import { db } from "@/db/client";
 import { services } from "@/services/services.config";
 
@@ -3445,7 +3471,7 @@ Create `src/web/nile-client.ts`. The payload map gives each action a type, and t
 
 ```ts
 import { createNileClient } from "@nilejs/client";
-import { Err, Ok, type Result } from "slang-ts";
+import { Err, Ok, type Result } from "@nilejs/nile/fp";
 import { z } from "zod";
 
 export interface TaskPayloads {
@@ -3520,7 +3546,7 @@ export const createTask = async (
 };
 ```
 
-Each function returns a Result from `slang-ts`. Callers check `isErr` first, then read `value`.
+Each function returns a Result from `@nilejs/nile/fp`. Callers check `isErr` first, then read `value`.
 
 ## 5. Write the component [#5-write-the-component]
 
@@ -3725,7 +3751,7 @@ Create `src/reports/weekly-report.ts`. It has four parts: the report builder, a 
 
 ```ts
 import { type JobRunContext, type JobRunEvent, type SchedulerOptions, utils } from "@nilejs/nile";
-import { Err, Ok, type Result } from "slang-ts";
+import { Err, Ok, type Result } from "@nilejs/nile/fp";
 import { taskModel } from "@/db/models";
 import { logger } from "@/observability";
 
@@ -3833,7 +3859,7 @@ Replace `src/index.ts`. The only change from the starter is the `schedules` opti
 ```ts
 import { createNileServer } from "@nilejs/nile";
 import { sql } from "drizzle-orm";
-import { Ok, safeTry } from "slang-ts";
+import { Ok, safeTry } from "@nilejs/nile/fp";
 import { db } from "@/db/client";
 import { schedules } from "@/reports/weekly-report";
 import { logger } from "@/observability";
@@ -4010,7 +4036,7 @@ This server enables discovery with a secret. The helper function runs on a trust
 
 ```ts
 import { createNileServer, createServices } from "@nilejs/nile";
-import { Err, Ok, safeTry, type Result } from "slang-ts";
+import { Err, Ok, safeTry, type Result } from "@nilejs/nile/fp";
 
 export const services = createServices([
   {
@@ -4162,7 +4188,7 @@ import {
   createServices,
 } from "@nilejs/nile";
 import type { NileContext } from "@nilejs/nile";
-import { Err, Ok, type Result } from "slang-ts";
+import { Err, Ok, type Result } from "@nilejs/nile/fp";
 import { z } from "zod";
 
 const requireRolesHook: BeforeActionHandler<boolean, string> = ({
@@ -4441,7 +4467,7 @@ import {
   createServices,
   type NileContext,
 } from "@nilejs/nile";
-import { Err, Ok } from "slang-ts";
+import { Err, Ok } from "@nilejs/nile/fp";
 import { z } from "zod";
 
 const logger = createLogger("team-workspace", {
@@ -4574,7 +4600,7 @@ import {
   type JobRunEvent,
   type SchedulerOptions,
 } from "@nilejs/nile";
-import { Err, Ok } from "slang-ts";
+import { Err, Ok } from "@nilejs/nile/fp";
 
 type WeeklySummary = {
   orderCount: number;
@@ -4713,7 +4739,7 @@ The table is an ordinary Drizzle table. The model is created from it with a data
 
 ```ts
 import { createAction, createModel, createServices } from "@nilejs/nile";
-import { Err, Ok } from "slang-ts";
+import { Err, Ok } from "@nilejs/nile/fp";
 import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { z } from "zod";
 
@@ -4867,7 +4893,7 @@ import {
   createServices,
   type StructuredPayload,
 } from "@nilejs/nile";
-import { Err, Ok } from "slang-ts";
+import { Err, Ok } from "@nilejs/nile/fp";
 
 const inspectDocumentHandler = (payload: StructuredPayload) => {
   const document = payload.files.document;
@@ -5102,7 +5128,7 @@ This module defines a receipt queue with two workers, a draft debounce and a cac
 
 ```ts
 import { utils } from "@nilejs/nile";
-import { type Result, Ok } from "slang-ts";
+import { type Result, Ok } from "@nilejs/nile/fp";
 
 type ReceiptEmail = {
   orderId: string;
@@ -5245,7 +5271,7 @@ This server allows a burst of 20 quote requests per client and refills 5 per sec
 
 ```ts
 import { createAction, createNileServer, createServices, utils } from "@nilejs/nile";
-import { Ok } from "slang-ts";
+import { Ok } from "@nilejs/nile/fp";
 import { z } from "zod";
 
 const quoteSchema = z.object({
@@ -5377,7 +5403,7 @@ This server enables the status endpoints, registers its HTTP listener as a lifec
 
 ```ts
 import { createNileServer, createServices } from "@nilejs/nile";
-import { Ok } from "slang-ts";
+import { Ok } from "@nilejs/nile/fp";
 
 const services = createServices([
   {
@@ -5523,7 +5549,7 @@ This module polls a delivery provider with up to eight attempts and a 60-second 
 
 ```ts
 import { utils } from "@nilejs/nile";
-import { Err, Ok, type Result } from "slang-ts";
+import { Err, Ok, type Result } from "@nilejs/nile/fp";
 
 type DeliveryStatus = {
   state: "queued" | "delivered" | "failed";
@@ -5739,7 +5765,7 @@ This action validates a project and then applies a reserved-name rule in its han
 
 ```ts
 import { createAction, createServices } from "@nilejs/nile";
-import { Err, Ok } from "slang-ts";
+import { Err, Ok } from "@nilejs/nile/fp";
 import { z } from "zod";
 
 const createProjectSchema = z.object({
@@ -5894,7 +5920,7 @@ import {
   getContext,
   type InferTopics,
 } from "@nilejs/nile";
-import { Err, Ok } from "slang-ts";
+import { Err, Ok } from "@nilejs/nile/fp";
 import { z } from "zod";
 
 export const topics = createTopics({
@@ -6157,7 +6183,7 @@ Static action policies work with both adapters:
 
 ```ts
 import { createAction } from "@nilejs/nile";
-import { Ok } from "slang-ts";
+import { Ok } from "@nilejs/nile/fp";
 
 const readReportHandler = () => {
   return Ok({ available: true });
@@ -6209,7 +6235,7 @@ Hono also supports path rules through `cors.addCors`; native supports equivalent
 
 # Model helpers
 
-Use `createModel` when a Drizzle-backed domain needs familiar CRUD operations. Keep custom business queries in ordinary model functions rather than forcing every operation through a generic helper.
+Use `createModel` when a Drizzle-backed domain needs well known CRUD operations. Keep custom business queries in ordinary model functions rather than forcing every operation through a generic helper.
 
 ## Create a model [#create-a-model]
 
@@ -6652,9 +6678,11 @@ Small teams building growing business applications: internal tools, dashboards, 
 
 The maintainer uses Nile for a fintech backend with over 500 actions, an internal Back Office shipped in days, and Wi-Fi billing receiving thousands of requests a day. These are in-house accounts, not independent performance or delivery guarantees.
 
-## Does Nile require domain-driven design? [#does-nile-require-domain-driven-design]
+## Does Nile enforce domain-driven design? [#does-nile-enforce-domain-driven-design]
 
-Nile groups actions into services. Organizing those services around business domains makes the application easier to navigate, but Nile does not impose domain aggregates, repositories or a particular folder tree. Ordinary functions can contain business rules; only operations exposed through the action API need to become actions.
+Yes, so the codebase still scales as it grows. Each business domain is a service under `src/services`, listed in the `services.config.ts` registry, with one file per action. Nile checks that layout at startup and reports misplaced or oversized action files. With `project: { structure: "error" }`, as in the CLI starter, a violation stops startup; existing applications get warnings by default.
+
+Inside that layout, aggregates and repositories stay your choice. Ordinary functions can contain business rules; only operations exposed through the action API need to become actions.
 
 Start with the [application structure guide](/guide/start/application-structure).
 
@@ -7497,7 +7525,7 @@ Keep database selection, migrations and transactions in your application. Nile o
 
 The maintainer's fintech backend has over 500 actions and continues to grow. The in-house Back Office tool was shipped in days; the reviewed version had 15 services and 78 actions. These are examples of a small team applying the same organization repeatedly, not guarantees about delivery time or request capacity.
 
-The useful constraint is consistency: once someone understands one operation, the next operation has a familiar place to start.
+The useful constraint is consistency: once someone understands one operation, the next operation has a well known place to start.
 
 Next: [share dependencies through context](/guide/basics/context), [handle failures consistently](/guide/basics/errors-and-results), and [reuse access policies](/guide/basics/auth).
 
@@ -7577,7 +7605,7 @@ The goal is a consistent place for the team to work. You still design the operat
 
 Send this to `POST /api/services` when `rest.baseUrl` is `/api`.
 
-| Familiar HTTP concept | Nile application concept |
+| Well known HTTP concept | Nile application concept |
 |---|---|
 | A domain route group | A service such as `projects` |
 | An operation handler | A named action such as `archive` |
@@ -7776,7 +7804,7 @@ Open `src/services/tasks/actions/complete.ts` and replace its contents with this
 
 ```ts
 import { createAction } from "@nilejs/nile";
-import { Err, Ok } from "slang-ts";
+import { Err, Ok } from "@nilejs/nile/fp";
 import { z } from "zod";
 import { taskModel } from "@/db/models";
 
@@ -7981,7 +8009,7 @@ You should see `{"status":true,"message":"my-app is running","data":{}}` from `/
 
 - **`Validation failed` in the response.** The request reached the action, and its input did not match the schema. Read the field named after `→ at`, correct the payload and send the request again.
 
-- **TypeScript reports that two `Result` types are not compatible.** Two copies of `slang-ts` are installed. Run `bun pm ls | grep slang-ts`; if you see more than one version, run `bun add slang-ts@0.0.9` so your code and Nile Js share one copy.
+- **TypeScript reports that two `Result` types are not compatible.** Two copies of `slang-ts` are installed. Import Results from `@nilejs/nile/fp` instead of `slang-ts`, and remove `slang-ts` from your own dependencies so your code and Nile Js share one copy. `bun pm ls | grep slang-ts` shows the installed versions.
 
 - **`@nilejs/nile` shows a version older than `1.0.0`.** This guide documents Nile Js 1.0.0. Earlier releases have a different starter and different commands. Install the 1.0.0 release, then start again from `bunx @nilejs/cli new`.
 

@@ -25,7 +25,7 @@ Handlers receive context as their optional second argument:
 
 ```ts
 import type { NileContext } from "@nilejs/nile";
-import { Ok } from "slang-ts";
+import { Ok } from "@nilejs/nile/fp";
 
 const createProjectHandler = (
   input: CreateProjectInput,

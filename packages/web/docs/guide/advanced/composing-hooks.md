@@ -20,7 +20,7 @@ import {
   createNileServer,
   createServices,
 } from "@nilejs/nile";
-import { Err, Ok } from "slang-ts";
+import { Err, Ok } from "@nilejs/nile/fp";
 import { z } from "zod";
 
 const prepareOrderSchema = z.object({

@@ -26,6 +26,14 @@ export interface RequestFailureDetails {
   validationIssues?: ValidationIssue[];
 }
 
+/**
+ * Details a transport can add to a successful response. Nested execution scopes share
+ * this object too; the outermost action finishes last, so its message is the one kept.
+ */
+export interface RequestSuccessDetails {
+  message?: string;
+}
+
 /** Per-request state isolated via AsyncLocalStorage — never shared between concurrent requests */
 export interface RequestStore {
   context?: NileContext;
@@ -40,6 +48,7 @@ export interface RequestStore {
   sessions: Sessions;
   hookContext?: HookContext;
   failure?: RequestFailureDetails;
+  success?: RequestSuccessDetails;
 }
 
 /** Single ALS instance shared across the entire Nile process */

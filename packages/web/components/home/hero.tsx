@@ -30,13 +30,12 @@ export function Hero() {
 			<div className="nile-hero-inner">
 				<div className="nile-hero-copy">
 					<h1 id="hero-title">
-						<span className="nile-nowrap">TypeScript-first,</span> service and
-						actions oriented{" "}
-						<span className="nile-accent">backend framework.</span>
+						Keep shipping as your <span>backend grows.</span>
 					</h1>
 					<p className="nile-lead">
-						Services and actions give every feature a familiar home, so your
-						team keeps shipping as the backend grows.
+						Nile Js is a TypeScript-first, service and actions oriented backend
+						framework. Built for small teams and coding agents that iterate
+						fast.
 					</p>
 					<div className="nile-actions">
 						<a
@@ -45,7 +44,7 @@ export function Hero() {
 						>
 							Build your first service <span aria-hidden="true">↗</span>
 						</a>
-						<a className="nile-text-link" href="#how-it-works">
+						<a className="nile-text-link" href="#how-nile-works">
 							See how it works <span aria-hidden="true">↓</span>
 						</a>
 					</div>

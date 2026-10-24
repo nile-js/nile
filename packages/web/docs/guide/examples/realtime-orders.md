@@ -69,7 +69,7 @@ Create `src/realtime/socket-auth.ts`. The socket client sends its token in the c
 
 ```ts
 import { type AuthConfig, verifyJWT, type WebSocketIdentity } from "@nilejs/nile";
-import { Err, Ok, type Result } from "slang-ts";
+import { Err, Ok, type Result } from "@nilejs/nile/fp";
 import { config } from "@/config";
 
 const jwtConfig: AuthConfig = {
@@ -143,7 +143,7 @@ Create `src/services/orders/actions/set-status.ts`. The action checks that the o
 
 ```ts
 import { createAction, type NileContext, getContext } from "@nilejs/nile";
-import { Err, Ok } from "slang-ts";
+import { Err, Ok } from "@nilejs/nile/fp";
 import { z } from "zod";
 import { topics } from "@/realtime/topics";
 import { findOrder, updateOrderStatus } from "@/services/orders/store";
@@ -238,7 +238,7 @@ Replace `src/index.ts`. It adds the `websocket` block, which uses the topics and
 ```ts
 import { createLogger, createNileServer } from "@nilejs/nile";
 import { sql } from "drizzle-orm";
-import { Ok, safeTry } from "slang-ts";
+import { Ok, safeTry } from "@nilejs/nile/fp";
 import { config } from "@/config";
 import { db } from "@/db/client";
 import { authenticateSocket } from "@/realtime/socket-auth";

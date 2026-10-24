@@ -28,7 +28,7 @@ The server starts on `http://localhost:8000` with an embedded database, so there
 
 ```ts
 import { createAction } from "@nilejs/nile";
-import { Ok } from "slang-ts";
+import { Ok } from "@nilejs/nile/fp";
 import { z } from "zod";
 
 const createProjectSchema = z.object({

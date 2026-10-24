@@ -15,7 +15,7 @@ The table is an ordinary Drizzle table. The model is created from it with a data
 
 ```ts
 import { createAction, createModel, createServices } from "@nilejs/nile";
-import { Err, Ok } from "slang-ts";
+import { Err, Ok } from "@nilejs/nile/fp";
 import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { z } from "zod";
 

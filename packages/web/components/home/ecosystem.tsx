@@ -6,7 +6,6 @@ import {
 	Bot,
 	Braces,
 	Code2,
-	MessagesSquare,
 	Network,
 	Terminal,
 } from "lucide-react";
@@ -80,9 +79,9 @@ export function Ecosystem() {
 		>
 			<header className="nile-heading nile-heading-center" data-reveal>
 				<h2 id="ecosystem-title">
-					A small framework.
+					A Small Framework.
 					<br />
-					Room for your people.
+					Room For Your People.
 				</h2>
 			</header>
 			<nav className="nile-eco-grid" aria-label="Nile Js community and tools">
@@ -91,7 +90,13 @@ export function Ecosystem() {
 					data-reveal
 					href="https://chat.whatsapp.com/K0xkSiilbVtFf3QZoA1z5Z?mode=gi_t"
 				>
-					<MessagesSquare size={30} strokeWidth={1.5} aria-hidden="true" />
+					<img
+						className="nile-eco-whatsapp"
+						src={withBase("/images/whatsapp.svg")}
+						alt=""
+						width={120}
+						height={120}
+					/>
 					<h3>WhatsApp community</h3>
 					<p>
 						Meet other builders, ask a question and share what you are shipping.

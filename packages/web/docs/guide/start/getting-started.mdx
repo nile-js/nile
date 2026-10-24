@@ -173,7 +173,7 @@ Open `src/services/tasks/actions/complete.ts` and replace its contents with this
 
 ```ts
 import { createAction } from "@nilejs/nile";
-import { Err, Ok } from "slang-ts";
+import { Err, Ok } from "@nilejs/nile/fp";
 import { z } from "zod";
 import { taskModel } from "@/db/models";
 
@@ -378,7 +378,7 @@ You should see `{"status":true,"message":"my-app is running","data":{}}` from `/
 
 - **`Validation failed` in the response.** The request reached the action, and its input did not match the schema. Read the field named after `→ at`, correct the payload and send the request again.
 
-- **TypeScript reports that two `Result` types are not compatible.** Two copies of `slang-ts` are installed. Run `bun pm ls | grep slang-ts`; if you see more than one version, run `bun add slang-ts@0.0.9` so your code and Nile Js share one copy.
+- **TypeScript reports that two `Result` types are not compatible.** Two copies of `slang-ts` are installed. Import Results from `@nilejs/nile/fp` instead of `slang-ts`, and remove `slang-ts` from your own dependencies so your code and Nile Js share one copy. `bun pm ls | grep slang-ts` shows the installed versions.
 
 - **`@nilejs/nile` shows a version older than `1.0.0`.** This guide documents Nile Js 1.0.0. Earlier releases have a different starter and different commands. Install the 1.0.0 release, then start again from `bunx @nilejs/cli new`.
 

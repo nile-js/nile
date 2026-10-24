@@ -5,7 +5,7 @@
 
 TypeScript-first, service and actions oriented backend framework.
 
-You write actions, group them into services, and Nile Js gives you a predictable API with validation, error handling and schema export. There are no route trees, controllers or middleware chains to maintain: each business operation lives in one familiar place, so small teams keep shipping as the backend grows.
+You write actions, group them into services, and Nile Js gives you a predictable API with validation, error handling and schema export. There are no route trees, controllers or middleware chains to maintain: each business operation lives in one well known place, so small teams keep shipping as the backend grows.
 
 [Documentation](https://nile-js.github.io/nile/) · [Getting started](https://nile-js.github.io/nile/guide/start/getting-started/) · [Features](https://nile-js.github.io/nile/guide/features/) · [Examples](https://nile-js.github.io/nile/guide/examples/)
 
@@ -25,8 +25,10 @@ The starter runs on Bun's native HTTP server with an embedded PGlite database, a
 ### Add to an existing project
 
 ```bash
-bun add @nilejs/nile zod slang-ts
+bun add @nilejs/nile zod
 ```
+
+Results, Options and `safeTry` come from `@nilejs/nile/fp`, which re-exports [slang-ts](https://www.npmjs.com/package/slang-ts).
 
 For the database helpers (`createModel`, `getZodSchema`), also add Drizzle:
 
@@ -45,7 +47,7 @@ An action is a named schema, the input type inferred from it and a handler that 
 ```ts
 // src/services/tasks/actions/create.ts
 import { createAction } from "@nilejs/nile";
-import { Ok } from "slang-ts";
+import { Ok } from "@nilejs/nile/fp";
 import { z } from "zod";
 
 const createTaskSchema = z.object({
@@ -201,7 +203,7 @@ A global before hook runs for every action. Use it for shared policy, such as ro
 
 ```ts
 import { type BeforeActionHandler, createNileServer } from "@nilejs/nile";
-import { Err, Ok, type Result } from "slang-ts";
+import { Err, Ok, type Result } from "@nilejs/nile/fp";
 import { services } from "./services/services.config";
 
 const requireSessionHook: BeforeActionHandler<boolean, string> = (
@@ -289,7 +291,7 @@ The package ships `SKILL.md`, a guide for coding assistants that matches the ins
 
 - Bun 1.4.2 or later for the native transport and the CLI starter.
 - Node.js 22.23.4+, 24.22.1+ or 26.12.1+ when you run the Hono adapter on Node.js.
-- TypeScript 7 (a peer dependency). Zod 4 and slang-ts install with the package; list them in your own dependencies too, since your code imports them.
+- TypeScript 7 (a peer dependency). Zod 4 and slang-ts install with the package. List Zod in your own dependencies, and import slang-ts helpers from `@nilejs/nile/fp` so your code uses Nile's copy.
 
 ## Contributing
 

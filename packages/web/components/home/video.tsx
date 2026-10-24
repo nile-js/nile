@@ -15,7 +15,7 @@ export function Video() {
 	return (
 		<section className="nile-section nile-video" aria-labelledby="video-title">
 			<header className="nile-heading nile-heading-center" data-reveal>
-				<h2 id="video-title">The thinking behind Nile Js.</h2>
+				<h2 id="video-title">The Thinking Behind Nile Js.</h2>
 				<p>
 					Hussein Kizza and Ssali Jonathan on the Nile Js approach to backend
 					APIs.{" "}

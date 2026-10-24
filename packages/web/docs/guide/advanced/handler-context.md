@@ -41,7 +41,7 @@ import {
   type NileContext,
   type NileLogger,
 } from "@nilejs/nile";
-import { Err, Ok } from "slang-ts";
+import { Err, Ok } from "@nilejs/nile/fp";
 import { z } from "zod";
 
 type AppDatabase = {

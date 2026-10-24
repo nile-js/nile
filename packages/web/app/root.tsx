@@ -1,3 +1,4 @@
+import sourceSansLatin from "@fontsource-variable/source-sans-3/files/source-sans-3-latin-wght-normal.woff2?url";
 import type { ReactNode } from "react";
 import {
 	isRouteErrorResponse,
@@ -9,24 +10,17 @@ import {
 } from "react-router";
 import type { Route } from "./+types/root";
 import { SiteProvider } from "./components/provider";
-import firaSansRegular from "./fonts/FiraSans-Regular.woff2?url";
-import firaSansSemiBold from "./fonts/FiraSans-SemiBold.woff2?url";
 import { SITE_DESCRIPTION, withBase } from "./lib/site";
 import NotFound from "./routes/not-found";
+import "@fontsource-variable/source-sans-3";
+import "@fontsource/fira-mono";
 import "./app.css";
 
 export const links: Route.LinksFunction = () => [
-	// Text weights render immediately instead of swapping in after layout.
+	// The variable Latin file carries every weight, so text renders without a swap after layout.
 	{
 		rel: "preload",
-		href: firaSansRegular,
-		as: "font",
-		type: "font/woff2",
-		crossOrigin: "anonymous",
-	},
-	{
-		rel: "preload",
-		href: firaSansSemiBold,
+		href: sourceSansLatin,
 		as: "font",
 		type: "font/woff2",
 		crossOrigin: "anonymous",

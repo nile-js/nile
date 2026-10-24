@@ -181,25 +181,54 @@ export function validatePayload(
   return Ok(parseResult.data);
 }
 
+/** The message a handler attached with `Ok(value, message)`, if it returned one. */
+function readSuccessMessage(returned: unknown): string | undefined {
+  if (returned === null || typeof returned !== "object") {
+    return undefined;
+  }
+  const candidate = returned as { isOk?: unknown; message?: unknown };
+  return candidate.isOk === true && typeof candidate.message === "string"
+    ? candidate.message
+    : undefined;
+}
+
 /**
- * Execute the main action handler, wrapped in safeTry for crash safety
+ * Execute the main action handler, wrapped in safeTry for crash safety.
+ * safeTry rebuilds the Result, so the handler's own success message is read before that.
  */
 export async function runHandler(
   action: Action,
   payload: unknown,
   nileContext: NileContext,
   log: (msg: string, data?: unknown) => void
-): Promise<Result<unknown, string>> {
-  const result = await safeTry(() =>
-    action.handler(payload as Record<string, unknown>, nileContext)
-  );
+): Promise<{ result: Result<unknown, string>; successMessage?: string }> {
+  let successMessage: string | undefined;
+  const result = await safeTry(async () => {
+    const returned = await action.handler(
+      payload as Record<string, unknown>,
+      nileContext
+    );
+    successMessage = readSuccessMessage(returned);
+    return returned;
+  });
 
   if (result.isErr) {
     log(`Handler failed for ${action.name}`, result.error);
     nileContext.setHookError(result.error);
-    return result;
+    return { result };
   }
 
   nileContext.setHookOutput(result.value);
-  return result;
+  return { result, successMessage };
+}
+
+/**
+ * Record the success message for transports that report one. Every action writes it as its
+ * last step, so an outer action overrides, or clears, a message left by actions it called.
+ */
+export function recordSuccessMessage(message: string | undefined): void {
+  const success = getRequestStore()?.success;
+  if (success) {
+    success.message = message;
+  }
 }

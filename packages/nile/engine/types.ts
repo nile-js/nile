@@ -55,6 +55,8 @@ export interface Action<T = unknown, E = string> {
   cors?: boolean | CorsOptions;
   name: string;
   description: string;
+  /** Response message for a successful call. A handler's `Ok(value, message)` takes precedence. */
+  successMessage?: string;
   isProtected?: boolean;
   visibility?: {
     rest?: boolean;

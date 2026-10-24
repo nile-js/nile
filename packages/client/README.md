@@ -107,7 +107,7 @@ Returns a Nile client instance.
 
 All methods return a `Promise<ClientResult<T>>`. Calls never throw:
 
-- Success: `{ isOk: true, isErr: false, value: T, error: null }`
+- Success: `{ isOk: true, isErr: false, value: T, error: null, message? }`, where `message` is the server's success message for HTTP calls
 - Failure: `{ isOk: false, isErr: true, value: null, error: string, details }`, where `details` holds any data the server attached, such as validation issues. Network failures and timeouts arrive as failures too.
 
 Check `isErr` first, then read `error` or `value`. The older `data` field is still present as a deprecated alias (the value on success, `null` on failure) so existing code keeps working.

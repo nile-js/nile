@@ -21,7 +21,7 @@ import {
   createServices,
   type NileContext,
 } from "@nilejs/nile";
-import { Err, Ok } from "slang-ts";
+import { Err, Ok } from "@nilejs/nile/fp";
 import { z } from "zod";
 
 const logger = createLogger("team-workspace", {

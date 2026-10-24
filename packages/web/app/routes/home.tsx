@@ -1,10 +1,13 @@
 import { HomeLayout } from "fumadocs-ui/layouts/home";
 import { Credits } from "../../components/home/credits";
 import { Ecosystem } from "../../components/home/ecosystem";
+import { Faq } from "../../components/home/faq";
 import { Features } from "../../components/home/features";
 import { Footer } from "../../components/home/footer";
+import { FunctionalSlang } from "../../components/home/functional-slang";
 import { Hero } from "../../components/home/hero";
 import { HowItWorks } from "../../components/home/how-it-works";
+import { HowNileWorks } from "../../components/home/how-nile-works";
 import { HomeMotion } from "../../components/home/motion";
 import { Performance } from "../../components/home/performance";
 import { ProductionStory } from "../../components/home/production-story";
@@ -91,7 +94,9 @@ export default function Home() {
 					height={9000}
 				/>
 				<Hero />
+				<HowNileWorks />
 				<HowItWorks />
+				<FunctionalSlang />
 				<Performance />
 				<ProductionStory />
 				<Video />
@@ -99,6 +104,7 @@ export default function Home() {
 				<Structure />
 				<Credits />
 				<Ecosystem />
+				<Faq />
 				<Footer />
 				<HomeMotion />
 			</div>

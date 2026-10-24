@@ -32,8 +32,8 @@ export function Performance() {
 			<header className="nile-heading nile-heading-split" data-reveal>
 				<div>
 					<h2 id="performance-title">
-						Measured with
-						<br />a 300-action backend.
+						Measured With
+						<br />A 300-Action Backend.
 					</h2>
 				</div>
 				<p>

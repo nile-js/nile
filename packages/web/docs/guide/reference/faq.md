@@ -9,9 +9,11 @@ Small teams building growing business applications: internal tools, dashboards, 
 
 The maintainer uses Nile for a fintech backend with over 500 actions, an internal Back Office shipped in days, and Wi-Fi billing receiving thousands of requests a day. These are in-house accounts, not independent performance or delivery guarantees.
 
-## Does Nile require domain-driven design?
+## Does Nile enforce domain-driven design?
 
-Nile groups actions into services. Organizing those services around business domains makes the application easier to navigate, but Nile does not impose domain aggregates, repositories or a particular folder tree. Ordinary functions can contain business rules; only operations exposed through the action API need to become actions.
+Yes, so the codebase still scales as it grows. Each business domain is a service under `src/services`, listed in the `services.config.ts` registry, with one file per action. Nile checks that layout at startup and reports misplaced or oversized action files. With `project: { structure: "error" }`, as in the CLI starter, a violation stops startup; existing applications get warnings by default.
+
+Inside that layout, aggregates and repositories stay your choice. Ordinary functions can contain business rules; only operations exposed through the action API need to become actions.
 
 Start with the [application structure guide](/guide/start/application-structure).
 

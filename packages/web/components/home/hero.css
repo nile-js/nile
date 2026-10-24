@@ -51,24 +51,16 @@
 	position: relative;
 	max-width: 640px;
 }
-/* The tagline wraps to about three balanced lines; keep "TypeScript-first," whole. */
-.nile-hero h1 {
-	font-size: clamp(40px, 4.4vw, 60px);
-	text-wrap: balance;
-}
-.nile-hero-copy .nile-nowrap {
-	white-space: nowrap;
-}
-.nile-hero-copy .nile-accent {
+.nile-hero-copy h1 span {
 	background: linear-gradient(100deg, #bae6fd, #38bdf8 55%, #60a5fa);
 	-webkit-background-clip: text;
 	background-clip: text;
 	color: transparent;
 }
 .nile-home .nile-lead {
-	max-width: 500px;
+	max-width: 560px;
 	margin-top: 26px;
-	font-size: 20px;
+	font-size: var(--nile-text-lg);
 	line-height: 1.6;
 }
 .nile-install {
@@ -94,14 +86,14 @@
 		inset 0 1px 0 #ffffff14;
 }
 .nile-install-prompt {
-	font-family: "Nile Mono", monospace;
+	font-family: "Fira Mono", monospace;
 	color: var(--nile-accent);
 }
 .nile-install code {
 	flex: 1;
 	min-width: 0;
 	overflow-x: auto;
-	font-size: 13px;
+	font-size: var(--nile-text-code);
 	white-space: nowrap;
 	scrollbar-width: none;
 }
@@ -237,11 +229,10 @@
 		height: 180%;
 	}
 	.nile-hero h1 {
-		font-size: clamp(32px, 9.5cqi, 48px);
+		font-size: clamp(36px, 10.5cqi, 54px);
 	}
 	.nile-home .nile-lead {
 		margin-top: 20px;
-		font-size: 17px;
 	}
 	.nile-actions {
 		gap: 20px;
@@ -249,9 +240,6 @@
 	}
 	.nile-install {
 		max-width: none;
-	}
-	.nile-install code {
-		font-size: 12px;
 	}
 	.nile-hero-art img {
 		object-position: 62% center;

@@ -15,7 +15,7 @@ Create `src/services/catalog/actions/quote.ts`. It is not protected, so anyone w
 
 ```ts
 import { createAction } from "@nilejs/nile";
-import { Err, Ok } from "slang-ts";
+import { Err, Ok } from "@nilejs/nile/fp";
 import { z } from "zod";
 
 const quoteSchema = z.object({
@@ -92,7 +92,7 @@ Replace `src/index.ts`. The `execution.rateLimit` policy applies to every action
 ```ts
 import { createLogger, createNileServer, utils } from "@nilejs/nile";
 import { sql } from "drizzle-orm";
-import { Ok, safeTry } from "slang-ts";
+import { Ok, safeTry } from "@nilejs/nile/fp";
 import { db } from "@/db/client";
 import { services } from "@/services/services.config";
 

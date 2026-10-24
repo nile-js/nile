@@ -18,7 +18,7 @@
 	overflow: clip;
 	margin-top: calc(var(--nile-nav-height) * -1);
 	color: var(--nile-ink);
-	font-family: "Nile Sans", sans-serif;
+	font-family: "Source Sans 3 Variable", sans-serif;
 }
 .nile-home *,
 .nile-home *::before,
@@ -90,18 +90,18 @@
 	line-height: 1.08;
 }
 .nile-home h3 {
-	font-size: 21px;
+	font-size: var(--nile-text-lg);
 	font-weight: 650;
 	line-height: 1.25;
 	letter-spacing: -0.025em;
 }
 .nile-home p {
-	font-size: 17px;
+	font-size: var(--nile-text-base);
 	line-height: 1.65;
 	color: var(--nile-muted);
 }
 .nile-home code {
-	font-family: "Nile Mono", monospace;
+	font-family: "Fira Mono", monospace;
 }
 .nile-home a {
 	color: inherit;
@@ -154,7 +154,7 @@
 .nile-heading-split > p {
 	max-width: 380px;
 	margin: 0 0 6px;
-	font-size: 16px;
+	font-size: var(--nile-text-base);
 }
 @container section (max-width: 720px) {
 	.nile-heading-split {
@@ -168,7 +168,7 @@
 .nile-home .nile-footnote {
 	max-width: 760px;
 	margin: 28px auto 0;
-	font-size: 13px;
+	font-size: var(--nile-text-xs);
 	line-height: 1.6;
 	text-align: center;
 	color: var(--nile-faint);
@@ -205,7 +205,7 @@
 	border-radius: 12px;
 	background: linear-gradient(135deg, #7dd3fc, #38bdf8 55%, #0ea5e9);
 	color: #03213a;
-	font-size: 15px;
+	font-size: var(--nile-text-sm);
 	font-weight: 650;
 	white-space: nowrap;
 	box-shadow:
@@ -246,7 +246,7 @@
 	display: inline-flex;
 	align-items: center;
 	gap: 10px;
-	font-size: 15px;
+	font-size: var(--nile-text-sm);
 	font-weight: 600;
 	color: var(--nile-ink);
 }
@@ -267,7 +267,7 @@
 	border-radius: var(--nile-inner-radius);
 	background: #ffffff0d;
 	color: var(--nile-muted);
-	font-size: 11px !important;
+	font-size: var(--nile-text-2xs) !important;
 	transition:
 		background-color 0.2s,
 		color 0.2s;
@@ -310,7 +310,7 @@
 	padding: 9px 10px 9px 18px;
 	background: #ffffff06;
 	font:
-		11.5px / 1.4 "Nile Mono",
+		var(--nile-text-2xs) / 1.4 "Fira Mono",
 		monospace;
 	color: var(--nile-faint);
 }
@@ -341,12 +341,17 @@
 	padding: 20px 22px 24px !important;
 	background: transparent !important;
 	overflow-x: auto;
-	font-size: 12.5px;
+	/* Grow with the viewport, but stay small enough for a 63-character line to fit the panel. */
+	font-size: clamp(
+		var(--nile-text-code-sm),
+		calc((100cqi - 44px) / 38),
+		var(--nile-text-code)
+	);
 	line-height: 1.75;
 	tab-size: 2;
 }
 .nile-highlight code {
-	font-family: "Nile Mono", monospace !important;
+	font-family: "Fira Mono", monospace !important;
 }
 .nile-highlight pre,
 .nile-highlight span {
@@ -355,13 +360,9 @@
 @container code (max-width: 520px) {
 	.nile-highlight pre {
 		padding: 18px 16px 20px !important;
-		font-size: 12px;
 	}
 }
 @container code (max-width: 400px) {
-	.nile-highlight pre {
-		font-size: 11.5px;
-	}
 	.nile-code-heading {
 		padding-left: 14px;
 	}
@@ -407,9 +408,6 @@
 	}
 	.nile-home > .nile-hero {
 		width: 100%;
-	}
-	.nile-home p {
-		font-size: 16px;
 	}
 }
 @media (prefers-reduced-motion: reduce) {

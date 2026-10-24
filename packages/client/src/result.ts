@@ -2,10 +2,17 @@ import type { ClientErr, ClientOk } from "./types.js";
 
 /**
  * A successful client result. `data` mirrors `value` so code written for
- * earlier clients keeps working.
+ * earlier clients keeps working. `message` is present only when the server sent one.
  */
-export function clientOk<T>(value: T): ClientOk<T> {
-  return { isOk: true, isErr: false, value: value, error: null, data: value };
+export function clientOk<T>(value: T, message?: string): ClientOk<T> {
+  return {
+    isOk: true,
+    isErr: false,
+    value: value,
+    error: null,
+    ...(message === undefined ? {} : { message: message }),
+    data: value,
+  };
 }
 
 /**
