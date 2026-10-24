@@ -23,7 +23,7 @@
 		"isbot": "^5",
 		"lucide-react": "^1.6.0",
 		"react": "^19.2.4",
-		"react-dom": "^19.2.4",
+		"react-dom": "^19.3.1",
 		"react-router": "7.18.2",
 		"shiki": "^3.23.0"
 	},
@@ -34,7 +34,7 @@
 		"@types/mdx": "^2.0.13",
 		"@types/node": "^25.5.0",
 		"@types/react": "^19.2.14",
-		"@types/react-dom": "^19.2.3",
+		"@types/react-dom": "^19.3.0",
 		"tailwindcss": "4.2.2",
 		"typescript": "^7.0.2",
 		"vite": "8.1.6"
