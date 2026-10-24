@@ -45,8 +45,8 @@
     "ai-backend"
   ],
   "scripts": {
-    "check": "ultracite check",
-    "fix": "ultracite fix",
+    "check": "bunx biome check --no-errors-on-unmatched",
+    "fix": "bunx biome check --write",
     "test": "bunx vitest",
     "test:run": "bunx vitest run",
     "test:security": "bunx vitest run security/tests",

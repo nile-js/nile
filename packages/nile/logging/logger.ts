@@ -110,7 +110,7 @@ function getISOWeekNumber(date: Date): number {
  * @returns The generated log ID (or JSON string in agentic mode)
  * @throws {Error} If appName is missing in the log object
  */
-export const createLog = (log: Log, config: LoggerConfig) => {
+export const createLog = (log: Log, config: LoggerConfig): string => {
   if (!log.appName) {
     throw new Error(`Missing appName in log: ${JSON.stringify(log)}`);
   }

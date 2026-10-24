@@ -7,7 +7,6 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   dts: {
-    generator: "tsgo",
     sourcemap: true,
   },
 });

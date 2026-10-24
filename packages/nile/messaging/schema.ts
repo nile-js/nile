@@ -1,9 +1,13 @@
-import { Ok, safeTry } from "slang-ts";
+import { Ok, type Result, safeTry } from "slang-ts";
 import z from "zod";
 import type { TopicDefinitions } from "./types";
 
 /** Convert topic contracts only when discovery/export is requested. */
-export function createTopicSchemaReader(topics: TopicDefinitions) {
+export function createTopicSchemaReader(
+  topics: TopicDefinitions
+): () => Promise<
+  Result<Record<string, { data: unknown; scope?: unknown }>, string>
+> {
   const cache = new WeakMap<z.ZodType, z.core.JSONSchema.BaseSchema>();
   const read = (schema: z.ZodType) => {
     const existing = cache.get(schema);

@@ -18,6 +18,7 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false,
+    "isolatedDeclarations": true,
     "paths": {
       "@/*": ["./*"]
     }

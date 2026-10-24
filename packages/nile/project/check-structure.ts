@@ -5,7 +5,9 @@ import { inspectServiceActions } from "./inspect-actions";
 import type { ProjectOptions, StructureIssue, StructureReport } from "./types";
 
 /** Inspect only recognized source directories; never recurse into symlinks or unrelated project data. */
-export async function checkProjectStructure(options: ProjectOptions = {}) {
+export async function checkProjectStructure(
+  options: ProjectOptions = {}
+): Promise<Ok<StructureReport>> {
   const root = resolve(options.root ?? process.cwd());
   const source = join(root, "src");
   const sourceInfo = await safeTry(() => lstat(source));
@@ -62,7 +64,9 @@ export async function checkProjectStructure(options: ProjectOptions = {}) {
 }
 
 /** Apply the report once at boot, outside request execution. */
-export async function enforceProjectStructure(options: ProjectOptions = {}) {
+export async function enforceProjectStructure(
+  options: ProjectOptions = {}
+): Promise<void> {
   if (options.structure === false) {
     return;
   }

@@ -9,7 +9,16 @@ type LogInput = Omit<Log, "appName">;
  * @param appName - The application name (determines log file/directory)
  * @param config - Config for chunking and mode
  */
-export const createLogger = (appName: string, config: LoggerConfig) => {
+export const createLogger = (
+  appName: string,
+  config: LoggerConfig
+): {
+  flush: () => Promise<void>;
+  close: () => Promise<void>;
+  info: (input: LogInput) => string;
+  warn: (input: LogInput) => string;
+  error: (input: LogInput) => string;
+} => {
   return {
     flush: () => flushLoggers(appName),
     close: () => closeLoggers(appName),
