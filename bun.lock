@@ -41,7 +41,7 @@
       "name": "nile-example",
       "version": "0.0.1",
       "dependencies": {
-        "@electric-sql/pglite": "^0.2.5",
+        "@electric-sql/pglite": "^0.5.10",
         "@nilejs/nile": "workspace:*",
         "drizzle-orm": "^0.45.2",
         "pino": "^10.3.1",
@@ -78,7 +78,7 @@
       },
       "devDependencies": {
         "@biomejs/biome": "2.3.13",
-        "@electric-sql/pglite": "^0.2.5",
+        "@electric-sql/pglite": "^0.5.10",
         "@types/bun": "latest",
         "drizzle-orm": "^0.45.4",
         "drizzle-zod": "0.8.3",
@@ -206,7 +206,7 @@
 
     "@drizzle-team/brocli": ["@drizzle-team/brocli@0.10.2", "", {}, "sha512-z33Il7l5dKjUgGULTqBsQBQwckHh5AbIuxhdsIxDDiZAzBOrZO6q9ogcWC65kU382AfynTfgNumVcNIjuIua6w=="],
 
-    "@electric-sql/pglite": ["@electric-sql/pglite@0.2.17", "", {}, "sha512-qEpKRT2oUaWDH6tjRxLHjdzMqRUGYDnGZlKrnL4dJ77JVMcP2Hpo3NYnOSPKdZdeec57B6QPprCUFg0picx5Pw=="],
+    "@electric-sql/pglite": ["@electric-sql/pglite@0.5.10", "", {}, "sha512-tXc/25U3ulOkiRQuTFdwIv+JhBqtMdAF7Gvo6CfZZWtSB4+hgC4Wr2vwK5ngvvN5PJfAAEGIsfyCVy1JhCOBYw=="],
 
     "@emnapi/core": ["@emnapi/core@1.11.1", "", { "dependencies": { "@emnapi/wasi-threads": "1.2.2", "tslib": "^2.4.0" } }, "sha512-RSvbQmHzdKzNsLYa/wHrbc3KN4sYLKAdPZxqiM2HATqv/SBk2/ENSHpvXGaLOMcsAyz0poEGqkmmKYG3OWiJEQ=="],
 
