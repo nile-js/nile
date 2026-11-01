@@ -119,21 +119,13 @@ export const generateSchemaCommand = async (options: {
     process.exit(1);
   }
 
-  const schemaCount = Object.values(extraction.schemas).reduce(
+  const actionCount = Object.values(extraction.schemas).reduce(
     (sum, actions) => sum + Object.keys(actions).length,
     0
   );
 
-  if (schemaCount === 0) {
-    spinner.stop("No action schemas found");
-    warn("None of the actions have validation schemas defined.");
-    hint("Add a Zod validation schema to your actions to generate types.");
-    outro();
-    return;
-  }
-
   spinner.stop(
-    `Extracted ${schemaCount} action schema${schemaCount > 1 ? "s" : ""}`
+    `Read ${actionCount} action contract${actionCount === 1 ? "" : "s"}`
   );
 
   // Generate output files
@@ -158,7 +150,9 @@ export const generateSchemaCommand = async (options: {
 
   if (extraction.skipped.length > 0) {
     console.log("");
-    hint(`Skipped ${extraction.skipped.length} action(s) without validation:`);
+    warn(
+      `Could not convert validation schemas for ${extraction.skipped.length} action(s):`
+    );
     hint(extraction.skipped.join(", "));
   }
 

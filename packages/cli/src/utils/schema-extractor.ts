@@ -5,6 +5,7 @@ import { pathExists } from "./files.js";
 
 /** Shape of the extraction output from the bun subprocess */
 export interface ExtractionResult {
+  /** A null schema means the registered action has no validation. */
   schemas: Record<string, Record<string, unknown>>;
   skipped: string[];
 }
@@ -30,7 +31,7 @@ for (const service of services) {
 
   for (const action of service.actions) {
     if (!action.validation) {
-      skipped.push(\`\${service.name}.\${action.name}\`);
+      serviceSchemas[action.name] = null;
       continue;
     }
 

@@ -1,6 +1,6 @@
 {
   "name": "@nilejs/cli",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "CLI for scaffolding and generating Nile backend projects",
   "type": "module",
   "bin": {
@@ -14,7 +14,8 @@
     "build": "bun run scripts/build.ts",
     "dev": "bun run src/index.ts",
     "typecheck": "tsc --noEmit",
-    "export": "bun run typecheck && bun run build && node dist/index.js --version"
+    "export": "bun run typecheck && bun run build && node dist/index.js --version",
+    "test": "bun test scripts/schema-contracts.spec.ts"
   },
   "dependencies": {
     "commander": "^13.1.0",
@@ -23,6 +24,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.8.1",
-    "typescript": "^5"
+    "typescript": "^5",
+    "zod": "4.6.7"
   }
 }

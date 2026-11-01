@@ -127,7 +127,7 @@ Options:
 | `-e, --entry <path>` | Path to services config (auto-detected by default) |
 | `-o, --output <path>` | Output directory (default: `src/generated`) |
 
-Actions without a validation schema are skipped and listed in the CLI output.
+Every registered action is included in `ServicePayloads`. Actions without validation accept an object payload (`Record<string, unknown>`); call `tasks.list` with `{}`. This fallback does not add server-side validation. Schemas that cannot be converted are reported separately.
 
 ## Database
 

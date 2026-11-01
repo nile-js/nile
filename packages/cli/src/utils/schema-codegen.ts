@@ -58,9 +58,12 @@ const buildSchemaEntries = (extraction: ExtractionResult): SchemaEntry[] => {
 
   for (const [serviceName, actions] of Object.entries(extraction.schemas)) {
     for (const [actionName, jsonSchema] of Object.entries(actions)) {
-      const zodCode = jsonSchemaToZod(jsonSchema as Record<string, unknown>, {
-        noImport: true,
-      });
+      const zodCode =
+        jsonSchema === null
+          ? "z.record(z.string(), z.unknown())"
+          : jsonSchemaToZod(jsonSchema as Record<string, unknown>, {
+              noImport: true,
+            });
 
       entries.push({
         serviceName,
@@ -77,7 +80,7 @@ const buildSchemaEntries = (extraction: ExtractionResult): SchemaEntry[] => {
 
 /**
  * Generate the schemas.ts file content.
- * Contains named Zod schema exports for every action with validation.
+ * Contains named payload schemas, with open object contracts for actions without validation.
  */
 export const generateSchemasFile = (extraction: ExtractionResult): string => {
   const entries = buildSchemaEntries(extraction);
@@ -94,7 +97,9 @@ export const generateSchemasFile = (extraction: ExtractionResult): string => {
   }
 
   if (extraction.skipped.length > 0) {
-    lines.push(`// Skipped (no validation): ${extraction.skipped.join(", ")}`);
+    lines.push(
+      `// Skipped (schema conversion failed): ${extraction.skipped.join(", ")}`
+    );
     lines.push("");
   }
 
@@ -109,7 +114,7 @@ export const generateTypesFile = (extraction: ExtractionResult): string => {
   const entries = buildSchemaEntries(extraction);
 
   if (entries.length === 0) {
-    return `${generateHeader()}\n// No action types found.\n`;
+    return `${generateHeader()}\nexport type ServicePayloads = Record<never, never>;\n`;
   }
 
   const schemaImports = entries.map((e) => e.exportName);
