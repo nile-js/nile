@@ -29,8 +29,8 @@ jobs:
         with:
           bun-version: 1.4.2
 
-      - name: Install dependencies
-        working-directory: ./packages/web
+      # All packages share the root bun.lock; validate it before building the docs.
+      - name: Install workspace dependencies
         run: bun install --frozen-lockfile
 
       # Set the DOCS_SITE_URL and DOCS_BASE_PATH repository variables to move the site,

@@ -9,9 +9,9 @@ You write actions, group them into services, and Nile Js gives you a predictable
 
 [Documentation](https://nile-js.github.io/nile/) · [Getting started](https://nile-js.github.io/nile/guide/start/getting-started/) · [Features](https://nile-js.github.io/nile/guide/features/) · [Examples](https://nile-js.github.io/nile/guide/examples/)
 
-## Updating to 1.0.2
+## Updating to 1.0.3
 
-Read the [migration notes](docs/release-migration.md) before updating an existing app. This release changes default messages, enforces project structure at startup, removes `dbTry` in favor of Slang’s `safeTry`, and reserves `raw` for internal diagnostics.
+Version 1.0.3 fixes the workspace lockfile and docs deployment; it adds no runtime API changes over 1.0.2. If updating from an earlier version, read the [migration notes](docs/release-migration.md): 1.0.2 changed default messages, enforced project structure at startup, removed `dbTry` in favor of Slang’s `safeTry`, and reserved `raw` for internal diagnostics.
 
 ## Install
 

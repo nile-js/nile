@@ -1,4 +1,10 @@
-# Nile 1.0.2 migration notes
+# Nile 1.0.3 migration notes
+
+No runtime API changes from 1.0.2. This patch synchronizes the workspace Bun lockfile with Slang 0.2.2 and fixes the docs deployment install location. The package README now reflects the current startup checks and action response contract.
+
+If updating from a version before 1.0.2, apply the notes below.
+
+## Changes introduced in 1.0.2
 
 This release preserves Nile's HTTP envelope: exactly `status`, `message`, and `data`.
 
