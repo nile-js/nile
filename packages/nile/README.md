@@ -3,11 +3,15 @@
 [![NPM Version](https://img.shields.io/npm/v/@nilejs/nile.svg)](https://www.npmjs.com/package/@nilejs/nile)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-TypeScript-first, service and actions oriented backend framework.
+A functional TypeScript backend for small teams shipping growing products.
 
 You write actions, group them into services, and Nile Js gives you a predictable API with validation, error handling and schema export. There are no route trees, controllers or middleware chains to maintain: each business operation lives in one well known place, so small teams keep shipping as the backend grows.
 
 [Documentation](https://nile-js.github.io/nile/) · [Getting started](https://nile-js.github.io/nile/guide/start/getting-started/) · [Features](https://nile-js.github.io/nile/guide/features/) · [Examples](https://nile-js.github.io/nile/guide/examples/)
+
+## Updating to 1.0.2
+
+Read the [migration notes](docs/release-migration.md) before updating an existing app. This release changes default messages, enforces project structure at startup, removes `dbTry` in favor of Slang’s `safeTry`, and reserves `raw` for internal diagnostics.
 
 ## Install
 
@@ -77,17 +81,23 @@ export const createTaskAction = createAction<CreateTaskInput>({
 ### 2. Group actions into a service
 
 ```ts
+// src/services/tasks/index.ts
+import { createService } from "@nilejs/nile";
+import { createTaskAction } from "./actions/create";
+
+export const tasksService = createService({
+  name: "tasks",
+  description: "Task management",
+  actions: [createTaskAction],
+});
+```
+
+```ts
 // src/services/services.config.ts
 import { createServices } from "@nilejs/nile";
-import { createTaskAction } from "./tasks/actions/create";
+import { tasksService } from "./tasks";
 
-export const services = createServices([
-  {
-    name: "tasks",
-    description: "Task management",
-    actions: [createTaskAction],
-  },
-]);
+export const services = createServices([tasksService]);
 ```
 
 ### 3. Start the server
@@ -127,7 +137,7 @@ curl -X POST http://localhost:8000/api/services \
 ```json
 {
   "status": true,
-  "message": "Action 'tasks.create' executed",
+  "message": "Action completed.",
   "data": {
     "task": { "id": "a1b2c3d4-...", "title": "Ship it", "status": "pending" }
   }
@@ -154,9 +164,9 @@ if (result.isErr) {
 }
 ```
 
-## Requests and responses
+## Action input and responses
 
-Every request is a `POST` to `{baseUrl}/services` with the same body:
+HTTP action calls use a `POST` to `{baseUrl}/services` with the same body:
 
 ```ts
 {
@@ -173,29 +183,66 @@ Every request is a `POST` to `{baseUrl}/services` with the same body:
 | `explore` | Lists services, or the actions in one service. |
 | `schema` | Returns an action's input as JSON Schema, for clients, tools and AI agents. |
 
-Every response has the same envelope:
+Every HTTP action response has exactly these three fields:
 
 ```ts
 {
   status: boolean, // true on success
   message: string, // a readable summary
-  data: object     // the action's value, or {} on failure
+  data: object     // the action's value, validation details, or {}
 }
 ```
 
-When validation fails, `data.issues` lists each failed field:
+Validation failures use Zod’s prettified message and include a generated unique `data.errorCode` alongside `data.issues`:
 
 ```json
 {
   "status": false,
-  "message": "Validation failed: ✖ Title is required\n  → at title",
+  "message": "✖ Title is required\n  → at title",
   "data": {
+    "errorCode": "jN8sQ4tV2pLm",
     "issues": [{ "path": "title", "message": "Title is required" }]
   }
 }
 ```
 
+The code above is illustrative; each failure gets a new reference. Unexpected exceptions are logged internally and return a safe message such as `Error Code: jN8sQ4tV2pLm - could not complete the action`. Diagnostic codes match the log’s `log_id`. Custom success messages and intentional `Err` messages keep their wording.
+
+Properties named `raw` are removed recursively from outbound JSON and Socket.IO messages, including custom JSON responses. Keep original causes on the backend and choose a different field name for public data. HTTP JSON responses are buffered to apply this filtering.
+
 Discovery (`explore` and `schema`) is off unless you enable it with `rest.discovery`, and can require a secret. See [API discovery](https://nile-js.github.io/nile/guide/features/api-discovery/).
+
+## Project structure
+
+The quick start produces this layout:
+
+```text
+src/
+  index.ts
+  services/
+    services.config.ts
+    tasks/
+      index.ts
+      actions/
+        create.ts
+```
+
+Nile checks the source structure at boot and fails on violations by default. Each service needs an `index.ts` and an `actions/` directory. When an action grows, move it into `actions/create/create.ts`, export it from `actions/create/index.ts`, and put private helpers in `actions/create/modules/`. Action entry points above 400 lines are reported for refactoring.
+
+Set `project: { root: ".", structure: "warn" }` in the server configuration to report violations and continue, or set `structure: false` to disable checking. In a monorepo, point `root` at the backend package. Source-less bundles skip inspection unless a root is explicit. See [application structure](https://nile-js.github.io/nile/guide/start/application-structure/).
+
+## Results and utilities
+
+Import Result helpers and Slang’s utilities through `@nilejs/nile/fp`; this release includes Slang 0.2.2. Return Results directly instead of nesting them: `Ok(Ok(value))` and `Ok(Err(message))` are rejected.
+
+Use `safeTry` for database operations and other promises that can throw. It preserves the original cause on `result.raw` for internal diagnostics. Nile’s `dbTry` helper has been removed. Use `utils.describeError` for bounded diagnostic metadata and `utils.handleError` for a safe caller message. Nile helpers, including `createModel` and `getZodSchema`, are available through the `utils` namespace:
+
+```ts
+import { utils } from "@nilejs/nile";
+import { safeTry } from "@nilejs/nile/fp";
+```
+
+See [shared utilities](https://nile-js.github.io/nile/guide/reference/shared-utilities/) for examples.
 
 ## Hooks
 
