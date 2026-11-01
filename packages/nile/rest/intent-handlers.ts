@@ -159,6 +159,8 @@ export async function handleExecute(
   const failure = getRequestStore()?.failure;
   if (failure) {
     failure.validationIssues = undefined;
+    failure.validationMessage = undefined;
+    failure.errorCode = undefined;
   }
   const success = getRequestStore()?.success;
   if (success) {
@@ -174,15 +176,16 @@ export async function handleExecute(
 
   const issues = failure?.validationIssues;
   const failedValidation =
-    result.isErr && result.error.startsWith("Validation failed");
+    result.isErr && result.error === failure?.validationMessage;
   if (failedValidation && issues !== undefined) {
-    return { status: false, message: result.error, data: { issues } };
+    return {
+      status: false,
+      message: result.error,
+      data: { errorCode: failure?.errorCode, issues },
+    };
   }
 
-  return toExternalResponse(
-    result,
-    success?.message ?? `Action '${service}.${action}' executed`
-  );
+  return toExternalResponse(result, success?.message ?? "Action completed.");
 }
 
 /**

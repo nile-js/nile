@@ -1407,11 +1407,11 @@ if (saved.isErr) {
 return Ok({ project: saved.value });
 ```
 
-This handler fragment uses your application's `saveProject` function. Current `slang-ts` recursively unwraps nested Results, including a Result returned by that function. Do not wrap an existing successful Result merely to pass it through; returning it directly is often clearer.
+This handler fragment uses your application's `saveProject` function. Slang 0.2.2 accepts a Result returned by that function, but rejects a Result nested inside another Result. Return an existing Result directly instead of wrapping it in `Ok`. Caught errors retain their original cause on the non-enumerable `raw` property.
 
 ## Send a success message [#send-a-success-message]
 
-Every successful HTTP response carries a `message`. By default it reads `Action 'projects.archive' executed`. Set `successMessage` on the action for a fixed message, or pass a message as the second argument to `Ok` to choose one per call. The handler's message wins.
+Every successful HTTP response carries a `message`. By default it reads `Action completed.`. Set `successMessage` on the action for a fixed message, or pass a message as the second argument to `Ok` to choose one per call. The handler's message wins.
 
 ```ts
 import { createAction } from "@nilejs/nile";
@@ -1445,11 +1445,34 @@ Object handler values become HTTP `data` directly. Primitive, array or null valu
 
 Action lookup, authentication, hook, validation and handler Result failures normally return HTTP **400**. A missing action is not an HTTP 404. Unknown HTTP routes return 404; disabled/denied discovery returns 403. Transport errors and custom routes have their own status behavior.
 
-## Do not rely on thrown errors being private [#do-not-rely-on-thrown-errors-being-private]
+## Validation failures [#validation-failures]
 
-Nile guards action and hook execution with `safeTry`. A thrown handler error can become a Result failure whose message reaches the caller. Catch potentially sensitive downstream failures at your application boundary and return a safe message deliberately. The transport's unexpected-error handler sanitizes its own 500 responses; that is a different boundary.
+HTTP responses contain exactly `status`, `message` and `data`. For validation failures, `status` is false, the generated unique diagnostic reference is in `data.errorCode`, and the message uses Zod's `prettifyError`. Custom schema messages are preserved. Nile also retains the existing field-level `data.issues` for frontend forms.
 
-`handleError({ message, data, atFunction })` logs through an explicit or configured logger and returns an `Err` containing the log ID. It fails fast if no logger is available. Use it when that traceable message is appropriate for the caller, and keep confidential details in logged data.
+```json
+{
+  "status": false,
+  "message": "✖ Enter a project name.\n  → at name",
+  "data": {
+    "errorCode": "DHFg123Ab9Zq",
+    "issues": [{ "path": "name", "message": "Enter a project name." }]
+  }
+}
+```
+
+The code is generated for each failure; it is not an error category, an HTTP status or a fixed value such as `INTERNAL_ERROR`. An explicit validation message supplied by a framework input check takes precedence over Zod's default formatting.
+
+## Unexpected throws and intentional failures [#unexpected-throws-and-intentional-failures]
+
+Nile contains unexpected throws and rejected callbacks at its internal operation boundaries, including Slang nested-Result panics. Callers receive `Error Code: <generated-code> - could not complete the action`; the original exception text does not become the response message. Configured logging receives bounded cause diagnostics without SQL, error messages or payloads by default. Without a configured logger, Nile writes the bounded diagnostic to the console. Logger failures cannot replace the safe failure.
+
+`raw` is reserved for internal diagnostics. Nile strips every `raw` property recursively from outgoing JSON objects and arrays, including explicit copies, `toJSON` output, custom JSON Responses, Socket.IO replies and topic messages. This happens at serialization, independently of exception handling, so successful actions cannot expose it either. It also means application response contracts must not use a public field named `raw`. JSON HTTP responses are buffered at this boundary to apply the filter; non-JSON assets keep their normal binary/stream behavior.
+
+Intentional `Err(message)` values retain their messages. Keep them safe for callers; wrapping a sensitive driver error in `Err` deliberately exposes that text. Direct `safeTry` imports from `/fp` retain Slang's original behavior and are not automatic public-response sanitizers.
+
+Execution admission and socket/queue capacity are released after failure. Unexpected startup failures reject initialization after cleanup with a sanitized error; explicit boot `Err` messages and framework timeout messages remain useful. This is a boundary around work Nile owns or awaits, not a process-wide uncaught-exception handler for unrelated timers or detached application promises.
+
+`handleError({ message, data, atFunction })` logs through an explicit or configured logger and returns an `Err` formatted as `Error Code: <generated-code> - <your message>`. It fails fast if no logger is available. Use it when that traceable message is appropriate for the caller, and keep confidential details in logged data.
 
 Result handling does not make a multi-step operation transactional or undo earlier side effects. Keep those decisions in the domain/data layer.
 
@@ -1581,7 +1604,7 @@ Execution requires a specific service and action; wildcards are for discovery. N
 ```json
 {
   "status": true,
-  "message": "Action 'projects.create' executed",
+  "message": "Action completed.",
   "data": { "project": { "id": "project-123", "name": "Customer portal" } }
 }
 ```
@@ -2114,7 +2137,7 @@ curl -s -X POST http://localhost:8000/api/services \
 You should see the handler's result with HTTP 200:
 
 ```json
-{"status":true,"message":"Action 'documents.inspect' executed","data":{"title":"Project brief","filename":"tiny.pdf","contentType":"application/pdf","size":9}}
+{"status":true,"message":"Action completed.","data":{"title":"Project brief","filename":"tiny.pdf","contentType":"application/pdf","size":9}}
 ```
 
 Now send the same action as JSON. Nile Js refuses it because the action expects form data:
@@ -2538,7 +2561,7 @@ curl -s -X POST http://localhost:8000/api/services \
 You should see HTTP 200 with the identity from the token:
 
 ```json
-{"status":true,"message":"Action 'account.profile' executed","data":{"profile":{"userId":"user_42","organizationId":"org_7"}}}
+{"status":true,"message":"Action completed.","data":{"profile":{"userId":"user_42","organizationId":"org_7"}}}
 ```
 
 Request the audit action with the member token. The role hook refuses it:
@@ -2568,7 +2591,7 @@ curl -s -X POST http://localhost:8000/api/services \
 You should see HTTP 200 and the audit entries:
 
 ```json
-{"status":true,"message":"Action 'account.audit' executed","data":{"entries":[{"event":"profile.viewed","at":"2026-10-23T09:00:00.000Z"}]}}
+{"status":true,"message":"Action completed.","data":{"entries":[{"event":"profile.viewed","at":"2026-10-23T09:00:00.000Z"}]}}
 ```
 
 Public actions still work without a token. The starter's `tasks.list` returns HTTP 200 whether or not you send one.
@@ -2824,7 +2847,7 @@ curl -s -X POST http://localhost:8000/api/services \
 You should see HTTP 200 and the total in cents:
 
 ```json
-{"status":true,"message":"Action 'catalog.quote' executed","data":{"sku":"TSHIRT-BLUE","quantity":3,"totalInCents":4500}}
+{"status":true,"message":"Action completed.","data":{"sku":"TSHIRT-BLUE","quantity":3,"totalInCents":4500}}
 ```
 
 ## 7. Type-check [#7-type-check]
@@ -4362,7 +4385,7 @@ A successful call returns `status: true` with the handler's object as `data`:
 ```json
 {
   "status": true,
-  "message": "Action 'tasks.list' executed",
+  "message": "Action completed.",
   "data": {
     "tasks": []
   }
@@ -4869,7 +4892,7 @@ The model also exposes `table` and `schemas.insert`, `schemas.update` and `schem
 
 - [Model helpers](/guide/internals/db/create-model) has the complete method reference.
 - [Data access overview](/guide/internals/db/) covers multi-write workflows.
-- [Shared utilities](/guide/reference/shared-utilities) explains `dbTry` and safe database failures.
+- [Shared utilities](/guide/reference/shared-utilities) explains `safeTry` from `@nilejs/nile/fp` and safe database failures.
 
 
 ---
@@ -5013,7 +5036,7 @@ With a 9-byte PDF named `tiny.pdf`, the example project returned:
 ```json
 {
   "status": true,
-  "message": "Action 'documents.inspect' executed",
+  "message": "Action completed.",
   "data": {
     "title": "Project brief",
     "filename": "tiny.pdf",
@@ -5541,7 +5564,7 @@ Nile Js includes a few helpers for work outside the action pipeline: retries wit
 
 ## When to use them [#when-to-use-them]
 
-Use `retryFnWithJitter` when you poll a provider or call a service that fails transiently and the operation is safe to repeat. Use `createMemoryStore` for values that expire quickly, such as short cache entries. Use `dbTry` around a database call that might throw.
+Use `retryFnWithJitter` when you poll a provider or call a service that fails transiently and the operation is safe to repeat. Use `createMemoryStore` for values that expire quickly, such as short cache entries. Use `safeTry` from `@nilejs/nile/fp` around a database call that might throw.
 
 ## Complete example [#complete-example]
 
@@ -5624,7 +5647,7 @@ export const rememberSummary = (summary: OrderSummary): Result<void, string> => 
 | --- | --- | --- |
 | `retryFnWithJitter` | Repeating a call until its result is final | `maxAttempts` (default 10), `timeoutMs` (default 60000), `baseDelayMs`, `maxDelayMs`, `jitterMs`, `onResult`, `signal` |
 | `createMemoryStore` | Bounded values with optional expiry | `maxKeys` (default 1000), `ttlMs`, `eviction` (`"reject-new"` default, or `"lru"`) |
-| `dbTry` | Wrapping a database call that may throw | `message` (safe text for callers), `atFunction` |
+| `safeTry` from `@nilejs/nile/fp` | Wrapping a database call that may throw | `raw` preserves the cause; use `handleError` for a safe caller message |
 | `describeError` | Reading a thrown error in a diagnostic log | `maxDepth`, `maxFieldLength`, `includeMessages` |
 | `createRateLimiter`, `createQueue` and others | Controls and quotas | See [queues](/guide/features/queues-debounce-throttle) and [rate limiting](/guide/features/rate-limiting) |
 | `resolveClientIdentity` | Reading the client address from a request | `getClientAddress`, `trustProxy` |
@@ -5650,7 +5673,7 @@ Values are held by reference in this process. The default store rejects new keys
 ## Common mistakes [#common-mistakes]
 
 - Retrying a write that is not idempotent.
-- Using `dbTry` and then returning the raw error message to the client.
+- Using `safeTry` from `@nilejs/nile/fp` and then returning the raw error message to the client.
 - Treating the memory store as shared between replicas.
 - Forgetting the Result from `set`, which reports a rejected insert when the store is full.
 
@@ -6295,7 +6318,7 @@ An Err from a transaction-wrapped operation is thrown as an Error to trigger rol
 
 The returned object exposes `table` and `schemas.insert/update/select`. Use these with your chosen Drizzle client for joins, reports and application-specific queries. Keep those functions in the same domain’s model/repository module so the team can find them.
 
-Queries pass through `utils.dbTry`, which keeps bounded driver cause metadata in diagnostics and returns a safe failure with a log reference when available. Model query and validation failures use `utils.handleError`, which resolves the current logger and returns an Err with its log reference. Configure a logger or supply an application policy for failures. The helper throws when required logging/database configuration is missing.
+Queries use Slang's `safeTry`, which preserves the original driver cause on `result.raw`. Nile logs bounded diagnostics from that cause and returns an operation-specific safe failure through `utils.handleError`. Configure a logger or supply an application policy for failures. Required logging/database configuration still fails fast.
 
 ## Keep the action focused [#keep-the-action-focused]
 
@@ -6468,7 +6491,7 @@ const failure = utils.handleError({
 });
 ```
 
-The returned message includes the logger’s returned identifier. In production mode this can be used to locate the corresponding record. `handleError` throws if no logger is available: missing logging configuration should be fixed rather than silently ignored.
+`handleError` generates a unique code, stores it as the log record’s `log_id`, and returns `Error Code: <generated-code> - <your message>`. The code is independent of a custom logger’s return value. Use it to locate the corresponding record. `handleError` throws if no logger is available: missing logging configuration should be fixed rather than silently ignored.
 
 Inside an HTTP request, direct action call or scheduled execution, Nile’s logger automatically includes the active `requestId` and any `traceId`, `spanId` or `runId`. Startup logs have no execution to attach. Plain `console.log` calls and arbitrary third-party loggers do not receive this metadata.
 
@@ -6680,7 +6703,7 @@ The maintainer uses Nile for a fintech backend with over 500 actions, an interna
 
 ## Does Nile enforce domain-driven design? [#does-nile-enforce-domain-driven-design]
 
-Yes, so the codebase still scales as it grows. Each business domain is a service under `src/services`, listed in the `services.config.ts` registry, with one file per action. Nile checks that layout at startup and reports misplaced or oversized action files. With `project: { structure: "error" }`, as in the CLI starter, a violation stops startup; existing applications get warnings by default.
+Yes, so the codebase still scales as it grows. Each business domain is a service under `src/services`, listed in the `services.config.ts` registry, with one file per action. Nile checks that layout at startup and reports misplaced or oversized action files. A violation stops startup by default, including in existing applications. Set `project: { structure: "warn" }` explicitly to continue with warnings, or `false` to disable the check.
 
 Inside that layout, aggregates and repositories stay your choice. Ordinary functions can contain business rules; only operations exposed through the action API need to become actions.
 
@@ -6975,7 +6998,7 @@ A shared external store must atomically check and consume the full allowance thr
 
 ## Project structure [#project-structure]
 
-Nile inspects recognized source layout once during boot. Existing projects receive warnings; `project.structure` can be `"warn"`, `"error"` or `false`. New CLI projects use `"error"`. Set `project.root` to the backend package root in a monorepo. Source-less bundles skip inspection unless a root is explicitly supplied. checkProjectStructure({ root }) exposes the same Result report without starting a server.
+Nile inspects recognized source layout once during boot. Violations fail startup by default; `project.structure` can be `"warn"`, `"error"` or `false`. Select `"warn"` explicitly to continue boot with warnings. New CLI projects also use `"error"`. Set `project.root` to the backend package root in a monorepo. Source-less bundles skip inspection unless a root is explicitly supplied. checkProjectStructure({ root }) exposes the same Result report without starting a server.
 
 Use `src/services/services.config.ts` and `service/actions/<action>.ts`. Larger actions can use `service/actions/<action>/<action>.ts`, `index.ts` and private `modules/`. Service-shared helpers belong in `service/modules/`. The registry stays explicit; filenames never automatically execute/register actions. Existing flat layouts remain compatible in warning mode. Action entry points above 400 lines receive refactoring guidance. Nile does not scan secrets or follow source symlinks.
 
@@ -7245,7 +7268,7 @@ import { utils } from "@nilejs/nile";
 
 | Use | Helpers |
 | --- | --- |
-| Database access | `createModel`, `createTransactionVariant`, `getZodSchema`, `dbTry` |
+| Database access | `createModel`, `createTransactionVariant`, `getZodSchema` |
 | Failure diagnostics | `handleError`, `describeError` |
 | Execution controls | `createQueue`, `createGroupedControl`, `createControlResource`, `createDebounce`, `createThrottle`, `createBatch`, `createRateLimiter` |
 | Retry and storage | `retryFnWithJitter`, `createMemoryStore` |
@@ -7257,22 +7280,24 @@ Call each helper through `utils`. Import option and result types as named export
 
 ```ts
 import { utils } from "@nilejs/nile";
+import { safeTry } from "@nilejs/nile/fp";
 
-const loaded = await utils.dbTry(() => db.select().from(orders), {
-  message: "Could not load orders",
-  atFunction: "orders.list",
-});
+const loaded = await safeTry(() => db.select().from(orders));
 
 if (loaded.isErr) {
-  return loaded;
+  return utils.handleError({
+    message: "Could not load orders",
+    atFunction: "orders.list",
+    data: { diagnostic: await utils.describeError(loaded.raw) },
+  });
 }
 ```
 
-Thrown database errors become a safe caller-facing Result. When logging succeeds, its validated log reference is included, following Nile’s existing handleError convention. Model error logs retain that reference so the diagnostic record can be found even outside a request scope. The active Nile logger receives bounded cause metadata, including driver error codes, constraints, tables and routines. An explicit `logger` overrides the current context; standalone use can omit logging. Nile's `createModel` query operations use this wrapper too. Transaction ownership, commit and rollback behavior are unchanged.
+Slang 0.2.2 preserves a caught error on the non-enumerable `result.raw` property. Use `safeTry` directly; Nile's former `dbTry` and `DbTryOptions` exports have been removed. `raw` retains driver causes for internal inspection without serializing them automatically. The ordinary `result.error` can still contain SQL or driver messages: return a deliberate safe message rather than passing that failure to a caller.
 
-Automatic diagnostics omit messages, SQL, parameters, detail and stack traces. `includeMessages: true` explicitly enables bounded error messages for internal diagnosis; driver messages may contain application data, so choose it deliberately. Known Drizzle `Failed query:` wrappers are replaced with a generic summary even in that mode. Supplied custom public messages must be safe for callers.
+Nile's model methods use `safeTry` and pass bounded diagnostics from `result.raw` into their existing operation-specific error logs. `handleError` returns the safe message with its log reference. Transaction ownership, commit and rollback behavior are unchanged.
 
-Returned failures are sanitized too, and successful nested Slang Results are resolved recursively. Logger failure does not replace the operation's safe failure. Reporting follows the synchronous Nile logger contract.
+`describeError` omits messages, SQL, parameters, detail and stack traces by default. Set `includeMessages: true` only when appropriate for internal diagnostics. Never log or send `raw` wholesale to a public client. Configure a Nile logger when using `handleError`.
 
 To inspect an error directly:
 
@@ -7421,7 +7446,7 @@ bun test ./scripts/verify-db-utilities.spec.ts
 
 A small team should be able to open an unfamiliar feature and follow it. Use domains to give that work a home, services to list its public operations, and ordinary functions for the business rules behind them.
 
-Register services and actions explicitly. At startup, Nile checks the source structure once and reports misplaced or oversized action files, helping the team keep the same conventions as the application grows.
+Register services and actions explicitly. At startup, Nile checks the source structure once: an application entry at `src/index.ts` or `src/server.ts`, the explicit `services/services.config.ts` registry, each domain’s `index.ts` and `actions/` directory, and the named entry plus `index.ts` for folder-based actions. Shared `modules/` directories are optional. It also reports oversized action files, helping the team keep the same conventions as the application grows.
 
 ## Start with one domain [#start-with-one-domain]
 
@@ -7468,7 +7493,7 @@ Start a small operation at `service/actions/create-project.ts`. When it needs se
 bunx @nilejs/cli generate action projects archive --folder
 ```
 
-Configure `project: { root: ".", structure: "error" }` on the server to fail startup when the structure check finds an error. Existing applications default to `"warn"`; `false` disables checking. In a monorepo, set `root` to the backend package. Source-less bundles skip the check unless a root is explicit. Action entry points above 400 lines receive refactoring guidance.
+Structure violations fail startup by default (`"error"`). Set `project: { root: ".", structure: "warn" }` explicitly to report violations and continue; `false` disables checking. In a monorepo, set `root` to the backend package. Source-less bundles skip the check unless a root is explicit. Action entry points above 400 lines receive refactoring guidance.
 
 ## Give each layer one job [#give-each-layer-one-job]
 
@@ -7748,7 +7773,7 @@ You should see a JSON response with `"status": true`. The `id`, `created_at` and
 ```json
 {
   "status": true,
-  "message": "Action 'tasks.create' executed",
+  "message": "Action completed.",
   "data": {
     "task": {
       "id": "9b4be379-a2e5-4edb-b7df-8654536b629d",
@@ -8082,6 +8107,27 @@ See [authentication and access control](/guide/basics/auth) and [hook ordering](
 Compare success, invalid input, missing identity, denied access and downstream failure against the existing behavior. Update the frontend call and its error handling. Move traffic only after those contracts are understood; keep a rollback path during the transition.
 
 You can retain existing models, queries and integrations. Database migrations and transactional behavior remain application responsibilities. See [runtime adapters](/guide/start/runtime-adapters) before replacing Hono-specific integrations.
+
+
+## Slang 0.2.2 and database failures [#slang-022-and-database-failures]
+
+Nile now re-exports Slang 0.2.2 through `@nilejs/nile/fp`, including `list`, `struct`, `sets`, `memoized`, `taskGroup`, `createStepper`, `createSignal` and `createChannel`. Import from that entry point to share Nile's Result implementation.
+
+The `dbTry` and `DbTryOptions` exports were removed. Replace `utils.dbTry(operation)` with `safeTry(operation)` from `@nilejs/nile/fp`. Caught errors preserve their original cause on non-enumerable `result.raw`. Use `utils.describeError(result.raw)` for bounded internal diagnostics and `utils.handleError` for an explicit safe caller message. `safeTry` does not sanitize `result.error`; do not expose raw driver failures. See [safe database failures](/guide/reference/shared-utilities#safe-database-failures).
+
+Return existing Results directly. `Ok(Ok(value))` and `Ok(Err(message))` are rejected by Slang at type-check time and panic at runtime; use `Ok(value)` or `Err(message)` instead. This also applies to action and hook handlers.
+
+
+## Exception boundaries [#exception-boundaries]
+
+Unexpected throws from handlers, hooks and managed callbacks now return `Error Code: <generated-code> - could not complete the action` rather than exposing exception messages. Expected `Err(message)` responses retain their messages. Invalid nested Results remain invalid Slang usage, but Nile contains the panic at its managed callback boundaries so callers settle and execution capacity is released. Startup still fails after cleanup when boot cannot complete.
+
+The property name `raw` is now reserved for internal diagnostics and is stripped recursively from outbound JSON across both HTTP adapters and Socket.IO. Rename public domain fields named `raw`. Custom JSON Responses are filtered as well; byte-count and content-validator headers are removed when rewriting the representation. Internal Results and direct backend calls retain diagnostic causes.
+
+
+## Message formatting [#message-formatting]
+
+The HTTP response envelope remains exactly `status`, `message` and `data`. The default success message is now `Action completed.`; action `successMessage` and messages returned with `Ok` retain their wording. Validation failures use Zod's `prettifyError` (or an explicitly provided message), with a generated unique `data.errorCode` and the existing `data.issues`. Diagnostic failures use `Error Code: <generated-code> - <message>` instead of bracketed identifiers. `handleError` and the internal exception boundary record the same generated code as `log_id`; these references are never fixed category names or numeric HTTP codes. Intentional `Err` messages remain unchanged.
 
 
 ---

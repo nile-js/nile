@@ -95,7 +95,7 @@ describe("Nile v1 integrated execution", () => {
       payload: { name: 5 },
     });
     expect(invalid.isErr ? invalid.error : "Unexpected success").toContain(
-      "Validation failed"
+      "→ at"
     );
     await server.lifecycle.shutdown();
     expect(

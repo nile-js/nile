@@ -26,9 +26,43 @@ export async function checkProjectStructure(
     });
   }
   if (!sourceInfo.value.isDirectory() || sourceInfo.value.isSymbolicLink()) {
-    return Ok<StructureReport>({ skipped: true, issues: [] });
+    return Ok<StructureReport>({
+      skipped: false,
+      issues: [
+        {
+          path: source,
+          message: "Expected src to be a real directory, not a file or symlink",
+        },
+      ],
+    });
   }
   const issues: StructureIssue[] = [];
+  const entryPoints = await Promise.all(
+    ["index.ts", "server.ts"].map((name) =>
+      safeTry(() => lstat(join(source, name)))
+    )
+  );
+  if (
+    !entryPoints.some(
+      (entry) =>
+        entry.isOk && entry.value.isFile() && !entry.value.isSymbolicLink()
+    )
+  ) {
+    issues.push({
+      path: source,
+      message:
+        "Expected src/index.ts or src/server.ts as the application entry point",
+    });
+  }
+  const serviceInfo = await safeTry(() => lstat(join(source, "services")));
+  if (serviceInfo.isOk && serviceInfo.value.isSymbolicLink()) {
+    issues.push({
+      path: join(source, "services"),
+      message: "Expected a real services directory, not a symlink",
+    });
+    return Ok<StructureReport>({ skipped: false, issues });
+  }
+
   const services = join(source, "services");
   const listed = await safeTry(() =>
     readdir(services, { withFileTypes: true })
@@ -56,7 +90,8 @@ export async function checkProjectStructure(
     });
   }
   for (const service of listed.value.filter(
-    (entry) => entry.isDirectory() && !entry.isSymbolicLink()
+    (entry) =>
+      entry.isDirectory() && !entry.isSymbolicLink() && entry.name !== "modules"
   )) {
     await inspectServiceActions(join(services, service.name), issues);
   }
@@ -80,7 +115,7 @@ export async function enforceProjectStructure(
   const message = report.value.issues
     .map((issue) => `${issue.path}: ${issue.message}`)
     .join("\n");
-  if (options.structure === "error") {
+  if (options.structure !== "warn") {
     throw new Error(message);
   }
   console.warn(`[Nile project structure]\n${message}`);

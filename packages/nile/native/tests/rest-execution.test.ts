@@ -96,7 +96,7 @@ describe("native execution pipeline integration", () => {
       },
     });
   });
-  it("retains global/local hook order, transformed validation and recursive Results", async () => {
+  it("retains global/local hook order, transformed validation and direct Results", async () => {
     const events: string[] = [];
     const server = await createNileServer({
       runtime: "bun",
@@ -157,13 +157,13 @@ describe("native execution pipeline integration", () => {
               },
               handler: (payload) => {
                 events.push("handler");
-                return Ok(Ok(payload));
+                return Ok(payload);
               },
             },
             {
               name: "failure",
               description: "Failure",
-              handler: () => Ok(Err("nested failure")),
+              handler: () => Err("action failure"),
             },
           ],
         },
@@ -190,7 +190,7 @@ describe("native execution pipeline integration", () => {
     ]);
     const failure = await server.nativeRest.fetch(request("failure"));
     expect(failure.status).toBe(400);
-    expect(await failure.json()).toMatchObject({ message: "nested failure" });
+    expect(await failure.json()).toMatchObject({ message: "action failure" });
   });
   it("isolates overlapping native identity, action state and request sessions", async () => {
     const entered = Promise.withResolvers<void>();

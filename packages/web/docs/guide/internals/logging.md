@@ -58,7 +58,7 @@ const failure = utils.handleError({
 });
 ```
 
-The returned message includes the logger’s returned identifier. In production mode this can be used to locate the corresponding record. `handleError` throws if no logger is available: missing logging configuration should be fixed rather than silently ignored.
+`handleError` generates a unique code, stores it as the log record’s `log_id`, and returns `Error Code: <generated-code> - <your message>`. The code is independent of a custom logger’s return value. Use it to locate the corresponding record. `handleError` throws if no logger is available: missing logging configuration should be fixed rather than silently ignored.
 
 Inside an HTTP request, direct action call or scheduled execution, Nile’s logger automatically includes the active `requestId` and any `traceId`, `spanId` or `runId`. Startup logs have no execution to attach. Plain `console.log` calls and arbitrary third-party loggers do not receive this metadata.
 

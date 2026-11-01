@@ -1,7 +1,8 @@
-import { safeTry } from "slang-ts";
+import { Err } from "slang-ts";
 import { createEngine } from "@/engine/engine";
 import type { Engine } from "@/engine/types";
 import { createDiagnosticsLog } from "@/utils";
+import { guardOperation } from "../diagnostics/guard-operation";
 import { createInvoker } from "../execution/invoke";
 import { createExecutionRuntime } from "../execution/runtime";
 import { createLifecycle } from "../lifecycle/lifecycle";
@@ -142,92 +143,102 @@ export async function createNileServer(
     options: config.execution,
   });
 
-  const initialized = await safeTry(async () => {
-    // Initialize the Action Engine
-    const engine: Engine = createEngine({
-      services: config.services,
-      execute: execution.execute,
-      checkQuota: execution.checkQuota,
-      diagnostics: config.diagnostics,
-      logger: config.resources?.logger as unknown as Parameters<
-        typeof createEngine
-      >[0]["logger"],
-      auth: config.auth,
-      onBeforeActionHandler: config.onBeforeActionHandler,
-      onAfterActionHandler: config.onAfterActionHandler,
-    });
-
-    log(`Engine initialized with ${config.services.length} service(s)`);
-
-    // Print registered services table (on by default, opt-out with logServices: false)
-    if (config.logServices !== false) {
-      printStartupStats(engine.stats());
-    }
-
-    // Run onBoot lifecycle hook — await before proceeding
-    if (config.onBoot) {
-      const { fn, maxWaitTime = 10_000 } = config.onBoot;
-      const bootStart = performance.now();
-
-      const boot = async () => {
-        const result = await safeTry(() => fn(nileContext));
-        if (result.isErr) {
-          throw new Error(`onBoot failed: ${result.error}`);
-        }
-      };
-
-      let timer: ReturnType<typeof setTimeout> | undefined;
-      const timeout = new Promise<never>((_, reject) => {
-        timer = setTimeout(
-          () => reject(new Error(`onBoot timed out after ${maxWaitTime}ms`)),
-          maxWaitTime
-        );
+  const initialized = await guardOperation(
+    async () => {
+      // Initialize the Action Engine
+      const engine: Engine = createEngine({
+        services: config.services,
+        execute: execution.execute,
+        checkQuota: execution.checkQuota,
+        diagnostics: config.diagnostics,
+        logger: config.resources?.logger as unknown as Parameters<
+          typeof createEngine
+        >[0]["logger"],
+        auth: config.auth,
+        onBeforeActionHandler: config.onBeforeActionHandler,
+        onAfterActionHandler: config.onAfterActionHandler,
       });
-      const bootResult = await safeTry(() => Promise.race([boot(), timeout]));
-      if (timer) {
-        clearTimeout(timer);
-      }
-      if (bootResult.isErr) {
-        await lifecycle.shutdown();
-        throw new Error(`Nile startup failed: ${bootResult.error}`);
-      }
-      console.log(`Booted in ${(performance.now() - bootStart).toFixed(1)}ms`);
-    }
 
-    // Build the server object — always booted at this point
-    let startupDurationMs = 0;
-    const server: NileServer = {
-      schema: createSchemaExporter(engine),
-      invoke: createInvoker(engine, nileContext, config.rpc?.enabled !== false),
-      lifecycle,
-      ...(await createServerTransports({
+      log(`Engine initialized with ${config.services.length} service(s)`);
+
+      // Print registered services table (on by default, opt-out with logServices: false)
+      if (config.logServices !== false) {
+        printStartupStats(engine.stats());
+      }
+
+      // Run onBoot lifecycle hook — await before proceeding
+      if (config.onBoot) {
+        const { fn, maxWaitTime = 10_000 } = config.onBoot;
+        const bootStart = performance.now();
+
+        const boot = () =>
+          guardOperation(() => fn(nileContext), {
+            logger: config.resources?.logger,
+            atFunction: "nile.onBoot",
+          });
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const timeout = new Promise<ReturnType<typeof Err>>((resolve) => {
+          timer = setTimeout(
+            () => resolve(Err(`onBoot timed out after ${maxWaitTime}ms`)),
+            maxWaitTime
+          );
+        });
+        let bootResult: Awaited<ReturnType<typeof boot>>;
+        try {
+          bootResult = await Promise.race([boot(), timeout]);
+        } finally {
+          if (timer) {
+            clearTimeout(timer);
+          }
+        }
+        if (bootResult.isErr) {
+          return Err(`onBoot failed: ${bootResult.error}`);
+        }
+        console.log(
+          `Booted in ${(performance.now() - bootStart).toFixed(1)}ms`
+        );
+      }
+
+      // Build the server object — always booted at this point
+      let startupDurationMs = 0;
+      const server: NileServer = {
+        schema: createSchemaExporter(engine),
+        invoke: createInvoker(
+          engine,
+          nileContext,
+          config.rpc?.enabled !== false
+        ),
+        lifecycle,
+        ...(await createServerTransports({
+          config,
+          engine,
+          lifecycle,
+          context: nileContext,
+        })),
+        stats: () => ({ ...engine.stats(), startupDurationMs }),
         config,
         engine,
-        lifecycle,
-        context: nileContext,
-      })),
-      stats: () => ({ ...engine.stats(), startupDurationMs }),
-      config,
-      engine,
-      context: nileContext as NileContext<unknown>,
-    };
+        context: nileContext as NileContext<unknown>,
+      };
 
-    server.schema = createSchemaExporter(engine, server.websocket);
-    attachSchedules(server, config.schedules, execution);
-    lifecycle.ready();
-    server.scheduler?.start();
+      server.schema = createSchemaExporter(engine, server.websocket);
+      attachSchedules(server, config.schedules, execution);
+      lifecycle.ready();
+      server.scheduler?.start();
 
-    const elapsed = performance.now() - startTime;
-    startupDurationMs = elapsed;
-    const readyTime =
-      elapsed >= 1000
-        ? `${(elapsed / 1000).toFixed(1)}s`
-        : `${elapsed.toFixed(1)}ms`;
-    console.log(`\n${config.serverName} server ready in ${readyTime}`);
+      const elapsed = performance.now() - startTime;
+      startupDurationMs = elapsed;
+      const readyTime =
+        elapsed >= 1000
+          ? `${(elapsed / 1000).toFixed(1)}s`
+          : `${elapsed.toFixed(1)}ms`;
+      console.log(`\n${config.serverName} server ready in ${readyTime}`);
 
-    _nileServer = server;
-    return server;
-  });
+      _nileServer = server;
+      return server;
+    },
+    { logger: config.resources?.logger, atFunction: "nile.startup" }
+  );
   if (initialized.isErr) {
     await lifecycle.shutdown();
     _nileContext = _nileServer?.context ?? null;

@@ -23,7 +23,7 @@ Execution requires a specific service and action; wildcards are for discovery. N
 ```json
 {
   "status": true,
-  "message": "Action 'projects.create' executed",
+  "message": "Action completed.",
   "data": { "project": { "id": "project-123", "name": "Customer portal" } }
 }
 ```

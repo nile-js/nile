@@ -12,6 +12,10 @@ import type {
   ServerRuntime,
 } from "@/nile/types";
 import { createDiagnosticsLog } from "@/utils";
+import {
+  createInputFailure,
+  createValidationFailure,
+} from "../diagnostics/validation-failure";
 import type { NileLifecycle } from "../lifecycle/types";
 import { getRequestStore } from "../nile/request-scope";
 import { createHttpBoundary } from "../protection/http";
@@ -62,7 +66,20 @@ export function createRestApp(params: CreateRestAppParams): RestApp {
     });
     // Hono ignores returned middleware responses after finalization; assign the wrapped response explicitly.
     c.res = response;
-    return response;
+    // Hono's response setter merges old headers back in; do not resurrect invalid body metadata.
+    for (const name of [
+      "content-length",
+      "etag",
+      "content-md5",
+      "digest",
+      "content-encoding",
+      "content-range",
+    ]) {
+      if (!response.headers.has(name)) {
+        c.res.headers.delete(name);
+      }
+    }
+    return c.res;
   });
 
   const handlers = createRestIntentHandlers({ config });
@@ -156,11 +173,7 @@ export function createRestApp(params: CreateRestAppParams): RestApp {
 
         if (!body) {
           return c.json(
-            {
-              status: false,
-              message: "Invalid or missing JSON body",
-              data: {},
-            } satisfies ExternalResponse,
+            createInputFailure("The action input must be valid JSON."),
             400
           );
         }
@@ -171,14 +184,7 @@ export function createRestApp(params: CreateRestAppParams): RestApp {
         }
         const parsed = externalRequestSchema.safeParse(body);
         if (!parsed.success) {
-          return c.json(
-            {
-              status: false,
-              message: "Invalid request format",
-              data: { errors: parsed.error.issues },
-            } satisfies ExternalResponse,
-            400
-          );
+          return c.json(createValidationFailure(parsed.error), 400);
         }
 
         const request = parsed.data as ExternalRequest;

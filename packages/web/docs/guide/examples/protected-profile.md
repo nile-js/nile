@@ -349,7 +349,7 @@ curl -s -X POST http://localhost:8000/api/services \
 You should see HTTP 200 with the identity from the token:
 
 ```json
-{"status":true,"message":"Action 'account.profile' executed","data":{"profile":{"userId":"user_42","organizationId":"org_7"}}}
+{"status":true,"message":"Action completed.","data":{"profile":{"userId":"user_42","organizationId":"org_7"}}}
 ```
 
 Request the audit action with the member token. The role hook refuses it:
@@ -379,7 +379,7 @@ curl -s -X POST http://localhost:8000/api/services \
 You should see HTTP 200 and the audit entries:
 
 ```json
-{"status":true,"message":"Action 'account.audit' executed","data":{"entries":[{"event":"profile.viewed","at":"2026-10-23T09:00:00.000Z"}]}}
+{"status":true,"message":"Action completed.","data":{"entries":[{"event":"profile.viewed","at":"2026-10-23T09:00:00.000Z"}]}}
 ```
 
 Public actions still work without a token. The starter's `tasks.list` returns HTTP 200 whether or not you send one.

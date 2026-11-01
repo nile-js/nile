@@ -1,3 +1,6 @@
+const ACTION_ERROR_PATTERN =
+  /^Error Code: [A-Za-z0-9_-]{12} - could not complete the action$/;
+
 import { Ok } from "slang-ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
@@ -36,7 +39,7 @@ describe("executeAction optional phases", () => {
               expect(getRequestStore()?.hookContext).toBe(context.hookContext);
               expect(context.hookContext).not.toBe(outside);
               expect(context.hookContext.actionName).toBe("test.plain");
-              return Ok(Ok(42));
+              return Ok(42);
             },
           },
         ],
@@ -268,9 +271,9 @@ describe("executeAction optional phases", () => {
     );
     expect(result.isErr).toBe(true);
     if (result.isErr) {
-      expect(result.error).toBe("handler failed");
+      expect(result.error).toMatch(ACTION_ERROR_PATTERN);
     }
-    expect(observed[0]?.error).toBe("handler failed");
+    expect(observed[0]?.error).toMatch(ACTION_ERROR_PATTERN);
   });
 
   it("keeps authentication configured for protected actions before the handler", async () => {

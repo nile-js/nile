@@ -1,4 +1,5 @@
-import { Err, type Result, safeTry } from "slang-ts";
+import { Err, type Result } from "slang-ts";
+import { guardOperation } from "../../diagnostics/guard-operation";
 import { runControlledTask } from "../pending-call";
 import { waitRetryDelay } from "./delay";
 import type { resolveRetryOptions } from "./options";
@@ -50,7 +51,7 @@ export async function runRetryAttempt<Value, Output>({
   if (history.length > bounds.maxHistory) {
     history.shift();
   }
-  const decided = await safeTry(() =>
+  const decided = await guardOperation(() =>
     options.onResult({
       attempt,
       attempts: history.map((item) => ({ ...item })),

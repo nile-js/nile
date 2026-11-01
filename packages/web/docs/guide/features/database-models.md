@@ -145,4 +145,4 @@ The model also exposes `table` and `schemas.insert`, `schemas.update` and `schem
 
 - [Model helpers](/guide/internals/db/create-model) has the complete method reference.
 - [Data access overview](/guide/internals/db/) covers multi-write workflows.
-- [Shared utilities](/guide/reference/shared-utilities) explains `dbTry` and safe database failures.
+- [Shared utilities](/guide/reference/shared-utilities) explains `safeTry` from `@nilejs/nile/fp` and safe database failures.

@@ -10,7 +10,9 @@ const result = await server.invoke({
   action: "create",
   payload: { name: "First order" },
 });
-if (result.isErr) return result;
+if (result.isErr) {
+  return result;
+}
 ```
 
 This executes normal hooks, validation and configured authentication. `visibility.rpc: false` disables direct access. Backend code can supply `session`, `credentials`, `signal`, `requestId` and `clientKey`. Session data does not bypass configured JWT verification; use `credentials` for it. Nested calls inherit cancellation and correlation, but receive isolated session containers and action state. Use `context.execution` for the current ID, transport, signal and optional trace IDs. `getContext()` resolves the active execution's instance.
@@ -37,7 +39,7 @@ Register resources with `name`, optional `stop`, `drain` and `close(signal)` cal
 
 HTTP protection accepts `rest.protection.maxBodyBytes` (default 10 MiB; `false` disables it). Nile checks actual bytes, including bodies with missing or inaccurate Content-Length, before JSON/form parsing. This buffers the bounded request body; configure a suitable limit for uploads or implement a custom streaming route outside this parser.
 
-`getClientAddress(request)` supplies a listener-derived peer when using custom integrations. `trustProxy(address)` permits walking X-Forwarded-For only through trusted peers. Arbitrary forwarded headers are ignored by default. The legacy configurable rate-limiting header remains application-controlled; do not treat a client-chosen header as verified identity.
+Set `rest.protection.getClientAddress` to return the peer address from your listener, never from a request header. Set `rest.protection.trustProxy` to return `true` only for proxy addresses you operate. Nile reads `x-forwarded-for` only when the actual peer is trusted, and it ignores other forwarded headers by default. `utils.resolveClientIdentity(request, protection)` returns the resolved `address`, `peer` and `source`. The legacy rate-limiting header (`rest.rateLimiting.limitingHeader`) remains application-controlled; do not treat a client-chosen header as verified identity.
 
 `execution.timeoutMs` requests cancellation and returns a timeout failure to the caller. Handlers can pass `context.execution.signal` to compatible dependencies. Timed-out work stays tracked until it actually finishes. Cancellation does not roll back writes or interrupt code that ignores the signal.
 
@@ -72,19 +74,33 @@ Failures and slow executions are summarized when a logger is configured; success
 ## Schedule business work
 
 ```ts
-schedules: {
+import type { JobRunContext, JobRunEvent, SchedulerOptions } from "@nilejs/nile";
+
+const billingSummaryJob = async (run: JobRunContext) => {
+  return await buildBillingSummary({ signal: run.signal });
+};
+
+const recordRunEvent = async (event: JobRunEvent) => {
+  await recordJobEvent(event);
+};
+
+export const schedules: SchedulerOptions = {
   jobs: [
     {
       name: "billing-summary",
-      schedule: { weekly: "monday", at: "09:00", timezone: "Africa/Kampala" },
-      handler: async ({ signal }) => buildBillingSummary({ signal }),
+      schedule: {
+        weekly: "monday",
+        at: "09:00",
+        timezone: "Africa/Kampala",
+      },
+      handler: billingSummaryJob,
     },
   ],
-  onRunEvent: async (event) => recordJobEvent(event),
-}
+  onRunEvent: recordRunEvent,
+};
 ```
 
-`recordJobEvent` and `buildBillingSummary` above are application functions. The recorder receives started/completed/failed/skipped events, job/run IDs, timestamps and completion duration. Handler return values and raw errors are not persisted automatically. Recorder failures do not fail business work; `onRecorderError(job)` can report persistence trouble. Recorder capacity and timeout are bounded; stalled writers retain their capacity slot until they settle.
+Pass `schedules` to `createNileServer`. `recordJobEvent` and `buildBillingSummary` above are application functions. The recorder receives started/completed/failed/skipped events, job/run IDs, timestamps and completion duration. Handler return values and raw errors are not persisted automatically. Recorder failures do not fail business work; `onRecorderError(job)` can report persistence trouble. Recorder capacity and timeout are bounded; stalled writers retain their capacity slot until they settle.
 
 Schedules support:
 
@@ -146,7 +162,7 @@ A shared external store must atomically check and consume the full allowance thr
 
 ## Project structure
 
-Nile inspects recognized source layout once during boot. Existing projects receive warnings; `project.structure` can be `"warn"`, `"error"` or `false`. New CLI projects use `"error"`. Set `project.root` to the backend package root in a monorepo. Source-less bundles skip inspection unless a root is explicitly supplied. checkProjectStructure({ root }) exposes the same Result report without starting a server.
+Nile inspects recognized source layout once during boot. Violations fail startup by default; `project.structure` can be `"warn"`, `"error"` or `false`. Select `"warn"` explicitly to continue boot with warnings. New CLI projects also use `"error"`. Set `project.root` to the backend package root in a monorepo. Source-less bundles skip inspection unless a root is explicitly supplied. checkProjectStructure({ root }) exposes the same Result report without starting a server.
 
 Use `src/services/services.config.ts` and `service/actions/<action>.ts`. Larger actions can use `service/actions/<action>/<action>.ts`, `index.ts` and private `modules/`. Service-shared helpers belong in `service/modules/`. The registry stays explicit; filenames never automatically execute/register actions. Existing flat layouts remain compatible in warning mode. Action entry points above 400 lines receive refactoring guidance. Nile does not scan secrets or follow source symlinks.
 

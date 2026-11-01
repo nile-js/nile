@@ -1,4 +1,4 @@
-import { safeTry } from "slang-ts";
+import { guardOperation } from "../diagnostics/guard-operation";
 import type { JobRunEvent, SchedulerOptions } from "./types";
 
 /** Bound persistence callbacks independently from business execution; a stalled writer cannot grow an unlimited backlog. */
@@ -19,7 +19,7 @@ export function createRunRecorder(options: SchedulerOptions) {
   const report = (job: string) => {
     // A diagnostics callback is untrusted application code too.
     if (options.onRecorderError) {
-      safeTry(() => options.onRecorderError?.(job));
+      guardOperation(() => options.onRecorderError?.(job));
     }
   };
   const record = (event: JobRunEvent) => {
@@ -31,13 +31,15 @@ export function createRunRecorder(options: SchedulerOptions) {
       return;
     }
     const timer = setTimeout(() => report(event.job), timeoutMs);
-    const work = safeTry(() => options.onRunEvent?.(event)).then((result) => {
-      clearTimeout(timer);
-      active.delete(work);
-      if (result.isErr) {
-        report(event.job);
+    const work = guardOperation(() => options.onRunEvent?.(event)).then(
+      (result) => {
+        clearTimeout(timer);
+        active.delete(work);
+        if (result.isErr) {
+          report(event.job);
+        }
       }
-    });
+    );
     // Timed-out writers still occupy their slot until they actually finish.
     active.add(work);
   };

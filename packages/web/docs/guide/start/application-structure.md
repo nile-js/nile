@@ -5,7 +5,7 @@ description: "Give each service, action and business rule a predictable place as
 
 A small team should be able to open an unfamiliar feature and follow it. Use domains to give that work a home, services to list its public operations, and ordinary functions for the business rules behind them.
 
-Register services and actions explicitly. At startup, Nile checks the source structure once and reports misplaced or oversized action files, helping the team keep the same conventions as the application grows.
+Register services and actions explicitly. At startup, Nile checks the source structure once: an application entry at `src/index.ts` or `src/server.ts`, the explicit `services/services.config.ts` registry, each domain’s `index.ts` and `actions/` directory, and the named entry plus `index.ts` for folder-based actions. Shared `modules/` directories are optional. It also reports oversized action files, helping the team keep the same conventions as the application grows.
 
 ## Start with one domain
 
@@ -52,7 +52,7 @@ Start a small operation at `service/actions/create-project.ts`. When it needs se
 bunx @nilejs/cli generate action projects archive --folder
 ```
 
-Configure `project: { root: ".", structure: "error" }` on the server to fail startup when the structure check finds an error. Existing applications default to `"warn"`; `false` disables checking. In a monorepo, set `root` to the backend package. Source-less bundles skip the check unless a root is explicit. Action entry points above 400 lines receive refactoring guidance.
+Structure violations fail startup by default (`"error"`). Set `project: { root: ".", structure: "warn" }` explicitly to report violations and continue; `false` disables checking. In a monorepo, set `root` to the backend package. Source-less bundles skip the check unless a root is explicit. Action entry points above 400 lines receive refactoring guidance.
 
 ## Give each layer one job
 

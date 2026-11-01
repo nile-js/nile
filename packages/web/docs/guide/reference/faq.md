@@ -11,7 +11,7 @@ The maintainer uses Nile for a fintech backend with over 500 actions, an interna
 
 ## Does Nile enforce domain-driven design?
 
-Yes, so the codebase still scales as it grows. Each business domain is a service under `src/services`, listed in the `services.config.ts` registry, with one file per action. Nile checks that layout at startup and reports misplaced or oversized action files. With `project: { structure: "error" }`, as in the CLI starter, a violation stops startup; existing applications get warnings by default.
+Yes, so the codebase still scales as it grows. Each business domain is a service under `src/services`, listed in the `services.config.ts` registry, with one file per action. Nile checks that layout at startup and reports misplaced or oversized action files. A violation stops startup by default, including in existing applications. Set `project: { structure: "warn" }` explicitly to continue with warnings, or `false` to disable the check.
 
 Inside that layout, aggregates and repositories stay your choice. Ordinary functions can contain business rules; only operations exposed through the action API need to become actions.
 

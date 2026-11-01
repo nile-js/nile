@@ -1,11 +1,12 @@
-import { Err, Ok, type Result, safeTry } from "slang-ts";
-import { prettifyError } from "zod";
+import { Err, Ok, type Result } from "slang-ts";
 import { getRequestStore } from "@/nile/request-scope";
 import type {
   AfterActionHandler,
   BeforeActionHandler,
   NileContext,
 } from "@/nile/types";
+import { guardOperation } from "../diagnostics/guard-operation";
+import { createValidationFailure } from "../diagnostics/validation-failure";
 import { runObservedHook } from "../execution/hook-tracing";
 import type { Action, HookDefinition, HookLogEntry } from "./types";
 
@@ -21,7 +22,7 @@ async function runHook(
   const result = await runObservedHook(
     `${hookDef.service}.${hookDef.action}`,
     () =>
-      safeTry(() =>
+      guardOperation(() =>
         hookAction.handler(input as Record<string, unknown>, nileContext)
       )
   );
@@ -104,7 +105,7 @@ export async function runGlobalBeforeHook(
   }
 
   const result = await runObservedHook("global.before", () =>
-    safeTry(() => handler({ nileContext, action, payload }))
+    guardOperation(() => handler({ nileContext, action, payload }))
   );
   if (result.isErr) {
     log(`Global before hook failed for ${action.name}`);
@@ -131,7 +132,7 @@ export async function runGlobalAfterHook(
   }
 
   const result = await runObservedHook("global.after", () =>
-    safeTry(() =>
+    guardOperation(() =>
       handler({
         nileContext,
         action,
@@ -164,18 +165,32 @@ export function validatePayload(
 
   const parseResult = action.validation.safeParse(payload);
   if (!parseResult.success) {
-    const validationError = prettifyError(parseResult.error);
-    log(`Validation failed for ${action.name}`, validationError);
+    const validation = createValidationFailure(parseResult.error);
+    const validationError = validation.message;
+    const errorCode = validation.data.errorCode;
+    try {
+      log(`Validation failed for ${action.name}`, {
+        errorCode,
+        message: validationError,
+      });
+      nileContext.resources?.logger?.warn({
+        log_id: errorCode,
+        atFunction: nileContext.hookContext.actionName,
+        message: validationError,
+        data: { issues: validation.data.issues },
+      });
+    } catch {
+      // Logging must not replace a useful validation failure with another error.
+    }
     nileContext.setHookError(validationError);
     // Transports that opted in return these per-field issues alongside the message.
     const failure = getRequestStore()?.failure;
     if (failure) {
-      failure.validationIssues = parseResult.error.issues.map((issue) => ({
-        path: issue.path.map(String).join("."),
-        message: issue.message,
-      }));
+      failure.errorCode = errorCode;
+      failure.validationMessage = validationError;
+      failure.validationIssues = validation.data.issues;
     }
-    return Err(`Validation failed: ${validationError}`);
+    return Err(validationError);
   }
 
   return Ok(parseResult.data);
@@ -203,7 +218,7 @@ export async function runHandler(
   log: (msg: string, data?: unknown) => void
 ): Promise<{ result: Result<unknown, string>; successMessage?: string }> {
   let successMessage: string | undefined;
-  const result = await safeTry(async () => {
+  const result = await guardOperation(async () => {
     const returned = await action.handler(
       payload as Record<string, unknown>,
       nileContext

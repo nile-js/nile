@@ -1,3 +1,6 @@
+const ACTION_ERROR_PATTERN =
+  /^Error Code: [A-Za-z0-9_-]{12} - could not complete the action$/;
+
 import type { Context } from "hono";
 import { Ok } from "slang-ts";
 import { describe, expect, it } from "vitest";
@@ -293,7 +296,7 @@ describe("per-execution hook context isolation", () => {
     });
     expect(failed.isErr).toBe(true);
     if (failed.isErr) {
-      expect(failed.error).toBe("A handler failure");
+      expect(failed.error).toMatch(ACTION_ERROR_PATTERN);
     }
     expect(successful.isOk).toBe(true);
     if (successful.isOk) {
@@ -304,7 +307,7 @@ describe("per-execution hook context isolation", () => {
         (successful.value as { data: Snapshot }).data.error
       ).toBeUndefined();
     }
-    expect(harness.contexts.get("A")?.error).toBe("A handler failure");
+    expect(harness.contexts.get("A")?.error).toMatch(ACTION_ERROR_PATTERN);
     expect(harness.contexts.get("B")?.error).toBeUndefined();
     expect(harness.events).toEqual([
       "A:global-before",

@@ -140,7 +140,7 @@ With a 9-byte PDF named `tiny.pdf`, the example project returned:
 ```json
 {
   "status": true,
-  "message": "Action 'documents.inspect' executed",
+  "message": "Action completed.",
   "data": {
     "title": "Project brief",
     "filename": "tiny.pdf",

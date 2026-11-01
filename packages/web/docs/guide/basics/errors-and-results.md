@@ -58,11 +58,11 @@ if (saved.isErr) {
 return Ok({ project: saved.value });
 ```
 
-This handler fragment uses your application's `saveProject` function. Current `slang-ts` recursively unwraps nested Results, including a Result returned by that function. Do not wrap an existing successful Result merely to pass it through; returning it directly is often clearer.
+This handler fragment uses your application's `saveProject` function. Slang 0.2.2 accepts a Result returned by that function, but rejects a Result nested inside another Result. Return an existing Result directly instead of wrapping it in `Ok`. Caught errors retain their original cause on the non-enumerable `raw` property.
 
 ## Send a success message
 
-Every successful HTTP response carries a `message`. By default it reads `Action 'projects.archive' executed`. Set `successMessage` on the action for a fixed message, or pass a message as the second argument to `Ok` to choose one per call. The handler's message wins.
+Every successful HTTP response carries a `message`. By default it reads `Action completed.`. Set `successMessage` on the action for a fixed message, or pass a message as the second argument to `Ok` to choose one per call. The handler's message wins.
 
 ```ts
 import { createAction } from "@nilejs/nile";
@@ -96,11 +96,34 @@ Object handler values become HTTP `data` directly. Primitive, array or null valu
 
 Action lookup, authentication, hook, validation and handler Result failures normally return HTTP **400**. A missing action is not an HTTP 404. Unknown HTTP routes return 404; disabled/denied discovery returns 403. Transport errors and custom routes have their own status behavior.
 
-## Do not rely on thrown errors being private
+## Validation failures
 
-Nile guards action and hook execution with `safeTry`. A thrown handler error can become a Result failure whose message reaches the caller. Catch potentially sensitive downstream failures at your application boundary and return a safe message deliberately. The transport's unexpected-error handler sanitizes its own 500 responses; that is a different boundary.
+HTTP responses contain exactly `status`, `message` and `data`. For validation failures, `status` is false, the generated unique diagnostic reference is in `data.errorCode`, and the message uses Zod's `prettifyError`. Custom schema messages are preserved. Nile also retains the existing field-level `data.issues` for frontend forms.
 
-`handleError({ message, data, atFunction })` logs through an explicit or configured logger and returns an `Err` containing the log ID. It fails fast if no logger is available. Use it when that traceable message is appropriate for the caller, and keep confidential details in logged data.
+```json
+{
+  "status": false,
+  "message": "✖ Enter a project name.\n  → at name",
+  "data": {
+    "errorCode": "DHFg123Ab9Zq",
+    "issues": [{ "path": "name", "message": "Enter a project name." }]
+  }
+}
+```
+
+The code is generated for each failure; it is not an error category, an HTTP status or a fixed value such as `INTERNAL_ERROR`. An explicit validation message supplied by a framework input check takes precedence over Zod's default formatting.
+
+## Unexpected throws and intentional failures
+
+Nile contains unexpected throws and rejected callbacks at its internal operation boundaries, including Slang nested-Result panics. Callers receive `Error Code: <generated-code> - could not complete the action`; the original exception text does not become the response message. Configured logging receives bounded cause diagnostics without SQL, error messages or payloads by default. Without a configured logger, Nile writes the bounded diagnostic to the console. Logger failures cannot replace the safe failure.
+
+`raw` is reserved for internal diagnostics. Nile strips every `raw` property recursively from outgoing JSON objects and arrays, including explicit copies, `toJSON` output, custom JSON Responses, Socket.IO replies and topic messages. This happens at serialization, independently of exception handling, so successful actions cannot expose it either. It also means application response contracts must not use a public field named `raw`. JSON HTTP responses are buffered at this boundary to apply the filter; non-JSON assets keep their normal binary/stream behavior.
+
+Intentional `Err(message)` values retain their messages. Keep them safe for callers; wrapping a sensitive driver error in `Err` deliberately exposes that text. Direct `safeTry` imports from `/fp` retain Slang's original behavior and are not automatic public-response sanitizers.
+
+Execution admission and socket/queue capacity are released after failure. Unexpected startup failures reject initialization after cleanup with a sanitized error; explicit boot `Err` messages and framework timeout messages remain useful. This is a boundary around work Nile owns or awaits, not a process-wide uncaught-exception handler for unrelated timers or detached application promises.
+
+`handleError({ message, data, atFunction })` logs through an explicit or configured logger and returns an `Err` formatted as `Error Code: <generated-code> - <your message>`. It fails fast if no logger is available. Use it when that traceable message is appropriate for the caller, and keep confidential details in logged data.
 
 Result handling does not make a multi-step operation transactional or undo earlier side effects. Keep those decisions in the domain/data layer.
 

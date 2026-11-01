@@ -1,3 +1,6 @@
+const ACTION_ERROR_PATTERN =
+  /^Error Code: [A-Za-z0-9_-]{12} - could not complete the action$/;
+
 import { Err, Ok } from "slang-ts";
 import { describe, expect, it } from "vitest";
 import { createNileContext } from "../../nile/nile";
@@ -57,13 +60,13 @@ describe("compiled action execution compatibility", () => {
     expect(mapped.expect()).toBe(3);
   });
 
-  it("preserves recursive success and error normalization for synchronous and async handlers", async () => {
+  it("preserves direct Result success and failure for synchronous and async handlers", async () => {
     const { engine, context } = setup([
-      { name: "nested", description: "Nested", handler: () => Ok(Ok(7)) },
+      { name: "nested", description: "Nested", handler: () => Ok(7) },
       {
         name: "failure",
         description: "Failure",
-        handler: async () => Ok(Err("nested failure")),
+        handler: async () => Err("action failure"),
       },
       {
         name: "reject",
@@ -75,13 +78,28 @@ describe("compiled action execution compatibility", () => {
       (await engine.executeAction("test", "nested", {}, context)).expect()
     ).toBe(7);
     for (const [name, message] of [
-      ["failure", "nested failure"],
-      ["reject", "rejected"],
+      ["failure", "action failure"],
+      ["reject", "could not complete the action"],
     ] as const) {
       const result = await engine.executeAction("test", name, {}, context);
-      expect(result.isErr && result.error).toBe(message);
+      expect(result.isErr && result.error).toContain(message);
       expect(() => result.expect()).toThrow(message);
     }
+  });
+
+  it("contains invalid nested Results instead of silently unwrapping them", async () => {
+    const { engine, context } = setup([
+      {
+        name: "invalid",
+        description: "Invalid nested result",
+        handler: () => {
+          // @ts-expect-error Slang rejects Result-in-Result values at the type boundary.
+          return Ok(Ok(7));
+        },
+      },
+    ]);
+    const result = await engine.executeAction("test", "invalid", {}, context);
+    expect(result.isErr && result.error).toMatch(ACTION_ERROR_PATTERN);
   });
 
   it("keeps missing service/action failures asynchronous and preserves messages", async () => {

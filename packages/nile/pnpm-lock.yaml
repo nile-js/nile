@@ -54,8 +54,8 @@ importers:
         specifier: ^10.4.0
         version: 10.4.0
       slang-ts:
-        specifier: ^0.1.1
-        version: 0.1.1(typescript@7.0.2)
+        specifier: ^0.2.2
+        version: 0.2.2(typescript@7.0.2)
       socket.io:
         specifier: 4.8.4
         version: 4.8.4
@@ -1084,10 +1084,14 @@ packages:
   sisteransi@1.0.5:
     resolution: {integrity: sha512-bLGGlR1QxBcynn2d5YmDX4MGjlZvy2MRBDRNHLJ8VI6l6+9FUiyTFNJ0IveOSP0bcXgVDPRcfGqA0pjaqUpfVg==}
 
-  slang-ts@0.1.1:
-    resolution: {integrity: sha512-C5M2A9HVv2kk1QdiPHKUpAPmiereZXCnn7zXO1X+aUdrvz9aTWe+0iCs+6m0v5rK66ifLt4ftxUuD9jpzxNiQw==}
+  slang-ts@0.2.2:
+    resolution: {integrity: sha512-oapprph45p2fZ8zTp/mGF+yVIq9lVtPIVH1FbLx0c+wEdimgI7ENtFncu5XHCYS4DDykDu4KazsAYdxke77mHg==}
+    engines: {node: '>=20'}
     peerDependencies:
       typescript: ^5.9.3 || ^7.0.2
+    peerDependenciesMeta:
+      typescript:
+        optional: true
 
   socket.io-adapter@2.5.8:
     resolution: {integrity: sha512-6Oy52pbg+kvdCVvjcN+FnY7BvxZ7cIHNScbvztT/It5d0vbwoJoVZmF2gjJmnV0/4WlXRfG15zc45ySk9Ah8bw==}
@@ -2017,8 +2021,8 @@ snapshots:
 
   sisteransi@1.0.5: {}
 
-  slang-ts@0.1.1(typescript@7.0.2):
-    dependencies:
+  slang-ts@0.2.2(typescript@7.0.2):
+    optionalDependencies:
       typescript: 7.0.2
 
   socket.io-adapter@2.5.8:

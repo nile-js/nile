@@ -1,5 +1,6 @@
 import { Cron } from "croner";
-import { Err, safeTry } from "slang-ts";
+import { Err } from "slang-ts";
+import { guardOperation } from "../diagnostics/guard-operation";
 import { normalizeSchedule } from "./normalize-schedule";
 import { createRunRecorder } from "./recorder";
 import type {
@@ -74,8 +75,8 @@ export function createScheduler(options: SchedulerOptions): NileScheduler {
       const startedAt = performance.now();
       emit(context, "started");
       const work = options.run
-        ? safeTry(() => options.run?.(context, job.handler))
-        : safeTry(() => job.handler(context));
+        ? guardOperation(() => options.run?.(context, job.handler))
+        : guardOperation(() => job.handler(context));
       active = work.then((result) => {
         emit(
           context,

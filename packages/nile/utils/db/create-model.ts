@@ -1,9 +1,9 @@
 import { count, desc, eq, lt } from "drizzle-orm";
-import { Ok } from "slang-ts";
+import { Ok, safeTry } from "slang-ts";
 import { getContext } from "@/nile/server";
+import { describeError } from "../../diagnostics/describe-error";
 import { handleError } from "../handle-error";
 import { createTransactionVariant } from "./create-transaction-variant";
-import { dbTry } from "./db-try";
 import { getZodSchema } from "./get-zod-schema";
 import type { DrizzleDbLike } from "./model-query-types";
 import type {
@@ -108,10 +108,6 @@ export function createModel<
   /** Resolve and cast db for the current call */
   const getDb = () => asDb(resolveDb<TDB>(options.db));
 
-  /** Preserve driver causes before Slang normalizes errors, using this model's log attribution. */
-  const tryQuery = <T>(fn: () => T | Promise<T>) =>
-    dbTry(fn, { atFunction: `${name}.query` });
-
   // -- Core CRUD --
 
   const create = async ({ data, dbx }: ModelWriteParams<TInsert, TDB>) => {
@@ -125,13 +121,13 @@ export function createModel<
     }
 
     const db = dbx ? asDb(dbx) : getDb();
-    const result = await tryQuery(() =>
+    const result = await safeTry(() =>
       db.insert(table).values(data).returning()
     );
     if (result.isErr) {
       return handleError({
         message: `Error creating ${name}`,
-        data: { error: result.error },
+        data: { diagnostic: await describeError(result.raw) },
         atFunction: `${name}.create`,
       });
     }
@@ -158,13 +154,13 @@ export function createModel<
 
     const db = dbx ? asDb(dbx) : getDb();
     const idCol = tableRef.id as Parameters<typeof eq>[0];
-    const result = await tryQuery(() =>
+    const result = await safeTry(() =>
       db.update(table).set(data).where(eq(idCol, id)).returning()
     );
     if (result.isErr) {
       return handleError({
         message: `Error updating ${name}`,
-        data: { id, error: result.error },
+        data: { id, diagnostic: await describeError(result.raw) },
         atFunction: `${name}.update`,
       });
     }
@@ -191,13 +187,13 @@ export function createModel<
   const findById = async (id: string) => {
     const db = getDb();
     const idCol = tableRef.id as Parameters<typeof eq>[0];
-    const result = await tryQuery(() =>
+    const result = await safeTry(() =>
       db.select().from(table).where(eq(idCol, id))
     );
     if (result.isErr) {
       return handleError({
         message: `Error getting ${name}`,
-        data: { id, error: result.error },
+        data: { id, diagnostic: await describeError(result.raw) },
         atFunction: `${name}.findById`,
       });
     }
@@ -216,13 +212,13 @@ export function createModel<
   const deleteFn = async (id: string) => {
     const db = getDb();
     const idCol = tableRef.id as Parameters<typeof eq>[0];
-    const result = await tryQuery(() =>
+    const result = await safeTry(() =>
       db.delete(table).where(eq(idCol, id)).returning()
     );
     if (result.isErr) {
       return handleError({
         message: `Error deleting ${name}`,
-        data: { id, error: result.error },
+        data: { id, diagnostic: await describeError(result.raw) },
         atFunction: `${name}.delete`,
       });
     }
@@ -242,7 +238,7 @@ export function createModel<
     const db = getDb();
     const tsCol = findTimestampColumn(tableRef);
 
-    const result = await tryQuery(() => {
+    const result = await safeTry(() => {
       const query = db.select().from(table);
       if (!tsCol) {
         return query;
@@ -252,7 +248,7 @@ export function createModel<
     if (result.isErr) {
       return handleError({
         message: `Error getting all ${name}s`,
-        data: { error: result.error },
+        data: { diagnostic: await describeError(result.raw) },
         atFunction: `${name}.findAll`,
       });
     }
@@ -265,7 +261,7 @@ export function createModel<
     const db = getDb();
     const tsCol = findTimestampColumn(tableRef);
 
-    const itemsResult = await tryQuery(() => {
+    const itemsResult = await safeTry(() => {
       const query = db.select().from(table);
       const ordered = tsCol
         ? query.orderBy(desc(tableRef[tsCol] as Parameters<typeof desc>[0]))
@@ -275,18 +271,22 @@ export function createModel<
     if (itemsResult.isErr) {
       return handleError({
         message: `Error getting paginated ${name}s`,
-        data: { limit, offset, error: itemsResult.error },
+        data: {
+          limit,
+          offset,
+          diagnostic: await describeError(itemsResult.raw),
+        },
         atFunction: `${name}.findPaginated`,
       });
     }
 
-    const countResult = await tryQuery(() =>
+    const countResult = await safeTry(() =>
       db.select({ total: count() }).from(table)
     );
     if (countResult.isErr) {
       return handleError({
         message: `Error getting ${name} count`,
-        data: { error: countResult.error },
+        data: { diagnostic: await describeError(countResult.raw) },
         atFunction: `${name}.findPaginated`,
       });
     }
@@ -320,7 +320,7 @@ export function createModel<
     const typedColumn = column as Parameters<typeof lt>[0];
 
     // Fetch one extra row to determine hasMore without a separate count query
-    const result = await tryQuery(() =>
+    const result = await safeTry(() =>
       db
         .select()
         .from(table)
@@ -331,7 +331,11 @@ export function createModel<
     if (result.isErr) {
       return handleError({
         message: `Error getting paginated ${name}s`,
-        data: { cursor, cursorColumn: colName, error: result.error },
+        data: {
+          cursor,
+          cursorColumn: colName,
+          diagnostic: await describeError(result.raw),
+        },
         atFunction: `${name}.findPaginated`,
       });
     }

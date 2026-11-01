@@ -1,5 +1,6 @@
 import { safeTry } from "slang-ts";
 import z from "zod";
+import { createValidationFailure } from "../diagnostics/validation-failure";
 import type { Engine } from "../engine/types";
 import type { ExternalRequest, NileContext } from "../nile/types";
 import {
@@ -112,12 +113,10 @@ export async function handleNativeFormData({
   });
   if (!routing.success) {
     return context.json(
-      {
-        status: false,
-        message:
-          "Form-data must include 'intent', 'service', and 'action' fields",
-        data: { errors: routing.error.issues },
-      },
+      createValidationFailure(
+        routing.error,
+        "The action input must include intent, service and action."
+      ),
       400
     );
   }

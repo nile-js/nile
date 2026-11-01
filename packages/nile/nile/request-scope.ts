@@ -24,6 +24,8 @@ export interface ValidationIssue {
  */
 export interface RequestFailureDetails {
   validationIssues?: ValidationIssue[];
+  validationMessage?: string;
+  errorCode?: string;
 }
 
 /**

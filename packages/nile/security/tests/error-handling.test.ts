@@ -1,3 +1,8 @@
+const LOGGED_ERROR_PATTERN_1 =
+  /^Error Code: [A-Za-z0-9_-]{12} - User not found$/;
+const LOGGED_ERROR_PATTERN_2 =
+  /^Error Code: [A-Za-z0-9_-]{12} - Something failed$/;
+
 import { describe, expect, it, vi } from "vitest";
 import { handleError } from "../../utils/handle-error";
 
@@ -17,7 +22,7 @@ describe("security: error handling and data leakage", () => {
 
     expect(result.isErr).toBe(true);
     if (result.isErr) {
-      expect(result.error).toBe("[error-123] User not found");
+      expect(result.error).toMatch(LOGGED_ERROR_PATTERN_1);
       // Sensitive data must not appear in the returned error string.
       expect(result.error).not.toContain("hunter2");
     }
@@ -45,7 +50,7 @@ describe("security: error handling and data leakage", () => {
     });
     expect(result.isErr).toBe(true);
     if (result.isErr) {
-      expect(result.error).toBe("[error-9] Something failed");
+      expect(result.error).toMatch(LOGGED_ERROR_PATTERN_2);
     }
   });
 });

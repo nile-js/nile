@@ -35,6 +35,13 @@ async function inspectFolder(
     });
     return;
   }
+  const barrel = await safeTry(() => lstat(join(folder, "index.ts")));
+  if (barrel.isErr || !barrel.value.isFile() || barrel.value.isSymbolicLink()) {
+    issues.push({
+      path: folder,
+      message: "Expected index.ts to export the folder-based action",
+    });
+  }
   await inspectAction(entryPoint, issues);
 }
 
@@ -52,6 +59,15 @@ export async function inspectServiceActions(
       message: "Service directory could not be read",
     });
     return;
+  }
+
+  if (
+    !children.value.some((entry) => entry.name === "index.ts" && entry.isFile())
+  ) {
+    issues.push({
+      path: directory,
+      message: "Expected index.ts to register the service's actions",
+    });
   }
   const actions = children.value.find(
     (entry: Dirent) => entry.name === "actions"

@@ -1,5 +1,6 @@
 # Shared backend utilities
 
+
 Nile keeps these helpers functional and independent of application models, payment providers or deployment configuration. Use the named `utils` export from `@nilejs/nile`. Framework entry points such as `createNileServer`, service/action factories and server configuration stay at the package root. Existing direct helper imports remain supported.
 
 ```ts
@@ -8,7 +9,7 @@ import { utils } from "@nilejs/nile";
 
 | Use | Helpers |
 | --- | --- |
-| Database access | `createModel`, `createTransactionVariant`, `getZodSchema`, `dbTry` |
+| Database access | `createModel`, `createTransactionVariant`, `getZodSchema` |
 | Failure diagnostics | `handleError`, `describeError` |
 | Execution controls | `createQueue`, `createGroupedControl`, `createControlResource`, `createDebounce`, `createThrottle`, `createBatch`, `createRateLimiter` |
 | Retry and storage | `retryFnWithJitter`, `createMemoryStore` |
@@ -20,20 +21,24 @@ Call each helper through `utils`. Import option and result types as named export
 
 ```ts
 import { utils } from "@nilejs/nile";
+import { safeTry } from "@nilejs/nile/fp";
 
-const loaded = await utils.dbTry(() => db.select().from(orders), {
-  message: "Could not load orders",
-  atFunction: "orders.list",
-});
+const loaded = await safeTry(() => db.select().from(orders));
 
-if (loaded.isErr) return loaded;
+if (loaded.isErr) {
+  return utils.handleError({
+    message: "Could not load orders",
+    atFunction: "orders.list",
+    data: { diagnostic: await utils.describeError(loaded.raw) },
+  });
+}
 ```
 
-Thrown database errors become a safe caller-facing Result. When logging succeeds, its validated log reference is included, following Nile’s existing handleError convention. Model error logs retain that reference so the diagnostic record can be found even outside a request scope. The active Nile logger receives bounded cause metadata, including driver error codes, constraints, tables and routines. An explicit `logger` overrides the current context; standalone use can omit logging. Nile's `createModel` query operations use this wrapper too. Transaction ownership, commit and rollback behavior are unchanged.
+Slang 0.2.2 preserves a caught error on the non-enumerable `result.raw` property. Use `safeTry` directly; Nile's former `dbTry` and `DbTryOptions` exports have been removed. `raw` retains driver causes for internal inspection without serializing them automatically. The ordinary `result.error` can still contain SQL or driver messages: return a deliberate safe message rather than passing that failure to a caller.
 
-Automatic diagnostics omit messages, SQL, parameters, detail and stack traces. `includeMessages: true` explicitly enables bounded error messages for internal diagnosis; driver messages may contain application data, so choose it deliberately. Known Drizzle `Failed query:` wrappers are replaced with a generic summary even in that mode. Supplied custom public messages must be safe for callers.
+Nile's model methods use `safeTry` and pass bounded diagnostics from `result.raw` into their existing operation-specific error logs. `handleError` returns the safe message with its log reference. Transaction ownership, commit and rollback behavior are unchanged.
 
-Returned failures are sanitized too, and successful nested Slang Results are resolved recursively. Logger failure does not replace the operation's safe failure. Reporting follows the synchronous Nile logger contract.
+`describeError` omits messages, SQL, parameters, detail and stack traces by default. Set `includeMessages: true` only when appropriate for internal diagnostics. Never log or send `raw` wholesale to a public client. Configure a Nile logger when using `handleError`.
 
 To inspect an error directly:
 
@@ -61,14 +66,22 @@ const delivered = await utils.retryFnWithJitter({
   maxDelayMs: 10_000,
   jitterMs: 500,
   onResult: ({ result, retry, end, stop }) => {
-    if (result.isErr) return retry();
-    if (result.value.state === "delivered") return end(result.value);
-    if (result.value.state === "failed") return stop("Delivery failed");
+    if (result.isErr) {
+      return retry();
+    }
+    if (result.value.state === "delivered") {
+      return end(result.value);
+    }
+    if (result.value.state === "failed") {
+      return stop("Delivery failed");
+    }
     return retry();
   },
 });
 
-if (delivered.isErr) return delivered;
+if (delivered.isErr) {
+  return delivered;
+}
 ```
 
 Each additional attempt requires the application's explicit decision. `end(value)` returns success; `stop(message)` returns failure; reaching the attempt bound returns a string failure, without pretending it has an arbitrary application error type. Policy exceptions return a safe policy failure. Do not retry a business write unless its idempotency makes repetition appropriate.
@@ -89,7 +102,9 @@ const cache = utils.createMemoryStore<OrderSummary>({
 });
 
 const stored = cache.set({ key: order.id, value: order });
-if (stored.isErr) return stored;
+if (stored.isErr) {
+  return stored;
+}
 
 const cached = cache.get(order.id);
 cache.delete(order.id);
@@ -124,7 +139,7 @@ const writes = utils.createGroupedControl({
   }),
 });
 
-const result = await writes.run(draft, { signal });
+const result = await writes.run(draft, { signal: signal });
 server.lifecycle.register(utils.createControlResource("draft-writes", writes));
 ```
 

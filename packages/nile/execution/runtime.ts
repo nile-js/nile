@@ -1,4 +1,5 @@
-import { Err, Ok, safeTry } from "slang-ts";
+import { Err, Ok } from "slang-ts";
+import { guardOperation } from "../diagnostics/guard-operation";
 import type { Engine } from "../engine/types";
 import type { NileLifecycle } from "../lifecycle/types";
 import { getRequestStore, runInRequestScope } from "../nile/request-scope";
@@ -67,7 +68,7 @@ export function createExecutionRuntime({
           if (!execution) {
             return Err("Action execution context unavailable");
           }
-          const checked = await safeTry(() => {
+          const checked = await guardOperation(() => {
             const key = policy.key({ service, action, context: execution });
             return policy.store.consume({ key });
           });
@@ -106,7 +107,7 @@ export function createExecutionRuntime({
       level = "error";
       message = "Action failed";
     }
-    await safeTry(() =>
+    await guardOperation(() =>
       logger[level]({
         atFunction: `${details.service}.${details.action}`,
         message,
@@ -172,7 +173,7 @@ export function createExecutionRuntime({
       async () => {
         const startedAt = performance.now();
         const spanResult = diagnostics?.telemetry
-          ? await safeTry(() => diagnostics.telemetry?.start(details))
+          ? await guardOperation(() => diagnostics.telemetry?.start(details))
           : undefined;
         const span = spanResult?.isOk ? spanResult.value : undefined;
         if (span) {
@@ -183,32 +184,41 @@ export function createExecutionRuntime({
         if (store && diagnostics?.hookTracing && diagnostics.telemetry) {
           const telemetry = diagnostics.telemetry;
           store.traceHook = async <T>(name: string, fn: () => Promise<T>) => {
-            const started = await safeTry(() =>
+            const started = await guardOperation(() =>
               telemetry.start({ ...details, hook: name })
             );
             if (started.isErr) {
               return fn();
             }
             const hookStart = performance.now();
-            const value = await started.value.run(fn);
-            await safeTry(() =>
-              started.value.end({
-                success: !(
-                  value &&
-                  typeof value === "object" &&
-                  "isErr" in value &&
-                  value.isErr === true
-                ),
-                durationMs: performance.now() - hookStart,
-              })
-            );
-            return value;
+            let success = false;
+            try {
+              const value = await started.value.run(fn);
+              success = !(
+                value &&
+                typeof value === "object" &&
+                "isErr" in value &&
+                value.isErr === true
+              );
+              return value;
+            } finally {
+              await guardOperation(() =>
+                started.value.end({
+                  success,
+                  durationMs: performance.now() - hookStart,
+                })
+              );
+            }
           };
         }
-        const result = await safeTry(() => (span ? span.run(run) : run()));
+        const result = await guardOperation(() =>
+          span ? span.run(run) : run()
+        );
         const durationMs = performance.now() - startedAt;
         if (span) {
-          await safeTry(() => span.end({ success: result.isOk, durationMs }));
+          await guardOperation(() =>
+            span.end({ success: result.isOk, durationMs })
+          );
         }
         if (diagnostics) {
           await summarize(details, result, durationMs);
@@ -216,14 +226,13 @@ export function createExecutionRuntime({
         return result;
       }
     );
-    const settled = Promise.resolve(work).then((result) => {
+    const settled = guardOperation(() => work).finally(() => {
       if (timer) {
         clearTimeout(timer);
       }
       admission.value.signal.removeEventListener("abort", abort);
       controller.signal.removeEventListener("abort", onCancel);
       admission.value.finish();
-      return result;
     });
     if (timeoutMs !== undefined) {
       timer = setTimeout(() => controller.abort("timeout"), timeoutMs);

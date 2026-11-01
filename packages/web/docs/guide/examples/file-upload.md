@@ -285,7 +285,7 @@ curl -s -X POST http://localhost:8000/api/services \
 You should see the handler's result with HTTP 200:
 
 ```json
-{"status":true,"message":"Action 'documents.inspect' executed","data":{"title":"Project brief","filename":"tiny.pdf","contentType":"application/pdf","size":9}}
+{"status":true,"message":"Action completed.","data":{"title":"Project brief","filename":"tiny.pdf","contentType":"application/pdf","size":9}}
 ```
 
 Now send the same action as JSON. Nile Js refuses it because the action expects form data:

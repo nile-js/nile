@@ -23,8 +23,11 @@ export function createEngine(options: EngineOptions) {
 
   // O(1) Pre-computed Lookups
   const serviceSummaries: ServiceSummary[] = [];
-  const serviceActionsStore: Record<string, ActionSummary[]> = {};
-  const actionStore: Record<string, Record<string, Action>> = {};
+  const serviceActionsStore: Record<string, ActionSummary[]> =
+    Object.create(null);
+  const actionStore: Record<string, Record<string, Action>> = Object.create(
+    null
+  );
   const serviceStats: ServiceStats[] = [];
 
   function getAction(
@@ -64,7 +67,7 @@ export function createEngine(options: EngineOptions) {
     const seenActionNames = new Set<string>();
     const actionNames: string[] = [];
     serviceActionsStore[service.name] = [];
-    actionStore[service.name] = {};
+    actionStore[service.name] = Object.create(null);
     const executorsForService = new Map<
       string,
       ReturnType<typeof compileActionExecutor>

@@ -1,4 +1,5 @@
-import { Err, type Result, safeTry } from "slang-ts";
+import { Err, type Result } from "slang-ts";
+import { guardOperation } from "../diagnostics/guard-operation";
 import type { ControlCallOptions, ControlledTask } from "./types";
 
 /** Guard task failures at one boundary; Output denotes the final business value, not a Result wrapper. */
@@ -7,9 +8,12 @@ export async function runControlledTask<Input, Output>(
   input: Input,
   signal: AbortSignal
 ): Promise<Result<Output, string>> {
-  // Slang recursively unwraps Results. Its conditional type cannot reduce an unconstrained
+  // Slang normalizes a returned Result. Its conditional type cannot reduce an unconstrained
   // generic, so preserve this factory's declared final-value contract at the boundary.
-  return (await safeTry(() => task(input, signal))) as Result<Output, string>;
+  return (await guardOperation(() => task(input, signal))) as Result<
+    Output,
+    string
+  >;
 }
 
 /** A caller settles exactly once; cancellation never loses the underlying work reference. */

@@ -1,6 +1,7 @@
 import { Err, type ErrType, type ResultMethods } from "slang-ts";
 import { getContext } from "@/nile/server";
 import type { NileLogger } from "@/nile/types";
+import { createErrorCode, formatErrorMessage } from "../diagnostics/error-code";
 
 /**
  * Parameters for the handleError utility.
@@ -48,7 +49,7 @@ function resolveLogger(explicit?: NileLogger): NileLogger {
 /**
  * Logs an error via the resolved logger and returns a typed Err result.
  * Resolves the logger from the current Nile request context when not provided explicitly.
- * The returned error string includes the log ID for traceability: `[logId] message`.
+ * The unique diagnostic code is shared by the log and the failure message.
  *
  * @param params - Error details including message, optional data, logger, and caller function name
  * @returns Always an Err variant — `ErrType<string> & ResultMethods<never>`, compatible with any `Result<T, E>` union
@@ -69,10 +70,12 @@ export function handleError(
 ): ErrType<string> & ResultMethods<never> {
   const atFunction = params.atFunction ?? inferCallerName();
   const logger = resolveLogger(params.logger);
-  const logId = logger.error({
+  const errorCode = createErrorCode();
+  logger.error({
+    log_id: errorCode,
     atFunction,
     message: params.message,
     data: params.data,
   });
-  return Err(`[${logId}] ${params.message}`);
+  return Err(formatErrorMessage(errorCode, params.message));
 }

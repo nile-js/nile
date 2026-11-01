@@ -28,7 +28,7 @@ A successful call returns `status: true` with the handler's object as `data`:
 ```json
 {
   "status": true,
-  "message": "Action 'tasks.list' executed",
+  "message": "Action completed.",
   "data": {
     "tasks": []
   }

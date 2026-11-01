@@ -125,8 +125,7 @@ describe("native multipart uploads", () => {
     expect(response.status).toBe(400);
     expect(await response.json()).toMatchObject({
       status: false,
-      message:
-        "Form-data must include 'intent', 'service', and 'action' fields",
+      message: "The action input must include intent, service and action.",
     });
   });
   it("returns a graceful parsing failure for malformed multipart", async () => {

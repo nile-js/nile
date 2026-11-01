@@ -1,3 +1,5 @@
+import { guardOperation } from "../diagnostics/guard-operation";
+import { sanitizeJsonResponse } from "../diagnostics/public-json";
 import { resolveClientAddress } from "./client-address";
 
 export { resolveClientAddress } from "./client-address";
@@ -22,7 +24,7 @@ export function createBodyGuard(
     }
     const declared = request.headers.get("content-length");
     if (declared && Number(declared) > maxBytes) {
-      return Err("Request body exceeds maxBodyBytes");
+      return Err("The action input exceeds the size limit.");
     }
     const reader = request.body.getReader();
     const chunks: Uint8Array[] = [];
@@ -36,7 +38,7 @@ export function createBodyGuard(
         bytes += chunk.value.byteLength;
         if (bytes > maxBytes) {
           safeTry(() => reader.cancel());
-          return Err("Request body exceeds maxBodyBytes");
+          return Err("The action input exceeds the size limit.");
         }
         chunks.push(chunk.value);
       }
@@ -71,7 +73,7 @@ export function createHttpBoundary(
         { status: 503 }
       );
     }
-    const result = await safeTry(() =>
+    const result = await guardOperation(() =>
       runInRequestScope(
         {
           sessions: {},
@@ -92,11 +94,10 @@ export function createHttpBoundary(
               { status: 413 }
             );
           }
-          return next(checked.value);
+          return sanitizeJsonResponse(await next(checked.value));
         }
       )
-    );
-    admission?.value.finish();
+    ).finally(() => admission?.value.finish());
     const response = result.isOk
       ? result.value
       : Response.json(

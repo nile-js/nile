@@ -7,7 +7,7 @@ Nile Js includes a few helpers for work outside the action pipeline: retries wit
 
 ## When to use them
 
-Use `retryFnWithJitter` when you poll a provider or call a service that fails transiently and the operation is safe to repeat. Use `createMemoryStore` for values that expire quickly, such as short cache entries. Use `dbTry` around a database call that might throw.
+Use `retryFnWithJitter` when you poll a provider or call a service that fails transiently and the operation is safe to repeat. Use `createMemoryStore` for values that expire quickly, such as short cache entries. Use `safeTry` from `@nilejs/nile/fp` around a database call that might throw.
 
 ## Complete example
 
@@ -90,7 +90,7 @@ export const rememberSummary = (summary: OrderSummary): Result<void, string> => 
 | --- | --- | --- |
 | `retryFnWithJitter` | Repeating a call until its result is final | `maxAttempts` (default 10), `timeoutMs` (default 60000), `baseDelayMs`, `maxDelayMs`, `jitterMs`, `onResult`, `signal` |
 | `createMemoryStore` | Bounded values with optional expiry | `maxKeys` (default 1000), `ttlMs`, `eviction` (`"reject-new"` default, or `"lru"`) |
-| `dbTry` | Wrapping a database call that may throw | `message` (safe text for callers), `atFunction` |
+| `safeTry` from `@nilejs/nile/fp` | Wrapping a database call that may throw | `raw` preserves the cause; use `handleError` for a safe caller message |
 | `describeError` | Reading a thrown error in a diagnostic log | `maxDepth`, `maxFieldLength`, `includeMessages` |
 | `createRateLimiter`, `createQueue` and others | Controls and quotas | See [queues](/guide/features/queues-debounce-throttle) and [rate limiting](/guide/features/rate-limiting) |
 | `resolveClientIdentity` | Reading the client address from a request | `getClientAddress`, `trustProxy` |
@@ -116,7 +116,7 @@ Values are held by reference in this process. The default store rejects new keys
 ## Common mistakes
 
 - Retrying a write that is not idempotent.
-- Using `dbTry` and then returning the raw error message to the client.
+- Using `safeTry` from `@nilejs/nile/fp` and then returning the raw error message to the client.
 - Treating the memory store as shared between replicas.
 - Forgetting the Result from `set`, which reports a rejected insert when the store is full.
 

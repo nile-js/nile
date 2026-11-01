@@ -194,7 +194,7 @@ describe("REST Interface - Execute Intent", () => {
 
     expect(status).toBe(400);
     expect(json.status).toBe(false);
-    expect(json.message).toContain("Validation failed");
+    expect(json.message).toContain("→ at");
   });
 
   it("should return per-field issues for an invalid payload", async () => {
@@ -206,6 +206,7 @@ describe("REST Interface - Execute Intent", () => {
     });
 
     expect(json.data).toEqual({
+      errorCode: expect.any(String),
       issues: [{ path: "email", message: expect.any(String) }],
     });
   });
@@ -378,7 +379,7 @@ describe("REST Interface - Request Validation", () => {
 
     expect(res.status).toBe(400);
     expect(json.status).toBe(false);
-    expect(json.message).toBe("Invalid request format");
+    expect(json.message).toContain("→ at intent");
   });
 
   it("should reject missing required fields", async () => {

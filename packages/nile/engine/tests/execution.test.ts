@@ -1,3 +1,6 @@
+const ACTION_ERROR_PATTERN =
+  /^Error Code: [A-Za-z0-9_-]{12} - could not complete the action$/;
+
 import { Err, Ok } from "slang-ts";
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
@@ -166,7 +169,7 @@ describe("executeAction - Validation", () => {
 
     expect(result.isErr).toBe(true);
     if (result.isErr) {
-      expect(result.error).toContain("Validation failed");
+      expect(result.error).toContain("→ at");
     }
   });
 
@@ -606,7 +609,7 @@ describe("executeAction - Crash Safety (safeTry)", () => {
 
     expect(result.isErr).toBe(true);
     if (result.isErr) {
-      expect(result.error).toContain("Unexpected crash in handler");
+      expect(result.error).toMatch(ACTION_ERROR_PATTERN);
     }
   });
 
@@ -649,7 +652,7 @@ describe("executeAction - Crash Safety (safeTry)", () => {
 
     expect(result.isErr).toBe(true);
     if (result.isErr) {
-      expect(result.error).toContain("Hook exploded");
+      expect(result.error).toMatch(ACTION_ERROR_PATTERN);
     }
   });
 
@@ -682,7 +685,7 @@ describe("executeAction - Crash Safety (safeTry)", () => {
 
     expect(result.isErr).toBe(true);
     if (result.isErr) {
-      expect(result.error).toContain("Global before hook crashed");
+      expect(result.error).toMatch(ACTION_ERROR_PATTERN);
     }
   });
 
@@ -715,7 +718,7 @@ describe("executeAction - Crash Safety (safeTry)", () => {
 
     expect(result.isErr).toBe(true);
     if (result.isErr) {
-      expect(result.error).toContain("Global after hook crashed");
+      expect(result.error).toMatch(ACTION_ERROR_PATTERN);
     }
   });
 

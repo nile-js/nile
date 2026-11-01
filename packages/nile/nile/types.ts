@@ -45,16 +45,19 @@ export interface NileLogger {
   info: (input: {
     atFunction: string;
     message: string;
+    log_id?: string;
     data?: unknown;
   }) => string;
   warn: (input: {
     atFunction: string;
     message: string;
+    log_id?: string;
     data?: unknown;
   }) => string;
   error: (input: {
     atFunction: string;
     message: string;
+    log_id?: string;
     data?: unknown;
   }) => string;
 }

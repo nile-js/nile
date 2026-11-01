@@ -1,8 +1,13 @@
+const LOGGED_ERROR_PATTERN_1 =
+  /^Error Code: [A-Za-z0-9_-]{12} - User account not active$/;
+const LOGGED_ERROR_PATTERN_2 =
+  /^Error Code: [A-Za-z0-9_-]{12} - User not found$/;
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { NileLogger } from "@/nile/types";
 import { handleError } from "../handle-error";
 
-const ERROR_ID_REGEX = /^\[.+\] User account not active$/;
+const ERROR_ID_REGEX = LOGGED_ERROR_PATTERN_1;
 const ANON_FN_REGEX = /^(unknown|<anonymous>)$/;
 
 describe("handleError", () => {
@@ -48,14 +53,14 @@ describe("handleError", () => {
       );
     });
 
-    it("should return Err with [logId] message format", () => {
+    it("should return Err with a generated error code", () => {
       const result = handleError({
         message: "User not found",
         logger: mockLogger,
       });
 
       expect(result.isErr).toBe(true);
-      expect(result.error).toBe("[error-123] User not found");
+      expect(result.error).toMatch(LOGGED_ERROR_PATTERN_2);
     });
 
     it("should use atFunction override when provided", () => {

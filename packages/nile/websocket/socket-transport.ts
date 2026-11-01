@@ -1,8 +1,10 @@
-import { Err, Ok, type Result, safeTry } from "slang-ts";
+import { Err, Ok, type Result } from "slang-ts";
 import type { Socket } from "socket.io";
 import { Server } from "socket.io";
 import z from "zod";
 import { createRateLimiter } from "../controls/rate-limit";
+import { guardOperation } from "../diagnostics/guard-operation";
+import { toPublicJson } from "../diagnostics/public-json";
 import type { Engine } from "../engine/types";
 import type { NileLifecycle } from "../lifecycle/types";
 import { createTopicMessaging } from "../messaging/messaging";
@@ -116,7 +118,7 @@ export async function createSocketTransport({
             ),
           });
     let timer: ReturnType<typeof setTimeout>;
-    const authenticated = safeTry(() =>
+    const authenticated = guardOperation(() =>
       config.authenticate
         ? config.authenticate(
             request,
@@ -181,12 +183,15 @@ export async function createSocketTransport({
         socket.disconnect(true);
         return;
       }
-      const size = new TextEncoder().encode(JSON.stringify(message)).byteLength;
+      const publicMessage = toPublicJson(message);
+      const size = new TextEncoder().encode(
+        JSON.stringify(publicMessage)
+      ).byteLength;
       if (bufferedBytes + size > bounds.buffered) {
         socket.disconnect(true);
         return;
       }
-      socket.emit("nile:message", message);
+      socket.emit("nile:message", publicMessage);
     };
     const handle = (
       name: string,
@@ -214,19 +219,25 @@ export async function createSocketTransport({
           return;
         }
         active++;
-        safeTry(() => fn(input)).then((result) => {
-          active--;
-          admission.value.finish();
-          if (controller.signal.aborted) {
-            return;
-          }
-          safeTry(() =>
-            ack({
-              error: result.isErr ? String(result.error) : null,
-              data: result.isOk ? result.value : null,
-            })
-          );
-        });
+        guardOperation(async () => {
+          const result = await fn(input);
+          return result.isOk ? Ok(toPublicJson(result.value ?? null)) : result;
+        })
+          .finally(() => {
+            active--;
+            admission.value.finish();
+          })
+          .then((result) => {
+            if (controller.signal.aborted) {
+              return;
+            }
+            guardOperation(() =>
+              ack({
+                error: result.isErr ? String(result.error) : null,
+                data: result.isOk ? result.value : null,
+              })
+            );
+          });
       });
     };
     const authorize = async (

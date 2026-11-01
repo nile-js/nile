@@ -91,7 +91,7 @@ describe.each([
     const send = await createSender(native);
     expect(await send("plain")).toMatchObject({
       status: true,
-      message: "Action 'projects.plain' executed",
+      message: "Action completed.",
     });
   });
 
@@ -107,8 +107,6 @@ describe.each([
 
   it("does not leak a nested action's message into the outer response", async () => {
     const send = await createSender(native);
-    expect((await send("outer")).message).toBe(
-      "Action 'projects.outer' executed"
-    );
+    expect((await send("outer")).message).toBe("Action completed.");
   });
 });

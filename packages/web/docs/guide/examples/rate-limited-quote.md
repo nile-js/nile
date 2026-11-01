@@ -225,7 +225,7 @@ curl -s -X POST http://localhost:8000/api/services \
 You should see HTTP 200 and the total in cents:
 
 ```json
-{"status":true,"message":"Action 'catalog.quote' executed","data":{"sku":"TSHIRT-BLUE","quantity":3,"totalInCents":4500}}
+{"status":true,"message":"Action completed.","data":{"sku":"TSHIRT-BLUE","quantity":3,"totalInCents":4500}}
 ```
 
 ## 7. Type-check

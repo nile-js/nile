@@ -134,8 +134,6 @@ export {
   type OffsetPage,
   type OffsetPaginationOptions,
 } from "./utils";
-export { dbTry } from "./utils/db/db-try";
-export type { DbTryOptions } from "./utils/db/types";
 export * as utils from "./utils/public";
 export type {
   NileSocket,

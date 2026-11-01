@@ -1,3 +1,6 @@
+const ACTION_ERROR_PATTERN =
+  /^Error Code: [A-Za-z0-9_-]{12} - could not complete the action$/;
+
 import { createServer } from "node:http";
 import { getRequestListener } from "@hono/node-server";
 import { Ok, safeTry } from "slang-ts";
@@ -11,7 +14,14 @@ import { createNileServer } from "../nile/server";
 
 const topics = createTopics({
   "orders.updated": {
-    schema: z.object({ id: z.string(), value: z.number().nonnegative() }),
+    schema: z.object({
+      id: z.string(),
+      value: z.number().nonnegative(),
+      raw: z.string().optional(),
+      nested: z
+        .object({ raw: z.string().optional(), keep: z.number() })
+        .optional(),
+    }),
     scope: z.object({ organization: z.string() }),
   },
 });
@@ -56,6 +66,15 @@ describe("Socket.IO shared action and topic interface", () => {
               description: "Echo",
               validation: z.object({ value: z.number() }),
               handler: async (data, context) => {
+                if (data.value === -3) {
+                  return Ok({
+                    raw: "PRIVATE_RAW",
+                    nested: [{ raw: "PRIVATE_RAW", keep: 1 }],
+                  });
+                }
+                if (data.value === -1) {
+                  return Reflect.apply(Ok, undefined, [Ok(1)]);
+                }
                 if (!context) {
                   throw new Error("Context required");
                 }
@@ -98,9 +117,23 @@ describe("Socket.IO shared action and topic interface", () => {
       auth: { organization: "two" },
       timeout: 2000,
     });
+    const receivedData: unknown[] = [];
     const firstEvents: number[] = [];
     const secondEvents: number[] = [];
     const checked = await safeTry(async () => {
+      const panicReply = await first.invoke({
+        service: "orders",
+        action: "echo",
+        payload: { value: -1 },
+      });
+      expect(panicReply.error).toMatch(ACTION_ERROR_PATTERN);
+      expect(app.lifecycle.active()).toBe(0);
+      const leaked = await first.invoke({
+        service: "orders",
+        action: "echo",
+        payload: { value: -3 },
+      });
+      expect(leaked.data).toEqual({ nested: [{ keep: 1 }] });
       const replies = await Promise.all(
         [1, 2].map((value) =>
           first.invoke({
@@ -125,6 +158,7 @@ describe("Socket.IO shared action and topic interface", () => {
         topic: "orders.updated",
         scope: { organization: "one" },
         onMessage: ({ data }) => {
+          receivedData.push(data);
           firstEvents.push(data.value);
         },
       });
@@ -172,11 +206,19 @@ describe("Socket.IO shared action and topic interface", () => {
           await first.send({
             topic: "orders.updated",
             scope: { organization: "one" },
-            data: { id: "a", value: 7 },
+            data: {
+              id: "a",
+              value: 7,
+              raw: "PRIVATE_RAW",
+              nested: { raw: "PRIVATE_RAW", keep: 1 },
+            },
           })
         ).error
       ).toBeNull();
       await expect.poll(() => firstEvents).toEqual([7]);
+      expect(receivedData).toEqual([
+        { id: "a", value: 7, nested: { keep: 1 } },
+      ]);
       expect(secondEvents).toEqual([]);
       await subscribed.data?.unsubscribe();
       const local = await app.websocket.send({

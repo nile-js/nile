@@ -18,6 +18,5 @@ export {
 export { createMemoryStore } from "../storage";
 export { createModel } from "./db/create-model";
 export { createTransactionVariant } from "./db/create-transaction-variant";
-export { dbTry } from "./db/db-try";
 export { getZodSchema } from "./db/get-zod-schema";
 export { handleError } from "./handle-error";

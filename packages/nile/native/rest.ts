@@ -1,4 +1,8 @@
 import z from "zod";
+import {
+  createInputFailure,
+  createValidationFailure,
+} from "../diagnostics/validation-failure";
 import { getRequestStore, runInRequestScope } from "../nile/request-scope";
 import type { ExternalRequest } from "../nile/types";
 import { createHttpBoundary } from "../protection/http";
@@ -85,11 +89,7 @@ export function createNativeRestApp({
         const body = await context.request.json().catch(() => null);
         if (!body) {
           return context.json(
-            {
-              status: false,
-              message: "Invalid or missing JSON body",
-              data: {},
-            },
+            createInputFailure("The action input must be valid JSON."),
             400
           );
         }
@@ -99,14 +99,7 @@ export function createNativeRestApp({
         }
         const parsed = requestSchema.safeParse(body);
         if (!parsed.success) {
-          return context.json(
-            {
-              status: false,
-              message: "Invalid request format",
-              data: { errors: parsed.error.issues },
-            },
-            400
-          );
+          return context.json(createValidationFailure(parsed.error), 400);
         }
         const request: ExternalRequest = parsed.data;
         log(`${request.intent} -> ${request.service}.${request.action}`);

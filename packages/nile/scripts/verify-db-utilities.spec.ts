@@ -5,9 +5,9 @@ import { PGlite } from "@electric-sql/pglite";
 import { pgTable, text } from "drizzle-orm/pg-core";
 import { drizzle } from "drizzle-orm/pglite";
 import { safeTry } from "slang-ts";
+import { describeError } from "../diagnostics/describe-error";
 import { createNileServer } from "../nile/server";
 import { createModel } from "../utils/db/create-model";
-import { dbTry } from "../utils/db/db-try";
 
 const probes = pgTable("utility_probes", { id: text("id").primaryKey() });
 
@@ -40,14 +40,14 @@ test("real Drizzle/PGlite failures keep driver causes internal to Nile logs", as
     if (failed.isErr) {
       assert.ok(!failed.error.includes("INSERT"));
     }
-    const guarded = await dbTry(
-      () => database.exec("INSERT INTO utility_probes VALUES ('one')"),
-      { logger, message: "Could not save probe" }
+    const guarded = await safeTry(() =>
+      database.exec("INSERT INTO utility_probes VALUES ('one')")
     );
-    assert.equal(
-      guarded.isErr && guarded.error,
-      "[utility-log] Could not save probe"
-    );
+    assert.equal(guarded.isErr, true);
+    assert.ok(guarded.raw instanceof Error);
+    const diagnostic = await describeError(guarded.raw);
+    assert.ok(JSON.stringify(diagnostic).includes("23505"));
+    assert.ok(!JSON.stringify(guarded).includes("raw"));
     const rows = await database.query("SELECT id FROM utility_probes");
     assert.equal(rows.rows.length, 1);
   });

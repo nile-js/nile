@@ -1,5 +1,6 @@
-import { Err, Ok, type Result, safeTry } from "slang-ts";
+import { Err, Ok, type Result } from "slang-ts";
 import z from "zod";
+import { guardOperation } from "../diagnostics/guard-operation";
 import type { Engine } from "../engine/types";
 import { runInRequestScope } from "../nile/request-scope";
 import type { NileContext } from "../nile/types";
@@ -55,7 +56,10 @@ export async function invokeSocketAction({
         headers: request.headers,
       },
     },
-    () => safeTry(() => engine.executeAction(service, action, payload, context))
+    () =>
+      guardOperation(() =>
+        engine.executeAction(service, action, payload, context)
+      )
   );
 }
 
@@ -68,7 +72,7 @@ export async function checkSocketPolicy(
   if (!policy) {
     return Err("Topic access is not permitted");
   }
-  const result = await safeTry(policy);
+  const result = await guardOperation(policy);
   return result.isOk && result.value === true
     ? Ok(true)
     : Err("Topic access denied");

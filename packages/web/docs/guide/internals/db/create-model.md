@@ -63,7 +63,7 @@ An Err from a transaction-wrapped operation is thrown as an Error to trigger rol
 
 The returned object exposes `table` and `schemas.insert/update/select`. Use these with your chosen Drizzle client for joins, reports and application-specific queries. Keep those functions in the same domain’s model/repository module so the team can find them.
 
-Queries pass through `utils.dbTry`, which keeps bounded driver cause metadata in diagnostics and returns a safe failure with a log reference when available. Model query and validation failures use `utils.handleError`, which resolves the current logger and returns an Err with its log reference. Configure a logger or supply an application policy for failures. The helper throws when required logging/database configuration is missing.
+Queries use Slang's `safeTry`, which preserves the original driver cause on `result.raw`. Nile logs bounded diagnostics from that cause and returns an operation-specific safe failure through `utils.handleError`. Configure a logger or supply an application policy for failures. Required logging/database configuration still fails fast.
 
 ## Keep the action focused
 

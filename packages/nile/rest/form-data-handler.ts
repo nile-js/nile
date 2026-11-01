@@ -2,6 +2,7 @@ import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import z from "zod";
 import type { ActionCors } from "../cors/action-cors";
+import { createValidationFailure } from "../diagnostics/validation-failure";
 import type { Engine } from "../engine/types";
 import type {
   ExternalRequest,
@@ -57,12 +58,10 @@ export async function handleFormDataPath(
 
   if (!routing.success) {
     return c.json(
-      {
-        status: false,
-        message:
-          "Form-data must include 'intent', 'service', and 'action' fields",
-        data: { errors: routing.error.issues },
-      } satisfies ExternalResponse,
+      createValidationFailure(
+        routing.error,
+        "The action input must include intent, service and action."
+      ),
       400
     );
   }

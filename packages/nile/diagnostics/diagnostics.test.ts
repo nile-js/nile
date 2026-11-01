@@ -1,6 +1,9 @@
-import { Err, Ok } from "slang-ts";
+const LOGGED_ERROR_PATTERN_1 =
+  /^Error Code: [A-Za-z0-9_-]{12} - Could not save order$/;
+
+import { Err, Ok, safeTry } from "slang-ts";
 import { describe, expect, it, vi } from "vitest";
-import { dbTry } from "../utils/db/db-try";
+import { handleError } from "../utils/handle-error";
 import { describeError } from "./describe-error";
 
 const PRIVATE_DATA = /SELECT|private|duplicate/;
@@ -47,33 +50,30 @@ describe("database error diagnostics", () => {
     const deep = new Error("outer", { cause: new Error("inner") });
     expect((await describeError(deep, { maxDepth: 1 })).truncated).toBe(true);
   });
-  it("returns safe caller errors, reports metadata and retains recursive Slang result behavior", async () => {
+  it("reads Slang raw causes and keeps safe model errors separate from diagnostics", async () => {
     const logged = vi.fn(() => "log-id");
     const logger = { error: logged, info: logged, warn: logged };
-    const failed = await dbTry(
-      () =>
-        Promise.reject(
-          new Error("Failed query: SELECT secret", { cause: driver() })
-        ),
-      { logger, message: "Could not save order", atFunction: "orders.create" }
-    );
-    expect(failed.isErr && failed.error).toBe("[log-id] Could not save order");
+    const original = new Error("Failed query: SELECT secret", {
+      cause: driver(),
+    });
+    const captured = await safeTry(() => Promise.reject(original));
+    expect(captured.raw).toBe(original);
+    expect(Object.keys(captured)).not.toContain("raw");
+    expect(JSON.stringify(captured)).not.toContain("23505");
+    const failed = handleError({
+      logger,
+      message: "Could not save order",
+      atFunction: "orders.create",
+      data: { diagnostic: await describeError(captured.raw) },
+    });
+    expect(failed.isErr && failed.error).toMatch(LOGGED_ERROR_PATTERN_1);
     expect(JSON.stringify(logged.mock.calls)).toContain("23505");
-    expect(JSON.stringify(logged.mock.calls)).not.toContain("SELECT");
-    const nested = await dbTry(() => Ok(Ok(5)));
-    expect(nested.isOk && nested.value).toBe(5);
-    const returnedFailure = await dbTry(() => Err("internal query details"));
+    expect(JSON.stringify(logged.mock.calls)).not.toMatch(PRIVATE_DATA);
+    const success = await safeTry(() => Ok(5));
+    expect(success.isOk && success.value).toBe(5);
+    const returnedFailure = await safeTry(() => Err("business refusal"));
     expect(returnedFailure.isErr && returnedFailure.error).toBe(
-      "Database operation failed"
+      "business refusal"
     );
-    const throwing = {
-      ...logger,
-      error: () => {
-        throw new Error("logging failed");
-      },
-    };
-    expect(
-      (await dbTry(() => Promise.reject(driver()), { logger: throwing })).isErr
-    ).toBe(true);
   });
 });

@@ -1,4 +1,5 @@
-import { Err, safeTry } from "slang-ts";
+import { Err } from "slang-ts";
+import { guardOperation } from "../diagnostics/guard-operation";
 import {
   assertPositive,
   createPendingCall,
@@ -65,7 +66,7 @@ export function createBatch<Input, Output>({
       for (const call of calls) {
         running.add(call);
       }
-      const work = safeTry(() =>
+      const work = guardOperation(() =>
         task(
           calls.map((call) => call.input),
           controller.signal

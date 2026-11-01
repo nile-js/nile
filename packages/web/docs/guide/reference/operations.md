@@ -165,7 +165,7 @@ A shared external store must atomically check and consume the full allowance thr
 
 ## Project structure
 
-Nile inspects recognized source layout once during boot. Existing projects receive warnings; `project.structure` can be `"warn"`, `"error"` or `false`. New CLI projects use `"error"`. Set `project.root` to the backend package root in a monorepo. Source-less bundles skip inspection unless a root is explicitly supplied. checkProjectStructure({ root }) exposes the same Result report without starting a server.
+Nile inspects recognized source layout once during boot. Violations fail startup by default; `project.structure` can be `"warn"`, `"error"` or `false`. Select `"warn"` explicitly to continue boot with warnings. New CLI projects also use `"error"`. Set `project.root` to the backend package root in a monorepo. Source-less bundles skip inspection unless a root is explicitly supplied. checkProjectStructure({ root }) exposes the same Result report without starting a server.
 
 Use `src/services/services.config.ts` and `service/actions/<action>.ts`. Larger actions can use `service/actions/<action>/<action>.ts`, `index.ts` and private `modules/`. Service-shared helpers belong in `service/modules/`. The registry stays explicit; filenames never automatically execute/register actions. Existing flat layouts remain compatible in warning mode. Action entry points above 400 lines receive refactoring guidance. Nile does not scan secrets or follow source symlinks.
 

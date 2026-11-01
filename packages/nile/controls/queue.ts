@@ -37,14 +37,13 @@ export function createQueue<Input, Output>({
         continue;
       }
       active.add(call);
-      runControlledTask(task, call.input, call.controller.signal).then(
-        (result) => {
-          call.settle(result);
+      runControlledTask(task, call.input, call.controller.signal)
+        .then((result) => call.settle(result))
+        .finally(() => {
           active.delete(call);
           pump();
           notify();
-        }
-      );
+        });
     }
     notify();
   };
