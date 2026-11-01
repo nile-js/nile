@@ -5,6 +5,12 @@ export interface ExternalResponse<T = Record<string, unknown>> {
   data: T;
 }
 
+/** Validation details returned by Nile HTTP actions; codes identify individual failures. */
+export interface ValidationFailureData {
+  errorCode: string;
+  issues: Array<{ path: string; message: string }>;
+}
+
 /** A successful call: read the action's data from `value`. */
 export interface ClientOk<T> {
   isOk: true;
@@ -52,7 +58,7 @@ export interface ExploreActionsResponse {
     isProtected: boolean;
     validation: boolean;
     accessControl: string[];
-    visibility?: { rest?: boolean; rpc?: boolean };
+    visibility?: { rest?: boolean; rpc?: boolean; ws?: boolean };
   }>;
 }
 
@@ -115,14 +121,12 @@ export interface NileClient<
   invoke: <
     S extends keyof TPayloads & string,
     A extends keyof TPayloads[S] & string,
-  >(
-    params: {
-      service: S;
-      action: A;
-      payload: TPayloads[S][A];
-      fetchOptions?: FetchOptions;
-    }
-  ) => Promise<ClientResult>;
+  >(params: {
+    service: S;
+    action: A;
+    payload: TPayloads[S][A];
+    fetchOptions?: FetchOptions;
+  }) => Promise<ClientResult>;
 
   /** Discover services/actions (supports "*" wildcard) */
   explore: <T = ExploreServicesResponse | ExploreActionsResponse>(

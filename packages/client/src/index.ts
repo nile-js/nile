@@ -22,4 +22,5 @@ export type {
   NileClientConfig,
   NileIntentParams,
   UploadParams,
+  ValidationFailureData,
 } from "./types.js";

@@ -7,11 +7,99 @@ import type {
   NileClientConfig,
 } from "./types.js";
 
-/**
- * Handles JSON communication with the Nile /services endpoint.
- * Uses fetch + safeTry for crash safety and returns a Result that never throws.
- */
-export async function sendNileRequest<T = Record<string, unknown>>(
+/** Send one action call; the deadline covers both fetch and reading its JSON body. */
+async function sendRequest<T>(
+  config: NileClientConfig,
+  body: () => BodyInit,
+  multipart: boolean,
+  options: FetchOptions
+): Promise<ClientResult<T>> {
+  const {
+    timeout = config.timeout ?? 30_000,
+    headers,
+    signal,
+    ...fetchOptions
+  } = options;
+  if (
+    !Number.isSafeInteger(timeout) ||
+    timeout < 1 ||
+    timeout > 2_147_483_647
+  ) {
+    return clientErr(
+      "Action timeout must be a positive integer up to 2147483647 milliseconds."
+    );
+  }
+  const controller = new AbortController();
+  const abort = () => controller.abort(signal?.reason);
+  if (signal?.aborted) {
+    abort();
+  } else {
+    signal?.addEventListener("abort", abort, { once: true });
+  }
+  let timedOut = false;
+  const timeoutId = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeout);
+
+  try {
+    const requestResult = await safeTry(async () => {
+      const mergedHeaders = new Headers(config.headers);
+      new Headers(headers).forEach((value, key) => {
+        mergedHeaders.set(key, value);
+      });
+      if (multipart) {
+        mergedHeaders.delete("content-type");
+      } else {
+        mergedHeaders.set("content-type", "application/json");
+      }
+      const response = await fetch(
+        `${config.baseUrl.replace(/\/+$/, "")}/services`,
+        {
+          ...fetchOptions,
+          method: "POST",
+          headers: mergedHeaders,
+          credentials: fetchOptions.credentials ?? config.credentials,
+          body: body(),
+          signal: controller.signal,
+        }
+      );
+      const json: unknown = await response.json();
+      if (
+        json === null ||
+        typeof json !== "object" ||
+        !("status" in json) ||
+        typeof json.status !== "boolean" ||
+        !("message" in json) ||
+        typeof json.message !== "string" ||
+        !("data" in json)
+      ) {
+        throw new Error("Invalid Nile action response.");
+      }
+      return json as ExternalResponse<T>;
+    });
+    if (requestResult.isErr) {
+      if (timedOut) {
+        return clientErr("Action timed out.");
+      }
+      if (signal?.aborted) {
+        return clientErr("Action cancelled.");
+      }
+      return resolveError(requestResult.error);
+    }
+    const result = requestResult.value;
+    if (!result.status) {
+      return clientErr(result.message, result.data ?? null);
+    }
+    return clientOk(result.data, result.message);
+  } finally {
+    clearTimeout(timeoutId);
+    signal?.removeEventListener("abort", abort);
+  }
+}
+
+/** JSON action calls preserve the server's message and failure data unchanged. */
+export function sendNileRequest<T = Record<string, unknown>>(
   config: NileClientConfig,
   intent: "explore" | "execute" | "schema",
   service: string,
@@ -19,58 +107,22 @@ export async function sendNileRequest<T = Record<string, unknown>>(
   payload: unknown,
   options: FetchOptions = {}
 ): Promise<ClientResult<T>> {
-  const { timeout = config.timeout ?? 30_000, ...fetchOptions } = options;
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-  const requestResult = await safeTry(async () => {
-    const response = await fetch(`${config.baseUrl}/services`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...config.headers,
-        ...(fetchOptions.headers as Record<string, string>),
-      },
-      credentials: config.credentials,
-      body: JSON.stringify({
-        intent,
-        service,
-        action,
+  return sendRequest<T>(
+    config,
+    () =>
+      JSON.stringify({
+        intent: intent,
+        service: service,
+        action: action,
         payload: payload ?? {},
       }),
-      signal: controller.signal,
-      ...fetchOptions,
-    });
-
-    clearTimeout(timeoutId);
-
-    const json = (await response.json()) as ExternalResponse<T>;
-    return json;
-  });
-
-  if (requestResult.isErr) {
-    return resolveError(requestResult.error);
-  }
-
-  const result = requestResult.value;
-
-  if (!result.status) {
-    return clientErr(result.message, result.data ?? null);
-  }
-
-  return clientOk(result.data, result.message);
+    false,
+    options
+  );
 }
 
-/**
- * Handles multipart form-data uploads to the Nile /services endpoint.
- * Builds a FormData body with RPC routing fields (intent, service, action),
- * user-provided fields, and file attachments.
- *
- * Content-Type header is intentionally omitted so the runtime sets the
- * correct multipart boundary automatically.
- */
-export async function sendUploadRequest<T = Record<string, unknown>>(
+/** Let the runtime set the multipart boundary; retain the same action Result contract. */
+export function sendUploadRequest<T = Record<string, unknown>>(
   config: NileClientConfig,
   service: string,
   action: string,
@@ -78,48 +130,12 @@ export async function sendUploadRequest<T = Record<string, unknown>>(
   fields?: Record<string, string>,
   options: FetchOptions = {}
 ): Promise<ClientResult<T>> {
-  const { timeout = config.timeout ?? 30_000, ...fetchOptions } = options;
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-  const formData = buildFormData(service, action, files, fields);
-
-  const requestResult = await safeTry(async () => {
-    // Spread config.headers but strip Content-Type — let the runtime set multipart boundary
-    const { "Content-Type": _ct, ...safeHeaders } = config.headers ?? {};
-    const { "Content-Type": _ct2, ...safeFetchHeaders } =
-      (fetchOptions.headers as Record<string, string>) ?? {};
-
-    const response = await fetch(`${config.baseUrl}/services`, {
-      method: "POST",
-      headers: {
-        ...safeHeaders,
-        ...safeFetchHeaders,
-      },
-      credentials: config.credentials,
-      body: formData,
-      signal: controller.signal,
-      ...fetchOptions,
-    });
-
-    clearTimeout(timeoutId);
-
-    const json = (await response.json()) as ExternalResponse<T>;
-    return json;
-  });
-
-  if (requestResult.isErr) {
-    return resolveError(requestResult.error);
-  }
-
-  const result = requestResult.value;
-
-  if (!result.status) {
-    return clientErr(result.message, result.data ?? null);
-  }
-
-  return clientOk(result.data, result.message);
+  return sendRequest<T>(
+    config,
+    () => buildFormData(service, action, files, fields),
+    true,
+    options
+  );
 }
 
 /**
@@ -160,16 +176,7 @@ export function buildFormData(
   return formData;
 }
 
-/** Resolve error from safeTry into a ClientResult */
+/** Convert local transport errors to the same client failure shape. */
 function resolveError(error: unknown): ClientResult<never> {
-  let errorMsg = "An unknown error occurred";
-
-  if (error instanceof Error) {
-    errorMsg =
-      error.name === "AbortError" ? "Request timed out" : error.message;
-  } else {
-    errorMsg = String(error);
-  }
-
-  return clientErr(errorMsg);
+  return clientErr(error instanceof Error ? error.message : String(error));
 }

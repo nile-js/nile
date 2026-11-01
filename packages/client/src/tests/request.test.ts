@@ -28,7 +28,9 @@ describe("sendNileRequest", () => {
       mockFetchResponse({ status: true, message: "ok", data: { id: 1 } })
     );
 
-    const result = await sendNileRequest(config, "execute", "users", "create", { name: "Alice" });
+    const result = await sendNileRequest(config, "execute", "users", "create", {
+      name: "Alice",
+    });
 
     expect(result.error).toBeNull();
     expect(result.data).toEqual({ id: 1 });
@@ -36,7 +38,9 @@ describe("sendNileRequest", () => {
     const [url, init] = mockFetch.mock.calls[0]!;
     expect(url).toBe("http://localhost:8000/api/services");
     expect(init?.method).toBe("POST");
-    expect((init?.headers as Record<string, string>)["Content-Type"]).toBe("application/json");
+    expect(new Headers(init?.headers).get("Content-Type")).toBe(
+      "application/json"
+    );
 
     const body = JSON.parse(init?.body as string);
     expect(body).toEqual({
@@ -52,7 +56,13 @@ describe("sendNileRequest", () => {
       mockFetchResponse({ status: true, message: "ok", data: { id: 1 } })
     );
 
-    const result = await sendNileRequest(config, "execute", "users", "create", {});
+    const result = await sendNileRequest(
+      config,
+      "execute",
+      "users",
+      "create",
+      {}
+    );
 
     expect(result.isOk).toBe(true);
     expect(result.isErr).toBe(false);
@@ -62,10 +72,20 @@ describe("sendNileRequest", () => {
 
   it("should expose the server's success message", async () => {
     vi.mocked(fetch).mockReturnValue(
-      mockFetchResponse({ status: true, message: "Project created", data: { id: 1 } })
+      mockFetchResponse({
+        status: true,
+        message: "Project created",
+        data: { id: 1 },
+      })
     );
 
-    const result = await sendNileRequest(config, "execute", "projects", "create", {});
+    const result = await sendNileRequest(
+      config,
+      "execute",
+      "projects",
+      "create",
+      {}
+    );
 
     expect(result.isOk && result.message).toBe("Project created");
   });
@@ -79,7 +99,13 @@ describe("sendNileRequest", () => {
       })
     );
 
-    const result = await sendNileRequest(config, "execute", "users", "create", {});
+    const result = await sendNileRequest(
+      config,
+      "execute",
+      "users",
+      "create",
+      {}
+    );
 
     expect(result.isErr).toBe(true);
     expect(result.isOk).toBe(false);
@@ -125,12 +151,19 @@ describe("sendNileRequest", () => {
       mockFetchResponse({ status: true, message: "ok", data: {} })
     );
 
-    await sendNileRequest(config, "execute", "svc", "act", {}, {
-      headers: { "X-Custom": "value" },
-    });
+    await sendNileRequest(
+      config,
+      "execute",
+      "svc",
+      "act",
+      {},
+      {
+        headers: { "X-Custom": "value" },
+      }
+    );
 
     const [, init] = mockFetch.mock.calls[0]!;
-    expect((init?.headers as Record<string, string>)["X-Custom"]).toBe("value");
+    expect(new Headers(init?.headers).get("X-Custom")).toBe("value");
   });
 
   it("should default null payload to empty object", async () => {
@@ -152,7 +185,11 @@ describe("sendUploadRequest", () => {
   it("should send FormData POST to /services", async () => {
     const mockFetch = vi.mocked(fetch);
     mockFetch.mockReturnValue(
-      mockFetchResponse({ status: true, message: "ok", data: { uploaded: true } })
+      mockFetchResponse({
+        status: true,
+        message: "ok",
+        data: { uploaded: true },
+      })
     );
 
     const file = new File(["hello"], "test.txt", { type: "text/plain" });
@@ -173,8 +210,8 @@ describe("sendUploadRequest", () => {
     expect(init?.body).toBeInstanceOf(FormData);
 
     // Verify Content-Type is NOT set (let runtime handle multipart boundary)
-    const headers = init?.headers as Record<string, string>;
-    expect(headers["Content-Type"]).toBeUndefined();
+    const headers = new Headers(init?.headers);
+    expect(headers.get("Content-Type")).toBeNull();
   });
 
   it("should include RPC routing fields in FormData", async () => {
@@ -195,7 +232,11 @@ describe("sendUploadRequest", () => {
 
   it("should return error when server returns status: false", async () => {
     vi.mocked(fetch).mockReturnValue(
-      mockFetchResponse({ status: false, message: "File too large", data: { maxSize: 5 } })
+      mockFetchResponse({
+        status: false,
+        message: "File too large",
+        data: { maxSize: 5 },
+      })
     );
 
     const file = new File(["x".repeat(1000)], "big.bin");
@@ -222,16 +263,19 @@ describe("sendUploadRequest", () => {
 
     const configWithCT: NileClientConfig = {
       ...config,
-      headers: { "Content-Type": "application/json", Authorization: "Bearer tok" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer tok",
+      },
     };
 
     const file = new File(["x"], "test.txt");
     await sendUploadRequest(configWithCT, "svc", "act", { file });
 
     const [, init] = mockFetch.mock.calls[0]!;
-    const headers = init?.headers as Record<string, string>;
-    expect(headers["Content-Type"]).toBeUndefined();
-    expect(headers["Authorization"]).toBe("Bearer tok");
+    const headers = new Headers(init?.headers);
+    expect(headers.get("Content-Type")).toBeNull();
+    expect(headers.get("Authorization")).toBe("Bearer tok");
   });
 
   it("should pass named fetchOptions through to fetch", async () => {
@@ -246,7 +290,176 @@ describe("sendUploadRequest", () => {
     });
 
     const [, init] = mockFetch.mock.calls[0]!;
-    const headers = init?.headers as Record<string, string>;
-    expect(headers["X-Request-Id"]).toBe("abc123");
+    const headers = new Headers(init?.headers);
+    expect(headers.get("X-Request-Id")).toBe("abc123");
+  });
+});
+
+describe("current Nile HTTP contract and transport controls", () => {
+  it("merges global and per-call Headers without losing JSON Content-Type", async () => {
+    vi.mocked(fetch).mockReturnValue(
+      mockFetchResponse({
+        status: true,
+        message: "Action completed.",
+        data: {},
+      })
+    );
+    await sendNileRequest(
+      {
+        ...config,
+        baseUrl: `${config.baseUrl}/`,
+        headers: {
+          Authorization: "Bearer session",
+          "X-Team": "original",
+        },
+      },
+      "execute",
+      "tasks",
+      "create",
+      {},
+      {
+        headers: new Headers({ "x-team": "override", "x-trace": "trace" }),
+      }
+    );
+    const [url, init] = vi.mocked(fetch).mock.calls[0]!;
+    const headers = new Headers(init?.headers);
+    expect(url).toBe(`${config.baseUrl}/services`);
+    expect(headers.get("authorization")).toBe("Bearer session");
+    expect(headers.get("x-team")).toBe("override");
+    expect(headers.get("x-trace")).toBe("trace");
+    expect(headers.get("content-type")).toBe("application/json");
+  });
+
+  it("strips multipart content types case-insensitively while preserving merged headers", async () => {
+    vi.mocked(fetch).mockReturnValue(
+      mockFetchResponse({
+        status: true,
+        message: "Action completed.",
+        data: {},
+      })
+    );
+    await sendUploadRequest(
+      {
+        ...config,
+        headers: {
+          "content-type": "application/json",
+          Authorization: "Bearer session",
+        },
+      },
+      "files",
+      "upload",
+      {},
+      undefined,
+      {
+        headers: [
+          ["CONTENT-TYPE", "wrong"],
+          ["x-trace", "trace"],
+        ],
+      }
+    );
+    const headers = new Headers(vi.mocked(fetch).mock.calls[0]![1]?.headers);
+    expect(headers.has("content-type")).toBe(false);
+    expect(headers.get("authorization")).toBe("Bearer session");
+    expect(headers.get("x-trace")).toBe("trace");
+  });
+
+  it("preserves prettified validation errors and unique diagnostic data", async () => {
+    const details = {
+      errorCode: "jN8sQ4tV2pLm",
+      issues: [{ path: "title", message: "Title is required" }],
+    };
+    const message = "✖ Title is required\n  → at title";
+    vi.mocked(fetch).mockReturnValue(
+      mockFetchResponse({ status: false, message: message, data: details })
+    );
+    const result = await sendNileRequest(
+      config,
+      "execute",
+      "tasks",
+      "create",
+      {}
+    );
+    expect(result.isErr).toBe(true);
+    if (result.isErr) {
+      expect(result.error).toBe(message);
+      expect(result.details).toEqual(details);
+    }
+  });
+
+  it("keeps the timeout active until the response body is read", async () => {
+    vi.useFakeTimers();
+    try {
+      vi.mocked(fetch).mockImplementation(
+        async (_url, init) =>
+          ({
+            json: () =>
+              new Promise((_resolve, reject) => {
+                init?.signal?.addEventListener(
+                  "abort",
+                  () => reject(new DOMException("Aborted", "AbortError")),
+                  { once: true }
+                );
+              }),
+          }) as Response
+      );
+      const pending = sendNileRequest(
+        config,
+        "execute",
+        "tasks",
+        "create",
+        {},
+        { timeout: 10 }
+      );
+      await vi.advanceTimersByTimeAsync(11);
+      const result = await pending;
+      expect(result.error).toBe("Action timed out.");
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("honors caller cancellation and removes pending timers on failure", async () => {
+    vi.useFakeTimers();
+    try {
+      const controller = new AbortController();
+      vi.mocked(fetch).mockImplementation(
+        (_url, init) =>
+          new Promise((_resolve, reject) => {
+            init?.signal?.addEventListener(
+              "abort",
+              () => reject(new DOMException("Aborted", "AbortError")),
+              { once: true }
+            );
+          })
+      );
+      const pending = sendNileRequest(
+        config,
+        "execute",
+        "tasks",
+        "create",
+        {},
+        { signal: controller.signal }
+      );
+      controller.abort();
+      expect((await pending).error).toBe("Action cancelled.");
+      expect(vi.getTimerCount()).toBe(0);
+      vi.mocked(fetch).mockRejectedValue(new Error("Offline"));
+      expect(
+        (await sendNileRequest(config, "execute", "tasks", "create", {})).error
+      ).toBe("Offline");
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("returns a failure for a non-Nile JSON response", async () => {
+    vi.mocked(fetch).mockReturnValue(
+      mockFetchResponse({ error: "Proxy failure" })
+    );
+    expect(
+      (await sendNileRequest(config, "execute", "tasks", "create", {})).error
+    ).toBe("Invalid Nile action response.");
   });
 });

@@ -1,7 +1,7 @@
-import { createLogger, createNileServer } from "@nilejs/nile";
+import { createLogger, createNileServer, utils } from "@nilejs/nile";
 import { sql } from "drizzle-orm";
 import { Ok, safeTry } from "@nilejs/nile/fp";
-import { db } from "@/db/client";
+import { db, pglite } from "@/db/client";
 import { services } from "@/services/services.config";
 
 const logger = createLogger("{{projectName}}", {
@@ -25,15 +25,22 @@ const pushSchema = async () => {
   );
 
   if (result.isErr) {
-    console.error("[pushSchema] Failed:", result.error);
+    return utils.handleError({
+      message: "Could not prepare the task database.",
+      data: utils.describeError(result.raw),
+      atFunction: "pushSchema",
+      logger: logger,
+    });
   }
+
+  return Ok(null);
 };
 
 const server = await createNileServer({
   serverName: "{{projectName}}",
   runtime: "bun",
   native: true,
-  project: { structure: "error" },
+  project: { root: process.cwd(), structure: "error" },
   services,
   resources: { logger, database: db },
   rest: {
@@ -48,7 +55,10 @@ const server = await createNileServer({
     // The first PGlite start on a slow machine can take longer than the 10 second default.
     maxWaitTime: 30_000,
     fn: async (ctx) => {
-      await pushSchema();
+      const prepared = await pushSchema();
+      if (prepared.isErr) {
+        return prepared;
+      }
       ctx.resources?.logger?.info({
         atFunction: "onBoot",
         message: "{{projectName}} booted - PGLite schema ready",
@@ -72,6 +82,21 @@ server.nativeRest?.addMiddleware("/api", async (c, next) => {
 
 if (server.nativeRest) {
   const port = server.config.rest?.port ?? 8000;
-  Bun.serve({ port, fetch: server.nativeRest.fetch });
+  const listener = Bun.serve({
+    port: port,
+    fetch: server.nativeRest.fetch,
+  });
+  let closing = false;
+  const shutdown = async () => {
+    if (closing) {
+      return;
+    }
+    closing = true;
+    listener.stop();
+    await server.lifecycle.shutdown();
+    await pglite.close();
+  };
+  process.once("SIGINT", shutdown);
+  process.once("SIGTERM", shutdown);
   console.log(`\n{{projectName}} listening on http://localhost:${port}\n`);
 }

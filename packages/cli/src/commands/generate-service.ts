@@ -60,21 +60,26 @@ export const sample${pascal}Action = createAction<Sample${pascal}Input>({
 `;
 };
 
-/** Generate the barrel index file content */
+/** Register the domain's public actions in its own entry point. */
 const generateBarrelContent = (serviceName: string): string => {
   const pascal = toPascalCase(serviceName);
-  return `export { sample${pascal}Action } from "./actions/sample";\n`;
+  const camel = toCamelCase(serviceName);
+  return `import { createService } from "@nilejs/nile";
+import { sample${pascal}Action } from "./actions/sample";
+
+export const ${camel}Service = createService({
+  name: "${serviceName}",
+  description: "${pascal} service",
+  actions: [sample${pascal}Action],
+});
+`;
 };
 
 /** Generate the import + registration snippet for services.config.ts */
 const generateConfigSnippet = (serviceName: string): string => {
-  const pascal = toPascalCase(serviceName);
-  const importLine = `import { sample${pascal}Action } from "./${serviceName}/actions/sample";`;
-  const serviceEntry = `  {
-    name: "${serviceName}",
-    description: "${pascal} service",
-    actions: [sample${pascal}Action],
-  },`;
+  const camel = toCamelCase(serviceName);
+  const importLine = `import { ${camel}Service } from "./${serviceName}";`;
+  const serviceEntry = `  ${camel}Service,`;
 
   return `${importLine}\n\n// Add to services array:\n${serviceEntry}`;
 };
@@ -89,9 +94,9 @@ const autoRegisterService = async (
 ): Promise<boolean> => {
   try {
     let content = await readFileContent(configPath);
-    const pascal = toPascalCase(serviceName);
+    const camel = toCamelCase(serviceName);
 
-    const importLine = `import { sample${pascal}Action } from "./${serviceName}/actions/sample";`;
+    const importLine = `import { ${camel}Service } from "./${serviceName}";`;
 
     // Find the last import line and add after it
     const importLines = content
@@ -109,11 +114,7 @@ const autoRegisterService = async (
     content = content.replace(lastImport, `${lastImport}\n${importLine}`);
 
     // Find the services array closing bracket and add before it
-    const serviceEntry = `  {
-    name: "${serviceName}",
-    description: "${pascal} service",
-    actions: [sample${pascal}Action],
-  },`;
+    const serviceEntry = `  ${camel}Service,`;
 
     // Insert before the array's closing bracket: `]);` for createServices([...]), `];` for a plain array.
     const wrappedClosingIndex = content.lastIndexOf("]);");
@@ -123,11 +124,9 @@ const autoRegisterService = async (
       return false;
     }
 
-    content =
-      content.slice(0, closingIndex) +
-      serviceEntry +
-      "\n" +
-      content.slice(closingIndex);
+    const prefix = content.slice(0, closingIndex).trimEnd();
+    const separator = prefix.endsWith("[") || prefix.endsWith(",") ? "" : ",";
+    content = `${prefix}${separator}\n${serviceEntry}\n${content.slice(closingIndex)}`;
 
     await writeFileSafe(configPath, content);
     return true;

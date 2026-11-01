@@ -50,7 +50,7 @@ describe("client.invoke", () => {
     const body = JSON.parse(init?.body as string);
     expect(body.intent).toBe("execute");
     expect(body.service).toBe("users");
-    expect((init?.headers as Record<string, string>)["X-Trace"]).toBe("abc");
+    expect(new Headers(init?.headers).get("X-Trace")).toBe("abc");
   });
 });
 
@@ -73,7 +73,7 @@ describe("client.explore", () => {
     const [, init] = mockFetch.mock.calls[0]!;
     const body = JSON.parse(init?.body as string);
     expect(body.intent).toBe("explore");
-    expect((init?.headers as Record<string, string>)["Authorization"]).toBe("Bearer tok");
+    expect(new Headers(init?.headers).get("Authorization")).toBe("Bearer tok");
   });
 });
 
@@ -102,7 +102,11 @@ describe("client.upload", () => {
   it("should send multipart form-data with files", async () => {
     const mockFetch = vi.mocked(fetch);
     mockFetch.mockReturnValue(
-      mockFetchResponse({ status: true, message: "ok", data: { fileId: "abc" } })
+      mockFetchResponse({
+        status: true,
+        message: "ok",
+        data: { fileId: "abc" },
+      })
     );
 
     const client = createNileClient(config);
@@ -172,8 +176,8 @@ describe("client.upload", () => {
     });
 
     const [, init] = mockFetch.mock.calls[0]!;
-    const headers = init?.headers as Record<string, string>;
-    expect(headers["X-Request-Id"]).toBe("req-123");
+    const headers = new Headers(init?.headers);
+    expect(headers.get("X-Request-Id")).toBe("req-123");
   });
 
   it("should not set Content-Type header", async () => {
@@ -192,7 +196,7 @@ describe("client.upload", () => {
     });
 
     const [, init] = mockFetch.mock.calls[0]!;
-    const headers = init?.headers as Record<string, string>;
-    expect(headers["Content-Type"]).toBeUndefined();
+    const headers = new Headers(init?.headers);
+    expect(headers.get("Content-Type")).toBeNull();
   });
 });

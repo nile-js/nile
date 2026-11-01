@@ -15,7 +15,9 @@ interface SchemaEntry {
  * Example: ("tasks", "create") -> "tasksCreateSchema"
  */
 const toSchemaExportName = (service: string, action: string): string => {
-  const pascalAction = action.charAt(0).toUpperCase() + action.slice(1);
+  const camelAction = toCamelCase(action);
+  const pascalAction =
+    camelAction.charAt(0).toUpperCase() + camelAction.slice(1);
   return `${toCamelCase(service)}${pascalAction}Schema`;
 };
 
@@ -27,7 +29,9 @@ const toTypeExportName = (service: string, action: string): string => {
   const pascalService =
     toCamelCase(service).charAt(0).toUpperCase() +
     toCamelCase(service).slice(1);
-  const pascalAction = action.charAt(0).toUpperCase() + action.slice(1);
+  const camelAction = toCamelCase(action);
+  const pascalAction =
+    camelAction.charAt(0).toUpperCase() + camelAction.slice(1);
   return `${pascalService}${pascalAction}Payload`;
 };
 
@@ -120,7 +124,7 @@ export const generateTypesFile = (extraction: ExtractionResult): string => {
 
   for (const entry of entries) {
     lines.push(
-      `export type ${entry.typeName} = z.infer<typeof ${entry.exportName}>;`
+      `export type ${entry.typeName} = z.input<typeof ${entry.exportName}>;`
     );
   }
 

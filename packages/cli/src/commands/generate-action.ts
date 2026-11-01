@@ -104,10 +104,8 @@ export const generateActionCommand = async (
 
   const camel = toCamelCase(actionName);
   console.log("");
-  hint("Register the action in your service config:");
-  hint(
-    `  import { ${camel}Action } from "./${serviceName}/actions/${actionName}";`
-  );
+  hint("Import the action in your service index.ts and add it to actions:");
+  hint(`  import { ${camel}Action } from "./actions/${actionName}";`);
 
   outro();
 };

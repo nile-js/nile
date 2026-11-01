@@ -20,7 +20,7 @@ The starter includes:
 
 - `src/index.ts`: server entry point on Bun's native HTTP server, with a logger and an `onBoot` schema push
 - `src/db/`: PGlite and Drizzle client, the `tasks` table and a `taskModel` built with `createModel`
-- `src/services/`: a `tasks` service with create, list, get, update and delete actions
+- `src/services/`: an explicit registry and domain entry point for a `tasks` service with create, list, get, update and delete actions
 - `Dockerfile`, `docker-compose.yml` and `docker-compose.dev.yml` for container deployments
 - `drizzle.config.ts`, `.env.example`, `tsconfig.json` and `package.json`
 
@@ -48,7 +48,7 @@ Creates:
 ```text
 src/services/users/
   actions/sample.ts   Sample action with a schema, an input type and a named handler
-  index.ts            Exports the sample action
+  index.ts            Registers the service and its public actions
 ```
 
 The CLI then asks whether to register the service in `src/services/services.config.ts`. If you decline, it prints the lines to add yourself.
@@ -85,7 +85,7 @@ export const getUserAction = createAction<GetUserInput>({
 });
 ```
 
-Kebab-case names become camelCase variables and PascalCase types. Register the action by importing it in `src/services/services.config.ts` and adding it to the service's `actions` list.
+Kebab-case names become camelCase variables and PascalCase types. Register the action by importing it in `src/services/users/index.ts` and adding it to the service’s `actions` list. The root registry imports services, not individual actions.
 
 ### Schemas and types
 
@@ -96,7 +96,7 @@ bun run gen schema
 Reads every action's validation schema from `src/services/services.config.ts` and writes:
 
 - `src/generated/schemas.ts`: named Zod schemas, such as `tasksCreateSchema`
-- `src/generated/types.ts`: inferred types, such as `TasksCreatePayload`
+- `src/generated/types.ts`: input types, such as `TasksCreatePayload`
 
 | Flag | Description |
 |---|---|
@@ -104,6 +104,12 @@ Reads every action's validation schema from `src/services/services.config.ts` an
 | `-o, --output <path>` | Output directory (default: `src/generated`) |
 
 Actions without a validation schema are skipped and listed in the output. Share the generated files with a frontend to validate forms with the same rules as the server.
+
+## Current starter
+
+CLI 1.0.1 targets Nile `^1.0.3`, Zod 4, TypeScript 7 and the Drizzle model helpers. The generated layout passes Nile’s strict boot checks. Database setup returns a Result and prevents startup on failure; shutdown drains Nile’s work before closing PGlite. Helpers are available as `utils.createModel`, and Result helpers come from `@nilejs/nile/fp`.
+
+Existing apps are not rewritten when the CLI updates. For an older starter, add a service entry point at `src/services/<domain>/index.ts`, register its actions there, and import that service from `services.config.ts`. [Nile’s migration notes](https://github.com/nile-js/nile/blob/main/packages/nile/docs/release-migration.md) describe the current error and startup behavior.
 
 ## Requirements
 

@@ -41,17 +41,19 @@ src/
       index.ts                    # Barrel export
   services/
     services.config.ts            # Service registry
-    tasks/actions/
-      create.ts                   # Create task action
-      list.ts                     # List tasks action
-      get.ts                      # Get task by ID action
-      update.ts                   # Update task action
-      delete.ts                   # Delete task action
+    tasks/
+      index.ts                    # Registers the tasks service
+      actions/
+        create.ts                   # Create task action
+        list.ts                     # List tasks action
+        get.ts                      # Get task by ID action
+        update.ts                   # Update task action
+        delete.ts                   # Delete task action
 ```
 
 ## Usage
 
-All requests go through a single POST endpoint. The `intent` field determines the operation.
+HTTP action calls go through a single POST endpoint. The `intent` field determines the operation.
 
 ### Explore available services
 
@@ -77,6 +79,12 @@ curl -X POST http://localhost:8000/api/services \
   -d '{"intent":"schema","service":"tasks","action":"*","payload":{}}'
 ```
 
+Responses have exactly `status`, `message` and `data`. The default success message is `Action completed.` Validation failures contain Zod’s readable message and `{ errorCode, issues }` in `data`. Unexpected failures use a generated diagnostic reference linked to the log’s `log_id`; internal `raw` causes are never sent to the frontend.
+
+## Optional features
+
+Keep business logic in actions and ordinary functions. Configure other features when the product needs them: [typed Socket.IO topics](https://nile-js.github.io/nile/guide/features/websockets/), [cron jobs](https://nile-js.github.io/nile/guide/features/cron-jobs/), [rate limits](https://nile-js.github.io/nile/guide/features/rate-limiting/), [queues](https://nile-js.github.io/nile/guide/features/queues-debounce-throttle/) and [telemetry](https://nile-js.github.io/nile/guide/features/telemetry/). The frontend package provides both `createNileClient` and a separate `createNileSocketClient`.
+
 ## Adding services
 
 Generate a new service with the CLI:
@@ -85,7 +93,7 @@ Generate a new service with the CLI:
 bun run gen service users
 ```
 
-The generator offers to register the service in `src/services/services.config.ts`. To add one by hand, create a folder under `src/services/` with an `actions/` folder and register its actions in `services.config.ts`.
+The generator offers to register the service in `src/services/services.config.ts`. To add one by hand, create a folder under `src/services/` with an `actions/` folder and create an `index.ts` that registers its actions with `createService`. Import that service into `services.config.ts`. Nile checks this layout at startup and fails on violations by default. Set `project.structure` to `"warn"` explicitly if you need to migrate an older layout gradually.
 
 ## Adding actions
 
@@ -95,7 +103,7 @@ Generate a new action in an existing service:
 bun run gen action users get-user
 ```
 
-This creates `src/services/users/actions/get-user.ts`. Each action file exports one action created with `createAction`: a named Zod schema, an input type inferred from it and a named handler that returns `Ok(data)` or `Err(message)`. Import the action in `src/services/services.config.ts` and add it to the service's `actions` list.
+This creates `src/services/users/actions/get-user.ts`. Each action file exports one action created with `createAction`: a named Zod schema, an input type inferred from it and a named handler that returns `Ok(data)` or `Err(message)`. Import the action in `src/services/users/index.ts` and add it to the service's `actions` list.
 
 ## Generating schemas and types
 
@@ -108,7 +116,7 @@ bun run gen schema
 This auto-detects `src/services/services.config.ts`, reads validation schemas from all actions, and outputs two files:
 
 - `src/generated/schemas.ts`: named Zod schema exports
-- `src/generated/types.ts`: inferred TypeScript types via `z.infer`
+- `src/generated/types.ts`: input TypeScript types via `z.input`
 
 Options:
 

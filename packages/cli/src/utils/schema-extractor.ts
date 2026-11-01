@@ -35,7 +35,7 @@ for (const service of services) {
     }
 
     try {
-      const jsonSchema = z.toJSONSchema(action.validation, { unrepresentable: "any" });
+      const jsonSchema = z.toJSONSchema(action.validation, { unrepresentable: "any", io: "input" });
       serviceSchemas[action.name] = jsonSchema;
     } catch {
       skipped.push(\`\${service.name}.\${action.name}\`);
