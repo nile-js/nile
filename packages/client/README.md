@@ -201,7 +201,7 @@ Multipart calls share the same cancellation, deadline and Result behavior as JSO
 
 ## Compatibility
 
-Version 1.0.1 supports Nile 1.0.3 while keeping the existing HTTP and socket client APIs. It fixes header merging, cancellation and timeout cleanup; it does not add fields to Nile’s wire contract.
+Version 1.0.1 supports Nile 1.0.3 and 1.0.4 while keeping the existing HTTP and socket client APIs. It fixes header merging, cancellation and timeout cleanup; it does not add fields to Nile’s wire contract.
 
 ## License
 

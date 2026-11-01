@@ -1,75 +1,48 @@
-# nile-example
+# Nile example
 
-A reference implementation showing how to build a backend with [Nile](https://github.com/nile-js/nile).
+A runnable Tasks backend using Nile, Bun native HTTP, Drizzle and an embedded PGlite database. It follows the same layout as the CLI starter.
 
-This example uses PGlite (embedded Postgres) with Drizzle ORM and includes a `tasks` service with full CRUD operations.
+## Run
 
-## Setup
+From this package, install dependencies and start the app:
 
-```bash
+```sh
 bun install
-cp .env.example .env   # if .env.example exists
-```
-
-## Database
-
-Push the schema to PGlite:
-
-```bash
-bun run db:push
-```
-
-Other database commands:
-
-```bash
-bun run db:generate   # Generate Drizzle migrations
-bun run db:studio     # Open Drizzle Studio
-```
-
-## Running
-
-```bash
+bun run typecheck
 bun run dev
 ```
 
-The server starts at `http://localhost:8000` with a single endpoint at `POST /api/services`.
+The app creates its task table on first boot and listens at `http://localhost:8000`. PGlite stores this example’s data in `data/`. The database closes when the app shuts down.
 
-## Project structure
+## Follow an action
 
-```
+```text
 src/
-  index.ts              # Server entry point
+  index.ts
   db/
-    client.ts           # PGlite + Drizzle setup
-    schema.ts           # Drizzle table definitions
-    types.ts            # Inferred DB types
-    models/
-      tasks.ts          # Task model using createModel
+    client.ts
+    schema.ts
+    models/tasks.ts
   services/
-    services.config.ts  # Service registry
+    services.config.ts
     tasks/
-      create.ts         # Create task action
-      list.ts           # List tasks action
-      get.ts            # Get task by ID action
-      update.ts         # Update task action
-      delete.ts         # Delete task action
+      index.ts
+      actions/
+        create.ts
+        list.ts
+        get.ts
+        update.ts
+        delete.ts
 ```
 
-## Try it
+`tasks/index.ts` registers the domain’s public actions. `services.config.ts` registers the service. Each action validates input, calls the model and returns a Result. Startup checks this layout before accepting actions.
 
-```bash
-# Create a task
+```sh
 curl -X POST http://localhost:8000/api/services \
   -H "Content-Type: application/json" \
   -d '{"intent":"execute","service":"tasks","action":"create","payload":{"title":"Ship it"}}'
-
-# List all tasks
-curl -X POST http://localhost:8000/api/services \
-  -H "Content-Type: application/json" \
-  -d '{"intent":"execute","service":"tasks","action":"list","payload":{}}'
-
-# Explore available services
-curl -X POST http://localhost:8000/api/services \
-  -H "Content-Type: application/json" \
-  -d '{"intent":"explore","service":"*","action":"*","payload":{}}'
 ```
+
+Responses contain exactly `status`, `message` and `data`. The default success message is `Action completed.` Validation failures include a readable message, `data.errorCode` and `data.issues`.
+
+Use `bun run gen service <name>` or `bun run gen action <service> <name>` to extend the app. See the [getting started guide](https://nile-js.github.io/nile/guide/start/getting-started/) for the complete workflow.

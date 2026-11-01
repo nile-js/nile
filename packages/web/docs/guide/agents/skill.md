@@ -3,7 +3,7 @@ title: "Nile Js skill"
 description: "Install the SKILL.md file that ships with @nilejs/nile so a coding assistant follows Nile Js conventions"
 ---
 
-The Nile Js skill is one Markdown file that teaches a coding assistant how a Nile Js project is organized and how to change it safely. It ships inside the `@nilejs/nile` package, so the copy in your project always matches the version you installed.
+The Nile Js skill is a Markdown file that teaches a coding assistant how a Nile Js project is organized and how to change it safely. It ships inside the `@nilejs/nile` package, so the copy in your project always matches the version you installed.
 
 ## What the skill covers
 
@@ -16,6 +16,10 @@ The Nile Js skill is one Markdown file that teaches a coding assistant how a Nil
 - Links to every [feature page](/guide/features).
 - Rules for agents, such as reading `services.config.ts` first and type-checking after every edit.
 - Common pitfalls, such as `accessControl` not blocking anything without a hook.
+
+The CLI starter includes the same guidance as a project-root `SKILL.md`. Nile’s package file is the reference after an upgrade; refresh a copied starter skill from it.
+
+The skill covers strict startup layout checks, returning Results directly, safe database diagnostics, generated validation references, and separate HTTP/socket clients. Its examples follow the same domain entry points as the starter.
 
 ## Find the file
 

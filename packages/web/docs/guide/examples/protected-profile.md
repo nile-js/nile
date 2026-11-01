@@ -150,37 +150,28 @@ export const auditAction = createAction({
 
 ## 6. Register the service
 
-Replace `src/services/services.config.ts` so the `account` service is registered next to `tasks`:
+Create `src/services/account/index.ts`, then update `src/services/services.config.ts` so the `account` service is registered next to `tasks`:
 
 ```ts
-import { createServices, type Services } from "@nilejs/nile";
-import { auditAction } from "./account/actions/audit";
-import { profileAction } from "./account/actions/profile";
-import { createTaskAction } from "./tasks/actions/create";
-import { deleteTaskAction } from "./tasks/actions/delete";
-import { getTaskAction } from "./tasks/actions/get";
-import { listTaskAction } from "./tasks/actions/list";
-import { updateTaskAction } from "./tasks/actions/update";
+// src/services/account/index.ts
+import { createService } from "@nilejs/nile";
+import { profileAction } from "./actions/profile";
+import { auditAction } from "./actions/audit";
 
-export const services: Services = createServices([
-  {
-    name: "tasks",
-    description: "Task management with CRUD operations",
-    meta: { version: "1.0.0" },
-    actions: [
-      createTaskAction,
-      listTaskAction,
-      getTaskAction,
-      updateTaskAction,
-      deleteTaskAction,
-    ],
-  },
-  {
-    name: "account",
-    description: "Signed-in account operations",
-    actions: [profileAction, auditAction],
-  },
-]);
+export const accountService = createService({
+  name: "account",
+  description: "Account operations",
+  actions: [profileAction, auditAction],
+});
+```
+
+```ts
+// src/services/services.config.ts
+import { createServices } from "@nilejs/nile";
+import { accountService } from "./account";
+import { tasksService } from "./tasks";
+
+export const services = createServices([tasksService, accountService]);
 ```
 
 ## 7. Connect auth and the hook to the server
@@ -188,7 +179,7 @@ export const services: Services = createServices([
 Replace `src/index.ts`. It adds the `auth` block, the `onBeforeActionHandler` and the JWT secret from `config`:
 
 ```ts
-import { createLogger, createNileServer } from "@nilejs/nile";
+import { createLogger, createNileServer, utils } from "@nilejs/nile";
 import { sql } from "drizzle-orm";
 import { Ok, safeTry } from "@nilejs/nile/fp";
 import { requireRolesHook } from "@/auth/role-hook";
@@ -217,15 +208,22 @@ const pushSchema = async () => {
   );
 
   if (result.isErr) {
-    console.error("[pushSchema] Failed:", result.error);
+    return utils.handleError({
+      message: "Could not prepare the task database.",
+      data: utils.describeError(result.raw),
+      atFunction: "pushSchema",
+      logger: logger,
+    });
   }
+
+  return Ok(null);
 };
 
 const server = await createNileServer({
   serverName: "my-app",
   runtime: "bun",
   native: true,
-  project: { structure: "error" },
+  project: { root: process.cwd(), structure: "error" },
   services,
   resources: { logger, database: db },
   auth: { secret: config.jwtSecret, method: "header" },
@@ -242,7 +240,10 @@ const server = await createNileServer({
     // The first PGlite start on a slow machine can take longer than the 10 second default.
     maxWaitTime: 30_000,
     fn: async (ctx) => {
-      await pushSchema();
+      const prepared = await pushSchema();
+      if (prepared.isErr) {
+        return prepared;
+      }
       ctx.resources?.logger?.info({
         atFunction: "onBoot",
         message: "my-app booted - PGLite schema ready",

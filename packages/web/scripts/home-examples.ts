@@ -8,7 +8,7 @@ import { Ok } from "@nilejs/nile/fp";
 import { z } from "zod";
 
 const createProjectSchema = z.object({
-  name: z.string().trim().min(1),
+  name: z.string().trim().min(1, "Name is required"),
 });
 
 type CreateProjectInput = z.infer<typeof createProjectSchema>;
@@ -45,13 +45,13 @@ export const projects = createService({
 		file: "server.ts",
 		language: "typescript",
 		raw: `import { createNileServer } from "@nilejs/nile";
-import { projects } from "./services/projects";
+import { services } from "./services/services.config";
 
 const server = await createNileServer({
   serverName: "Team workspace",
   runtime: "bun",
   native: true,
-  services: [projects],
+  services: services,
   rest: {
     baseUrl: "/api",
     allowedOrigins: ["http://localhost:3000"],
@@ -157,13 +157,6 @@ showTotal(result.value.total);`,
         "isProtected": false,
         "validation": true,
         "accessControl": []
-      },
-      {
-        "name": "archive",
-        "description": "Archive a project",
-        "isProtected": false,
-        "validation": true,
-        "accessControl": []
       }
     ]
   }
@@ -192,10 +185,9 @@ showTotal(result.value.total);`,
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "type": "object",
       "properties": {
-        "name": { "type": "string", "minLength": 1 },
-        "teamId": { "type": "string", "minLength": 1 }
+        "name": { "type": "string", "minLength": 1 }
       },
-      "required": ["name", "teamId"],
+      "required": ["name"],
       "additionalProperties": false
     }
   }
@@ -209,7 +201,7 @@ showTotal(result.value.total);`,
   "intent": "execute",
   "service": "projects",
   "action": "create",
-  "payload": { "name": "Customer portal", "teamId": "t_1" }
+  "payload": { "name": "Customer portal" }
 }`,
 	},
 	executeResponse: {
@@ -218,12 +210,11 @@ showTotal(result.value.total);`,
 		tone: "ok",
 		raw: `{
   "status": true,
-  "message": "Project created",
+  "message": "Action completed.",
   "data": {
     "project": {
       "id": "p_42",
-      "name": "Customer portal",
-      "teamId": "t_1"
+      "name": "Customer portal"
     }
   }
 }`,
@@ -245,14 +236,11 @@ showTotal(result.value.total);`,
 		tone: "err",
 		raw: `{
   "status": false,
-  "message": "Validation failed: ✖ Name is required\\n  → at name\\n✖ Invalid input: expected string, received undefined\\n  → at teamId",
+  "message": "✖ Name is required\\n  → at name",
   "data": {
+    "errorCode": "jN8sQ4tV2pLm",
     "issues": [
-      { "path": "name", "message": "Name is required" },
-      {
-        "path": "teamId",
-        "message": "Invalid input: expected string, received undefined"
-      }
+      { "path": "name", "message": "Name is required" }
     ]
   }
 }`,

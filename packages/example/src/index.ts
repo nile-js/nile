@@ -1,15 +1,15 @@
-import { createLogger, createNileServer } from "@nilejs/nile";
+import { createLogger, createNileServer, utils } from "@nilejs/nile";
 import { sql } from "drizzle-orm";
-import { Err, Ok, safeTry } from "@nilejs/nile/fp";
-import { db } from "@/db/client";
+import { Ok, safeTry } from "@nilejs/nile/fp";
+import { db, pglite } from "@/db/client";
 import { services } from "@/services/services.config";
 
-const logger = createLogger("task-app", { chunking: "monthly" });
+const logger = createLogger("task-app", {
+  mode: "dev",
+  chunking: "monthly",
+});
 
-/**
- * Push schema to PGLite on boot.
- * Creates the tasks table if it doesn't exist.
- */
+/** Push schema to PGLite on boot */
 const pushSchema = async () => {
   const result = await safeTry(() =>
     db.execute(sql`
@@ -25,12 +25,22 @@ const pushSchema = async () => {
   );
 
   if (result.isErr) {
-    console.error("[pushSchema] Failed:", result.error);
+    return utils.handleError({
+      message: "Could not prepare the task database.",
+      data: utils.describeError(result.raw),
+      atFunction: "pushSchema",
+      logger: logger,
+    });
   }
+
+  return Ok(null);
 };
 
 const server = await createNileServer({
   serverName: "task-app",
+  runtime: "bun",
+  native: true,
+  project: { root: process.cwd(), structure: "error" },
   services,
   resources: { logger, database: db },
   rest: {
@@ -39,30 +49,54 @@ const server = await createNileServer({
     port: 8000,
     allowedOrigins: ["http://localhost:8000"],
     enableStatus: true,
+    discovery: { enabled: true },
   },
   onBoot: {
-    fn: async () => {
-      await pushSchema();
-      logger.info({
+    // The first PGlite start on a slow machine can take longer than the 10 second default.
+    maxWaitTime: 30_000,
+    fn: async (ctx) => {
+      const prepared = await pushSchema();
+      if (prepared.isErr) {
+        return prepared;
+      }
+      ctx.resources?.logger?.info({
         atFunction: "onBoot",
-        message: "Task app booted — PGLite schema ready",
+        message: "task-app booted - PGLite schema ready",
       });
       return Ok(null);
     },
   },
 });
 
-if (server.rest) {
+// Register custom middleware (runs before all service requests)
+server.nativeRest?.addMiddleware("/api", async (c, next) => {
+  const start = performance.now();
+  await next();
+  const ms = (performance.now() - start).toFixed(1);
+  logger.info({
+    atFunction: "requestLog",
+    message: `${c.request.method} ${c.path} - ${ms}ms`,
+  });
+  return undefined;
+});
+
+if (server.nativeRest) {
   const port = server.config.rest?.port ?? 8000;
-  const { fetch } = server.rest.app;
-
-  Bun.serve({ port, fetch });
-
-  console.log(`\nTask app listening on http://localhost:${port}`);
-  console.log("\nTry it:");
-  console.log(`  curl -X POST http://localhost:${port}/api/services \\`);
-  console.log(`    -H "Content-Type: application/json" \\`);
-  console.log(
-    `    -d '{"intent":"explore","service":"*","action":"*","payload":{}}'`
-  );
+  const listener = Bun.serve({
+    port: port,
+    fetch: server.nativeRest.fetch,
+  });
+  let closing = false;
+  const shutdown = async () => {
+    if (closing) {
+      return;
+    }
+    closing = true;
+    listener.stop();
+    await server.lifecycle.shutdown();
+    await pglite.close();
+  };
+  process.once("SIGINT", shutdown);
+  process.once("SIGTERM", shutdown);
+  console.log(`\ntask-app listening on http://localhost:${port}\n`);
 }

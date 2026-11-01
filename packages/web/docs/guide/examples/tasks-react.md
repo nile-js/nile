@@ -24,7 +24,7 @@ You should see both commands finish with a line such as `installed react@19` and
 Browsers block responses from another origin unless the server lists it. Replace `src/index.ts` with this file. It adds `http://localhost:5173` to `rest.allowedOrigins`. Everything else is the starter's setup.
 
 ```ts
-import { createLogger, createNileServer } from "@nilejs/nile";
+import { createLogger, createNileServer, utils } from "@nilejs/nile";
 import { sql } from "drizzle-orm";
 import { Ok, safeTry } from "@nilejs/nile/fp";
 import { db } from "@/db/client";
@@ -51,15 +51,22 @@ const pushSchema = async () => {
   );
 
   if (result.isErr) {
-    console.error("[pushSchema] Failed:", result.error);
+    return utils.handleError({
+      message: "Could not prepare the task database.",
+      data: utils.describeError(result.raw),
+      atFunction: "pushSchema",
+      logger: logger,
+    });
   }
+
+  return Ok(null);
 };
 
 const server = await createNileServer({
   serverName: "my-app",
   runtime: "bun",
   native: true,
-  project: { structure: "error" },
+  project: { root: process.cwd(), structure: "error" },
   services,
   resources: { logger, database: db },
   rest: {
@@ -74,7 +81,10 @@ const server = await createNileServer({
     // The first PGlite start on a slow machine can take longer than the 10 second default.
     maxWaitTime: 30_000,
     fn: async (ctx) => {
-      await pushSchema();
+      const prepared = await pushSchema();
+      if (prepared.isErr) {
+        return prepared;
+      }
       ctx.resources?.logger?.info({
         atFunction: "onBoot",
         message: "my-app booted - PGLite schema ready",
@@ -337,7 +347,7 @@ You should see something like this. IDs and the task count change between runs:
 ```text
 created 3f5ac4b5-d128-4dd4-812e-7805a8640909 pending
 listed 2 tasks
-empty title rejected true Validation failed: ✖ Title is required
+empty title rejected true ✖ Title is required
   → at title
 ```
 

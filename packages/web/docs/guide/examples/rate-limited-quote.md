@@ -53,36 +53,27 @@ export const quoteAction = createAction<QuoteInput>({
 
 ## 2. Register the service
 
-Replace `src/services/services.config.ts` so the `catalog` service is registered next to `tasks`:
+Create `src/services/catalog/index.ts`, then update `src/services/services.config.ts` so the `catalog` service is registered next to `tasks`:
 
 ```ts
-import { createServices, type Services } from "@nilejs/nile";
-import { quoteAction } from "./catalog/actions/quote";
-import { createTaskAction } from "./tasks/actions/create";
-import { deleteTaskAction } from "./tasks/actions/delete";
-import { getTaskAction } from "./tasks/actions/get";
-import { listTaskAction } from "./tasks/actions/list";
-import { updateTaskAction } from "./tasks/actions/update";
+// src/services/catalog/index.ts
+import { createService } from "@nilejs/nile";
+import { quoteAction } from "./actions/quote";
 
-export const services: Services = createServices([
-  {
-    name: "tasks",
-    description: "Task management with CRUD operations",
-    meta: { version: "1.0.0" },
-    actions: [
-      createTaskAction,
-      listTaskAction,
-      getTaskAction,
-      updateTaskAction,
-      deleteTaskAction,
-    ],
-  },
-  {
-    name: "catalog",
-    description: "Public product information",
-    actions: [quoteAction],
-  },
-]);
+export const catalogService = createService({
+  name: "catalog",
+  description: "Public product information",
+  actions: [quoteAction],
+});
+```
+
+```ts
+// src/services/services.config.ts
+import { createServices } from "@nilejs/nile";
+import { catalogService } from "./catalog";
+import { tasksService } from "./tasks";
+
+export const services = createServices([tasksService, catalogService]);
 ```
 
 ## 3. Add the limiter
@@ -125,15 +116,22 @@ const pushSchema = async () => {
   );
 
   if (result.isErr) {
-    console.error("[pushSchema] Failed:", result.error);
+    return utils.handleError({
+      message: "Could not prepare the task database.",
+      data: utils.describeError(result.raw),
+      atFunction: "pushSchema",
+      logger: logger,
+    });
   }
+
+  return Ok(null);
 };
 
 const server = await createNileServer({
   serverName: "my-app",
   runtime: "bun",
   native: true,
-  project: { structure: "error" },
+  project: { root: process.cwd(), structure: "error" },
   services,
   resources: { logger, database: db },
   execution: {
@@ -154,7 +152,10 @@ const server = await createNileServer({
     // The first PGlite start on a slow machine can take longer than the 10 second default.
     maxWaitTime: 30_000,
     fn: async (ctx) => {
-      await pushSchema();
+      const prepared = await pushSchema();
+      if (prepared.isErr) {
+        return prepared;
+      }
       ctx.resources?.logger?.info({
         atFunction: "onBoot",
         message: "my-app booted - PGLite schema ready",

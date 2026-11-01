@@ -4,6 +4,8 @@ Built with [Nile Js](https://nile-js.github.io/nile/). Read the [getting started
 
 The server runs on Bun's native HTTP server (`runtime: "bun", native: true` in `src/index.ts`). REST settings live under `rest`; custom routes and middleware are available on `server.nativeRest`.
 
+The included `SKILL.md` gives coding assistants the action pattern, service layout and current error-handling rules. After a Nile upgrade, use `node_modules/@nilejs/nile/SKILL.md` as the current reference.
+
 ## Setup
 
 ```bash

@@ -111,7 +111,7 @@ const result = await nile.invoke({
 bunx @nilejs/cli generate schema --entry src/services/services.config.ts --output src/generated
 ```
 
-The CLI reads the local service registry and writes `schemas.ts` and `types.ts`. It runs a Bun subprocess for extraction and does not require discovery to be enabled. `types.ts` exports `ServicePayloads`; import it into `createNileClient<ServicePayloads>`. Share or publish that contract to a separate frontend repository when needed.
+The CLI reads the local service registry and writes `schemas.ts` and `types.ts`. It runs a Bun subprocess for extraction and does not require discovery to be enabled. Payloads use `z.input` so schema defaults remain optional for callers, while handlers use the parsed output type. `types.ts` exports `ServicePayloads`; import it into `createNileClient<ServicePayloads>`. Share or publish that contract to a separate frontend repository when needed.
 
 Regenerate the input map when input contracts change. See [type-system boundaries](/guide/basics/type-system).
 

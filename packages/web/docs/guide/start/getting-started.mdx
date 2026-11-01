@@ -71,15 +71,17 @@ my-app/
     │       └── tasks.ts       taskModel with create, find, update and delete helpers
     └── services/
         ├── services.config.ts Registry of services and their actions
-        └── tasks/actions/
-            ├── create.ts      tasks.create
-            ├── list.ts        tasks.list
-            ├── get.ts         tasks.get
-            ├── update.ts      tasks.update
-            └── delete.ts      tasks.delete
+        └── tasks/
+            ├── index.ts       Registers the tasks service
+            └── actions/
+                ├── create.ts      tasks.create
+                ├── list.ts        tasks.list
+                ├── get.ts         tasks.get
+                ├── update.ts      tasks.update
+                └── delete.ts      tasks.delete
 ```
 
-`bun install` also creates `node_modules/` and `bun.lock`. Running the server creates a `data/` folder for the database. The starter's `.gitignore` already keeps `node_modules/`, `.env` and `data/` out of git.
+`bun install` installs the project’s dependencies. Running the server creates a `data/` folder for the database. The starter's `.gitignore` already keeps `node_modules/`, `.env` and `data/` out of git.
 
 ## Start the server
 
@@ -141,13 +143,14 @@ curl -s -X POST http://localhost:8000/api/services \
   -d '{"intent":"execute","service":"tasks","action":"create","payload":{"title":""}}'
 ```
 
-You should see `"status": false`, a message that names the field and one entry per failed field in `data.issues`:
+You should see `"status": false`, a message that names the field a generated unique `data.errorCode`, and one entry per failed field in `data.issues`:
 
 ```json
 {
   "status": false,
-  "message": "Validation failed: ✖ Title is required\n  → at title",
+  "message": "✖ Title is required\n  → at title",
   "data": {
+    "errorCode": "jN8sQ4tV2pLm",
     "issues": [{ "path": "title", "message": "Title is required" }]
   }
 }
@@ -165,7 +168,7 @@ You will add `tasks.complete`. It marks one task as `done` and returns the saved
 bun run gen action tasks complete
 ```
 
-You should see `Action created at src/services/tasks/actions/complete.ts` and a hint to import `completeAction`. The generator does not change `services.config.ts`; you register the action yourself in the next step.
+You should see `Action created at src/services/tasks/actions/complete.ts` and a hint to import `completeAction`. The generator does not change the service’s action list; register the action in `src/services/tasks/index.ts` in the next step.
 
 ### Replace the generated code
 
@@ -208,33 +211,32 @@ The schema checks the input before the handler runs. The handler returns `Ok` wi
 
 ### Register the action
 
-Open `src/services/services.config.ts`, add the import, and add `completeAction` to the `tasks` actions list. The complete file should read:
+Open `src/services/tasks/index.ts`, import `completeAction`, and add it to the `actions` list:
 
 ```ts
-import { createServices, type Services } from "@nilejs/nile";
-import { completeAction } from "./tasks/actions/complete";
-import { createTaskAction } from "./tasks/actions/create";
-import { deleteTaskAction } from "./tasks/actions/delete";
-import { getTaskAction } from "./tasks/actions/get";
-import { listTaskAction } from "./tasks/actions/list";
-import { updateTaskAction } from "./tasks/actions/update";
+import { completeAction } from "./actions/complete";
+import { createService } from "@nilejs/nile";
+import { createTaskAction } from "./actions/create";
+import { deleteTaskAction } from "./actions/delete";
+import { getTaskAction } from "./actions/get";
+import { listTaskAction } from "./actions/list";
+import { updateTaskAction } from "./actions/update";
 
-export const services: Services = createServices([
-  {
-    name: "tasks",
-    description: "Task management with CRUD operations",
-    meta: { version: "1.0.0" },
-    actions: [
-      createTaskAction,
-      listTaskAction,
-      getTaskAction,
-      updateTaskAction,
-      deleteTaskAction,
-      completeAction,
-    ],
-  },
-]);
+export const tasksService = createService({
+  name: "tasks",
+  description: "Task management with CRUD operations",
+  actions: [
+    createTaskAction,
+    completeAction,
+    listTaskAction,
+    getTaskAction,
+    updateTaskAction,
+    deleteTaskAction,
+  ],
+});
 ```
+
+The root `services.config.ts` already imports `tasksService`, so it needs no changes.
 
 ### Call it
 
@@ -364,23 +366,23 @@ You should see `{"status":true,"message":"my-app is running","data":{}}` from `/
 
 - **`Route not found. Use POST /api/services for all operations.` with HTTP 404.** The request used the wrong method or path. Operations use `POST /api/services`. Only `/status` and `/ready` use `GET` at the root.
 
-- **`Action 'complete' not found in service 'tasks'`.** The server does not know the action yet. Check that `completeAction` is imported and listed in the `actions` list in `services.config.ts`, then save the file. `bun run dev` restarts the server when you save.
+- **`Action 'complete' not found in service 'tasks'`.** The server does not know the action yet. Check that `completeAction` is imported and listed in the `actions` list in `src/services/tasks/index.ts`, then save the file. `bun run dev` restarts the server when you save.
 
 - **A new action is missing after you edit a file.** Check that the server terminal printed the `listening` line again after you saved. If you started the server with `bun run src/index.ts` instead of `bun run dev`, it does not watch files; stop it and run `bun run dev`.
 
 - **`Could not auto-register. Add manually:`** This message appears after `generate service` when `services.config.ts` no longer ends with the services list, for example after you reorganized it. Copy the printed import and the service entry into that file yourself.
 
-- **`Group action entry points under actions/` at startup.** The server stops before it listens. A file was placed directly in a service folder, such as `src/services/documents/inspect.ts`. Move it to `src/services/documents/actions/inspect.ts` and update its import in `services.config.ts`. The CLI already creates the `actions/` folder.
+- **`Group action entry points under actions/` at startup.** The server stops before it listens. A file was placed directly in a service folder, such as `src/services/documents/inspect.ts`. Move it to `src/services/documents/actions/inspect.ts` and update its import in the domain’s `index.ts`. The CLI already creates the `actions/` folder.
 
 - **`Dependencies not installed.`** The CLI generators stop when `node_modules` is missing. Run `bun install` in the project root, then run the generator again.
 
 - **The browser prints `No 'Access-Control-Allow-Origin' header`.** Add the page's origin to `rest.allowedOrigins` and save the file. See [Call the action from a client](#call-the-action-from-a-client).
 
-- **`Validation failed` in the response.** The request reached the action, and its input did not match the schema. Read the field named after `→ at`, correct the payload and send the request again.
+- **A validation message in the response.** The action’s input did not match the schema. Read the field named after `→ at`, correct the payload and send the request again.
 
 - **TypeScript reports that two `Result` types are not compatible.** Two copies of `slang-ts` are installed. Import Results from `@nilejs/nile/fp` instead of `slang-ts`, and remove `slang-ts` from your own dependencies so your code and Nile Js share one copy. `bun pm ls | grep slang-ts` shows the installed versions.
 
-- **`@nilejs/nile` shows a version older than `1.0.0`.** This guide documents Nile Js 1.0.0. Earlier releases have a different starter and different commands. Install the 1.0.0 release, then start again from `bunx @nilejs/cli new`.
+- **An older application has a different layout.** Follow the [migration guide](/guide/start/migration) when updating it. New projects created by the current CLI use the domain entry points shown here.
 
 ## See also
 

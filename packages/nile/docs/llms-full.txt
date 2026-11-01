@@ -708,7 +708,7 @@ Do not paste JWT secrets, discovery secrets or database credentials into a promp
 
 # Nile Js skill
 
-The Nile Js skill is one Markdown file that teaches a coding assistant how a Nile Js project is organized and how to change it safely. It ships inside the `@nilejs/nile` package, so the copy in your project always matches the version you installed.
+The Nile Js skill is a Markdown file that teaches a coding assistant how a Nile Js project is organized and how to change it safely. It ships inside the `@nilejs/nile` package, so the copy in your project always matches the version you installed.
 
 ## What the skill covers [#what-the-skill-covers]
 
@@ -721,6 +721,10 @@ The Nile Js skill is one Markdown file that teaches a coding assistant how a Nil
 - Links to every [feature page](/guide/features).
 - Rules for agents, such as reading `services.config.ts` first and type-checking after every edit.
 - Common pitfalls, such as `accessControl` not blocking anything without a hook.
+
+The CLI starter includes the same guidance as a project-root `SKILL.md`. Nile’s package file is the reference after an upgrade; refresh a copied starter skill from it.
+
+The skill covers strict startup layout checks, returning Results directly, safe database diagnostics, generated validation references, and separate HTTP/socket clients. Its examples follow the same domain entry points as the starter.
 
 ## Find the file [#find-the-file]
 
@@ -1086,7 +1090,7 @@ const result = await nile.invoke({
 bunx @nilejs/cli generate schema --entry src/services/services.config.ts --output src/generated
 ```
 
-The CLI reads the local service registry and writes `schemas.ts` and `types.ts`. It runs a Bun subprocess for extraction and does not require discovery to be enabled. `types.ts` exports `ServicePayloads`; import it into `createNileClient<ServicePayloads>`. Share or publish that contract to a separate frontend repository when needed.
+The CLI reads the local service registry and writes `schemas.ts` and `types.ts`. It runs a Bun subprocess for extraction and does not require discovery to be enabled. Payloads use `z.input` so schema defaults remain optional for callers, while handlers use the parsed output type. `types.ts` exports `ServicePayloads`; import it into `createNileClient<ServicePayloads>`. Share or publish that contract to a separate frontend repository when needed.
 
 Regenerate the input map when input contracts change. See [type-system boundaries](/guide/basics/type-system).
 
@@ -1905,36 +1909,27 @@ export const inspectDocumentAction = createAction<StructuredPayload>({
 
 ## 3. Register the service [#3-register-the-service]
 
-Replace `src/services/services.config.ts` so the `documents` service sits next to `tasks`:
+Create `src/services/documents/index.ts`, then update `src/services/services.config.ts` so the `documents` service sits next to `tasks`:
 
 ```ts
-import { createServices, type Services } from "@nilejs/nile";
-import { inspectDocumentAction } from "./documents/actions/inspect";
-import { createTaskAction } from "./tasks/actions/create";
-import { deleteTaskAction } from "./tasks/actions/delete";
-import { getTaskAction } from "./tasks/actions/get";
-import { listTaskAction } from "./tasks/actions/list";
-import { updateTaskAction } from "./tasks/actions/update";
+// src/services/documents/index.ts
+import { createService } from "@nilejs/nile";
+import { inspectDocumentAction } from "./actions/inspect";
 
-export const services: Services = createServices([
-  {
-    name: "tasks",
-    description: "Task management with CRUD operations",
-    meta: { version: "1.0.0" },
-    actions: [
-      createTaskAction,
-      listTaskAction,
-      getTaskAction,
-      updateTaskAction,
-      deleteTaskAction,
-    ],
-  },
-  {
-    name: "documents",
-    description: "Document intake",
-    actions: [inspectDocumentAction],
-  },
-]);
+export const documentsService = createService({
+  name: "documents",
+  description: "Document intake",
+  actions: [inspectDocumentAction],
+});
+```
+
+```ts
+// src/services/services.config.ts
+import { createServices } from "@nilejs/nile";
+import { documentsService } from "./documents";
+import { tasksService } from "./tasks";
+
+export const services = createServices([tasksService, documentsService]);
 ```
 
 ## 4. Set the limits [#4-set-the-limits]
@@ -1942,7 +1937,7 @@ export const services: Services = createServices([
 Replace `src/index.ts`. The `uploads` block in `rest` sets the file count, the sizes, the filename length and the types the server accepts:
 
 ```ts
-import { createLogger, createNileServer } from "@nilejs/nile";
+import { createLogger, createNileServer, utils } from "@nilejs/nile";
 import { sql } from "drizzle-orm";
 import { Ok, safeTry } from "@nilejs/nile/fp";
 import { db } from "@/db/client";
@@ -1969,15 +1964,22 @@ const pushSchema = async () => {
   );
 
   if (result.isErr) {
-    console.error("[pushSchema] Failed:", result.error);
+    return utils.handleError({
+      message: "Could not prepare the task database.",
+      data: utils.describeError(result.raw),
+      atFunction: "pushSchema",
+      logger: logger,
+    });
   }
+
+  return Ok(null);
 };
 
 const server = await createNileServer({
   serverName: "my-app",
   runtime: "bun",
   native: true,
-  project: { structure: "error" },
+  project: { root: process.cwd(), structure: "error" },
   services,
   resources: { logger, database: db },
   rest: {
@@ -2006,7 +2008,10 @@ const server = await createNileServer({
     // The first PGlite start on a slow machine can take longer than the 10 second default.
     maxWaitTime: 30_000,
     fn: async (ctx) => {
-      await pushSchema();
+      const prepared = await pushSchema();
+      if (prepared.isErr) {
+        return prepared;
+      }
       ctx.resources?.logger?.info({
         atFunction: "onBoot",
         message: "my-app booted - PGLite schema ready",
@@ -2362,37 +2367,28 @@ export const auditAction = createAction({
 
 ## 6. Register the service [#6-register-the-service]
 
-Replace `src/services/services.config.ts` so the `account` service is registered next to `tasks`:
+Create `src/services/account/index.ts`, then update `src/services/services.config.ts` so the `account` service is registered next to `tasks`:
 
 ```ts
-import { createServices, type Services } from "@nilejs/nile";
-import { auditAction } from "./account/actions/audit";
-import { profileAction } from "./account/actions/profile";
-import { createTaskAction } from "./tasks/actions/create";
-import { deleteTaskAction } from "./tasks/actions/delete";
-import { getTaskAction } from "./tasks/actions/get";
-import { listTaskAction } from "./tasks/actions/list";
-import { updateTaskAction } from "./tasks/actions/update";
+// src/services/account/index.ts
+import { createService } from "@nilejs/nile";
+import { profileAction } from "./actions/profile";
+import { auditAction } from "./actions/audit";
 
-export const services: Services = createServices([
-  {
-    name: "tasks",
-    description: "Task management with CRUD operations",
-    meta: { version: "1.0.0" },
-    actions: [
-      createTaskAction,
-      listTaskAction,
-      getTaskAction,
-      updateTaskAction,
-      deleteTaskAction,
-    ],
-  },
-  {
-    name: "account",
-    description: "Signed-in account operations",
-    actions: [profileAction, auditAction],
-  },
-]);
+export const accountService = createService({
+  name: "account",
+  description: "Account operations",
+  actions: [profileAction, auditAction],
+});
+```
+
+```ts
+// src/services/services.config.ts
+import { createServices } from "@nilejs/nile";
+import { accountService } from "./account";
+import { tasksService } from "./tasks";
+
+export const services = createServices([tasksService, accountService]);
 ```
 
 ## 7. Connect auth and the hook to the server [#7-connect-auth-and-the-hook-to-the-server]
@@ -2400,7 +2396,7 @@ export const services: Services = createServices([
 Replace `src/index.ts`. It adds the `auth` block, the `onBeforeActionHandler` and the JWT secret from `config`:
 
 ```ts
-import { createLogger, createNileServer } from "@nilejs/nile";
+import { createLogger, createNileServer, utils } from "@nilejs/nile";
 import { sql } from "drizzle-orm";
 import { Ok, safeTry } from "@nilejs/nile/fp";
 import { requireRolesHook } from "@/auth/role-hook";
@@ -2429,15 +2425,22 @@ const pushSchema = async () => {
   );
 
   if (result.isErr) {
-    console.error("[pushSchema] Failed:", result.error);
+    return utils.handleError({
+      message: "Could not prepare the task database.",
+      data: utils.describeError(result.raw),
+      atFunction: "pushSchema",
+      logger: logger,
+    });
   }
+
+  return Ok(null);
 };
 
 const server = await createNileServer({
   serverName: "my-app",
   runtime: "bun",
   native: true,
-  project: { structure: "error" },
+  project: { root: process.cwd(), structure: "error" },
   services,
   resources: { logger, database: db },
   auth: { secret: config.jwtSecret, method: "header" },
@@ -2454,7 +2457,10 @@ const server = await createNileServer({
     // The first PGlite start on a slow machine can take longer than the 10 second default.
     maxWaitTime: 30_000,
     fn: async (ctx) => {
-      await pushSchema();
+      const prepared = await pushSchema();
+      if (prepared.isErr) {
+        return prepared;
+      }
       ctx.resources?.logger?.info({
         atFunction: "onBoot",
         message: "my-app booted - PGLite schema ready",
@@ -2675,36 +2681,27 @@ export const quoteAction = createAction<QuoteInput>({
 
 ## 2. Register the service [#2-register-the-service]
 
-Replace `src/services/services.config.ts` so the `catalog` service is registered next to `tasks`:
+Create `src/services/catalog/index.ts`, then update `src/services/services.config.ts` so the `catalog` service is registered next to `tasks`:
 
 ```ts
-import { createServices, type Services } from "@nilejs/nile";
-import { quoteAction } from "./catalog/actions/quote";
-import { createTaskAction } from "./tasks/actions/create";
-import { deleteTaskAction } from "./tasks/actions/delete";
-import { getTaskAction } from "./tasks/actions/get";
-import { listTaskAction } from "./tasks/actions/list";
-import { updateTaskAction } from "./tasks/actions/update";
+// src/services/catalog/index.ts
+import { createService } from "@nilejs/nile";
+import { quoteAction } from "./actions/quote";
 
-export const services: Services = createServices([
-  {
-    name: "tasks",
-    description: "Task management with CRUD operations",
-    meta: { version: "1.0.0" },
-    actions: [
-      createTaskAction,
-      listTaskAction,
-      getTaskAction,
-      updateTaskAction,
-      deleteTaskAction,
-    ],
-  },
-  {
-    name: "catalog",
-    description: "Public product information",
-    actions: [quoteAction],
-  },
-]);
+export const catalogService = createService({
+  name: "catalog",
+  description: "Public product information",
+  actions: [quoteAction],
+});
+```
+
+```ts
+// src/services/services.config.ts
+import { createServices } from "@nilejs/nile";
+import { catalogService } from "./catalog";
+import { tasksService } from "./tasks";
+
+export const services = createServices([tasksService, catalogService]);
 ```
 
 ## 3. Add the limiter [#3-add-the-limiter]
@@ -2747,15 +2744,22 @@ const pushSchema = async () => {
   );
 
   if (result.isErr) {
-    console.error("[pushSchema] Failed:", result.error);
+    return utils.handleError({
+      message: "Could not prepare the task database.",
+      data: utils.describeError(result.raw),
+      atFunction: "pushSchema",
+      logger: logger,
+    });
   }
+
+  return Ok(null);
 };
 
 const server = await createNileServer({
   serverName: "my-app",
   runtime: "bun",
   native: true,
-  project: { structure: "error" },
+  project: { root: process.cwd(), structure: "error" },
   services,
   resources: { logger, database: db },
   execution: {
@@ -2776,7 +2780,10 @@ const server = await createNileServer({
     // The first PGlite start on a slow machine can take longer than the 10 second default.
     maxWaitTime: 30_000,
     fn: async (ctx) => {
-      await pushSchema();
+      const prepared = await pushSchema();
+      if (prepared.isErr) {
+        return prepared;
+      }
       ctx.resources?.logger?.info({
         atFunction: "onBoot",
         message: "my-app booted - PGLite schema ready",
@@ -3076,36 +3083,27 @@ export const setStatusAction = createAction<SetStatusInput>({
 
 ## 8. Register the service [#8-register-the-service]
 
-Replace `src/services/services.config.ts` so the `orders` service is registered:
+Create `src/services/orders/index.ts`, then update `src/services/services.config.ts` so the `orders` service is registered:
 
 ```ts
-import { createServices, type Services } from "@nilejs/nile";
-import { setStatusAction } from "./orders/actions/set-status";
-import { createTaskAction } from "./tasks/actions/create";
-import { deleteTaskAction } from "./tasks/actions/delete";
-import { getTaskAction } from "./tasks/actions/get";
-import { listTaskAction } from "./tasks/actions/list";
-import { updateTaskAction } from "./tasks/actions/update";
+// src/services/orders/index.ts
+import { createService } from "@nilejs/nile";
+import { setStatusAction } from "./actions/set-status";
 
-export const services: Services = createServices([
-  {
-    name: "tasks",
-    description: "Task management with CRUD operations",
-    meta: { version: "1.0.0" },
-    actions: [
-      createTaskAction,
-      listTaskAction,
-      getTaskAction,
-      updateTaskAction,
-      deleteTaskAction,
-    ],
-  },
-  {
-    name: "orders",
-    description: "Order status changes",
-    actions: [setStatusAction],
-  },
-]);
+export const ordersService = createService({
+  name: "orders",
+  description: "Order status changes",
+  actions: [setStatusAction],
+});
+```
+
+```ts
+// src/services/services.config.ts
+import { createServices } from "@nilejs/nile";
+import { ordersService } from "./orders";
+import { tasksService } from "./tasks";
+
+export const services = createServices([tasksService, ordersService]);
 ```
 
 ## 9. Configure the server [#9-configure-the-server]
@@ -3113,7 +3111,7 @@ export const services: Services = createServices([
 Replace `src/index.ts`. It adds the `websocket` block, which uses the topics and the policies, and serves the HTTP and socket handlers with `Bun.serve`:
 
 ```ts
-import { createLogger, createNileServer } from "@nilejs/nile";
+import { createLogger, createNileServer, utils } from "@nilejs/nile";
 import { sql } from "drizzle-orm";
 import { Ok, safeTry } from "@nilejs/nile/fp";
 import { config } from "@/config";
@@ -3143,15 +3141,22 @@ const pushSchema = async () => {
   );
 
   if (result.isErr) {
-    console.error("[pushSchema] Failed:", result.error);
+    return utils.handleError({
+      message: "Could not prepare the task database.",
+      data: utils.describeError(result.raw),
+      atFunction: "pushSchema",
+      logger: logger,
+    });
   }
+
+  return Ok(null);
 };
 
 const server = await createNileServer({
   serverName: "my-app",
   runtime: "bun",
   native: true,
-  project: { structure: "error" },
+  project: { root: process.cwd(), structure: "error" },
   services,
   resources: { logger, database: db },
   auth: { secret: config.jwtSecret, method: "header" },
@@ -3176,7 +3181,10 @@ const server = await createNileServer({
     // The first PGlite start on a slow machine can take longer than the 10 second default.
     maxWaitTime: 30_000,
     fn: async (ctx) => {
-      await pushSchema();
+      const prepared = await pushSchema();
+      if (prepared.isErr) {
+        return prepared;
+      }
       ctx.resources?.logger?.info({
         atFunction: "onBoot",
         message: "my-app booted - PGLite schema ready",
@@ -3383,7 +3391,7 @@ You should see both commands finish with a line such as `installed react@19` and
 Browsers block responses from another origin unless the server lists it. Replace `src/index.ts` with this file. It adds `http://localhost:5173` to `rest.allowedOrigins`. Everything else is the starter's setup.
 
 ```ts
-import { createLogger, createNileServer } from "@nilejs/nile";
+import { createLogger, createNileServer, utils } from "@nilejs/nile";
 import { sql } from "drizzle-orm";
 import { Ok, safeTry } from "@nilejs/nile/fp";
 import { db } from "@/db/client";
@@ -3410,15 +3418,22 @@ const pushSchema = async () => {
   );
 
   if (result.isErr) {
-    console.error("[pushSchema] Failed:", result.error);
+    return utils.handleError({
+      message: "Could not prepare the task database.",
+      data: utils.describeError(result.raw),
+      atFunction: "pushSchema",
+      logger: logger,
+    });
   }
+
+  return Ok(null);
 };
 
 const server = await createNileServer({
   serverName: "my-app",
   runtime: "bun",
   native: true,
-  project: { structure: "error" },
+  project: { root: process.cwd(), structure: "error" },
   services,
   resources: { logger, database: db },
   rest: {
@@ -3433,7 +3448,10 @@ const server = await createNileServer({
     // The first PGlite start on a slow machine can take longer than the 10 second default.
     maxWaitTime: 30_000,
     fn: async (ctx) => {
-      await pushSchema();
+      const prepared = await pushSchema();
+      if (prepared.isErr) {
+        return prepared;
+      }
       ctx.resources?.logger?.info({
         atFunction: "onBoot",
         message: "my-app booted - PGLite schema ready",
@@ -3696,7 +3714,7 @@ You should see something like this. IDs and the task count change between runs:
 ```text
 created 3f5ac4b5-d128-4dd4-812e-7805a8640909 pending
 listed 2 tasks
-empty title rejected true Validation failed: ✖ Title is required
+empty title rejected true ✖ Title is required
   → at title
 ```
 
@@ -3904,15 +3922,22 @@ const pushSchema = async () => {
   );
 
   if (result.isErr) {
-    console.error("[pushSchema] Failed:", result.error);
+    return utils.handleError({
+      message: "Could not prepare the task database.",
+      data: utils.describeError(result.raw),
+      atFunction: "pushSchema",
+      logger: logger,
+    });
   }
+
+  return Ok(null);
 };
 
 export const server = await createNileServer({
   serverName: "my-app",
   runtime: "bun",
   native: true,
-  project: { structure: "error" },
+  project: { root: process.cwd(), structure: "error" },
   services,
   resources: { logger, database: db },
   schedules: schedules,
@@ -3927,7 +3952,10 @@ export const server = await createNileServer({
     // The first PGlite start on a slow machine can take longer than the 10 second default.
     maxWaitTime: 30_000,
     fn: async (ctx) => {
-      await pushSchema();
+      const prepared = await pushSchema();
+      if (prepared.isErr) {
+        return prepared;
+      }
       ctx.resources?.logger?.info({
         atFunction: "onBoot",
         message: "my-app booted - PGLite schema ready",
@@ -5841,13 +5869,14 @@ curl -s -X POST http://localhost:8000/api/services \
   -d '{"intent":"execute","service":"projects","action":"create","payload":{"name":"Hi","address":{"city":""},"budget":10}}'
 ```
 
-The response carries the field path in `data.issues`:
+The response carries a generated unique `data.errorCode` and field paths in `data.issues` (the code below is illustrative):
 
 ```json
 {
   "status": false,
-  "message": "Validation failed: ✖ Name must have at least 3 characters\n  → at name\n✖ City is required\n  → at address.city",
+  "message": "✖ Name must have at least 3 characters\n  → at name\n✖ City is required\n  → at address.city",
   "data": {
+    "errorCode": "jN8sQ4tV2pLm",
     "issues": [
       { "path": "name", "message": "Name must have at least 3 characters" },
       { "path": "address.city", "message": "City is required" }
@@ -5901,8 +5930,8 @@ Here `nile` is a client created with `createNileClient`, as in [the frontend cli
 - The order is: JWT check, global before hook, local before hooks, Zod validation, handler, local after hooks, global after hook. Before hooks see the raw payload, so validate again in them if you depend on a field.
 - Zod object schemas remove keys they do not declare. The handler receives only the parsed fields.
 - A validation failure returns HTTP 400 with `status: false`. Handler `Err` values also return HTTP 400.
-- `data.issues` appears only for validation failures. Other failures return `data: {}`.
-- A handler that throws is caught and returned as a failure with the thrown message. Return `Err` for expected cases so the message is one you chose.
+- `data.errorCode` and `data.issues` appear on validation failures. Other failures return `data: {}`.
+- An unexpected handler throw is logged and returns a safe message with a generated diagnostic reference; its original exception text stays internal. Return `Err` for expected cases so the message is one you chose.
 
 ## Common mistakes [#common-mistakes]
 
@@ -7727,15 +7756,17 @@ my-app/
     │       └── tasks.ts       taskModel with create, find, update and delete helpers
     └── services/
         ├── services.config.ts Registry of services and their actions
-        └── tasks/actions/
-            ├── create.ts      tasks.create
-            ├── list.ts        tasks.list
-            ├── get.ts         tasks.get
-            ├── update.ts      tasks.update
-            └── delete.ts      tasks.delete
+        └── tasks/
+            ├── index.ts       Registers the tasks service
+            └── actions/
+                ├── create.ts      tasks.create
+                ├── list.ts        tasks.list
+                ├── get.ts         tasks.get
+                ├── update.ts      tasks.update
+                └── delete.ts      tasks.delete
 ```
 
-`bun install` also creates `node_modules/` and `bun.lock`. Running the server creates a `data/` folder for the database. The starter's `.gitignore` already keeps `node_modules/`, `.env` and `data/` out of git.
+`bun install` installs the project’s dependencies. Running the server creates a `data/` folder for the database. The starter's `.gitignore` already keeps `node_modules/`, `.env` and `data/` out of git.
 
 ## Start the server [#start-the-server]
 
@@ -7797,13 +7828,14 @@ curl -s -X POST http://localhost:8000/api/services \
   -d '{"intent":"execute","service":"tasks","action":"create","payload":{"title":""}}'
 ```
 
-You should see `"status": false`, a message that names the field and one entry per failed field in `data.issues`:
+You should see `"status": false`, a message that names the field a generated unique `data.errorCode`, and one entry per failed field in `data.issues`:
 
 ```json
 {
   "status": false,
-  "message": "Validation failed: ✖ Title is required\n  → at title",
+  "message": "✖ Title is required\n  → at title",
   "data": {
+    "errorCode": "jN8sQ4tV2pLm",
     "issues": [{ "path": "title", "message": "Title is required" }]
   }
 }
@@ -7821,7 +7853,7 @@ You will add `tasks.complete`. It marks one task as `done` and returns the saved
 bun run gen action tasks complete
 ```
 
-You should see `Action created at src/services/tasks/actions/complete.ts` and a hint to import `completeAction`. The generator does not change `services.config.ts`; you register the action yourself in the next step.
+You should see `Action created at src/services/tasks/actions/complete.ts` and a hint to import `completeAction`. The generator does not change the service’s action list; register the action in `src/services/tasks/index.ts` in the next step.
 
 ### Replace the generated code [#replace-the-generated-code]
 
@@ -7864,33 +7896,32 @@ The schema checks the input before the handler runs. The handler returns `Ok` wi
 
 ### Register the action [#register-the-action]
 
-Open `src/services/services.config.ts`, add the import, and add `completeAction` to the `tasks` actions list. The complete file should read:
+Open `src/services/tasks/index.ts`, import `completeAction`, and add it to the `actions` list:
 
 ```ts
-import { createServices, type Services } from "@nilejs/nile";
-import { completeAction } from "./tasks/actions/complete";
-import { createTaskAction } from "./tasks/actions/create";
-import { deleteTaskAction } from "./tasks/actions/delete";
-import { getTaskAction } from "./tasks/actions/get";
-import { listTaskAction } from "./tasks/actions/list";
-import { updateTaskAction } from "./tasks/actions/update";
+import { completeAction } from "./actions/complete";
+import { createService } from "@nilejs/nile";
+import { createTaskAction } from "./actions/create";
+import { deleteTaskAction } from "./actions/delete";
+import { getTaskAction } from "./actions/get";
+import { listTaskAction } from "./actions/list";
+import { updateTaskAction } from "./actions/update";
 
-export const services: Services = createServices([
-  {
-    name: "tasks",
-    description: "Task management with CRUD operations",
-    meta: { version: "1.0.0" },
-    actions: [
-      createTaskAction,
-      listTaskAction,
-      getTaskAction,
-      updateTaskAction,
-      deleteTaskAction,
-      completeAction,
-    ],
-  },
-]);
+export const tasksService = createService({
+  name: "tasks",
+  description: "Task management with CRUD operations",
+  actions: [
+    createTaskAction,
+    completeAction,
+    listTaskAction,
+    getTaskAction,
+    updateTaskAction,
+    deleteTaskAction,
+  ],
+});
 ```
+
+The root `services.config.ts` already imports `tasksService`, so it needs no changes.
 
 ### Call it [#call-it]
 
@@ -8020,23 +8051,23 @@ You should see `{"status":true,"message":"my-app is running","data":{}}` from `/
 
 - **`Route not found. Use POST /api/services for all operations.` with HTTP 404.** The request used the wrong method or path. Operations use `POST /api/services`. Only `/status` and `/ready` use `GET` at the root.
 
-- **`Action 'complete' not found in service 'tasks'`.** The server does not know the action yet. Check that `completeAction` is imported and listed in the `actions` list in `services.config.ts`, then save the file. `bun run dev` restarts the server when you save.
+- **`Action 'complete' not found in service 'tasks'`.** The server does not know the action yet. Check that `completeAction` is imported and listed in the `actions` list in `src/services/tasks/index.ts`, then save the file. `bun run dev` restarts the server when you save.
 
 - **A new action is missing after you edit a file.** Check that the server terminal printed the `listening` line again after you saved. If you started the server with `bun run src/index.ts` instead of `bun run dev`, it does not watch files; stop it and run `bun run dev`.
 
 - **`Could not auto-register. Add manually:`** This message appears after `generate service` when `services.config.ts` no longer ends with the services list, for example after you reorganized it. Copy the printed import and the service entry into that file yourself.
 
-- **`Group action entry points under actions/` at startup.** The server stops before it listens. A file was placed directly in a service folder, such as `src/services/documents/inspect.ts`. Move it to `src/services/documents/actions/inspect.ts` and update its import in `services.config.ts`. The CLI already creates the `actions/` folder.
+- **`Group action entry points under actions/` at startup.** The server stops before it listens. A file was placed directly in a service folder, such as `src/services/documents/inspect.ts`. Move it to `src/services/documents/actions/inspect.ts` and update its import in the domain’s `index.ts`. The CLI already creates the `actions/` folder.
 
 - **`Dependencies not installed.`** The CLI generators stop when `node_modules` is missing. Run `bun install` in the project root, then run the generator again.
 
 - **The browser prints `No 'Access-Control-Allow-Origin' header`.** Add the page's origin to `rest.allowedOrigins` and save the file. See [Call the action from a client](#call-the-action-from-a-client).
 
-- **`Validation failed` in the response.** The request reached the action, and its input did not match the schema. Read the field named after `→ at`, correct the payload and send the request again.
+- **A validation message in the response.** The action’s input did not match the schema. Read the field named after `→ at`, correct the payload and send the request again.
 
 - **TypeScript reports that two `Result` types are not compatible.** Two copies of `slang-ts` are installed. Import Results from `@nilejs/nile/fp` instead of `slang-ts`, and remove `slang-ts` from your own dependencies so your code and Nile Js share one copy. `bun pm ls | grep slang-ts` shows the installed versions.
 
-- **`@nilejs/nile` shows a version older than `1.0.0`.** This guide documents Nile Js 1.0.0. Earlier releases have a different starter and different commands. Install the 1.0.0 release, then start again from `bunx @nilejs/cli new`.
+- **An older application has a different layout.** Follow the [migration guide](/guide/start/migration) when updating it. New projects created by the current CLI use the domain entry points shown here.
 
 ## See also [#see-also]
 

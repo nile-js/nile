@@ -1,6 +1,6 @@
-# Nile 1.0.3 migration notes
+# Nile 1.0.4 migration notes
 
-No runtime API changes from 1.0.2. If updating from an earlier version, apply the notes below.
+No runtime API changes from 1.0.3. The package skill, starter guidance and examples follow the current action and service patterns. If updating from an earlier version, apply the notes below.
 
 ## Changes introduced in 1.0.2
 

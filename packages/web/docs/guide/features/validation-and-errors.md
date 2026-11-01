@@ -68,13 +68,14 @@ curl -s -X POST http://localhost:8000/api/services \
   -d '{"intent":"execute","service":"projects","action":"create","payload":{"name":"Hi","address":{"city":""},"budget":10}}'
 ```
 
-The response carries the field path in `data.issues`:
+The response carries a generated unique `data.errorCode` and field paths in `data.issues` (the code below is illustrative):
 
 ```json
 {
   "status": false,
-  "message": "Validation failed: ✖ Name must have at least 3 characters\n  → at name\n✖ City is required\n  → at address.city",
+  "message": "✖ Name must have at least 3 characters\n  → at name\n✖ City is required\n  → at address.city",
   "data": {
+    "errorCode": "jN8sQ4tV2pLm",
     "issues": [
       { "path": "name", "message": "Name must have at least 3 characters" },
       { "path": "address.city", "message": "City is required" }
@@ -128,8 +129,8 @@ Here `nile` is a client created with `createNileClient`, as in [the frontend cli
 - The order is: JWT check, global before hook, local before hooks, Zod validation, handler, local after hooks, global after hook. Before hooks see the raw payload, so validate again in them if you depend on a field.
 - Zod object schemas remove keys they do not declare. The handler receives only the parsed fields.
 - A validation failure returns HTTP 400 with `status: false`. Handler `Err` values also return HTTP 400.
-- `data.issues` appears only for validation failures. Other failures return `data: {}`.
-- A handler that throws is caught and returned as a failure with the thrown message. Return `Err` for expected cases so the message is one you chose.
+- `data.errorCode` and `data.issues` appear on validation failures. Other failures return `data: {}`.
+- An unexpected handler throw is logged and returns a safe message with a generated diagnostic reference; its original exception text stays internal. Return `Err` for expected cases so the message is one you chose.
 
 ## Common mistakes
 

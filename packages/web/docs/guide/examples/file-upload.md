@@ -53,36 +53,27 @@ export const inspectDocumentAction = createAction<StructuredPayload>({
 
 ## 3. Register the service
 
-Replace `src/services/services.config.ts` so the `documents` service sits next to `tasks`:
+Create `src/services/documents/index.ts`, then update `src/services/services.config.ts` so the `documents` service sits next to `tasks`:
 
 ```ts
-import { createServices, type Services } from "@nilejs/nile";
-import { inspectDocumentAction } from "./documents/actions/inspect";
-import { createTaskAction } from "./tasks/actions/create";
-import { deleteTaskAction } from "./tasks/actions/delete";
-import { getTaskAction } from "./tasks/actions/get";
-import { listTaskAction } from "./tasks/actions/list";
-import { updateTaskAction } from "./tasks/actions/update";
+// src/services/documents/index.ts
+import { createService } from "@nilejs/nile";
+import { inspectDocumentAction } from "./actions/inspect";
 
-export const services: Services = createServices([
-  {
-    name: "tasks",
-    description: "Task management with CRUD operations",
-    meta: { version: "1.0.0" },
-    actions: [
-      createTaskAction,
-      listTaskAction,
-      getTaskAction,
-      updateTaskAction,
-      deleteTaskAction,
-    ],
-  },
-  {
-    name: "documents",
-    description: "Document intake",
-    actions: [inspectDocumentAction],
-  },
-]);
+export const documentsService = createService({
+  name: "documents",
+  description: "Document intake",
+  actions: [inspectDocumentAction],
+});
+```
+
+```ts
+// src/services/services.config.ts
+import { createServices } from "@nilejs/nile";
+import { documentsService } from "./documents";
+import { tasksService } from "./tasks";
+
+export const services = createServices([tasksService, documentsService]);
 ```
 
 ## 4. Set the limits
@@ -90,7 +81,7 @@ export const services: Services = createServices([
 Replace `src/index.ts`. The `uploads` block in `rest` sets the file count, the sizes, the filename length and the types the server accepts:
 
 ```ts
-import { createLogger, createNileServer } from "@nilejs/nile";
+import { createLogger, createNileServer, utils } from "@nilejs/nile";
 import { sql } from "drizzle-orm";
 import { Ok, safeTry } from "@nilejs/nile/fp";
 import { db } from "@/db/client";
@@ -117,15 +108,22 @@ const pushSchema = async () => {
   );
 
   if (result.isErr) {
-    console.error("[pushSchema] Failed:", result.error);
+    return utils.handleError({
+      message: "Could not prepare the task database.",
+      data: utils.describeError(result.raw),
+      atFunction: "pushSchema",
+      logger: logger,
+    });
   }
+
+  return Ok(null);
 };
 
 const server = await createNileServer({
   serverName: "my-app",
   runtime: "bun",
   native: true,
-  project: { structure: "error" },
+  project: { root: process.cwd(), structure: "error" },
   services,
   resources: { logger, database: db },
   rest: {
@@ -154,7 +152,10 @@ const server = await createNileServer({
     // The first PGlite start on a slow machine can take longer than the 10 second default.
     maxWaitTime: 30_000,
     fn: async (ctx) => {
-      await pushSchema();
+      const prepared = await pushSchema();
+      if (prepared.isErr) {
+        return prepared;
+      }
       ctx.resources?.logger?.info({
         atFunction: "onBoot",
         message: "my-app booted - PGLite schema ready",

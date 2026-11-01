@@ -107,9 +107,13 @@ Actions without a validation schema are skipped and listed in the output. Share 
 
 ## Current starter
 
-CLI 1.0.1 targets Nile `^1.0.3`, Zod 4, TypeScript 7 and the Drizzle model helpers. The generated layout passes Nile’s strict boot checks. Database setup returns a Result and prevents startup on failure; shutdown drains Nile’s work before closing PGlite. Helpers are available as `utils.createModel`, and Result helpers come from `@nilejs/nile/fp`.
+CLI 1.0.1 targets Nile `^1.0.4`, Zod 4, TypeScript 7 and the Drizzle model helpers. The generated layout passes Nile’s strict boot checks. Database setup returns a Result and prevents startup on failure; shutdown drains Nile’s work before closing PGlite. Helpers are available as `utils.createModel`, and Result helpers come from `@nilejs/nile/fp`.
 
 Existing apps are not rewritten when the CLI updates. For an older starter, add a service entry point at `src/services/<domain>/index.ts`, register its actions there, and import that service from `services.config.ts`. [Nile’s migration notes](https://github.com/nile-js/nile/blob/main/packages/nile/docs/release-migration.md) describe the current error and startup behavior.
+
+## Coding assistants
+
+The starter includes `SKILL.md` with the current Nile action pattern, service layout, Results, access policies and client calls. Ask your assistant to read it before changing the backend. After updating Nile, use the version shipped at `node_modules/@nilejs/nile/SKILL.md`.
 
 ## Requirements
 

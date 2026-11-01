@@ -1,5 +1,10 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { copyFile, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+
+await copyFile(
+  join(import.meta.dir, "../../nile/SKILL.md"),
+  join(import.meta.dir, "../template/SKILL.md")
+);
 
 const outdir = join(import.meta.dir, "../dist");
 
