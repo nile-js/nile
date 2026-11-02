@@ -1,198 +1,103 @@
 ---
 title: "Handler context"
-description: "Use the second argument of an action handler to read resources, the session, execution details and topic publishing"
+description: "Read shared resources, sessions and execution details from an action handler"
 ---
 
-Every action handler receives two arguments: its validated input and a `NileContext`. Nile Js passes the context on every call, from HTTP, the socket transport, `server.invoke` and scheduled jobs. The type marks it optional so handlers can be called without one in tests, so read its fields with `?.`.
+Use `data` for the action’s validated data and `context` for its execution context. Nile passes context for HTTP calls, sockets, `server.invoke` and scheduled actions.
 
 ## Signature
 
-```ts
-const createOrderHandler = (
-  input: CreateOrderInput,
-  context?: NileContext<unknown>
-) => {
-  // ...
-};
-```
-
-Pass the handler to `createAction` by name, as with any other action:
+Derive the data type from the schema and annotate the named handler. `createAction` infers its type from the handler.
 
 ```ts
-export const createOrderAction = createAction<CreateOrderInput>({
-  name: "create",
-  description: "Create an order",
-  validation: createOrderSchema,
-  handler: createOrderHandler,
-});
-```
-
-## Complete example
-
-This action reads the database resource, the signed-in session and the request identifier. It stores a value for its own execution, sends a topic message and returns the result. Each use is marked in the file.
-
-```ts
-import {
-  createAction,
-  createNileServer,
-  createServices,
-  createTopics,
-  getContext,
-  type NileContext,
-  type NileLogger,
-} from "@nilejs/nile";
-import { Err, Ok } from "@nilejs/nile/fp";
+import { createAction, type NileContext } from "@nilejs/nile";
+import { Ok } from "@nilejs/nile/fp";
 import { z } from "zod";
 
-type AppDatabase = {
-  orders: { findById: (id: string) => Promise<{ id: string; total: number }> };
-};
-
-export const topics = createTopics({
-  "orders.updated": {
-    schema: z.object({
-      orderId: z.string(),
-      status: z.enum(["reserved", "paid"]),
-    }),
-    scope: z.object({
-      organizationId: z.string(),
-    }),
-  },
+const createProjectSchema = z.object({
+  name: z.string().trim().min(1, "Name is required"),
 });
 
-const reserveOrderSchema = z.object({
-  orderId: z.string().uuid(),
-});
+type CreateProjectData = z.infer<typeof createProjectSchema>;
 
-type ReserveOrderInput = z.infer<typeof reserveOrderSchema>;
-
-const reserveOrderHandler = async (
-  input: ReserveOrderInput,
-  context?: NileContext<unknown>
+const createProjectHandler = (
+  data: CreateProjectData,
+  context?: NileContext
 ) => {
-  const logger: NileLogger | undefined = context?.resources?.logger;
-  const session = context?.getSession("rest");
-  const requestId = context?.execution?.requestId;
+  const project = {
+    id: crypto.randomUUID(),
+    name: data.name,
+  };
 
-  if (session === undefined) {
-    return Err("Sign in to continue");
-  }
-
-  const database = getContext<AppDatabase>().resources?.database;
-  if (database === undefined) {
-    return Err("Order store is not configured");
-  }
-
-  logger?.info({
-    atFunction: "reserveOrder",
-    message: "Reserving order",
-    data: {
-      orderId: input.orderId,
-      requestId: requestId,
-      userId: session.userId,
-    },
+  context?.resources?.logger?.info({
+    atFunction: "createProject",
+    message: "Project created",
+    data: { projectId: project.id },
   });
 
-  const order = await database.orders.findById(input.orderId);
-  context?.updateHookState("loadedTotal", order.total);
-  context?.set("lastReservedOrder", input.orderId);
-
-  const sent = await getContext({ topics: topics }).websocket.send({
-    topic: "orders.updated",
-    scope: { organizationId: "org_123" },
-    data: { orderId: order.id, status: "reserved" },
-  });
-
-  if (sent.isErr) {
-    return Err(sent.error);
-  }
-
-  return Ok({
-    orderId: order.id,
-    total: order.total,
-    loadedTotal: context?.hookContext.state.loadedTotal,
-  });
+  return Ok({ project: project });
 };
 
-const reserveOrderAction = createAction<ReserveOrderInput>({
-  name: "reserve",
-  description: "Reserve an order for the signed-in user",
-  isProtected: true,
-  validation: reserveOrderSchema,
-  handler: reserveOrderHandler,
+export const createProjectAction = createAction({
+  name: "create",
+  description: "Create a project",
+  validation: createProjectSchema,
+  handler: createProjectHandler,
 });
+```
 
-const services = createServices([
-  {
-    name: "orders",
-    description: "Order operations",
-    actions: [reserveOrderAction],
-  },
-]);
+Supply the logger through `resources.logger` when creating the server. Logs written during an action include its execution identifier.
 
-export const server = await createNileServer({
-  serverName: "shop",
-  services: services,
-  websocket: { topics: topics },
-  rest: { baseUrl: "/api", allowedOrigins: ["https://shop.example.com"] },
-});
+The handler type makes context optional, so you can call a handler directly in a unit test. Use `?.` for optional resources. If an operation requires a resource or session, check for it before continuing.
 
-export const callAnotherAction = async (
-  orderId: string
-): Promise<unknown> => {
-  const result = await server.invoke({
-    service: "orders",
-    action: "reserve",
-    payload: { orderId: orderId },
+## Read execution details
+
+| Value | Use it for |
+| --- | --- |
+| `context.resources` | Shared resources supplied when the server starts, such as a database and logger |
+| `context.getSession("rest")` | The verified HTTP session, or an identity supplied by your authentication integration |
+| `context.getSession("ws")` | The current socket session |
+| `context.execution.requestId` | Correlating work and logs within an execution |
+| `context.execution.transport` | Identifying the transport used for this call |
+| `context.execution.signal` | Passing cancellation to a database, provider or other dependency |
+| `context.execution.clientKey` | Applying a policy using the resolved client identity |
+| `context.hookContext` | State, output, failures and logs for the current action pipeline |
+
+Read optional execution fields with `?.`, for example `context?.execution?.signal`. Dependencies must honor the signal for cancellation to stop their work. A deadline does not roll back completed writes.
+
+## Share state within an action
+
+Use `context.updateHookState(name, value)` to pass a value between a handler and its local hooks. Read it through `context.hookContext.state`. Each concurrent or nested action execution has its own state.
+
+Application-defined keys written with `context.set` are shared across the process. Keep current users in scoped sessions and per-action state in `hookContext`.
+
+See [composing hooks](/guide/advanced/composing-hooks) for a complete pipeline.
+
+## Get context in a helper
+
+An ordinary helper called from an action can use `getContext` to read the same resources:
+
+```ts
+import { getContext } from "@nilejs/nile";
+
+export const logProjectArchived = (projectId: string) => {
+  const context = getContext();
+  context.resources?.logger?.info({
+    atFunction: "logProjectArchived",
+    message: "Project archived",
+    data: { projectId: projectId },
   });
-  return result;
 };
 ```
 
-The file also defines `callAnotherAction`, which calls a second action through `server.invoke`. `NileContext` has no invoke method. Keep a reference to the server in the module that defines the actions, and call `server.invoke` from a helper like this one.
+Call `getContext` after server initialization. Pass a dependency explicitly when a helper should also run outside Nile, such as in a standalone script or domain unit test.
 
-## The context fields you will use
+## Publish topic messages
 
-| Field | What you get | Scope |
-| --- | --- | --- |
-| `resources?.logger` | The logger you passed to `createNileServer` | Shared by the application |
-| `resources?.database` | The database you passed as a resource | Shared by the application |
-| `getSession("rest")` | Verified identity from JWT: `userId`, `organizationId` and other claims | One request |
-| `execution?.requestId` | Identifier for this execution, also used in logs | One execution |
-| `execution?.transport` | `"rest"`, `"rpc"`, `"ws"` or `"cron"` | One execution |
-| `execution?.signal` | Cancellation signal for the call | One execution |
-| `execution?.clientKey` | Client identity used for rate limits | One execution |
-| `updateHookState(key, value)` and `hookContext.state` | Values shared between hooks and the handler | One action execution |
-| `set(key, value)` and `get(key)` | Application-wide values | Every request in the process |
-| `websocket` | The socket server. Use `getContext({ topics })` for typed sends | Shared by the application |
-
-`context.get("rest")` and `context.get("nativeRest")` return the request object for the transport in use. Prefer `getSession` for identity.
-
-## State for one execution, or shared state
-
-Use `updateHookState` and `hookContext.state` for values that belong to one action call. Nested and concurrent executions each get their own state.
-
-Use `set` and `get` only for values that every request should see, such as a feature flag loaded at boot. A value stored with `set` is visible to every concurrent request in the process and is lost on restart. Never store the current user there.
-
-## Publishing a topic message
-
-`getContext({ topics })` returns the socket server with the topic types from your definition, so `send` checks the message shape at compile time. The `topics` object must be the same one passed to `createNileServer`. See [WebSockets](/guide/features/websockets) for the full setup.
-
-## Limits
-
-- The context is valid for the duration of the call. Do not keep it in a module variable and use it later.
-- Outside a request, `getSession` returns `undefined` and session writes do nothing.
-- `getContext()` throws if the server has not been created. Call it inside a handler or after startup.
-
-## Common mistakes
-
-- Reading `context.execution.requestId` without `?.`, which fails when the handler is called without a context.
-- Using `set` for per-request data.
-- Creating a second database connection in each handler instead of using `resources.database`.
-- Assuming `context.websocket.send` knows your topic types. Use `getContext({ topics })` for that.
+Use the context’s typed socket interface to publish messages from an action. Declare the topics and their data schemas in your backend, then configure them under `websocket`. The [WebSockets guide](/guide/features/websockets) shows topic definitions, access policies and a named action handler.
 
 ## See also
 
-- [Context](/guide/basics/context) describes the resource and session model in full.
-- [Context and logging](/guide/features/context-and-logging) shows the logger in use.
-- [Composing hooks](/guide/advanced/composing-hooks) explains state that hooks share with the handler.
+- [Context and resources](/guide/basics/context)
+- [Logging](/guide/internals/logging)
+- [Testing actions](/guide/advanced/testing-actions)

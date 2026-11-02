@@ -3,7 +3,7 @@ title: "Validation and errors"
 description: "Validate action input with Zod and return expected failures as Results that clients can read"
 ---
 
-Validation rejects a bad payload before your handler runs. A handler returns `Err` when a business rule refuses the request. Both reach the caller as a failure, so the client checks one thing: `isErr`.
+Validate action data with a schema before the handler runs. Return `Err` when a business rule prevents the operation. The client reads both failures through its Result API.
 
 ## When to use it
 
@@ -30,21 +30,21 @@ type CreateProjectInput = z.infer<typeof createProjectSchema>;
 
 const reservedNames: readonly string[] = ["system", "admin"];
 
-const createProjectHandler = (input: CreateProjectInput) => {
-  if (reservedNames.includes(input.name.toLowerCase())) {
+const createProjectHandler = (data: CreateProjectInput) => {
+  if (reservedNames.includes(data.name.toLowerCase())) {
     return Err("Choose a different project name");
   }
 
   return Ok({
     project: {
-      name: input.name,
-      city: input.address.city,
-      budget: input.budget,
+      name: data.name,
+      city: data.address.city,
+      budget: data.budget,
     },
   });
 };
 
-const createProjectAction = createAction<CreateProjectInput>({
+const createProjectAction = createAction({
   name: "create",
   description: "Create a project after validating its input",
   validation: createProjectSchema,
@@ -122,7 +122,7 @@ Here `nile` is a client created with `createNileClient`, as in [the frontend cli
 | --- | --- | --- |
 | Action | `validation` | Zod schema for the payload. Use `null` or omit it for actions without input. |
 | Action | `handler` | Named function that returns `Ok(value)` or `Err(message)`. |
-| Schema | `z.infer<typeof schema>` | Input type for the handler. Use it as the generic argument to `createAction`. |
+| Schema | `z.infer<typeof schema>` | Input type for the handler. Use it to annotate the handler’s `data` parameter. |
 
 ## How it behaves
 

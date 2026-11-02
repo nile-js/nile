@@ -46,23 +46,23 @@ const markPaidSchema = z.object({
 
 type MarkPaidInput = z.infer<typeof markPaidSchema>;
 
-const markPaidHandler = async (input: MarkPaidInput) => {
+const markPaidHandler = async (data: MarkPaidInput) => {
   const { websocket } = getContext({ topics: topics });
 
   const sent = await websocket.send({
     topic: "payments.updated",
     scope: { organizationId: "org_123" },
-    data: { paymentId: input.paymentId, status: "paid" },
+    data: { paymentId: data.paymentId, status: "paid" },
   });
 
   if (sent.isErr) {
     return Err(sent.error);
   }
 
-  return Ok({ paymentId: input.paymentId, status: "paid" });
+  return Ok({ paymentId: data.paymentId, status: "paid" });
 };
 
-const markPaidAction = createAction<MarkPaidInput>({
+const markPaidAction = createAction({
   name: "mark-paid",
   description: "Mark a payment as paid and notify subscribers",
   isProtected: true,

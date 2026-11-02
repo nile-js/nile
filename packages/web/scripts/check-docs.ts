@@ -32,7 +32,13 @@ async function checkDocs(): Promise<void> {
 					inCode = !inCode;
 					continue;
 				}
-				if (inCode) continue;
+				if (inCode) {
+					if (/\bcreateAction\s*</.test(line))
+						failures.push(`${name}:${index + 1}: infer createAction types from the handler`);
+					if (/\bhookInput\b/.test(line))
+						failures.push(`${name}:${index + 1}: name hook parameters hookContext`);
+					continue;
+				}
 				if (line.includes("—"))
 					failures.push(
 						`${name}:${index + 1}: use ordinary punctuation in prose`,

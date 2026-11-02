@@ -3,7 +3,7 @@ title: "Database models"
 description: "Create typed model helpers from a Drizzle table for inserts, lookups, updates, deletes and pagination"
 ---
 
-`createModel` turns a Drizzle table into a set of helpers that return Results. Your actions call the helpers instead of building queries inline, and validation, error handling and pagination follow one pattern across the application.
+Use `utils.createModel` with a Drizzle table for create, read, update and delete operations. The helpers return Results and include validation and pagination. Keep custom queries in your application’s model functions.
 
 ## When to use it
 
@@ -46,11 +46,11 @@ const createTaskSchema = z.object({
 
 type CreateTaskInput = z.infer<typeof createTaskSchema>;
 
-const createTaskHandler = async (input: CreateTaskInput) => {
+const createTaskHandler = async (data: CreateTaskInput) => {
   const created = await taskModel.create({
     data: {
-      title: input.title,
-      description: input.description,
+      title: data.title,
+      description: data.description,
     },
   });
 
@@ -61,7 +61,7 @@ const createTaskHandler = async (input: CreateTaskInput) => {
   return Ok({ task: created.value });
 };
 
-const createTaskAction = createAction<CreateTaskInput>({
+const createTaskAction = createAction({
   name: "create",
   description: "Create a task",
   validation: createTaskSchema,
@@ -78,7 +78,7 @@ const listTasksHandler = async () => {
   return Ok({ tasks: page.value.items, hasMore: page.value.hasMore });
 };
 
-const listTasksAction = createAction<undefined>({
+const listTasksAction = createAction({
   name: "list",
   description: "List the first page of tasks",
   handler: listTasksHandler,

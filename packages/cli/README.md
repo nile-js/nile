@@ -72,12 +72,12 @@ const getUserSchema = z.object({
 
 type GetUserInput = z.infer<typeof getUserSchema>;
 
-const getUserHandler = async (input: GetUserInput) => {
+const getUserHandler = async (data: GetUserInput) => {
   // Implement users.get-user here
-  return Ok({ result: input });
+  return Ok({ result: data });
 };
 
-export const getUserAction = createAction<GetUserInput>({
+export const getUserAction = createAction({
   name: "get-user",
   description: "GetUser action for users",
   validation: getUserSchema,

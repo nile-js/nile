@@ -3,7 +3,7 @@ title: "Data access"
 description: "Keep data access in application models and use the optional Drizzle helpers"
 ---
 
-Keep business operations easy to follow: an action handles its input and application policy, an ordinary domain function implements the rule, and a model/repository owns data access. This is a useful convention, not a runtime restriction. Nile does not require a particular ORM or database.
+Keep data access in model functions. An action validates data and applies policy, then calls a model or domain function. Choose the database and transaction conventions your application needs.
 
 The [application structure guide](/guide/start/application-structure) shows how these modules fit together as the operation count grows.
 

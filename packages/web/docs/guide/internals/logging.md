@@ -3,7 +3,7 @@ title: "Logging"
 description: "Follow related executions through structured logs and correlation IDs"
 ---
 
-A consistent log format helps a small team follow a failure back to the operation that produced it. Nile includes a structured logger; supply it through resources so actions, hooks and error helpers can use the same convention.
+Supply a logger through `resources.logger`. Actions, hooks and error helpers can then write structured logs with the current execution’s identifier.
 
 ## Configure a logger
 

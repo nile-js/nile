@@ -3,7 +3,7 @@ title: "Getting started"
 description: "Create a Nile Js project, call its first action, add an action that changes data and call it from a client"
 ---
 
-This walkthrough creates a Nile Js project, runs it and calls its starter action with curl. Then you add an action that changes data and call it from a small TypeScript client. Each step says what you should see when it worked.
+Create a project, call the Tasks service, then add an action and call it through the frontend client. The starter includes a PGlite database and runs on Bun.
 
 Nile Js uses Bun's native HTTP server. The starter stores its data in an embedded PGlite database, so you do not install or run a database server.
 
@@ -43,7 +43,7 @@ grep '"version"' node_modules/@nilejs/nile/package.json
 
 You should see `"version": "1.0.0",`. If the version is older, stop here and read the last troubleshooting item on this page.
 
-## Look at what you got
+## Project files
 
 The starter has this structure. The comments describe what each file is for.
 
@@ -104,7 +104,7 @@ my-app listening on http://localhost:8000
 
 The first start can take between 10 and 30 seconds because PGlite creates the `data/` folder. Later starts are faster. Wait for the `listening` line before you send requests. Keep this terminal open. Press Ctrl+C to stop the server.
 
-## Make your first request
+## Call an action
 
 Open a second terminal in the `my-app` folder and run:
 
@@ -186,9 +186,9 @@ const completeTaskSchema = z.object({
 
 type CompleteTaskInput = z.infer<typeof completeTaskSchema>;
 
-const completeTaskHandler = async (input: CompleteTaskInput) => {
+const completeTaskHandler = async (data: CompleteTaskInput) => {
   const result = await taskModel.update({
-    id: input.id,
+    id: data.id,
     data: { status: "done" },
   });
 
@@ -199,7 +199,7 @@ const completeTaskHandler = async (input: CompleteTaskInput) => {
   return Ok({ task: result.value });
 };
 
-export const completeAction = createAction<CompleteTaskInput>({
+export const completeAction = createAction({
   name: "complete",
   description: "Mark a task as done",
   validation: completeTaskSchema,

@@ -13,16 +13,16 @@ const createProjectSchema = z.object({
 
 type CreateProjectInput = z.infer<typeof createProjectSchema>;
 
-const createProjectHandler = (input: CreateProjectInput) => {
+const createProjectHandler = (data: CreateProjectInput) => {
   const project = {
     id: crypto.randomUUID(),
-    name: input.name,
+    name: data.name,
   };
 
   return Ok({ project: project });
 };
 
-export const createProject = createAction<CreateProjectInput>({
+export const createProject = createAction({
   name: "create",
   description: "Create a project",
   validation: createProjectSchema,
@@ -96,22 +96,38 @@ export function CreateProjectButton() {
 		file: "services/orders/actions/quote.ts",
 		language: "typescript",
 		side: "Backend",
-		lines: { err: [7, 11], ok: [14] },
-		raw: `import { Err, Ok } from "@nilejs/nile/fp";
+		lines: { err: [16, 20], ok: [23] },
+		raw: `import { createAction } from "@nilejs/nile";
+import { Err, Ok } from "@nilejs/nile/fp";
+import { z } from "zod";
 import { productModel } from "@/db/models";
 
-const quoteHandler = async (input: QuoteInput) => {
-  const product = await productModel.findById(input.id);
+const quoteSchema = z.object({
+  id: z.string().min(1),
+  quantity: z.number().int().positive(),
+});
+
+type QuoteData = z.infer<typeof quoteSchema>;
+
+const quoteHandler = async (data: QuoteData) => {
+  const product = await productModel.findById(data.id);
   if (product.isErr) {
     return Err("Product not found");
   }
 
-  if (product.value.stock < input.quantity) {
+  if (product.value.stock < data.quantity) {
     return Err("Not enough stock");
   }
 
-  return Ok({ total: product.value.price * input.quantity });
-};`,
+  return Ok({ total: product.value.price * data.quantity });
+};
+
+export const quoteAction = createAction({
+  name: "quote",
+  description: "Quote a product order",
+  validation: quoteSchema,
+  handler: quoteHandler,
+});`,
 	},
 	resultFrontend: {
 		file: "components/quote.tsx",
@@ -251,8 +267,12 @@ showTotal(result.value.total);`,
 		raw: `import { Err, Ok, match, option, safeTry } from "@nilejs/nile/fp";
 
 const port = match(option(process.env.PORT), {
-  Some: (v) => Number(v.value),
-  None: () => 8000,
+  Some: (presentPort) => {
+    return Number(presentPort.value);
+  },
+  None: () => {
+    return 8000;
+  },
 });
 
 export const loadSettings = async (path: string) => {

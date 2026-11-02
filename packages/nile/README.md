@@ -1,52 +1,34 @@
 # Nile Js
 
-[![NPM Version](https://img.shields.io/npm/v/@nilejs/nile.svg)](https://www.npmjs.com/package/@nilejs/nile)
+[![npm version](https://img.shields.io/npm/v/@nilejs/nile.svg)](https://www.npmjs.com/package/@nilejs/nile)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A functional TypeScript backend for small teams shipping growing products.
+Nile Js is a functional TypeScript backend framework for small teams. Organize your backend into services for business domains and actions for individual operations. Give each action a name and a handler, and validate incoming data with a schema.
 
-You write actions, group them into services, and Nile Js gives you a predictable API with validation, error handling and schema export. There are no route trees, controllers or middleware chains to maintain: each business operation lives in one well known place, so small teams keep shipping as the backend grows.
+You can follow the same structure as the application grows: find the service, open the action, then follow its business logic and data access. Validation, error handling, logging and shared resources use the same conventions across your backend.
 
-[Documentation](https://nile-js.github.io/nile/) · [Getting started](https://nile-js.github.io/nile/guide/start/getting-started/) · [Features](https://nile-js.github.io/nile/guide/features/) · [Examples](https://nile-js.github.io/nile/guide/examples/)
+[Documentation](https://nile-js.github.io/nile/guide/) · [Getting started](https://nile-js.github.io/nile/guide/start/getting-started/) · [Examples](https://nile-js.github.io/nile/guide/examples/)
 
-## Upgrading
+## Create a project
 
-Read the [migration notes](https://github.com/nile-js/nile/blob/main/packages/nile/docs/release-migration.md) before upgrading an existing application.
-
-## Install
-
-### Start from the CLI (recommended)
-
-```bash
+```sh
 bunx @nilejs/cli new my-app
 cd my-app
 bun install
 bun run dev
 ```
 
-The starter runs on Bun's native HTTP server with an embedded PGlite database, a `tasks` service and generators for new services and actions. See [`@nilejs/cli`](https://www.npmjs.com/package/@nilejs/cli).
+The starter runs on Bun at `http://localhost:8000`. It includes a Tasks service, a PGlite database and generators for services, actions and client contracts.
 
-### Add to an existing project
+To add Nile to an existing project:
 
-```bash
+```sh
 bun add @nilejs/nile zod
 ```
 
-Results, Options and `safeTry` come from `@nilejs/nile/fp`, which re-exports [slang-ts](https://www.npmjs.com/package/slang-ts).
+## Write an action
 
-For the database helpers (`createModel`, `getZodSchema`), also add Drizzle:
-
-```bash
-bun add drizzle-orm drizzle-zod
-```
-
-For frontends, use [`@nilejs/client`](https://www.npmjs.com/package/@nilejs/client).
-
-## Quick start
-
-### 1. Write an action
-
-An action is a named schema, the input type inferred from it and a handler that returns `Ok` or `Err`.
+Define the schema, derive the data type and write a named handler. `createAction` infers the action type from the handler.
 
 ```ts
 // src/services/tasks/actions/create.ts
@@ -58,19 +40,19 @@ const createTaskSchema = z.object({
   title: z.string().min(1, "Title is required"),
 });
 
-type CreateTaskInput = z.infer<typeof createTaskSchema>;
+type CreateTaskData = z.infer<typeof createTaskSchema>;
 
-const createTaskHandler = (input: CreateTaskInput) => {
+const createTaskHandler = (data: CreateTaskData) => {
   const task = {
     id: crypto.randomUUID(),
-    title: input.title,
+    title: data.title,
     status: "pending",
   };
 
   return Ok({ task: task });
 };
 
-export const createTaskAction = createAction<CreateTaskInput>({
+export const createTaskAction = createAction({
   name: "create",
   description: "Create a task",
   validation: createTaskSchema,
@@ -78,7 +60,11 @@ export const createTaskAction = createAction<CreateTaskInput>({
 });
 ```
 
-### 2. Group actions into a service
+This action returns a task. Add a model call to the handler when you want to save it. Use `Err(message)` for an expected failure and check a model’s Result before reading its value.
+
+## Register the service
+
+Keep each domain’s actions in its service entry point:
 
 ```ts
 // src/services/tasks/index.ts
@@ -92,6 +78,8 @@ export const tasksService = createService({
 });
 ```
 
+Register the service in the application:
+
 ```ts
 // src/services/services.config.ts
 import { createServices } from "@nilejs/nile";
@@ -100,7 +88,7 @@ import { tasksService } from "./tasks";
 export const services = createServices([tasksService]);
 ```
 
-### 3. Start the server
+## Start the server
 
 ```ts
 // src/index.ts
@@ -114,47 +102,41 @@ const server = await createNileServer({
   services: services,
   rest: {
     baseUrl: "/api",
-    port: 8000,
     allowedOrigins: ["http://localhost:3000"],
   },
 });
 
 if (server.nativeRest) {
-  Bun.serve({ port: 8000, fetch: server.nativeRest.fetch });
+  Bun.serve({
+    port: 8000,
+    fetch: server.nativeRest.fetch,
+  });
 }
 ```
 
-Applications that leave out `native` use the Hono adapter on Bun or Node.js, available as `server.rest.app`. See [runtime adapters](https://nile-js.github.io/nile/guide/start/runtime-adapters/).
+Nile checks your source layout at startup. Each service needs an `index.ts` and an `actions/` directory, alongside the application’s `services.config.ts` registry. See [application structure](https://nile-js.github.io/nile/guide/start/application-structure/) for larger actions, shared modules and startup settings.
 
-### 4. Call it
+You can also use the [Hono adapter on Bun or Node.js](https://nile-js.github.io/nile/guide/start/runtime-adapters/).
 
-```bash
-curl -X POST http://localhost:8000/api/services \
-  -H "Content-Type: application/json" \
-  -d '{"intent":"execute","service":"tasks","action":"create","payload":{"title":"Ship it"}}'
+## Call the action
+
+Install the frontend client:
+
+```sh
+bun add @nilejs/client
 ```
-
-```json
-{
-  "status": true,
-  "message": "Action completed.",
-  "data": {
-    "task": { "id": "a1b2c3d4-...", "title": "Ship it", "status": "pending" }
-  }
-}
-```
-
-From a frontend, `@nilejs/client` returns the same Result shape as your handlers:
 
 ```ts
 import { createNileClient } from "@nilejs/client";
 
-const nile = createNileClient({ baseUrl: "http://localhost:8000/api" });
+const nile = createNileClient({
+  baseUrl: "http://localhost:8000/api",
+});
 
 const result = await nile.invoke({
   service: "tasks",
   action: "create",
-  payload: { title: "Ship it" },
+  payload: { title: "Ship the next feature" },
 });
 
 if (result.isErr) {
@@ -164,185 +146,93 @@ if (result.isErr) {
 }
 ```
 
-## Action input and responses
+Generate `ServicePayloads` with `bun run gen schema` and pass it to `createNileClient<ServicePayloads>` for service names, action names and payload checking. Within your backend, call the same operation with `server.invoke`.
 
-HTTP action calls use a `POST` to `{baseUrl}/services` with the same body:
-
-```ts
-{
-  intent: "explore" | "execute" | "schema",
-  service: string, // a service name, or "*" for all
-  action: string,  // an action name, or "*" for all
-  payload: object  // the action's input; use {} when there is none
-}
-```
-
-| Intent | What it does |
-|---|---|
-| `execute` | Validates the payload against the action's schema and runs the action. |
-| `explore` | Lists services, or the actions in one service. |
-| `schema` | Returns an action's input as JSON Schema, for clients, tools and AI agents. |
-
-Every HTTP action response has exactly these three fields:
-
-```ts
-{
-  status: boolean, // true on success
-  message: string, // a readable summary
-  data: object     // the action's value, validation details, or {}
-}
-```
-
-Validation failures use Zod’s prettified message and include a generated unique `data.errorCode` alongside `data.issues`:
+HTTP action calls use `POST /api/services` with `intent`, `service`, `action` and `payload`. Responses contain exactly `status`, `message` and `data`:
 
 ```json
 {
-  "status": false,
-  "message": "✖ Title is required\n  → at title",
+  "status": true,
+  "message": "Action completed.",
   "data": {
-    "errorCode": "jN8sQ4tV2pLm",
-    "issues": [{ "path": "title", "message": "Title is required" }]
+    "task": {
+      "id": "aa5f730d-b2ce-40fa-8b74-98f6ea4ab271",
+      "title": "Ship the next feature",
+      "status": "pending"
+    }
   }
 }
 ```
 
-The code above is illustrative; each failure gets a new reference. Unexpected exceptions are logged internally and return a safe message such as `Error Code: jN8sQ4tV2pLm - could not complete the action`. Diagnostic codes match the log’s `log_id`. Custom success messages and intentional `Err` messages keep their wording.
+## Handle failures
 
-Properties named `raw` are removed recursively from outbound JSON and Socket.IO messages, including custom JSON responses. Keep original causes on the backend and choose a different field name for public data. HTTP JSON responses are buffered to apply this filtering.
+An action returns `Ok(value)` or `Err(message)`. Import Results, Options and async helpers from `@nilejs/nile/fp`. Nile-specific helpers, including optional Drizzle models, are available through `utils` from `@nilejs/nile`.
 
-Discovery (`explore` and `schema`) is off unless you enable it with `rest.discovery`, and can require a secret. See [API discovery](https://nile-js.github.io/nile/guide/features/api-discovery/).
+Validation failures include a readable message, a unique `data.errorCode` and field-level `data.issues`. The client exposes the message as `result.error` and failure data as `result.details`.
 
-## Project structure
+Unexpected errors return a safe message with a generated reference matching the log’s `log_id`. Keep database and provider details in your logs. Use `safeTry` to catch dependency failures and `utils.handleError` to log diagnostics with a message suitable for the caller. See [errors and Results](https://nile-js.github.io/nile/guide/basics/errors-and-results/) for examples.
 
-The quick start produces this layout:
+## Apply shared policies with hooks
 
-```text
-src/
-  index.ts
-  services/
-    services.config.ts
-    tasks/
-      index.ts
-      actions/
-        create.ts
-```
-
-Nile checks the source structure at boot and fails on violations by default. Each service needs an `index.ts` and an `actions/` directory. When an action grows, move it into `actions/create/create.ts`, export it from `actions/create/index.ts`, and put private helpers in `actions/create/modules/`. Action entry points above 400 lines are reported for refactoring.
-
-Set `project: { root: ".", structure: "warn" }` in the server configuration to report violations and continue, or set `structure: false` to disable checking. In a monorepo, point `root` at the backend package. Source-less bundles skip inspection unless a root is explicit. See [application structure](https://nile-js.github.io/nile/guide/start/application-structure/).
-
-## Results and utilities
-
-Import Result helpers and Slang’s utilities through `@nilejs/nile/fp`; this release includes Slang 0.2.2. Return Results directly instead of nesting them: `Ok(Ok(value))` and `Ok(Err(message))` are rejected.
-
-Use `safeTry` for database operations and other promises that can throw. It preserves the original cause on `result.raw` for internal diagnostics. Nile’s `dbTry` helper has been removed. Use `utils.describeError` for bounded diagnostic metadata and `utils.handleError` for a safe caller message. Nile helpers, including `createModel` and `getZodSchema`, are available through the `utils` namespace:
+A global before hook can check access before an action runs. This hook allows an action when the session contains at least one role from its `accessControl` list:
 
 ```ts
-import { utils } from "@nilejs/nile";
-import { safeTry } from "@nilejs/nile/fp";
-```
+import type { BeforeActionHandler } from "@nilejs/nile";
+import { Err, Ok } from "@nilejs/nile/fp";
 
-See [shared utilities](https://nile-js.github.io/nile/guide/reference/shared-utilities/) for examples.
-
-## Hooks
-
-A global before hook runs for every action. Use it for shared policy, such as role checks:
-
-```ts
-import { type BeforeActionHandler, createNileServer } from "@nilejs/nile";
-import { Err, Ok, type Result } from "@nilejs/nile/fp";
-import { services } from "./services/services.config";
-
-const requireSessionHook: BeforeActionHandler<boolean, string> = (
-  hookInput
-): Result<boolean, string> => {
-  if (!hookInput.action.isProtected) {
+export const authorizeAction: BeforeActionHandler<boolean, string> = (
+  hookContext
+) => {
+  const requiredRoles = hookContext.action.accessControl ?? [];
+  if (requiredRoles.length === 0) {
     return Ok(true);
   }
 
-  const session = hookInput.nileContext.getSession("rest");
-  if (session === undefined) {
-    return Err("Sign in to continue");
+  const session = hookContext.nileContext.getSession("rest");
+  const roles = session?.roles;
+  if (!Array.isArray(roles)) {
+    return Err("You do not have access to this action");
+  }
+
+  const allowed = requiredRoles.some((role) => roles.includes(role));
+  if (!allowed) {
+    return Err("You do not have access to this action");
   }
 
   return Ok(true);
 };
-
-const server = await createNileServer({
-  serverName: "my-app",
-  services: services,
-  onBeforeActionHandler: requireSessionHook,
-});
 ```
 
-Actions can also list local `hooks.before` and `hooks.after`, which reference other registered actions. For an executed action the order is:
+Set `onBeforeActionHandler` to `authorizeAction` in your server configuration. Your authentication setup supplies the session. Actions can also compose local before and after hooks. See [authentication and hooks](https://nile-js.github.io/nile/guide/features/authentication-and-hooks/).
 
-```text
-JWT check (protected actions)
-  -> global before hook
-    -> local before hooks
-      -> validation
-        -> handler
-      -> local after hooks
-  -> global after hook
--> response
-```
+## Add what your application needs
 
-Any failing step stops the rest, except a local hook marked `isCritical: false`. See [hooks and pipelines](https://nile-js.github.io/nile/guide/basics/hooks-and-pipelines/).
+| Task | Guide |
+| --- | --- |
+| Share a database, logger and other resources | [Context and logging](https://nile-js.github.io/nile/guide/features/context-and-logging/) |
+| Publish typed messages and call actions over Socket.IO | [WebSockets](https://nile-js.github.io/nile/guide/features/websockets/) |
+| Run recurring or one-time jobs | [Cron jobs](https://nile-js.github.io/nile/guide/features/cron-jobs/) |
+| Limit calls and concurrent work | [Rate limiting](https://nile-js.github.io/nile/guide/features/rate-limiting/) and [queues](https://nile-js.github.io/nile/guide/features/queues-debounce-throttle/) |
+| Save and query data with Drizzle helpers | [Database models](https://nile-js.github.io/nile/guide/features/database-models/) |
+| Accept files | [File uploads](https://nile-js.github.io/nile/guide/features/file-uploads/) |
+| Export schemas for clients and coding agents | [API discovery](https://nile-js.github.io/nile/guide/features/api-discovery/) |
+| Trace actions and collect metrics | [Telemetry](https://nile-js.github.io/nile/guide/features/telemetry/) |
+| Inspect startup service and action counts | [Server setup](https://nile-js.github.io/nile/guide/internals/server/) |
+| Close resources during shutdown | [Readiness and shutdown](https://nile-js.github.io/nile/guide/features/readiness-and-shutdown/) |
 
-## What else is included
+## Work with a coding assistant
 
-| Feature | Guide |
-|---|---|
-| JWT authentication and access policy | [Authentication and hooks](https://nile-js.github.io/nile/guide/features/authentication-and-hooks/) |
-| Calls over HTTP, from other actions and from tests with `server.invoke` | [Calling actions](https://nile-js.github.io/nile/guide/features/calling-actions/) |
-| Multipart file uploads with limits and type checks | [File uploads](https://nile-js.github.io/nile/guide/features/file-uploads/) |
-| Socket.IO actions and typed topics | [WebSockets](https://nile-js.github.io/nile/guide/features/websockets/) |
-| Rate limiting per action or per client | [Rate limiting](https://nile-js.github.io/nile/guide/features/rate-limiting/) |
-| Cron schedules | [Cron jobs](https://nile-js.github.io/nile/guide/features/cron-jobs/) |
-| Queues, debounce and throttle | [Queues, debounce and throttle](https://nile-js.github.io/nile/guide/features/queues-debounce-throttle/) |
-| Retries and shared utilities | [Retries and utilities](https://nile-js.github.io/nile/guide/features/retries-and-utilities/) |
-| Drizzle models with validation and pagination | [Database models](https://nile-js.github.io/nile/guide/features/database-models/) |
-| Structured logging and shared resources | [Context and logging](https://nile-js.github.io/nile/guide/features/context-and-logging/) |
-| Readiness checks and graceful shutdown | [Readiness and shutdown](https://nile-js.github.io/nile/guide/features/readiness-and-shutdown/) |
-| Telemetry | [Telemetry](https://nile-js.github.io/nile/guide/features/telemetry/) |
-
-## Startup statistics
-
-At startup Nile Js prints a table of services with their action counts and registration times. Set `logServices: false` in `createNileServer` to turn it off. The same numbers are available in code:
-
-```ts
-const stats = server.stats();
-console.table(stats.services);
-// { totalServices, totalActions, registrationDurationMs, startupDurationMs,
-//   services: [{ name, description, actionCount, registrationDurationMs }] }
-```
-
-All durations are in milliseconds. `startupDurationMs` covers server initialization, including `onBoot` and REST setup, but not module imports. Each call returns a fresh copy, and the numbers do not change after startup.
-
-## Schema conversion
-
-Nile Js converts an action's Zod schema to JSON Schema only when a discovery request first needs it, then caches the result. Startup and ordinary execution never convert schemas; validation always runs through Zod.
-
-The cache is keyed by schema object, so later changes to a schema's descriptions or defaults are not picked up. To reconvert on every discovery request, set `cacheSchema: false` on an action or `rest.discovery.cacheSchemas: false` for the whole REST app.
-
-## Hook execution context
-
-Inside a handler or hook, `context.hookContext` holds that execution's state, output, errors and logs. Nested action calls get their own context and restore the parent's when they finish. Outside an execution, `context.hookContext` is a fallback, not the last request's state. To inspect hook logs after a call, set `result: { pipeline: true }` on the action and read the returned `pipeline` field.
-
-## Using with coding assistants
-
-The package ships `SKILL.md`, a guide for coding assistants that matches the installed version. After `bun install` it is at `node_modules/@nilejs/nile/SKILL.md`. See [the Nile Js skill](https://nile-js.github.io/nile/guide/agents/skill/) for setup.
+The starter includes `SKILL.md` with the service layout, action pattern, FP helpers and common mistakes. After an upgrade, use the copy at `node_modules/@nilejs/nile/SKILL.md`. See [skill setup](https://nile-js.github.io/nile/guide/agents/skill/) for your assistant.
 
 ## Requirements
 
-- Bun 1.4.2 or later for the native transport and the CLI starter.
-- Node.js 22.23.4+, 24.22.1+ or 26.12.1+ when you run the Hono adapter on Node.js.
-- TypeScript 7 (a peer dependency). Zod 4 and slang-ts install with the package. List Zod in your own dependencies, and import slang-ts helpers from `@nilejs/nile/fp` so your code uses Nile's copy.
+Use Bun 1.4.2 or later for Bun native. The Hono adapter supports Node.js 22.23.4+, 24.22.1+ and 26.12.1+. TypeScript 7 is a peer dependency.
 
-## Contributing
+For an existing application, read the [migration notes](https://github.com/nile-js/nile/blob/main/packages/nile/docs/release-migration.md) before upgrading.
 
-Nile Js was first built by Hussein Kizz at [Nile Squad Labz](https://nilesquad.com) to power its own B2B products, and is now open source. Read [CONTRIBUTING.md](https://github.com/nile-js/nile/blob/main/CONTRIBUTING.md) to get started, and join the [community](https://chat.whatsapp.com/K0xkSiilbVtFf3QZoA1z5Z?mode=gi_t) to ask questions.
+## Community and contributing
+
+Nile Js was created by Hussein Kizz at [Nile Squad Labz](https://nilesquad.com). Join the [WhatsApp community](https://chat.whatsapp.com/K0xkSiilbVtFf3QZoA1z5Z?mode=gi_t), report issues on [GitHub](https://github.com/nile-js/nile/issues), or read [CONTRIBUTING.md](https://github.com/nile-js/nile/blob/main/CONTRIBUTING.md).
 
 ## License
 

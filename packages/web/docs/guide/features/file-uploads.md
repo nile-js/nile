@@ -3,7 +3,7 @@ title: "File uploads"
 description: "Accept multipart files in an action with count, size, filename and type limits, and read them as a structured payload"
 ---
 
-An upload is an action whose input arrives as multipart form data. Nile Js parses the form, applies the limits in `rest.uploads`, and passes the fields and files to your handler as a structured payload. Nile Js does not store the files; your handler decides where they go.
+Define an upload action with multipart input. Nile parses its fields and files and applies the limits in `rest.uploads`. Your handler decides where to store the files.
 
 ## When to use it
 
@@ -41,7 +41,7 @@ const inspectDocumentHandler = (payload: StructuredPayload) => {
   });
 };
 
-const inspectDocumentAction = createAction<StructuredPayload>({
+const inspectDocumentAction = createAction({
   name: "inspect",
   description: "Inspect an uploaded PDF or image",
   isSpecial: { contentType: "multipart/form-data" },

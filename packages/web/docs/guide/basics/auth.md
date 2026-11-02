@@ -3,7 +3,7 @@ title: "Authentication and access"
 description: "Verify credentials and apply access policies before business work runs"
 ---
 
-As more operations are added, a common policy boundary helps the team avoid repeating authentication code. Nile includes JWT verification; role, organization and resource-level authorization remain explicit application rules.
+Configure JWT verification for protected actions. Use a global before hook for role, organization or resource access checks.
 
 ## Built-in JWT verification
 
@@ -29,12 +29,12 @@ export const serverConfig: ServerConfig = {
 ```ts
 import { createAction } from "@nilejs/nile";
 import type { NileContext } from "@nilejs/nile";
-import { Err, Ok, type Result } from "@nilejs/nile/fp";
+import { Err, Ok } from "@nilejs/nile/fp";
 
 const getProfileHandler = (
-  input: unknown,
-  context?: NileContext<unknown>
-): Result<unknown, string> => {
+  data: unknown,
+  context?: NileContext
+) => {
   const session = context?.getSession("rest");
 
   if (session === undefined) {
@@ -78,7 +78,7 @@ Custom routes and webhooks do not pass through an action's `isProtected` check. 
 
 ```ts
 import { type AuthConfig, verifyJWT } from "@nilejs/nile";
-import { Err, Ok, type Result } from "@nilejs/nile/fp";
+import { Err, Ok } from "@nilejs/nile/fp";
 import { config } from "./config";
 
 const jwtConfig: AuthConfig = {
@@ -109,24 +109,21 @@ import type { BeforeActionHandler } from "@nilejs/nile";
 import { Err, Ok, type Result } from "@nilejs/nile/fp";
 
 /** Require every role listed on a protected action. */
-export const authorizeAction: BeforeActionHandler<boolean, string> = ({
-  nileContext,
-  action,
-}): Result<boolean, string> => {
-  if (!action.isProtected) {
+export const authorizeAction: BeforeActionHandler<boolean, string> = (hookContext) => {
+  if (!hookContext.action.isProtected) {
     return Ok(true);
   }
 
-  const session = nileContext.getSession("rest");
+  const session = hookContext.nileContext.getSession("rest");
   if (!session) {
     return Err("Sign in to continue");
   }
 
   const roles = session.roles;
-  if (action.accessControl?.length && !Array.isArray(roles)) {
+  if (hookContext.action.accessControl?.length && !Array.isArray(roles)) {
     return Err("Access denied");
   }
-  const isAllowed = (action.accessControl ?? []).every(
+  const isAllowed = (hookContext.action.accessControl ?? []).every(
     (role) => Array.isArray(roles) && roles.includes(role),
   );
   return isAllowed ? Ok(true) : Err("Access denied");

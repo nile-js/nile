@@ -27,7 +27,7 @@ export function createAction<T = unknown, E = string>(
  * No runtime overhead — returns the config array as-is.
  *
  * Uses `any` at the collection boundary to support heterogeneous action types.
- * Individual actions retain full type safety via `createAction<T>()`.
+ * `createAction()` infers each action’s data type from its handler.
  */
 // biome-ignore lint/suspicious/noExplicitAny: Collection boundary for heterogeneous action types
 export function createActions(configs: Action<any, any>[]): Action<any, any>[] {

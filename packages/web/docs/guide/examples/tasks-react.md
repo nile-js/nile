@@ -3,7 +3,7 @@ title: "Tasks API in React"
 description: "Call the starter's tasks actions from a React component with @nilejs/client, handle failures and allow the Vite origin"
 ---
 
-This example connects a React task list to the starter's `tasks` service. The component loads tasks, adds a new task through `@nilejs/client` and shows the validation message when the title is empty. You will build it in an existing starter project and check it from the command line, then mount the component in your React app.
+Connect a React task list to the starter’s `tasks` service. Load tasks, create a task through `@nilejs/client` and show the validation message when the title is empty.
 
 ## What you need
 
@@ -80,12 +80,12 @@ const server = await createNileServer({
   onBoot: {
     // The first PGlite start on a slow machine can take longer than the 10 second default.
     maxWaitTime: 30_000,
-    fn: async (ctx) => {
+    fn: async (context) => {
       const prepared = await pushSchema();
       if (prepared.isErr) {
         return prepared;
       }
-      ctx.resources?.logger?.info({
+      context.resources?.logger?.info({
         atFunction: "onBoot",
         message: "my-app booted - PGLite schema ready",
       });
@@ -270,7 +270,7 @@ export const TaskBoard = (): ReactElement => {
         }}
       >
         <label htmlFor="task-title">Title</label>
-        <input
+        <data
           id="task-title"
           value={title}
           onChange={(event) => {

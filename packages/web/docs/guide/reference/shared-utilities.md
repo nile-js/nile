@@ -3,7 +3,7 @@ title: "Shared backend utilities"
 description: "Use database, retry, storage and execution helpers through the utils namespace"
 ---
 
-Nile keeps these helpers functional and independent of application models, payment providers or deployment configuration. Use the named `utils` export from `@nilejs/nile`. Framework entry points such as `createNileServer`, service/action factories and server configuration stay at the package root. Existing direct helper imports remain supported.
+Import Nile helpers through `utils` from `@nilejs/nile`. Use them for models, diagnostics, retries, queues and other shared application resources.
 
 ```ts
 import { utils } from "@nilejs/nile";
@@ -131,7 +131,7 @@ Consume is a synchronous compare-and-delete: only the matching caller consumes i
 
 ```ts
 const writes = utils.createGroupedControl({
-  key: (input: SaveDraft) => input.documentId,
+  key: (data: SaveDraft) => data.documentId,
   maxKeys: 1000,
   idleMs: 30_000,
   create: () => utils.createQueue({

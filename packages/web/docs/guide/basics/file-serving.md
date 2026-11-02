@@ -3,7 +3,7 @@ title: "Public assets"
 description: "Serve application assets through the selected HTTP adapter"
 ---
 
-For a small application, Nile can expose a local public asset directory without another HTTP service. Both adapters support the same configuration:
+Serve public files by setting `rest.enableStatic` and `rest.staticDir`. Both HTTP adapters support these settings:
 
 ```ts
 rest: {

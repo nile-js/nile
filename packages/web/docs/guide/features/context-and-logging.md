@@ -37,16 +37,16 @@ const renameProjectSchema = z.object({
 type RenameProjectInput = z.infer<typeof renameProjectSchema>;
 
 const renameProjectHandler = (
-  input: RenameProjectInput,
-  context?: NileContext<unknown>
+  data: RenameProjectInput,
+  context?: NileContext
 ) => {
   const activeLogger = context?.resources?.logger;
 
-  if (input.name === "system") {
+  if (data.name === "system") {
     activeLogger?.warn({
       atFunction: "renameProject",
       message: "Rejected a reserved project name",
-      data: { projectId: input.projectId },
+      data: { projectId: data.projectId },
     });
     return Err("Choose a different project name");
   }
@@ -54,13 +54,13 @@ const renameProjectHandler = (
   activeLogger?.info({
     atFunction: "renameProject",
     message: "Project renamed",
-    data: { projectId: input.projectId },
+    data: { projectId: data.projectId },
   });
 
-  return Ok({ projectId: input.projectId, name: input.name });
+  return Ok({ projectId: data.projectId, name: data.name });
 };
 
-const renameProjectAction = createAction<RenameProjectInput>({
+const renameProjectAction = createAction({
   name: "rename",
   description: "Rename a project",
   validation: renameProjectSchema,
@@ -83,7 +83,7 @@ export const server = await createNileServer({
 });
 ```
 
-Handlers are typed with `NileContext<unknown>` and read optional fields with `?.`. Nile passes the context on every call, including `server.invoke` calls. The fields are optional because your handler can also be called from a test or a background job that has no request.
+Handlers are typed with `NileContext` and read optional fields with `?.`. Nile passes the context on every call, including `server.invoke` calls. The fields are optional because your handler can also be called from a test or a background job that has no request.
 
 With the logger above, `createLogger` writes structured lines to `logs/` relative to the working directory. The starter's startup line looks like this:
 

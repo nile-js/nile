@@ -1,5 +1,5 @@
 import { createAction } from "@nilejs/nile";
-import { Err, Ok } from "@nilejs/nile/fp";
+import { Ok } from "@nilejs/nile/fp";
 import z from "zod";
 import { taskModel } from "@/db/models";
 
@@ -9,17 +9,17 @@ const deleteTaskSchema = z.object({
 
 type DeleteTaskInput = z.infer<typeof deleteTaskSchema>;
 
-const deleteTaskHandler = async (input: DeleteTaskInput) => {
-  const result = await taskModel.delete(input.id);
+const deleteTaskHandler = async (data: DeleteTaskInput) => {
+  const result = await taskModel.delete(data.id);
 
   if (result.isErr) {
-    return Err(result.error);
+    return result;
   }
 
-  return Ok({ deleted: true, id: input.id });
+  return Ok({ deleted: true, id: data.id });
 };
 
-export const deleteTaskAction = createAction<DeleteTaskInput>({
+export const deleteTaskAction = createAction({
   name: "delete",
   description: "Delete a task by ID",
   validation: deleteTaskSchema,

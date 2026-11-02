@@ -3,7 +3,7 @@ title: "Telemetry"
 description: "Send action traces and metrics from Nile Js to an OpenTelemetry collector over OTLP HTTP"
 ---
 
-Telemetry sends a span for each action or scheduled job, plus bounded metrics, to an OpenTelemetry collector. Use it when your team already reads traces and metrics in a tool such as Grafana, Honeycomb or Jaeger. Nile Js does not include a dashboard.
+Send action and scheduled-job traces and metrics to an OpenTelemetry collector. Read them in your chosen tool, such as Grafana, Honeycomb or Jaeger.
 
 ## When to use it
 

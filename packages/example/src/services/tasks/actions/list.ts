@@ -1,12 +1,12 @@
 import { createAction } from "@nilejs/nile";
-import { Err, Ok } from "@nilejs/nile/fp";
+import { Ok } from "@nilejs/nile/fp";
 import { taskModel } from "@/db/models";
 
 const listTasksHandler = async () => {
   const result = await taskModel.findAll();
 
   if (result.isErr) {
-    return Err(result.error);
+    return result;
   }
 
   return Ok({ tasks: result.value });

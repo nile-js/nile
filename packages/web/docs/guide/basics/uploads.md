@@ -56,7 +56,7 @@ const inspectDocumentHandler = (payload: StructuredPayload) => {
   });
 };
 
-export const inspectDocument = createAction<StructuredPayload>({
+export const inspectDocument = createAction({
   name: "inspect",
   description: "Inspect an uploaded document",
   isSpecial: { contentType: "multipart/form-data" },

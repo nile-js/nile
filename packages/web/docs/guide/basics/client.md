@@ -3,7 +3,7 @@ title: "Frontend client"
 description: "Call service actions from a browser or server TypeScript app and check each Result before reading its value"
 ---
 
-The frontend calls `projects.create` by name, while the backend keeps its service and action structure. `@nilejs/client` works wherever your application can use Fetch. It does not require React or a shared repository.
+Call an action by its service and action names with `@nilejs/client`. The client uses Fetch and returns Results for successful calls, validation failures and network errors.
 
 ```sh
 bun add @nilejs/client

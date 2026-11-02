@@ -3,7 +3,7 @@ title: "Actions"
 description: "Define an operation with input validation, access rules and a Result"
 ---
 
-An action is a named business operation. Keep its description, input schema and handler together so a teammate can understand what it accepts and how it finishes without tracing a chain of route definitions.
+Keep an operation’s name, validation schema and handler together. The schema defines the data the handler receives; the handler calls your business logic and returns a Result.
 
 ```ts
 import { createAction } from "@nilejs/nile";
@@ -16,16 +16,16 @@ const createProjectSchema = z.object({
 
 type CreateProjectInput = z.infer<typeof createProjectSchema>;
 
-const createProjectHandler = (input: CreateProjectInput) => {
+const createProjectHandler = (data: CreateProjectInput) => {
   const project = {
     id: crypto.randomUUID(),
-    name: input.name,
+    name: data.name,
   };
 
   return Ok({ project: project });
 };
 
-export const createProject = createAction<CreateProjectInput>({
+export const createProject = createAction({
   name: "create",
   description: "Create a team project",
   validation: createProjectSchema,
@@ -53,6 +53,6 @@ The example returns a project without persistence. In a real application, coordi
 | `result.pipeline` | Include local hook execution logs in the returned data. |
 | `meta` | Attach application-defined metadata. No automatic caching or permissions are implied. |
 
-`createAction` preserves your definition; it does not infer a handler's input from the `validation` property. Derive the input type with `z.infer` and pass it explicitly, as above.
+`createAction` infers the data type from the handler. For a named handler, derive its data type with `z.infer` and annotate the `data` parameter. Let TypeScript infer the handler’s return type and the action type.
 
 Use [services](/guide/basics/services) to group actions, [Results](/guide/basics/errors-and-results) for failure paths, and [hooks](/guide/basics/hooks-and-pipelines) for shared policy.

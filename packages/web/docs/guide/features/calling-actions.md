@@ -3,7 +3,7 @@ title: "HTTP, WebSocket and direct calls"
 description: "Call one action from HTTP, a socket client or your own backend code, and know what each path requires"
 ---
 
-Every action runs through the same pipeline no matter how it was called: validation, hooks, the handler and the JWT check for protected actions. The transport changes how you send the request and how the response arrives. This page shows the three paths and what each one needs.
+Call an action over HTTP, through a socket client or within your backend using `server.invoke`. Each path runs the action’s authentication, hooks, validation and handler.
 
 ## When to use each path
 

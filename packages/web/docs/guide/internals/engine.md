@@ -3,7 +3,7 @@ title: "Engine"
 description: "Understand action lookup, pipeline order and registration statistics"
 ---
 
-The engine gives every business operation the same execution path. A team can review input checks, reusable policy and the handler without learning a different convention for each service.
+Registered actions share one execution path for authentication, hooks, validation and their handler. Configure those steps once and apply them across the service registry.
 
 ## Registration
 

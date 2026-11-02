@@ -3,7 +3,7 @@ title: "Services"
 description: "Group related actions into an explicitly registered business domain"
 ---
 
-A service gives related actions a recognizable home. Use domain names the team already uses: projects, tickets, billing or collaboration. As more operations arrive, people can start with the domain rather than search an unfamiliar route map.
+Group related operations in a service named for their business domain, such as projects, billing or membership. Register its public actions in the domain’s `index.ts`.
 
 ```ts
 import { createService, createServices } from "@nilejs/nile";

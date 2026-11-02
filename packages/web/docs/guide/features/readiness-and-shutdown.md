@@ -3,7 +3,7 @@ title: "Readiness and shutdown"
 description: "Expose readiness and liveness endpoints, then stop accepting work and drain in-flight executions on shutdown"
 ---
 
-A deployment platform needs two signals from your service: whether it is ready to receive traffic, and whether it is still running. Nile Js provides both, and a shutdown call that stops new work, waits for accepted work and closes the resources you register.
+Expose readiness and liveness checks for your deployment platform. On shutdown, stop new work, wait for accepted actions and close registered resources.
 
 ## When to use it
 

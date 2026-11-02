@@ -30,15 +30,15 @@ const prepareOrderSchema = z.object({
 
 type PrepareOrderInput = z.infer<typeof prepareOrderSchema>;
 
-const prepareOrderHook = (input: PrepareOrderInput) => {
+const prepareOrderHook = (data: PrepareOrderInput) => {
   const normalized = {
-    sku: input.sku.toUpperCase(),
-    quantity: input.quantity,
+    sku: data.sku.toUpperCase(),
+    quantity: data.quantity,
   };
   return Ok(normalized);
 };
 
-const prepareOrderAction = createAction<PrepareOrderInput>({
+const prepareOrderAction = createAction({
   name: "prepare",
   description: "Normalize an order line before checkout",
   validation: null,
@@ -49,25 +49,25 @@ type CheckoutInput = z.infer<typeof prepareOrderSchema>;
 
 const checkoutSchema = prepareOrderSchema;
 
-const checkoutHandler = (input: CheckoutInput) => {
-  if (input.quantity > 100) {
+const checkoutHandler = (data: CheckoutInput) => {
+  if (data.quantity > 100) {
     return Err("Quantity exceeds the checkout limit");
   }
 
-  return Ok({ sku: input.sku, quantity: input.quantity, status: "accepted" });
+  return Ok({ sku: data.sku, quantity: data.quantity, status: "accepted" });
 };
 
-const stampHook = (input: unknown) => {
-  return Ok(input);
+const stampHook = (data: unknown) => {
+  return Ok(data);
 };
 
-const stampAction = createAction<unknown>({
+const stampAction = createAction({
   name: "stamp",
   description: "Attach checkout metadata to the response",
   handler: stampHook,
 });
 
-const checkoutAction = createAction<CheckoutInput>({
+const checkoutAction = createAction({
   name: "checkout",
   description: "Accept a checkout request",
   validation: checkoutSchema,
@@ -98,16 +98,12 @@ const services = createServices([
   },
 ]);
 
-const recordAuditTrail: AfterActionHandler<unknown, unknown> = ({
-  nileContext,
-  action,
-  result,
-}) => {
-  nileContext.updateHookState("audited", action.name);
-  if (result.isErr) {
-    return Err(String(result.error));
+const recordAuditTrail: AfterActionHandler<unknown, unknown> = (hookContext) => {
+  hookContext.nileContext.updateHookState("audited", hookContext.action.name);
+  if (hookContext.result.isErr) {
+    return Err(String(hookContext.result.error));
   }
-  return Ok(result.value);
+  return Ok(hookContext.result.value);
 };
 
 export const server = await createNileServer({

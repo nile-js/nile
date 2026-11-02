@@ -3,7 +3,7 @@ title: "Discovery and agents"
 description: "Expose selected action schemas for tools and coding agents"
 ---
 
-A predictable domain structure helps a coding agent find implementation files. Runtime discovery solves a different problem: an integration can inspect registered operations and their input descriptions before calling them.
+Enable discovery so trusted tools can list registered services and inspect action schemas before calling them.
 
 Nile provides `explore` and `schema` intents. It does not include an MCP server, an autonomous agent runtime or automatic tool registration. Your integration decides which operations a tool can call and carries the caller's credentials.
 

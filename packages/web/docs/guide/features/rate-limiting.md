@@ -24,11 +24,11 @@ const quoteSchema = z.object({
 
 type QuoteInput = z.infer<typeof quoteSchema>;
 
-const quoteHandler = (input: QuoteInput) => {
-  return Ok({ sku: input.sku, price: 1200 });
+const quoteHandler = (data: QuoteInput) => {
+  return Ok({ sku: data.sku, price: 1200 });
 };
 
-const quoteAction = createAction<QuoteInput>({
+const quoteAction = createAction({
   name: "quote",
   description: "Return the public price of a product",
   validation: quoteSchema,

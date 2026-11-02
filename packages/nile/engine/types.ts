@@ -83,7 +83,7 @@ export interface Action<T = unknown, E = string> {
 /**
  * Heterogeneous collection of actions with varying T types.
  * Uses `any` at the collection boundary since TypeScript lacks existential types.
- * Individual actions retain full type safety via `createAction<T>()`.
+ * `createAction()` infers each action’s data type from its handler.
  */
 // biome-ignore lint/suspicious/noExplicitAny: Collection boundary for heterogeneous action types
 export type Actions = Action<any, any>[];

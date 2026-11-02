@@ -1,36 +1,26 @@
 # Nile Js
 
-[![npm version](https://img.shields.io/npm/v/@nilejs/nile.svg?label=@nilejs%2Fnile)](https://www.npmjs.com/package/@nilejs/nile)
-[![npm downloads](https://img.shields.io/npm/dm/@nilejs/nile.svg)](https://www.npmjs.com/package/@nilejs/nile)
-[![GitHub repo](https://img.shields.io/badge/GitHub-nile--js%2Fnile-blue?logo=github)](https://github.com/nile-js/nile)
-[![GitHub stars](https://img.shields.io/github/stars/nile-js/nile.svg?style=social&label=Star)](https://github.com/nile-js/nile)
+[![npm version](https://img.shields.io/npm/v/@nilejs/nile.svg)](https://www.npmjs.com/package/@nilejs/nile)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
 
-TypeScript-first, service and actions oriented backend framework.
+Nile Js is a functional TypeScript backend framework for small teams. Group your backend into services for business domains and actions for individual operations. Validation, error handling, logging and shared resources follow the same conventions as your application grows.
 
-**Repository:** https://github.com/nile-js/nile (archived original: https://github.com/nile-squad/nile)
+A teammate or coding agent can find a feature through its service, open the action and follow its business logic and data access. You write ordinary TypeScript functions for the rules of your product.
 
-You define actions, group them into services, and get a predictable API with validation, error handling and schema export. No route definitions, controllers or middleware chains: each business operation lives in one place your team remembers and can reason about.
+[Documentation](https://nile-js.github.io/nile/guide/) · [Getting started](https://nile-js.github.io/nile/guide/start/getting-started/) · [Examples](https://nile-js.github.io/nile/guide/examples/)
 
-Built for small teams and coding agents that iterate fast. Services follow your business domains, so the structure scales predictably. Errors are values, input is validated before the handler runs, and dependencies come from one shared context. OpenTelemetry, background jobs and global hooks are built in, so Nile keeps you shipping as your backend grows.
+## Create a project
 
-[Documentation](https://nile-js.github.io/nile/) · [Getting started](https://nile-js.github.io/nile/guide/start/getting-started/) · [Features](https://nile-js.github.io/nile/guide/features/) · [Examples](https://nile-js.github.io/nile/guide/examples/)
-
-> Nile Js is the result of 12 months of design and development. This repository is a ground-up rewrite; the original codebase lives at [nile-squad/nile](https://github.com/nile-squad/nile) (archived).
-
-## Quick start
-
-```bash
+```sh
 bunx @nilejs/cli new my-app
 cd my-app
 bun install
 bun run dev
 ```
 
-The server starts on `http://localhost:8000` with an embedded database, so there is nothing else to install.
+The starter runs on Bun at `http://localhost:8000`. It includes a Tasks service and an embedded PGlite database.
 
-## One action
+## Write an action
 
 ```ts
 import { createAction } from "@nilejs/nile";
@@ -38,16 +28,21 @@ import { Ok } from "@nilejs/nile/fp";
 import { z } from "zod";
 
 const createProjectSchema = z.object({
-  name: z.string().trim().min(1),
+  name: z.string().trim().min(1, "Name is required"),
 });
 
-type CreateProjectInput = z.infer<typeof createProjectSchema>;
+type CreateProjectData = z.infer<typeof createProjectSchema>;
 
-const createProjectHandler = (input: CreateProjectInput) => {
-  return Ok({ project: { id: crypto.randomUUID(), name: input.name } });
+const createProjectHandler = (data: CreateProjectData) => {
+  const project = {
+    id: crypto.randomUUID(),
+    name: data.name,
+  };
+
+  return Ok({ project: project });
 };
 
-export const createProject = createAction<CreateProjectInput>({
+export const createProjectAction = createAction({
   name: "create",
   description: "Create a project",
   validation: createProjectSchema,
@@ -55,79 +50,32 @@ export const createProject = createAction<CreateProjectInput>({
 });
 ```
 
-Register it in a service, then call it from any frontend:
-
-```ts
-const result = await nile.invoke({
-  service: "projects",
-  action: "create",
-  payload: { name: "Customer portal" },
-});
-
-if (result.isErr) {
-  console.error(result.error);
-} else {
-  console.log(result.value);
-}
-```
+`createAction` infers its type from the handler. Register the action in a service, then call it through the frontend client, `server.invoke` or Socket.IO. The [core package guide](https://github.com/nile-js/nile/blob/main/packages/nile/README.md) shows registration, startup and a client call.
 
 ## Packages
 
-| Package | Version | Description |
-|---------|---------|-------------|
-| [`@nilejs/nile`](./packages/nile) | [![npm](https://img.shields.io/npm/v/@nilejs/nile.svg)](https://www.npmjs.com/package/@nilejs/nile) | Core framework: server, engine, HTTP and WebSocket transports, validation, logging and utilities |
-| [`@nilejs/cli`](./packages/cli) | [![npm](https://img.shields.io/npm/v/@nilejs/cli.svg)](https://www.npmjs.com/package/@nilejs/cli) | Project scaffolding and code generation |
-| [`@nilejs/client`](./packages/client) | [![npm](https://img.shields.io/npm/v/@nilejs/client.svg)](https://www.npmjs.com/package/@nilejs/client) | Type-safe frontend client with a Result API and a socket client |
+| Package | Use it for |
+| --- | --- |
+| [@nilejs/nile](https://www.npmjs.com/package/@nilejs/nile) | Server, actions, validation, hooks, logging and backend utilities |
+| [@nilejs/cli](https://www.npmjs.com/package/@nilejs/cli) | Project scaffolding, action generators and client contracts |
+| [@nilejs/client](https://www.npmjs.com/package/@nilejs/client) | Typed HTTP calls and a Socket.IO client |
 
-### Other packages
-
-| Package | Description |
-|---------|-------------|
-| [`example`](./packages/example) | Reference project showing a working Nile Js setup |
-| [`web`](./packages/web) | Website and documentation |
-| [`benchmarks`](./packages/benchmarks) | Reproducible framework comparison suite |
-
-## Repository structure
-
-```
-nile/
-  packages/
-    nile/        Core framework (@nilejs/nile)
-    cli/         CLI tool (@nilejs/cli)
-    client/      Frontend client (@nilejs/client)
-    example/     Reference project
-    web/         Website and documentation
-    benchmarks/  Performance comparison suite
-```
+Explore the [reference application](https://github.com/nile-js/nile/tree/main/packages/example), [documentation source](https://github.com/nile-js/nile/tree/main/packages/web) and [benchmark suite](https://github.com/nile-js/nile/tree/main/packages/benchmarks).
 
 ## Development
 
-This is a Bun workspaces monorepo. [CONTRIBUTING.md](./CONTRIBUTING.md) covers setup, builds, tests and code standards.
-
-```bash
-# Install all dependencies
+```sh
 bun install
-
-# Build and test the core framework
 bun run --cwd packages/nile build
 bun run --cwd packages/nile test:run
-
-# Build the website and documentation
 bun run --cwd packages/web build
 ```
 
+Read [CONTRIBUTING.md](https://github.com/nile-js/nile/blob/main/CONTRIBUTING.md) for setup and contribution guidelines. When changing an existing application, start with the [migration notes](https://github.com/nile-js/nile/blob/main/packages/nile/docs/release-migration.md).
+
 ## Community
 
-Join the [WhatsApp community](https://chat.whatsapp.com/K0xkSiilbVtFf3QZoA1z5Z?mode=gi_t) to ask questions and share what you are building. Report bugs and propose features in [GitHub issues](https://github.com/nile-js/nile/issues).
-
-## Contributing
-
-Contributions are welcome. Read [CONTRIBUTING.md](./CONTRIBUTING.md), then:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/your-feature`)
-3. Commit your changes
-4. Push the branch and open a pull request
+Join the [WhatsApp community](https://chat.whatsapp.com/K0xkSiilbVtFf3QZoA1z5Z?mode=gi_t) or report an issue on [GitHub](https://github.com/nile-js/nile/issues).
 
 ## License
 

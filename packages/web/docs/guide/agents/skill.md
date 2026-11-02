@@ -3,12 +3,12 @@ title: "Nile Js skill"
 description: "Install the SKILL.md file that ships with @nilejs/nile so a coding assistant follows Nile Js conventions"
 ---
 
-The Nile Js skill is a Markdown file that teaches a coding assistant how a Nile Js project is organized and how to change it safely. It ships inside the `@nilejs/nile` package, so the copy in your project always matches the version you installed.
+Use Nile’s `SKILL.md` to give a coding assistant the service layout, action pattern, FP conventions and common mistakes. The package includes a copy matching your installed version.
 
 ## What the skill covers
 
 - The project layout of a CLI starter and where the service registry lives.
-- The action pattern: a named Zod schema, an inferred input type, a named handler and `createAction<T>`.
+- The action pattern: a named Zod schema, an inferred input type, a named handler and `createAction`.
 - That handlers receive `(data, context)`, and which context fields to use.
 - Results, the HTTP response envelope and the per-field `data.issues` on validation failures.
 - Calling actions over HTTP, with `@nilejs/client` and with `server.invoke`.

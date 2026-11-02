@@ -49,7 +49,7 @@ Structure violations fail startup by default. An application needs `src/index.ts
 
 ## The action pattern
 
-Every action uses a named schema, an inferred input type, a separately written named handler and `createAction<T>`:
+Define a named schema, derive the handler’s data type and pass the named handler to `createAction`. The action type and handler return type are inferred. Use `data` and `context` for the parameters you need; omit unused parameters:
 
 ```ts
 import { createAction } from "@nilejs/nile";
@@ -62,15 +62,15 @@ const createProjectSchema = z.object({
 
 type CreateProjectInput = z.infer<typeof createProjectSchema>;
 
-const createProjectHandler = (input: CreateProjectInput) => {
-  if (input.name === "system") {
+const createProjectHandler = (data: CreateProjectInput) => {
+  if (data.name === "system") {
     return Err("Choose a different project name");
   }
 
-  return Ok({ project: { name: input.name } });
+  return Ok({ project: { name: data.name } });
 };
 
-export const createProjectAction = createAction<CreateProjectInput>({
+export const createProjectAction = createAction({
   name: "create",
   description: "Create a project",
   validation: createProjectSchema,
@@ -104,7 +104,7 @@ Action names are unique within a service. Folder names do not create routes; onl
 
 ## Handlers take (data, context)
 
-Nile Js calls every handler with two arguments: the validated input and the execution's `NileContext`. The type marks the context optional. Use `createAction<Input>` for the schema’s parsed output type, and import `NileContext` when annotating a named handler’s second argument. Read an optional context with `?.` or explicitly reject its absence before using it.
+Nile Js calls every handler with two arguments: the validated input and the execution's `NileContext`. For a named handler, annotate `data` with the schema’s parsed output type and use `context` for its second parameter. Import `NileContext` when you need to annotate it. `createAction` infers its type from the handler; leave off the repeated generic argument and inferred return annotation. Read an optional context with `?.` or explicitly reject its absence before using it.
 
 - `context.getSession("rest")` returns the verified JWT identity (`userId`, `organizationId` and other claims) for a protected action.
 - `context.resources` holds what `createNileServer` received (`logger`, `database`).
@@ -324,7 +324,7 @@ Advanced pages cover handler context, composed hooks, execution options and test
 1. Read `services.config.ts`, the target service’s `index.ts` and its actions before you change anything.
 2. Follow the existing pattern in that service. Do not add a second architecture.
 3. Never invent an API. Check the guide, the installed `@nilejs/nile` types in `node_modules`, or the existing code. If it is not there, say so.
-4. Use named schemas, inferred input types, named handlers, `createAction<T>` and braces on every `if`.
+4. Use named schemas and handlers. Name action parameters `data` and `context`, and hook parameters `hookContext`. Annotate a named handler’s data from the schema; let `createAction` and return types infer the rest. Use braces on every `if`.
 5. Start with business rules in the action’s named handler. Move reusable rules or transaction coordination into ordinary domain functions when that makes them easier to share or test. Keep persistence in models or repositories; keep transaction boundaries explicit.
 6. Typecheck and run the relevant tests after a coherent change. Exercise the registered action through `server.invoke` or a transport when registration, policy or validation changes.
 7. Do not commit, publish or change secrets, `.env` values or deployment settings unless the user asks.

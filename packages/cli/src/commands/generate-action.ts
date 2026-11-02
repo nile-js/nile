@@ -36,12 +36,12 @@ const ${camel}Schema = z.object({
 
 type ${pascal}Input = z.infer<typeof ${camel}Schema>;
 
-const ${camel}Handler = async (input: ${pascal}Input) => {
+const ${camel}Handler = async (data: ${pascal}Input) => {
   // Implement ${serviceName}.${actionName} here
-  return Ok({ result: input });
+  return Ok({ result: data });
 };
 
-export const ${camel}Action = createAction<${pascal}Input>({
+export const ${camel}Action = createAction({
   name: "${actionName}",
   description: "${pascal} action for ${serviceName}",
   validation: ${camel}Schema,

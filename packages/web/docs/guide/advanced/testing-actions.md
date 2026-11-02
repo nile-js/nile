@@ -25,14 +25,14 @@ const addNoteSchema = z.object({
 
 type AddNoteInput = z.infer<typeof addNoteSchema>;
 
-const addNoteHandler = (input: AddNoteInput) => {
-  if (input.text.length > 280) {
+const addNoteHandler = (data: AddNoteInput) => {
+  if (data.text.length > 280) {
     return Err("Note is too long");
   }
-  return Ok({ note: { text: input.text } });
+  return Ok({ note: { text: data.text } });
 };
 
-const addNoteAction = createAction<AddNoteInput>({
+const addNoteAction = createAction({
   name: "add",
   description: "Add a note",
   validation: addNoteSchema,

@@ -3,7 +3,7 @@ title: "Realtime order updates"
 description: "Define typed order topics, verify the JWT on each socket connection, publish from a protected action and receive updates in a client"
 ---
 
-This example connects a socket client to an order topic. A protected action changes an order's status and publishes the change to subscribers in the same organization. A client from another organization can neither subscribe to that topic nor change the order.
+Publish order status changes to socket subscribers in the same organization. Authenticate each connection, check subscription access and protect the action which changes the order.
 
 ## What you need
 
@@ -156,20 +156,20 @@ const setStatusSchema = z.object({
 type SetStatusInput = z.infer<typeof setStatusSchema>;
 
 const setStatusHandler = async (
-  input: SetStatusInput,
-  context?: NileContext<unknown>
+  data: SetStatusInput,
+  context?: NileContext
 ) => {
   const session = context?.getSession("rest");
   if (session === undefined) {
     return Err("Sign in to continue");
   }
 
-  const existing = findOrder(input.orderId);
+  const existing = findOrder(data.orderId);
   if (existing === undefined || existing.organizationId !== session.organizationId) {
     return Err("Order not found");
   }
 
-  const order = updateOrderStatus(input.orderId, input.status);
+  const order = updateOrderStatus(data.orderId, data.status);
   if (order === undefined) {
     return Err("Order not found");
   }
@@ -188,7 +188,7 @@ const setStatusHandler = async (
   return Ok({ order: order });
 };
 
-export const setStatusAction = createAction<SetStatusInput>({
+export const setStatusAction = createAction({
   name: "set-status",
   description: "Change an order status and notify subscribers",
   isProtected: true,
@@ -296,12 +296,12 @@ const server = await createNileServer({
   onBoot: {
     // The first PGlite start on a slow machine can take longer than the 10 second default.
     maxWaitTime: 30_000,
-    fn: async (ctx) => {
+    fn: async (context) => {
       const prepared = await pushSchema();
       if (prepared.isErr) {
         return prepared;
       }
-      ctx.resources?.logger?.info({
+      context.resources?.logger?.info({
         atFunction: "onBoot",
         message: "my-app booted - PGLite schema ready",
       });

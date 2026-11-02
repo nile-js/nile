@@ -1,5 +1,5 @@
 import { createAction } from "@nilejs/nile";
-import { Err, Ok } from "@nilejs/nile/fp";
+import { Ok } from "@nilejs/nile/fp";
 import z from "zod";
 import { taskModel } from "@/db/models";
 
@@ -12,25 +12,25 @@ const updateTaskSchema = z.object({
 
 type UpdateTaskInput = z.infer<typeof updateTaskSchema>;
 
-const updateTaskHandler = async (input: UpdateTaskInput) => {
+const updateTaskHandler = async (data: UpdateTaskInput) => {
   // Fields left out of the request stay undefined and are not changed.
   const result = await taskModel.update({
-    id: input.id,
+    id: data.id,
     data: {
-      title: input.title,
-      description: input.description,
-      status: input.status,
+      title: data.title,
+      description: data.description,
+      status: data.status,
     },
   });
 
   if (result.isErr) {
-    return Err(result.error);
+    return result;
   }
 
   return Ok({ task: result.value });
 };
 
-export const updateTaskAction = createAction<UpdateTaskInput>({
+export const updateTaskAction = createAction({
   name: "update",
   description: "Update an existing task",
   validation: updateTaskSchema,

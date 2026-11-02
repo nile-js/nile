@@ -3,7 +3,7 @@ title: "Hooks and pipelines"
 description: "Compose shared policies and action-specific work in a defined execution order"
 ---
 
-When several actions need the same check or transformation, put it in a recognizable pipeline step. That keeps the next operation small and makes the shared rule easier to review.
+Use hooks for checks or transformations shared by several actions. Global hooks run across the application; local hooks form part of an action’s pipeline.
 
 ## Know when each step runs
 
@@ -21,20 +21,24 @@ A before hook sees input **before validation**. Check the values it uses; do not
 
 ## Global checks
 
-This server-configuration fragment rejects a protected action without a session:
+Require a session before a protected action runs:
 
 ```ts
+import type { BeforeActionHandler } from "@nilejs/nile";
 import { Err, Ok } from "@nilejs/nile/fp";
 
-const onBeforeActionHandler = ({ nileContext, action, payload }) => {
-  if (action.isProtected && !nileContext.getSession("rest")) {
+const onBeforeActionHandler: BeforeActionHandler<boolean, string> = (
+  hookContext
+) => {
+  const session = hookContext.nileContext.getSession("rest");
+  if (hookContext.action.isProtected && session === undefined) {
     return Err("Sign in to continue");
   }
-  return Ok(payload);
+  return Ok(true);
 };
 ```
 
-For a standalone typed declaration, annotate this function with `BeforeActionHandler` as shown in [authentication](/guide/basics/auth). Global before-hook success allows execution to continue; **its returned value does not replace the payload**. Use local before hooks for transformations. Global before-hook failure always stops execution.
+Set `onBeforeActionHandler` in your server configuration to this hook. Global before-hook success allows execution to continue; **its returned value does not replace the payload**. Use local before hooks for transformations. Global before-hook failure always stops execution.
 
 The global after hook receives `{ nileContext, action, payload, result }`. Its Result becomes the final output; returning an error stops success. It is not an always-run `finally` callback and does not run after an earlier failure.
 

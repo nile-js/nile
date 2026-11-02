@@ -3,7 +3,7 @@ title: "Shared context"
 description: "Share application resources while keeping request identity and action state isolated"
 ---
 
-A growing application often needs the same logger, database client or cache across many operations. Supply long-lived resources once and read them through Nile context instead of building a new dependency container for every action.
+Supply shared resources, such as a database and logger, when you create the server. Actions and hooks read them through `context.resources`.
 
 ```ts
 import { createLogger, createNileServer } from "@nilejs/nile";
@@ -28,8 +28,8 @@ import type { NileContext } from "@nilejs/nile";
 import { Ok } from "@nilejs/nile/fp";
 
 const createProjectHandler = (
-  input: CreateProjectInput,
-  context?: NileContext<unknown>,
+  data: CreateProjectInput,
+  context?: NileContext,
 ) => {
   const logger = context?.resources?.logger;
 
@@ -37,11 +37,11 @@ const createProjectHandler = (
     logger.info({
       atFunction: "createProject",
       message: "Creating a project",
-      data: { name: input.name },
+      data: { name: data.name },
     });
   }
 
-  return Ok({ project: { name: input.name } });
+  return Ok({ project: { name: data.name } });
 };
 ```
 

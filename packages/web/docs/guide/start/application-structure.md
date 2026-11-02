@@ -3,7 +3,7 @@ title: "Application structure"
 description: "Give each service, action and business rule a predictable place as your team grows"
 ---
 
-A small team should be able to open an unfamiliar feature and follow it. Use domains to give that work a home, services to list its public operations, and ordinary functions for the business rules behind them.
+Give each business domain a service and each operation an action. Keep small rules in the handler, shared rules in ordinary functions and data access in models.
 
 Register services and actions explicitly. At startup, Nile checks the source structure once: an application entry at `src/index.ts` or `src/server.ts`, the explicit `services/services.config.ts` registry, each domain’s `index.ts` and `actions/` directory, and the named entry plus `index.ts` for folder-based actions. Shared `modules/` directories are optional. It also reports oversized action files, helping the team keep the same conventions as the application grows.
 

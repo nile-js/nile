@@ -3,7 +3,7 @@ title: "Build with AI agents"
 description: "Work with a coding assistant on Nile Js services: why the structure suits agents, which documentation to give them, and a workflow that keeps changes safe"
 ---
 
-Nile Js suits coding assistants because each operation is one named action with a schema, a handler and a Result. An agent can find the existing actions, read their input shapes, add one action and check the compiler, without guessing at an API. This page explains the setup and the workflow. The [Nile Js skill](/guide/agents/skill) gives the assistant the conventions in one file.
+Give your coding assistant the service registry, the relevant action schemas and Nile’s skill. It can follow an existing operation, add a handler and check the same contracts your application uses.
 
 ## Why services and actions suit agents
 
@@ -35,7 +35,7 @@ For the design of discovery and what it exposes, read [discovery and agents](/gu
 
 1. Read `src/services/services.config.ts`, then the action files of the service you will change.
 2. Read the Nile Js skill or the documentation for the feature you need.
-3. Add the action with a named Zod schema, an inferred input type, a named handler and `createAction<T>`. The [getting started guide](/guide/start/getting-started) shows the pattern.
+3. Add the action with a named Zod schema, an inferred input type, a named handler and `createAction`. The [getting started guide](/guide/start/getting-started) shows the pattern.
 4. Register the action in the service's `actions` list.
 5. Run `./node_modules/.bin/tsc --noEmit`, and fix every error before you go on.
 6. Call the action through `curl` or a test that uses `server.invoke`. The [testing actions page](/guide/advanced/testing-actions) shows the test form.

@@ -3,7 +3,7 @@ title: "File upload"
 description: "Accept a document through a multipart action with count, size and type limits, then send it from a client and from curl"
 ---
 
-This example adds a `documents.inspect` action to the starter. It accepts one PDF or image with a title, applies the limits in `rest.uploads` and returns the file's name, type and size. A real action would store the file, so the handler is the place to add that step.
+Add a `documents.inspect` action which accepts one PDF or image and a title. Apply file limits with `rest.uploads`, then return the file’s name, type and size. Add storage in the handler when you need to save the file.
 
 ## What you need
 
@@ -43,7 +43,7 @@ const inspectDocumentHandler = (payload: StructuredPayload) => {
   });
 };
 
-export const inspectDocumentAction = createAction<StructuredPayload>({
+export const inspectDocumentAction = createAction({
   name: "inspect",
   description: "Inspect an uploaded PDF or image",
   isSpecial: { contentType: "multipart/form-data" },
@@ -151,12 +151,12 @@ const server = await createNileServer({
   onBoot: {
     // The first PGlite start on a slow machine can take longer than the 10 second default.
     maxWaitTime: 30_000,
-    fn: async (ctx) => {
+    fn: async (context) => {
       const prepared = await pushSchema();
       if (prepared.isErr) {
         return prepared;
       }
-      ctx.resources?.logger?.info({
+      context.resources?.logger?.info({
         atFunction: "onBoot",
         message: "my-app booted - PGLite schema ready",
       });

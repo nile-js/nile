@@ -3,7 +3,7 @@ title: "Server"
 description: "Configure resources, interfaces, startup and registration statistics"
 ---
 
-`createNileServer` registers your application, creates context and prepares the selected HTTP adapter. It does not start a network listener. This keeps application setup separate from deployment.
+`createNileServer` registers your services, creates context and prepares the HTTP adapter. Start the network listener with your runtime.
 
 ## Bun native
 

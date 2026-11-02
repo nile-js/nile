@@ -3,7 +3,7 @@ title: "Protected profile"
 description: "Add JWT verification to the starter, read the signed-in user in an action, and enforce a role with a global before hook"
 ---
 
-This example protects two actions in the starter project. `account.profile` accepts any signed-in user. `account.audit` requires the `admin` role, and a global before hook enforces that role for every action that lists it. You will sign tokens for two users with a small helper script and send requests with `curl`.
+Add two protected actions: `account.profile` for signed-in users and `account.audit` for administrators. A global before hook checks each action’s listed roles. Sign tokens for two users to verify both access paths.
 
 ## What you need
 
@@ -50,23 +50,20 @@ Create `src/auth/role-hook.ts`. It runs before every action. Protected actions m
 
 ```ts
 import type { BeforeActionHandler } from "@nilejs/nile";
-import { Err, Ok, type Result } from "@nilejs/nile/fp";
+import { Err, Ok } from "@nilejs/nile/fp";
 
 /** Requires every role listed in a protected action's accessControl. */
-export const requireRolesHook: BeforeActionHandler<boolean, string> = ({
-  nileContext,
-  action,
-}): Result<boolean, string> => {
-  if (!action.isProtected) {
+export const requireRolesHook: BeforeActionHandler<boolean, string> = (hookContext) => {
+  if (!hookContext.action.isProtected) {
     return Ok(true);
   }
 
-  const session = nileContext.getSession("rest");
+  const session = hookContext.nileContext.getSession("rest");
   if (session === undefined) {
     return Err("Sign in to continue");
   }
 
-  const requiredRoles = action.accessControl ?? [];
+  const requiredRoles = hookContext.action.accessControl ?? [];
   if (requiredRoles.length === 0) {
     return Ok(true);
   }
@@ -100,8 +97,8 @@ const profileSchema = z.object({
 type ProfileInput = z.infer<typeof profileSchema>;
 
 const profileHandler = (
-  input: ProfileInput,
-  context?: NileContext<unknown>
+  data: ProfileInput,
+  context?: NileContext
 ) => {
   const session = context?.getSession("rest");
   if (session === undefined) {
@@ -111,14 +108,14 @@ const profileHandler = (
   return Ok({
     profile: {
       userId: session.userId,
-      organizationId: input.includeOrganization
+      organizationId: data.includeOrganization
         ? session.organizationId
         : null,
     },
   });
 };
 
-export const profileAction = createAction<ProfileInput>({
+export const profileAction = createAction({
   name: "profile",
   description: "Read the signed-in user's profile",
   isProtected: true,
@@ -239,12 +236,12 @@ const server = await createNileServer({
   onBoot: {
     // The first PGlite start on a slow machine can take longer than the 10 second default.
     maxWaitTime: 30_000,
-    fn: async (ctx) => {
+    fn: async (context) => {
       const prepared = await pushSchema();
       if (prepared.isErr) {
         return prepared;
       }
-      ctx.resources?.logger?.info({
+      context.resources?.logger?.info({
         atFunction: "onBoot",
         message: "my-app booted - PGLite schema ready",
       });

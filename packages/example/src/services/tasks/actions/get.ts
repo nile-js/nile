@@ -1,5 +1,5 @@
 import { createAction } from "@nilejs/nile";
-import { Err, Ok } from "@nilejs/nile/fp";
+import { Ok } from "@nilejs/nile/fp";
 import z from "zod";
 import { taskModel } from "@/db/models";
 
@@ -9,17 +9,17 @@ const getTaskSchema = z.object({
 
 type GetTaskInput = z.infer<typeof getTaskSchema>;
 
-const getTaskHandler = async (input: GetTaskInput) => {
-  const result = await taskModel.findById(input.id);
+const getTaskHandler = async (data: GetTaskInput) => {
+  const result = await taskModel.findById(data.id);
 
   if (result.isErr) {
-    return Err(result.error);
+    return result;
   }
 
   return Ok({ task: result.value });
 };
 
-export const getTaskAction = createAction<GetTaskInput>({
+export const getTaskAction = createAction({
   name: "get",
   description: "Get a task by ID",
   validation: getTaskSchema,

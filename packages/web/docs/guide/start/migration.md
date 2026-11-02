@@ -30,11 +30,11 @@ const archiveProjectSchema = z.object({
 
 type ArchiveProjectInput = z.infer<typeof archiveProjectSchema>;
 
-const archiveProjectHandler = (input: ArchiveProjectInput) => {
-  return archiveProject(input);
+const archiveProjectHandler = (data: ArchiveProjectInput) => {
+  return archiveProject(data);
 };
 
-export const archiveProjectAction = createAction<ArchiveProjectInput>({
+export const archiveProjectAction = createAction({
   name: "archive",
   description: "Archive a project",
   validation: archiveProjectSchema,

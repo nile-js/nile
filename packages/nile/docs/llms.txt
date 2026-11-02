@@ -8,7 +8,7 @@ Full text: https://nile-js.github.io/nile/llms-full.txt
 
 - [Composing hooks](https://nile-js.github.io/nile/guide/advanced/composing-hooks): Build a checkout from local before and after hooks, a global after hook and clear rules for critical steps
 - [Execution options](https://nile-js.github.io/nile/guide/advanced/execution-options): Set a timeout for each execution and layer rate limits from the server down to one action
-- [Handler context](https://nile-js.github.io/nile/guide/advanced/handler-context): Use the second argument of an action handler to read resources, the session, execution details and topic publishing
+- [Handler context](https://nile-js.github.io/nile/guide/advanced/handler-context): Read shared resources, sessions and execution details from an action handler
 - [Advanced](https://nile-js.github.io/nile/guide/advanced): Go beyond a single action: use handler context, compose hooks, set execution limits and test actions
 - [Testing actions](https://nile-js.github.io/nile/guide/advanced/testing-actions): Test action rules with server.invoke and Bun's test runner, without starting an HTTP listener
 - [Build with AI agents](https://nile-js.github.io/nile/guide/agents): Work with a coding assistant on Nile Js services: why the structure suits agents, which documentation to give them, and a workflow that keeps changes safe
@@ -40,7 +40,7 @@ Full text: https://nile-js.github.io/nile/llms-full.txt
 - [Cron jobs](https://nile-js.github.io/nile/guide/features/cron-jobs): Run recurring business work on calendar, interval or one-time schedules, and trigger a job by hand for testing
 - [Database models](https://nile-js.github.io/nile/guide/features/database-models): Create typed model helpers from a Drizzle table for inserts, lookups, updates, deletes and pagination
 - [File uploads](https://nile-js.github.io/nile/guide/features/file-uploads): Accept multipart files in an action with count, size, filename and type limits, and read them as a structured payload
-- [Features](https://nile-js.github.io/nile/guide/features): Find the Nile Js feature you need, with a short description and a link to its guide page
+- [Features](https://nile-js.github.io/nile/guide/features): Validate actions, apply access policies and add the services your application needs
 - [Queues, debounce and throttle](https://nile-js.github.io/nile/guide/features/queues-debounce-throttle): Limit concurrency with queues, collapse repeated calls with debounce and cap call frequency with throttle
 - [Rate limiting](https://nile-js.github.io/nile/guide/features/rate-limiting): Limit how often a client can call an action, using a shared limiter with per-service and per-action policies
 - [Readiness and shutdown](https://nile-js.github.io/nile/guide/features/readiness-and-shutdown): Expose readiness and liveness endpoints, then stop accepting work and drain in-flight executions on shutdown

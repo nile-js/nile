@@ -27,15 +27,15 @@ const prepareOrderSchema = z.object({
 
 type PrepareOrderInput = z.infer<typeof prepareOrderSchema>;
 
-const prepareOrderHook = (input: PrepareOrderInput) => {
+const prepareOrderHook = (data: PrepareOrderInput) => {
   const normalized = {
-    sku: input.sku.toUpperCase(),
-    quantity: input.quantity,
+    sku: data.sku.toUpperCase(),
+    quantity: data.quantity,
   };
   return Ok(normalized);
 };
 
-const prepareOrderAction = createAction<PrepareOrderInput>({
+const prepareOrderAction = createAction({
   name: "prepare",
   description: "Normalize an order line before checkout",
   validation: null,
@@ -46,25 +46,25 @@ type CheckoutInput = z.infer<typeof prepareOrderSchema>;
 
 const checkoutSchema = prepareOrderSchema;
 
-const checkoutHandler = (input: CheckoutInput) => {
-  if (input.quantity > 100) {
+const checkoutHandler = (data: CheckoutInput) => {
+  if (data.quantity > 100) {
     return Err("Quantity exceeds the checkout limit");
   }
 
-  return Ok({ sku: input.sku, quantity: input.quantity, status: "accepted" });
+  return Ok({ sku: data.sku, quantity: data.quantity, status: "accepted" });
 };
 
-const stampHook = (input: unknown) => {
-  return Ok(input);
+const stampHook = (data: unknown) => {
+  return Ok(data);
 };
 
-const stampAction = createAction<unknown>({
+const stampAction = createAction({
   name: "stamp",
   description: "Attach checkout metadata to the response",
   handler: stampHook,
 });
 
-const checkoutAction = createAction<CheckoutInput>({
+const checkoutAction = createAction({
   name: "checkout",
   description: "Accept a checkout request",
   validation: checkoutSchema,
@@ -95,16 +95,12 @@ const services = createServices([
   },
 ]);
 
-const recordAuditTrail: AfterActionHandler<unknown, unknown> = ({
-  nileContext,
-  action,
-  result,
-}) => {
-  nileContext.updateHookState("audited", action.name);
-  if (result.isErr) {
-    return Err(String(result.error));
+const recordAuditTrail: AfterActionHandler<unknown, unknown> = (hookContext) => {
+  hookContext.nileContext.updateHookState("audited", hookContext.action.name);
+  if (hookContext.result.isErr) {
+    return Err(String(hookContext.result.error));
   }
-  return Ok(result.value);
+  return Ok(hookContext.result.value);
 };
 
 export const server = await createNileServer({
@@ -291,206 +287,111 @@ The `key` function receives the execution details. Its `context.clientKey` value
 
 # Handler context
 
-Every action handler receives two arguments: its validated input and a `NileContext`. Nile Js passes the context on every call, from HTTP, the socket transport, `server.invoke` and scheduled jobs. The type marks it optional so handlers can be called without one in tests, so read its fields with `?.`.
+Use `data` for the action’s validated data and `context` for its execution context. Nile passes context for HTTP calls, sockets, `server.invoke` and scheduled actions.
 
 ## Signature [#signature]
 
-```ts
-const createOrderHandler = (
-  input: CreateOrderInput,
-  context?: NileContext<unknown>
-) => {
-  // ...
-};
-```
-
-Pass the handler to `createAction` by name, as with any other action:
+Derive the data type from the schema and annotate the named handler. `createAction` infers its type from the handler.
 
 ```ts
-export const createOrderAction = createAction<CreateOrderInput>({
-  name: "create",
-  description: "Create an order",
-  validation: createOrderSchema,
-  handler: createOrderHandler,
-});
-```
-
-## Complete example [#complete-example]
-
-This action reads the database resource, the signed-in session and the request identifier. It stores a value for its own execution, sends a topic message and returns the result. Each use is marked in the file.
-
-```ts
-import {
-  createAction,
-  createNileServer,
-  createServices,
-  createTopics,
-  getContext,
-  type NileContext,
-  type NileLogger,
-} from "@nilejs/nile";
-import { Err, Ok } from "@nilejs/nile/fp";
+import { createAction, type NileContext } from "@nilejs/nile";
+import { Ok } from "@nilejs/nile/fp";
 import { z } from "zod";
 
-type AppDatabase = {
-  orders: { findById: (id: string) => Promise<{ id: string; total: number }> };
-};
-
-export const topics = createTopics({
-  "orders.updated": {
-    schema: z.object({
-      orderId: z.string(),
-      status: z.enum(["reserved", "paid"]),
-    }),
-    scope: z.object({
-      organizationId: z.string(),
-    }),
-  },
+const createProjectSchema = z.object({
+  name: z.string().trim().min(1, "Name is required"),
 });
 
-const reserveOrderSchema = z.object({
-  orderId: z.string().uuid(),
-});
+type CreateProjectData = z.infer<typeof createProjectSchema>;
 
-type ReserveOrderInput = z.infer<typeof reserveOrderSchema>;
-
-const reserveOrderHandler = async (
-  input: ReserveOrderInput,
-  context?: NileContext<unknown>
+const createProjectHandler = (
+  data: CreateProjectData,
+  context?: NileContext
 ) => {
-  const logger: NileLogger | undefined = context?.resources?.logger;
-  const session = context?.getSession("rest");
-  const requestId = context?.execution?.requestId;
+  const project = {
+    id: crypto.randomUUID(),
+    name: data.name,
+  };
 
-  if (session === undefined) {
-    return Err("Sign in to continue");
-  }
-
-  const database = getContext<AppDatabase>().resources?.database;
-  if (database === undefined) {
-    return Err("Order store is not configured");
-  }
-
-  logger?.info({
-    atFunction: "reserveOrder",
-    message: "Reserving order",
-    data: {
-      orderId: input.orderId,
-      requestId: requestId,
-      userId: session.userId,
-    },
+  context?.resources?.logger?.info({
+    atFunction: "createProject",
+    message: "Project created",
+    data: { projectId: project.id },
   });
 
-  const order = await database.orders.findById(input.orderId);
-  context?.updateHookState("loadedTotal", order.total);
-  context?.set("lastReservedOrder", input.orderId);
-
-  const sent = await getContext({ topics: topics }).websocket.send({
-    topic: "orders.updated",
-    scope: { organizationId: "org_123" },
-    data: { orderId: order.id, status: "reserved" },
-  });
-
-  if (sent.isErr) {
-    return Err(sent.error);
-  }
-
-  return Ok({
-    orderId: order.id,
-    total: order.total,
-    loadedTotal: context?.hookContext.state.loadedTotal,
-  });
+  return Ok({ project: project });
 };
 
-const reserveOrderAction = createAction<ReserveOrderInput>({
-  name: "reserve",
-  description: "Reserve an order for the signed-in user",
-  isProtected: true,
-  validation: reserveOrderSchema,
-  handler: reserveOrderHandler,
+export const createProjectAction = createAction({
+  name: "create",
+  description: "Create a project",
+  validation: createProjectSchema,
+  handler: createProjectHandler,
 });
+```
 
-const services = createServices([
-  {
-    name: "orders",
-    description: "Order operations",
-    actions: [reserveOrderAction],
-  },
-]);
+Supply the logger through `resources.logger` when creating the server. Logs written during an action include its execution identifier.
 
-export const server = await createNileServer({
-  serverName: "shop",
-  services: services,
-  websocket: { topics: topics },
-  rest: { baseUrl: "/api", allowedOrigins: ["https://shop.example.com"] },
-});
+The handler type makes context optional, so you can call a handler directly in a unit test. Use `?.` for optional resources. If an operation requires a resource or session, check for it before continuing.
 
-export const callAnotherAction = async (
-  orderId: string
-): Promise<unknown> => {
-  const result = await server.invoke({
-    service: "orders",
-    action: "reserve",
-    payload: { orderId: orderId },
+## Read execution details [#read-execution-details]
+
+| Value | Use it for |
+| --- | --- |
+| `context.resources` | Shared resources supplied when the server starts, such as a database and logger |
+| `context.getSession("rest")` | The verified HTTP session, or an identity supplied by your authentication integration |
+| `context.getSession("ws")` | The current socket session |
+| `context.execution.requestId` | Correlating work and logs within an execution |
+| `context.execution.transport` | Identifying the transport used for this call |
+| `context.execution.signal` | Passing cancellation to a database, provider or other dependency |
+| `context.execution.clientKey` | Applying a policy using the resolved client identity |
+| `context.hookContext` | State, output, failures and logs for the current action pipeline |
+
+Read optional execution fields with `?.`, for example `context?.execution?.signal`. Dependencies must honor the signal for cancellation to stop their work. A deadline does not roll back completed writes.
+
+## Share state within an action [#share-state-within-an-action]
+
+Use `context.updateHookState(name, value)` to pass a value between a handler and its local hooks. Read it through `context.hookContext.state`. Each concurrent or nested action execution has its own state.
+
+Application-defined keys written with `context.set` are shared across the process. Keep current users in scoped sessions and per-action state in `hookContext`.
+
+See [composing hooks](/guide/advanced/composing-hooks) for a complete pipeline.
+
+## Get context in a helper [#get-context-in-a-helper]
+
+An ordinary helper called from an action can use `getContext` to read the same resources:
+
+```ts
+import { getContext } from "@nilejs/nile";
+
+export const logProjectArchived = (projectId: string) => {
+  const context = getContext();
+  context.resources?.logger?.info({
+    atFunction: "logProjectArchived",
+    message: "Project archived",
+    data: { projectId: projectId },
   });
-  return result;
 };
 ```
 
-The file also defines `callAnotherAction`, which calls a second action through `server.invoke`. `NileContext` has no invoke method. Keep a reference to the server in the module that defines the actions, and call `server.invoke` from a helper like this one.
+Call `getContext` after server initialization. Pass a dependency explicitly when a helper should also run outside Nile, such as in a standalone script or domain unit test.
 
-## The context fields you will use [#the-context-fields-you-will-use]
+## Publish topic messages [#publish-topic-messages]
 
-| Field | What you get | Scope |
-| --- | --- | --- |
-| `resources?.logger` | The logger you passed to `createNileServer` | Shared by the application |
-| `resources?.database` | The database you passed as a resource | Shared by the application |
-| `getSession("rest")` | Verified identity from JWT: `userId`, `organizationId` and other claims | One request |
-| `execution?.requestId` | Identifier for this execution, also used in logs | One execution |
-| `execution?.transport` | `"rest"`, `"rpc"`, `"ws"` or `"cron"` | One execution |
-| `execution?.signal` | Cancellation signal for the call | One execution |
-| `execution?.clientKey` | Client identity used for rate limits | One execution |
-| `updateHookState(key, value)` and `hookContext.state` | Values shared between hooks and the handler | One action execution |
-| `set(key, value)` and `get(key)` | Application-wide values | Every request in the process |
-| `websocket` | The socket server. Use `getContext({ topics })` for typed sends | Shared by the application |
-
-`context.get("rest")` and `context.get("nativeRest")` return the request object for the transport in use. Prefer `getSession` for identity.
-
-## State for one execution, or shared state [#state-for-one-execution-or-shared-state]
-
-Use `updateHookState` and `hookContext.state` for values that belong to one action call. Nested and concurrent executions each get their own state.
-
-Use `set` and `get` only for values that every request should see, such as a feature flag loaded at boot. A value stored with `set` is visible to every concurrent request in the process and is lost on restart. Never store the current user there.
-
-## Publishing a topic message [#publishing-a-topic-message]
-
-`getContext({ topics })` returns the socket server with the topic types from your definition, so `send` checks the message shape at compile time. The `topics` object must be the same one passed to `createNileServer`. See [WebSockets](/guide/features/websockets) for the full setup.
-
-## Limits [#limits]
-
-- The context is valid for the duration of the call. Do not keep it in a module variable and use it later.
-- Outside a request, `getSession` returns `undefined` and session writes do nothing.
-- `getContext()` throws if the server has not been created. Call it inside a handler or after startup.
-
-## Common mistakes [#common-mistakes]
-
-- Reading `context.execution.requestId` without `?.`, which fails when the handler is called without a context.
-- Using `set` for per-request data.
-- Creating a second database connection in each handler instead of using `resources.database`.
-- Assuming `context.websocket.send` knows your topic types. Use `getContext({ topics })` for that.
+Use the context’s typed socket interface to publish messages from an action. Declare the topics and their data schemas in your backend, then configure them under `websocket`. The [WebSockets guide](/guide/features/websockets) shows topic definitions, access policies and a named action handler.
 
 ## See also [#see-also]
 
-- [Context](/guide/basics/context) describes the resource and session model in full.
-- [Context and logging](/guide/features/context-and-logging) shows the logger in use.
-- [Composing hooks](/guide/advanced/composing-hooks) explains state that hooks share with the handler.
+- [Context and resources](/guide/basics/context)
+- [Logging](/guide/internals/logging)
+- [Testing actions](/guide/advanced/testing-actions)
 
 
 ---
 
 # Advanced
 
-The pages in this section assume you have built an action with the [getting started guide](/guide/start/getting-started) or the [basics](/guide/basics/actions). Each page covers one advanced topic with a complete, type-checked example.
+Use these guides when an action needs shared state, composed hooks, execution limits or tests through `server.invoke`. Start with [actions](/guide/basics/actions) if you are defining your first operation.
 
 | Page | Read it when |
 | --- | --- |
@@ -528,14 +429,14 @@ const addNoteSchema = z.object({
 
 type AddNoteInput = z.infer<typeof addNoteSchema>;
 
-const addNoteHandler = (input: AddNoteInput) => {
-  if (input.text.length > 280) {
+const addNoteHandler = (data: AddNoteInput) => {
+  if (data.text.length > 280) {
     return Err("Note is too long");
   }
-  return Ok({ note: { text: input.text } });
+  return Ok({ note: { text: data.text } });
 };
 
-const addNoteAction = createAction<AddNoteInput>({
+const addNoteAction = createAction({
   name: "add",
   description: "Add a note",
   validation: addNoteSchema,
@@ -645,7 +546,7 @@ Without `credentials`, the call returns `Authentication required: no request con
 
 # Build with AI agents
 
-Nile Js suits coding assistants because each operation is one named action with a schema, a handler and a Result. An agent can find the existing actions, read their input shapes, add one action and check the compiler, without guessing at an API. This page explains the setup and the workflow. The [Nile Js skill](/guide/agents/skill) gives the assistant the conventions in one file.
+Give your coding assistant the service registry, the relevant action schemas and Nile’s skill. It can follow an existing operation, add a handler and check the same contracts your application uses.
 
 ## Why services and actions suit agents [#why-services-and-actions-suit-agents]
 
@@ -677,7 +578,7 @@ For the design of discovery and what it exposes, read [discovery and agents](/gu
 
 1. Read `src/services/services.config.ts`, then the action files of the service you will change.
 2. Read the Nile Js skill or the documentation for the feature you need.
-3. Add the action with a named Zod schema, an inferred input type, a named handler and `createAction<T>`. The [getting started guide](/guide/start/getting-started) shows the pattern.
+3. Add the action with a named Zod schema, an inferred input type, a named handler and `createAction`. The [getting started guide](/guide/start/getting-started) shows the pattern.
 4. Register the action in the service's `actions` list.
 5. Run `./node_modules/.bin/tsc --noEmit`, and fix every error before you go on.
 6. Call the action through `curl` or a test that uses `server.invoke`. The [testing actions page](/guide/advanced/testing-actions) shows the test form.
@@ -708,12 +609,12 @@ Do not paste JWT secrets, discovery secrets or database credentials into a promp
 
 # Nile Js skill
 
-The Nile Js skill is a Markdown file that teaches a coding assistant how a Nile Js project is organized and how to change it safely. It ships inside the `@nilejs/nile` package, so the copy in your project always matches the version you installed.
+Use Nile’s `SKILL.md` to give a coding assistant the service layout, action pattern, FP conventions and common mistakes. The package includes a copy matching your installed version.
 
 ## What the skill covers [#what-the-skill-covers]
 
 - The project layout of a CLI starter and where the service registry lives.
-- The action pattern: a named Zod schema, an inferred input type, a named handler and `createAction<T>`.
+- The action pattern: a named Zod schema, an inferred input type, a named handler and `createAction`.
 - That handlers receive `(data, context)`, and which context fields to use.
 - Results, the HTTP response envelope and the per-field `data.issues` on validation failures.
 - Calling actions over HTTP, with `@nilejs/client` and with `server.invoke`.
@@ -778,7 +679,7 @@ The skill describes the installed release. After you upgrade `@nilejs/nile`, a l
 
 # Actions
 
-An action is a named business operation. Keep its description, input schema and handler together so a teammate can understand what it accepts and how it finishes without tracing a chain of route definitions.
+Keep an operation’s name, validation schema and handler together. The schema defines the data the handler receives; the handler calls your business logic and returns a Result.
 
 ```ts
 import { createAction } from "@nilejs/nile";
@@ -791,16 +692,16 @@ const createProjectSchema = z.object({
 
 type CreateProjectInput = z.infer<typeof createProjectSchema>;
 
-const createProjectHandler = (input: CreateProjectInput) => {
+const createProjectHandler = (data: CreateProjectInput) => {
   const project = {
     id: crypto.randomUUID(),
-    name: input.name,
+    name: data.name,
   };
 
   return Ok({ project: project });
 };
 
-export const createProject = createAction<CreateProjectInput>({
+export const createProject = createAction({
   name: "create",
   description: "Create a team project",
   validation: createProjectSchema,
@@ -828,7 +729,7 @@ The example returns a project without persistence. In a real application, coordi
 | `result.pipeline` | Include local hook execution logs in the returned data. |
 | `meta` | Attach application-defined metadata. No automatic caching or permissions are implied. |
 
-`createAction` preserves your definition; it does not infer a handler's input from the `validation` property. Derive the input type with `z.infer` and pass it explicitly, as above.
+`createAction` infers the data type from the handler. For a named handler, derive its data type with `z.infer` and annotate the `data` parameter. Let TypeScript infer the handler’s return type and the action type.
 
 Use [services](/guide/basics/services) to group actions, [Results](/guide/basics/errors-and-results) for failure paths, and [hooks](/guide/basics/hooks-and-pipelines) for shared policy.
 
@@ -837,7 +738,7 @@ Use [services](/guide/basics/services) to group actions, [Results](/guide/basics
 
 # Authentication and access
 
-As more operations are added, a common policy boundary helps the team avoid repeating authentication code. Nile includes JWT verification; role, organization and resource-level authorization remain explicit application rules.
+Configure JWT verification for protected actions. Use a global before hook for role, organization or resource access checks.
 
 ## Built-in JWT verification [#built-in-jwt-verification]
 
@@ -863,12 +764,12 @@ export const serverConfig: ServerConfig = {
 ```ts
 import { createAction } from "@nilejs/nile";
 import type { NileContext } from "@nilejs/nile";
-import { Err, Ok, type Result } from "@nilejs/nile/fp";
+import { Err, Ok } from "@nilejs/nile/fp";
 
 const getProfileHandler = (
-  input: unknown,
-  context?: NileContext<unknown>
-): Result<unknown, string> => {
+  data: unknown,
+  context?: NileContext
+) => {
   const session = context?.getSession("rest");
 
   if (session === undefined) {
@@ -912,7 +813,7 @@ Custom routes and webhooks do not pass through an action's `isProtected` check. 
 
 ```ts
 import { type AuthConfig, verifyJWT } from "@nilejs/nile";
-import { Err, Ok, type Result } from "@nilejs/nile/fp";
+import { Err, Ok } from "@nilejs/nile/fp";
 import { config } from "./config";
 
 const jwtConfig: AuthConfig = {
@@ -943,24 +844,21 @@ import type { BeforeActionHandler } from "@nilejs/nile";
 import { Err, Ok, type Result } from "@nilejs/nile/fp";
 
 /** Require every role listed on a protected action. */
-export const authorizeAction: BeforeActionHandler<boolean, string> = ({
-  nileContext,
-  action,
-}): Result<boolean, string> => {
-  if (!action.isProtected) {
+export const authorizeAction: BeforeActionHandler<boolean, string> = (hookContext) => {
+  if (!hookContext.action.isProtected) {
     return Ok(true);
   }
 
-  const session = nileContext.getSession("rest");
+  const session = hookContext.nileContext.getSession("rest");
   if (!session) {
     return Err("Sign in to continue");
   }
 
   const roles = session.roles;
-  if (action.accessControl?.length && !Array.isArray(roles)) {
+  if (hookContext.action.accessControl?.length && !Array.isArray(roles)) {
     return Err("Access denied");
   }
-  const isAllowed = (action.accessControl ?? []).every(
+  const isAllowed = (hookContext.action.accessControl ?? []).every(
     (role) => Array.isArray(roles) && roles.includes(role),
   );
   return isAllowed ? Ok(true) : Err("Access denied");
@@ -982,7 +880,7 @@ Hooks run before input validation. Never trust a payload organization ID as the 
 
 # Frontend client
 
-The frontend calls `projects.create` by name, while the backend keeps its service and action structure. `@nilejs/client` works wherever your application can use Fetch. It does not require React or a shared repository.
+Call an action by its service and action names with `@nilejs/client`. The client uses Fetch and returns Results for successful calls, validation failures and network errors.
 
 ```sh
 bun add @nilejs/client
@@ -1090,7 +988,7 @@ const result = await nile.invoke({
 bunx @nilejs/cli generate schema --entry src/services/services.config.ts --output src/generated
 ```
 
-The CLI reads the local service registry and writes `schemas.ts` and `types.ts`. It runs a Bun subprocess for extraction and does not require discovery to be enabled. Payloads use `z.input` so schema defaults remain optional for callers, while handlers use the parsed output type. `types.ts` exports `ServicePayloads`; import it into `createNileClient<ServicePayloads>`. Share or publish that contract to a separate frontend repository when needed.
+The CLI reads the local service registry and writes `schemas.ts` and `types.ts`. It runs a Bun subprocess for extraction and does not require discovery to be enabled. Actions without a validation schema are included with an object payload type (`Record<string, unknown>`), so `tasks.list` accepts `{}`. This generated fallback does not add server-side validation. Payloads use `z.input` so schema defaults remain optional for callers, while handlers use the parsed output type. `types.ts` exports `ServicePayloads`; import it into `createNileClient<ServicePayloads>`. Share or publish that contract to a separate frontend repository when needed.
 
 Regenerate the input map when input contracts change. See [type-system boundaries](/guide/basics/type-system).
 
@@ -1105,7 +1003,7 @@ Regenerate the input map when input contracts change. See [type-system boundarie
 
 # Shared context
 
-A growing application often needs the same logger, database client or cache across many operations. Supply long-lived resources once and read them through Nile context instead of building a new dependency container for every action.
+Supply shared resources, such as a database and logger, when you create the server. Actions and hooks read them through `context.resources`.
 
 ```ts
 import { createLogger, createNileServer } from "@nilejs/nile";
@@ -1130,8 +1028,8 @@ import type { NileContext } from "@nilejs/nile";
 import { Ok } from "@nilejs/nile/fp";
 
 const createProjectHandler = (
-  input: CreateProjectInput,
-  context?: NileContext<unknown>,
+  data: CreateProjectInput,
+  context?: NileContext,
 ) => {
   const logger = context?.resources?.logger;
 
@@ -1139,11 +1037,11 @@ const createProjectHandler = (
     logger.info({
       atFunction: "createProject",
       message: "Creating a project",
-      data: { name: input.name },
+      data: { name: data.name },
     });
   }
 
-  return Ok({ project: { name: input.name } });
+  return Ok({ project: { name: data.name } });
 };
 ```
 
@@ -1280,7 +1178,7 @@ Hono Context and native context APIs are different; plugins require deliberate m
 
 # Discovery and agents
 
-A predictable domain structure helps a coding agent find implementation files. Runtime discovery solves a different problem: an integration can inspect registered operations and their input descriptions before calling them.
+Enable discovery so trusted tools can list registered services and inspect action schemas before calling them.
 
 Nile provides `explore` and `schema` intents. It does not include an MCP server, an autonomous agent runtime or automatic tool registration. Your integration decides which operations a tool can call and carries the caller's credentials.
 
@@ -1356,7 +1254,7 @@ JSON Schema cannot express every Zod refinement, transform or runtime default. U
 
 # Errors and Results
 
-A team should be able to see how an operation can fail beside its business logic. Nile handlers return `Ok(data)` or `Err(message)` from `@nilejs/nile/fp`, Nile's re-export of [slang-ts](https://www.npmjs.com/package/slang-ts), so expected failures become explicit branches. Import every slang-ts helper from there; your code then shares Nile's copy and needs no separate dependency.
+Return `Ok(data)` when an action succeeds and `Err(message)` for an expected failure. Import Result helpers from `@nilejs/nile/fp` so your application and Nile use the same types.
 
 ```ts
 import { createAction } from "@nilejs/nile";
@@ -1369,20 +1267,20 @@ const createProjectSchema = z.object({
 
 type CreateProjectInput = z.infer<typeof createProjectSchema>;
 
-const createProjectHandler = (input: CreateProjectInput) => {
-  if (input.name.toLowerCase() === "system") {
+const createProjectHandler = (data: CreateProjectInput) => {
+  if (data.name.toLowerCase() === "system") {
     return Err("Choose a different project name");
   }
 
   const project = {
     id: crypto.randomUUID(),
-    name: input.name,
+    name: data.name,
   };
 
   return Ok({ project: project });
 };
 
-export const createProject = createAction<CreateProjectInput>({
+export const createProject = createAction({
   name: "create",
   description: "Create a project",
   validation: createProjectSchema,
@@ -1399,7 +1297,7 @@ Use `safeTry` around an external call or application function that can reject or
 ```ts
 import { Err, Ok, safeTry } from "@nilejs/nile/fp";
 
-const saved = await safeTry(() => saveProject(input));
+const saved = await safeTry(() => saveProject(data));
 if (saved.isErr) {
   context?.resources?.logger?.error({
     atFunction: "createProject",
@@ -1421,16 +1319,16 @@ Every successful HTTP response carries a `message`. By default it reads `Action 
 import { createAction } from "@nilejs/nile";
 import { Ok } from "@nilejs/nile/fp";
 
-export const archiveProject = createAction<ArchiveProjectInput>({
+export const archiveProject = createAction({
   name: "archive",
   description: "Archive a project",
   successMessage: "Project archived",
   validation: archiveProjectSchema,
-  handler: (input) => {
-    if (input.notifyTeam) {
-      return Ok({ id: input.id }, "Project archived and the team notified");
+  handler: (data: ArchiveProjectInput) => {
+    if (data.notifyTeam) {
+      return Ok({ id: data.id }, "Project archived and the team notified");
     }
-    return Ok({ id: input.id });
+    return Ok({ id: data.id });
   },
 });
 ```
@@ -1487,7 +1385,7 @@ Next: [hooks and their failure rules](/guide/basics/hooks-and-pipelines).
 
 # Public assets
 
-For a small application, Nile can expose a local public asset directory without another HTTP service. Both adapters support the same configuration:
+Serve public files by setting `rest.enableStatic` and `rest.staticDir`. Both HTTP adapters support these settings:
 
 ```ts
 rest: {
@@ -1515,7 +1413,7 @@ A reverse proxy, CDN or object store may be a better fit for larger deployments.
 
 # Hooks and pipelines
 
-When several actions need the same check or transformation, put it in a recognizable pipeline step. That keeps the next operation small and makes the shared rule easier to review.
+Use hooks for checks or transformations shared by several actions. Global hooks run across the application; local hooks form part of an action’s pipeline.
 
 ## Know when each step runs [#know-when-each-step-runs]
 
@@ -1533,20 +1431,24 @@ A before hook sees input **before validation**. Check the values it uses; do not
 
 ## Global checks [#global-checks]
 
-This server-configuration fragment rejects a protected action without a session:
+Require a session before a protected action runs:
 
 ```ts
+import type { BeforeActionHandler } from "@nilejs/nile";
 import { Err, Ok } from "@nilejs/nile/fp";
 
-const onBeforeActionHandler = ({ nileContext, action, payload }) => {
-  if (action.isProtected && !nileContext.getSession("rest")) {
+const onBeforeActionHandler: BeforeActionHandler<boolean, string> = (
+  hookContext
+) => {
+  const session = hookContext.nileContext.getSession("rest");
+  if (hookContext.action.isProtected && session === undefined) {
     return Err("Sign in to continue");
   }
-  return Ok(payload);
+  return Ok(true);
 };
 ```
 
-For a standalone typed declaration, annotate this function with `BeforeActionHandler` as shown in [authentication](/guide/basics/auth). Global before-hook success allows execution to continue; **its returned value does not replace the payload**. Use local before hooks for transformations. Global before-hook failure always stops execution.
+Set `onBeforeActionHandler` in your server configuration to this hook. Global before-hook success allows execution to continue; **its returned value does not replace the payload**. Use local before hooks for transformations. Global before-hook failure always stops execution.
 
 The global after hook receives `{ nileContext, action, payload, result }`. Its Result becomes the final output; returning an error stops success. It is not an always-run `finally` callback and does not run after an earlier failure.
 
@@ -1643,7 +1545,7 @@ For file input use [multipart uploads](/guide/basics/uploads). For webhooks or H
 
 # Services
 
-A service gives related actions a recognizable home. Use domain names the team already uses: projects, tickets, billing or collaboration. As more operations arrive, people can start with the domain rather than search an unfamiliar route map.
+Group related operations in a service named for their business domain, such as projects, billing or membership. Register its public actions in the domain’s `index.ts`.
 
 ```ts
 import { createService, createServices } from "@nilejs/nile";
@@ -1682,12 +1584,12 @@ See [application structure](/guide/start/application-structure) for a domain lay
 
 # Input contracts
 
-A growing team benefits when the action schema, TypeScript input and frontend call describe the same operation. Nile gives those pieces a common shape, with explicit boundaries.
+Derive handler data from its validation schema and generate frontend payload types from the registered actions. Type the data once and let TypeScript infer the action type and the handler’s return type.
 
 ## Type an action's input [#type-an-actions-input]
 
 ```ts
-import { createAction, type ActionHandler } from "@nilejs/nile";
+import { createAction } from "@nilejs/nile";
 import { Ok } from "@nilejs/nile/fp";
 import { z } from "zod";
 
@@ -1696,19 +1598,19 @@ export const createProjectSchema = z.object({
 });
 type CreateProjectInput = z.infer<typeof createProjectSchema>;
 
-const handler: ActionHandler<CreateProjectInput> = (input) => {
-  return Ok({ project: { id: crypto.randomUUID(), name: input.name } });
+const createProjectHandler = (data: CreateProjectInput) => {
+  return Ok({ project: { id: crypto.randomUUID(), name: data.name } });
 };
 
-export const createProject = createAction<CreateProjectInput>({
+export const createProject = createAction({
   name: "create",
   description: "Create a project",
   validation: createProjectSchema,
-  handler,
+  handler: createProjectHandler,
 });
 ```
 
-`Action<T, E>` and `ActionHandler<T, E>` use `T` for the handler **input** and `E` for its error type. They do not encode the output shape as `T`. `createAction` does not infer the handler input from the schema property; use an explicit generic or a typed handler.
+`Action<T, E>` and `ActionHandler<T, E>` use `T` for handler data and `E` for the error type. Annotate the named handler’s data once; `createAction` infers the action type from it.
 
 The main action's schema parses input at runtime, including supported defaults and transforms. Keep the handler type aligned with the schema's parsed output (`z.infer`). Before hooks run before that parsing and must treat incoming values accordingly.
 
@@ -1718,7 +1620,7 @@ The main action's schema parses input at runtime, including supported defaults a
 bunx @nilejs/cli generate schema --output src/generated
 ```
 
-The CLI imports the local service registry, extracts validation schemas and emits `schemas.ts` plus `types.ts`. `ServicePayloads` is the generated service/action input map used by the client. Actions without validation schemas are skipped by the generator; the CLI reports them.
+The CLI imports the local service registry, extracts validation schemas and emits `schemas.ts` plus `types.ts`. `ServicePayloads` is the generated service/action input map used by the client. Actions without a validation schema receive an object payload type, so calls such as `tasks.list` accept `{}`. Conversion failures are reported separately.
 
 ```ts
 import { createNileClient } from "@nilejs/client";
@@ -1739,18 +1641,18 @@ if (result.isErr) {
 
 Generated contracts are snapshots, so regenerate and share them with consumers when inputs change. Inspect generated types for transformed or custom schema types; JSON Schema cannot preserve every Zod runtime behavior.
 
-## Understand the boundaries [#understand-the-boundaries]
+## What is checked [#what-is-checked]
 
 | Boundary | What it checks |
 |---|---|
-| `createAction<Input>` | The handler input at compile time. |
+| `createAction` | The handler input at compile time. |
 | Main action `validation` | Incoming payload at runtime before its handler. |
 | Service registry | A heterogeneous action collection; individual input types are erased for dispatch. |
 | `createNileClient<ServicePayloads>` | Service name, action name and payload at compile time. |
 | Client Result | `value` is a general record; the client does not infer the handler's output type. Validate `value` in application code if needed. |
 | Discovery JSON Schema | A description of representable inputs, not execution of custom refinements or application policy. |
 
-The client exports `ExternalResponse<T>` and `ClientResult<T>` (the `ClientOk` or `ClientErr` Result) for describing responses, but `invoke` does not infer an action's output or accept an output-type generic. Runtime schemas remain the application's correctness boundary, including when the caller is a coding agent.
+The client exports `ExternalResponse<T>` and `ClientResult<T>` (the `ClientOk` or `ClientErr` Result) for describing responses, but `invoke` does not infer an action's output or accept an output-type generic. Validate incoming data on the server even when a client or coding agent uses generated types.
 
 Next: [frontend integration](/guide/basics/client) and [discovery](/guide/basics/discovery-and-agents).
 
@@ -1812,7 +1714,7 @@ const inspectDocumentHandler = (payload: StructuredPayload) => {
   });
 };
 
-export const inspectDocument = createAction<StructuredPayload>({
+export const inspectDocument = createAction({
   name: "inspect",
   description: "Inspect an uploaded document",
   isSpecial: { contentType: "multipart/form-data" },
@@ -1859,7 +1761,7 @@ Upload parsing/limit failures return a failure envelope with validation details;
 
 # File upload
 
-This example adds a `documents.inspect` action to the starter. It accepts one PDF or image with a title, applies the limits in `rest.uploads` and returns the file's name, type and size. A real action would store the file, so the handler is the place to add that step.
+Add a `documents.inspect` action which accepts one PDF or image and a title. Apply file limits with `rest.uploads`, then return the file’s name, type and size. Add storage in the handler when you need to save the file.
 
 ## What you need [#what-you-need]
 
@@ -1899,7 +1801,7 @@ const inspectDocumentHandler = (payload: StructuredPayload) => {
   });
 };
 
-export const inspectDocumentAction = createAction<StructuredPayload>({
+export const inspectDocumentAction = createAction({
   name: "inspect",
   description: "Inspect an uploaded PDF or image",
   isSpecial: { contentType: "multipart/form-data" },
@@ -2007,12 +1909,12 @@ const server = await createNileServer({
   onBoot: {
     // The first PGlite start on a slow machine can take longer than the 10 second default.
     maxWaitTime: 30_000,
-    fn: async (ctx) => {
+    fn: async (context) => {
       const prepared = await pushSchema();
       if (prepared.isErr) {
         return prepared;
       }
-      ctx.resources?.logger?.info({
+      context.resources?.logger?.info({
         atFunction: "onBoot",
         message: "my-app booted - PGLite schema ready",
       });
@@ -2196,7 +2098,7 @@ This request returns HTTP 200 with `"contentType":"image/png"`.
 
 # Examples
 
-Each example starts from the starter project, adds one feature and runs it. Every file is shown in full, so you can copy the result, and each step ends with output you can compare against. The commands assume Bun 1.4.2 or later and a terminal in the project folder.
+Start from the CLI project and add one feature at a time. Run these commands from the project folder with Bun 1.4.2 or later.
 
 | Example | What you build | Features used |
 | --- | --- | --- |
@@ -2220,7 +2122,7 @@ Each example says which files to create or replace. Files that are not mentioned
 
 # Protected profile
 
-This example protects two actions in the starter project. `account.profile` accepts any signed-in user. `account.audit` requires the `admin` role, and a global before hook enforces that role for every action that lists it. You will sign tokens for two users with a small helper script and send requests with `curl`.
+Add two protected actions: `account.profile` for signed-in users and `account.audit` for administrators. A global before hook checks each action’s listed roles. Sign tokens for two users to verify both access paths.
 
 ## What you need [#what-you-need]
 
@@ -2267,23 +2169,20 @@ Create `src/auth/role-hook.ts`. It runs before every action. Protected actions m
 
 ```ts
 import type { BeforeActionHandler } from "@nilejs/nile";
-import { Err, Ok, type Result } from "@nilejs/nile/fp";
+import { Err, Ok } from "@nilejs/nile/fp";
 
 /** Requires every role listed in a protected action's accessControl. */
-export const requireRolesHook: BeforeActionHandler<boolean, string> = ({
-  nileContext,
-  action,
-}): Result<boolean, string> => {
-  if (!action.isProtected) {
+export const requireRolesHook: BeforeActionHandler<boolean, string> = (hookContext) => {
+  if (!hookContext.action.isProtected) {
     return Ok(true);
   }
 
-  const session = nileContext.getSession("rest");
+  const session = hookContext.nileContext.getSession("rest");
   if (session === undefined) {
     return Err("Sign in to continue");
   }
 
-  const requiredRoles = action.accessControl ?? [];
+  const requiredRoles = hookContext.action.accessControl ?? [];
   if (requiredRoles.length === 0) {
     return Ok(true);
   }
@@ -2317,8 +2216,8 @@ const profileSchema = z.object({
 type ProfileInput = z.infer<typeof profileSchema>;
 
 const profileHandler = (
-  input: ProfileInput,
-  context?: NileContext<unknown>
+  data: ProfileInput,
+  context?: NileContext
 ) => {
   const session = context?.getSession("rest");
   if (session === undefined) {
@@ -2328,14 +2227,14 @@ const profileHandler = (
   return Ok({
     profile: {
       userId: session.userId,
-      organizationId: input.includeOrganization
+      organizationId: data.includeOrganization
         ? session.organizationId
         : null,
     },
   });
 };
 
-export const profileAction = createAction<ProfileInput>({
+export const profileAction = createAction({
   name: "profile",
   description: "Read the signed-in user's profile",
   isProtected: true,
@@ -2456,12 +2355,12 @@ const server = await createNileServer({
   onBoot: {
     // The first PGlite start on a slow machine can take longer than the 10 second default.
     maxWaitTime: 30_000,
-    fn: async (ctx) => {
+    fn: async (context) => {
       const prepared = await pushSchema();
       if (prepared.isErr) {
         return prepared;
       }
-      ctx.resources?.logger?.info({
+      context.resources?.logger?.info({
         atFunction: "onBoot",
         message: "my-app booted - PGLite schema ready",
       });
@@ -2631,7 +2530,7 @@ A failed JWT message names the reason only, such as `token expired`, and never c
 
 # Rate-limited quote
 
-This example adds a public `catalog.quote` action with a token-bucket limit. Each client may send a burst of 20 requests, and the bucket refills at 5 requests per second. A client that exceeds the limit gets a failure that says how long to wait.
+Add a public `catalog.quote` action with a token-bucket limit. Each client can send a burst of 20 calls, then receives 5 new calls per second. Calls over the limit return a failure with the wait time.
 
 ## What you need [#what-you-need]
 
@@ -2658,20 +2557,20 @@ const PRICE_IN_CENTS: Readonly<Record<string, number>> = {
   "MUG-WHITE": 900,
 };
 
-const quoteHandler = (input: QuoteInput) => {
-  const unitPrice = PRICE_IN_CENTS[input.sku];
+const quoteHandler = (data: QuoteInput) => {
+  const unitPrice = PRICE_IN_CENTS[data.sku];
   if (unitPrice === undefined) {
     return Err("Unknown SKU");
   }
 
   return Ok({
-    sku: input.sku,
-    quantity: input.quantity,
-    totalInCents: unitPrice * input.quantity,
+    sku: data.sku,
+    quantity: data.quantity,
+    totalInCents: unitPrice * data.quantity,
   });
 };
 
-export const quoteAction = createAction<QuoteInput>({
+export const quoteAction = createAction({
   name: "quote",
   description: "Return the public price for a product quantity",
   validation: quoteSchema,
@@ -2779,12 +2678,12 @@ const server = await createNileServer({
   onBoot: {
     // The first PGlite start on a slow machine can take longer than the 10 second default.
     maxWaitTime: 30_000,
-    fn: async (ctx) => {
+    fn: async (context) => {
       const prepared = await pushSchema();
       if (prepared.isErr) {
         return prepared;
       }
-      ctx.resources?.logger?.info({
+      context.resources?.logger?.info({
         atFunction: "onBoot",
         message: "my-app booted - PGLite schema ready",
       });
@@ -2887,7 +2786,7 @@ You should see no output and exit with status 0.
 
 # Realtime order updates
 
-This example connects a socket client to an order topic. A protected action changes an order's status and publishes the change to subscribers in the same organization. A client from another organization can neither subscribe to that topic nor change the order.
+Publish order status changes to socket subscribers in the same organization. Authenticate each connection, check subscription access and protect the action which changes the order.
 
 ## What you need [#what-you-need]
 
@@ -3040,20 +2939,20 @@ const setStatusSchema = z.object({
 type SetStatusInput = z.infer<typeof setStatusSchema>;
 
 const setStatusHandler = async (
-  input: SetStatusInput,
-  context?: NileContext<unknown>
+  data: SetStatusInput,
+  context?: NileContext
 ) => {
   const session = context?.getSession("rest");
   if (session === undefined) {
     return Err("Sign in to continue");
   }
 
-  const existing = findOrder(input.orderId);
+  const existing = findOrder(data.orderId);
   if (existing === undefined || existing.organizationId !== session.organizationId) {
     return Err("Order not found");
   }
 
-  const order = updateOrderStatus(input.orderId, input.status);
+  const order = updateOrderStatus(data.orderId, data.status);
   if (order === undefined) {
     return Err("Order not found");
   }
@@ -3072,7 +2971,7 @@ const setStatusHandler = async (
   return Ok({ order: order });
 };
 
-export const setStatusAction = createAction<SetStatusInput>({
+export const setStatusAction = createAction({
   name: "set-status",
   description: "Change an order status and notify subscribers",
   isProtected: true,
@@ -3180,12 +3079,12 @@ const server = await createNileServer({
   onBoot: {
     // The first PGlite start on a slow machine can take longer than the 10 second default.
     maxWaitTime: 30_000,
-    fn: async (ctx) => {
+    fn: async (context) => {
       const prepared = await pushSchema();
       if (prepared.isErr) {
         return prepared;
       }
-      ctx.resources?.logger?.info({
+      context.resources?.logger?.info({
         atFunction: "onBoot",
         message: "my-app booted - PGLite schema ready",
       });
@@ -3370,7 +3269,7 @@ You should see no output and exit with status 0.
 
 # Tasks API in React
 
-This example connects a React task list to the starter's `tasks` service. The component loads tasks, adds a new task through `@nilejs/client` and shows the validation message when the title is empty. You will build it in an existing starter project and check it from the command line, then mount the component in your React app.
+Connect a React task list to the starter’s `tasks` service. Load tasks, create a task through `@nilejs/client` and show the validation message when the title is empty.
 
 ## What you need [#what-you-need]
 
@@ -3447,12 +3346,12 @@ const server = await createNileServer({
   onBoot: {
     // The first PGlite start on a slow machine can take longer than the 10 second default.
     maxWaitTime: 30_000,
-    fn: async (ctx) => {
+    fn: async (context) => {
       const prepared = await pushSchema();
       if (prepared.isErr) {
         return prepared;
       }
-      ctx.resources?.logger?.info({
+      context.resources?.logger?.info({
         atFunction: "onBoot",
         message: "my-app booted - PGLite schema ready",
       });
@@ -3637,7 +3536,7 @@ export const TaskBoard = (): ReactElement => {
         }}
       >
         <label htmlFor="task-title">Title</label>
-        <input
+        <data
           id="task-title"
           value={title}
           onChange={(event) => {
@@ -3951,12 +3850,12 @@ export const server = await createNileServer({
   onBoot: {
     // The first PGlite start on a slow machine can take longer than the 10 second default.
     maxWaitTime: 30_000,
-    fn: async (ctx) => {
+    fn: async (context) => {
       const prepared = await pushSchema();
       if (prepared.isErr) {
         return prepared;
       }
-      ctx.resources?.logger?.info({
+      context.resources?.logger?.info({
         atFunction: "onBoot",
         message: "my-app booted - PGLite schema ready",
       });
@@ -4239,23 +4138,20 @@ import {
   createServices,
 } from "@nilejs/nile";
 import type { NileContext } from "@nilejs/nile";
-import { Err, Ok, type Result } from "@nilejs/nile/fp";
+import { Err, Ok } from "@nilejs/nile/fp";
 import { z } from "zod";
 
-const requireRolesHook: BeforeActionHandler<boolean, string> = ({
-  nileContext,
-  action,
-}): Result<boolean, string> => {
-  if (!action.isProtected) {
+const requireRolesHook: BeforeActionHandler<boolean, string> = (hookContext) => {
+  if (!hookContext.action.isProtected) {
     return Ok(true);
   }
 
-  const session = nileContext.getSession("rest");
+  const session = hookContext.nileContext.getSession("rest");
   if (session === undefined) {
     return Err("Sign in to continue");
   }
 
-  const requiredRoles = action.accessControl ?? [];
+  const requiredRoles = hookContext.action.accessControl ?? [];
   if (requiredRoles.length === 0) {
     return Ok(true);
   }
@@ -4279,8 +4175,8 @@ const profileSchema = z.object({
 type ProfileInput = z.infer<typeof profileSchema>;
 
 const profileHandler = (
-  input: ProfileInput,
-  context?: NileContext<unknown>
+  data: ProfileInput,
+  context?: NileContext
 ) => {
   const session = context?.getSession("rest");
   if (session === undefined) {
@@ -4289,11 +4185,11 @@ const profileHandler = (
 
   return Ok({
     userId: session.userId,
-    organizationId: input.includeOrganization ? session.organizationId : null,
+    organizationId: data.includeOrganization ? session.organizationId : null,
   });
 };
 
-const profileAction = createAction<ProfileInput>({
+const profileAction = createAction({
   name: "profile",
   description: "Read the signed-in user profile",
   isProtected: true,
@@ -4301,7 +4197,7 @@ const profileAction = createAction<ProfileInput>({
   handler: profileHandler,
 });
 
-const invoicesAction = createAction<ProfileInput>({
+const invoicesAction = createAction({
   name: "invoices",
   description: "List invoices for billing administrators",
   isProtected: true,
@@ -4388,7 +4284,7 @@ The verifier requires `userId` (or `id` or `sub`) and `organizationId` (or `orga
 
 # HTTP, WebSocket and direct calls
 
-Every action runs through the same pipeline no matter how it was called: validation, hooks, the handler and the JWT check for protected actions. The transport changes how you send the request and how the response arrives. This page shows the three paths and what each one needs.
+Call an action over HTTP, through a socket client or within your backend using `server.invoke`. Each path runs the action’s authentication, hooks, validation and handler.
 
 ## When to use each path [#when-to-use-each-path]
 
@@ -4534,16 +4430,16 @@ const renameProjectSchema = z.object({
 type RenameProjectInput = z.infer<typeof renameProjectSchema>;
 
 const renameProjectHandler = (
-  input: RenameProjectInput,
-  context?: NileContext<unknown>
+  data: RenameProjectInput,
+  context?: NileContext
 ) => {
   const activeLogger = context?.resources?.logger;
 
-  if (input.name === "system") {
+  if (data.name === "system") {
     activeLogger?.warn({
       atFunction: "renameProject",
       message: "Rejected a reserved project name",
-      data: { projectId: input.projectId },
+      data: { projectId: data.projectId },
     });
     return Err("Choose a different project name");
   }
@@ -4551,13 +4447,13 @@ const renameProjectHandler = (
   activeLogger?.info({
     atFunction: "renameProject",
     message: "Project renamed",
-    data: { projectId: input.projectId },
+    data: { projectId: data.projectId },
   });
 
-  return Ok({ projectId: input.projectId, name: input.name });
+  return Ok({ projectId: data.projectId, name: data.name });
 };
 
-const renameProjectAction = createAction<RenameProjectInput>({
+const renameProjectAction = createAction({
   name: "rename",
   description: "Rename a project",
   validation: renameProjectSchema,
@@ -4580,7 +4476,7 @@ export const server = await createNileServer({
 });
 ```
 
-Handlers are typed with `NileContext<unknown>` and read optional fields with `?.`. Nile passes the context on every call, including `server.invoke` calls. The fields are optional because your handler can also be called from a test or a background job that has no request.
+Handlers are typed with `NileContext` and read optional fields with `?.`. Nile passes the context on every call, including `server.invoke` calls. The fields are optional because your handler can also be called from a test or a background job that has no request.
 
 With the logger above, `createLogger` writes structured lines to `logs/` relative to the working directory. The starter's startup line looks like this:
 
@@ -4778,7 +4674,7 @@ Calendar schedules use UTC when you omit `timezone`.
 
 # Database models
 
-`createModel` turns a Drizzle table into a set of helpers that return Results. Your actions call the helpers instead of building queries inline, and validation, error handling and pagination follow one pattern across the application.
+Use `utils.createModel` with a Drizzle table for create, read, update and delete operations. The helpers return Results and include validation and pagination. Keep custom queries in your application’s model functions.
 
 ## When to use it [#when-to-use-it]
 
@@ -4821,11 +4717,11 @@ const createTaskSchema = z.object({
 
 type CreateTaskInput = z.infer<typeof createTaskSchema>;
 
-const createTaskHandler = async (input: CreateTaskInput) => {
+const createTaskHandler = async (data: CreateTaskInput) => {
   const created = await taskModel.create({
     data: {
-      title: input.title,
-      description: input.description,
+      title: data.title,
+      description: data.description,
     },
   });
 
@@ -4836,7 +4732,7 @@ const createTaskHandler = async (input: CreateTaskInput) => {
   return Ok({ task: created.value });
 };
 
-const createTaskAction = createAction<CreateTaskInput>({
+const createTaskAction = createAction({
   name: "create",
   description: "Create a task",
   validation: createTaskSchema,
@@ -4853,7 +4749,7 @@ const listTasksHandler = async () => {
   return Ok({ tasks: page.value.items, hasMore: page.value.hasMore });
 };
 
-const listTasksAction = createAction<undefined>({
+const listTasksAction = createAction({
   name: "list",
   description: "List the first page of tasks",
   handler: listTasksHandler,
@@ -4927,7 +4823,7 @@ The model also exposes `table` and `schemas.insert`, `schemas.update` and `schem
 
 # File uploads
 
-An upload is an action whose input arrives as multipart form data. Nile Js parses the form, applies the limits in `rest.uploads`, and passes the fields and files to your handler as a structured payload. Nile Js does not store the files; your handler decides where they go.
+Define an upload action with multipart input. Nile parses its fields and files and applies the limits in `rest.uploads`. Your handler decides where to store the files.
 
 ## When to use it [#when-to-use-it]
 
@@ -4965,7 +4861,7 @@ const inspectDocumentHandler = (payload: StructuredPayload) => {
   });
 };
 
-const inspectDocumentAction = createAction<StructuredPayload>({
+const inspectDocumentAction = createAction({
   name: "inspect",
   description: "Inspect an uploaded PDF or image",
   isSpecial: { contentType: "multipart/form-data" },
@@ -5136,7 +5032,7 @@ The complete runnable project, including oversized and wrong-type checks, is in 
 
 # Features
 
-Each page below covers one capability of Nile Js: what it does, when to use it, a complete example, the options that matter and the limits to plan for. Start with the page that matches your task. Pages link to the deeper reference when you need every option.
+Choose the feature your next operation needs. For a complete workflow, start with the [examples](/guide/examples).
 
 | Feature | Use it to |
 | --- | --- |
@@ -5154,8 +5050,6 @@ Each page below covers one capability of Nile Js: what it does, when to use it, 
 | [Rate limiting](/guide/features/rate-limiting) | Bound how often a client can call an action or an HTTP route |
 | [File uploads](/guide/features/file-uploads) | Accept multipart files with size, count and type limits |
 | [Readiness and shutdown](/guide/features/readiness-and-shutdown) | Report readiness to a platform and stop new work before the process exits |
-
-Ready to build something end to end? The [examples](/guide/examples) combine several of these features in complete projects.
 
 
 ---
@@ -5331,11 +5225,11 @@ const quoteSchema = z.object({
 
 type QuoteInput = z.infer<typeof quoteSchema>;
 
-const quoteHandler = (input: QuoteInput) => {
-  return Ok({ sku: input.sku, price: 1200 });
+const quoteHandler = (data: QuoteInput) => {
+  return Ok({ sku: data.sku, price: 1200 });
 };
 
-const quoteAction = createAction<QuoteInput>({
+const quoteAction = createAction({
   name: "quote",
   description: "Return the public price of a product",
   validation: quoteSchema,
@@ -5442,7 +5336,7 @@ Policies resolve from the most specific to the least specific. Keys are computed
 
 # Readiness and shutdown
 
-A deployment platform needs two signals from your service: whether it is ready to receive traffic, and whether it is still running. Nile Js provides both, and a shutdown call that stops new work, waits for accepted work and closes the resources you register.
+Expose readiness and liveness checks for your deployment platform. On shutdown, stop new work, wait for accepted actions and close registered resources.
 
 ## When to use it [#when-to-use-it]
 
@@ -5588,7 +5482,7 @@ server.lifecycle.register({
 
 # Retries and utilities
 
-Nile Js includes a few helpers for work outside the action pipeline: retries with backoff for calls to other services, a bounded in-memory store for short-lived values, and a wrapper that turns thrown database errors into safe failures. Import them from `utils` in `@nilejs/nile`.
+Use `utils` for retries, bounded stores and diagnostics. Use `safeTry` from `@nilejs/nile/fp` to catch failures from database or provider calls.
 
 ## When to use them [#when-to-use-them]
 
@@ -5716,7 +5610,7 @@ Values are held by reference in this process. The default store rejects new keys
 
 # Telemetry
 
-Telemetry sends a span for each action or scheduled job, plus bounded metrics, to an OpenTelemetry collector. Use it when your team already reads traces and metrics in a tool such as Grafana, Honeycomb or Jaeger. Nile Js does not include a dashboard.
+Send action and scheduled-job traces and metrics to an OpenTelemetry collector. Read them in your chosen tool, such as Grafana, Honeycomb or Jaeger.
 
 ## When to use it [#when-to-use-it]
 
@@ -5804,7 +5698,7 @@ export const server = await createNileServer({
 
 # Validation and errors
 
-Validation rejects a bad payload before your handler runs. A handler returns `Err` when a business rule refuses the request. Both reach the caller as a failure, so the client checks one thing: `isErr`.
+Validate action data with a schema before the handler runs. Return `Err` when a business rule prevents the operation. The client reads both failures through its Result API.
 
 ## When to use it [#when-to-use-it]
 
@@ -5831,21 +5725,21 @@ type CreateProjectInput = z.infer<typeof createProjectSchema>;
 
 const reservedNames: readonly string[] = ["system", "admin"];
 
-const createProjectHandler = (input: CreateProjectInput) => {
-  if (reservedNames.includes(input.name.toLowerCase())) {
+const createProjectHandler = (data: CreateProjectInput) => {
+  if (reservedNames.includes(data.name.toLowerCase())) {
     return Err("Choose a different project name");
   }
 
   return Ok({
     project: {
-      name: input.name,
-      city: input.address.city,
-      budget: input.budget,
+      name: data.name,
+      city: data.address.city,
+      budget: data.budget,
     },
   });
 };
 
-const createProjectAction = createAction<CreateProjectInput>({
+const createProjectAction = createAction({
   name: "create",
   description: "Create a project after validating its input",
   validation: createProjectSchema,
@@ -5923,7 +5817,7 @@ Here `nile` is a client created with `createNileClient`, as in [the frontend cli
 | --- | --- | --- |
 | Action | `validation` | Zod schema for the payload. Use `null` or omit it for actions without input. |
 | Action | `handler` | Named function that returns `Ok(value)` or `Err(message)`. |
-| Schema | `z.infer<typeof schema>` | Input type for the handler. Use it as the generic argument to `createAction`. |
+| Schema | `z.infer<typeof schema>` | Input type for the handler. Use it to annotate the handler’s `data` parameter. |
 
 ## How it behaves [#how-it-behaves]
 
@@ -5995,23 +5889,23 @@ const markPaidSchema = z.object({
 
 type MarkPaidInput = z.infer<typeof markPaidSchema>;
 
-const markPaidHandler = async (input: MarkPaidInput) => {
+const markPaidHandler = async (data: MarkPaidInput) => {
   const { websocket } = getContext({ topics: topics });
 
   const sent = await websocket.send({
     topic: "payments.updated",
     scope: { organizationId: "org_123" },
-    data: { paymentId: input.paymentId, status: "paid" },
+    data: { paymentId: data.paymentId, status: "paid" },
   });
 
   if (sent.isErr) {
     return Err(sent.error);
   }
 
-  return Ok({ paymentId: input.paymentId, status: "paid" });
+  return Ok({ paymentId: data.paymentId, status: "paid" });
 };
 
-const markPaidAction = createAction<MarkPaidInput>({
+const markPaidAction = createAction({
   name: "mark-paid",
   description: "Mark a payment as paid and notify subscribers",
   isProtected: true,
@@ -6173,11 +6067,11 @@ const listener = Bun.serve({
 
 # Build with Nile
 
-Nile Js is a TypeScript-first, service and actions oriented backend framework. It organizes your backend into **services** and **actions**. A service groups a business domain, such as billing. An action names one operation, validates its input and runs an ordinary function. The same structure gives teammates and coding agents a path through the next feature.
+Build your backend around services and actions. A service groups a business domain, such as billing. An action defines one operation with a validation schema and a handler. Your team and coding agents can follow the same structure as you add features.
 
 ## Start with one operation [#start-with-one-operation]
 
-[Build your first service](/guide/start/getting-started), send it a request, then move the action into your application's domain structure. The complete example uses Bun native and returns a project you can inspect.
+Create the [starter project](/guide/start/getting-started), call its Tasks service and add your first action. Keep using its domain structure as you add operations.
 
 | Your next task | Guide |
 | --- | --- |
@@ -6360,7 +6254,7 @@ Continue with [application structure](/guide/start/application-structure), [cont
 
 # Data access
 
-Keep business operations easy to follow: an action handles its input and application policy, an ordinary domain function implements the rule, and a model/repository owns data access. This is a useful convention, not a runtime restriction. Nile does not require a particular ORM or database.
+Keep data access in model functions. An action validates data and applies policy, then calls a model or domain function. Choose the database and transaction conventions your application needs.
 
 The [application structure guide](/guide/start/application-structure) shows how these modules fit together as the operation count grows.
 
@@ -6403,7 +6297,7 @@ See [createModel](/guide/internals/db/create-model) for the exact method boundar
 
 # Engine
 
-The engine gives every business operation the same execution path. A team can review input checks, reusable policy and the handler without learning a different convention for each service.
+Registered actions share one execution path for authentication, hooks, validation and their handler. Configure those steps once and apply them across the service registry.
 
 ## Registration [#registration]
 
@@ -6465,7 +6359,7 @@ Use ordinary domain functions when composition does not need another action pipe
 
 # Logging
 
-A consistent log format helps a small team follow a failure back to the operation that produced it. Nile includes a structured logger; supply it through resources so actions, hooks and error helpers can use the same convention.
+Supply a logger through `resources.logger`. Actions, hooks and error helpers can then write structured logs with the current execution’s identifier.
 
 ## Configure a logger [#configure-a-logger]
 
@@ -6653,7 +6547,7 @@ The default in-memory store belongs to one process. Multiple instances need a de
 
 # Server
 
-`createNileServer` registers your application, creates context and prepares the selected HTTP adapter. It does not start a network listener. This keeps application setup separate from deployment.
+`createNileServer` registers your services, creates context and prepares the HTTP adapter. Start the network listener with your runtime.
 
 ## Bun native [#bun-native]
 
@@ -7289,7 +7183,7 @@ The existing REST discovery enabled/secret checks apply before conversion or dis
 
 # Shared backend utilities
 
-Nile keeps these helpers functional and independent of application models, payment providers or deployment configuration. Use the named `utils` export from `@nilejs/nile`. Framework entry points such as `createNileServer`, service/action factories and server configuration stay at the package root. Existing direct helper imports remain supported.
+Import Nile helpers through `utils` from `@nilejs/nile`. Use them for models, diagnostics, retries, queues and other shared application resources.
 
 ```ts
 import { utils } from "@nilejs/nile";
@@ -7417,7 +7311,7 @@ Consume is a synchronous compare-and-delete: only the matching caller consumes i
 
 ```ts
 const writes = utils.createGroupedControl({
-  key: (input: SaveDraft) => input.documentId,
+  key: (data: SaveDraft) => data.documentId,
   maxKeys: 1000,
   idleMs: 30_000,
   create: () => utils.createQueue({
@@ -7473,7 +7367,7 @@ bun test ./scripts/verify-db-utilities.spec.ts
 
 # Application structure
 
-A small team should be able to open an unfamiliar feature and follow it. Use domains to give that work a home, services to list its public operations, and ordinary functions for the business rules behind them.
+Give each business domain a service and each operation an action. Keep small rules in the handler, shared rules in ordinary functions and data access in models.
 
 Register services and actions explicitly. At startup, Nile checks the source structure once: an application entry at `src/index.ts` or `src/server.ts`, the explicit `services/services.config.ts` registry, each domain’s `index.ts` and `actions/` directory, and the named entry plus `index.ts` for folder-based actions. Shared `modules/` directories are optional. It also reports oversized action files, helping the team keep the same conventions as the application grows.
 
@@ -7688,7 +7582,7 @@ Move an existing application [one domain at a time](/guide/start/migration).
 
 # Getting started
 
-This walkthrough creates a Nile Js project, runs it and calls its starter action with curl. Then you add an action that changes data and call it from a small TypeScript client. Each step says what you should see when it worked.
+Create a project, call the Tasks service, then add an action and call it through the frontend client. The starter includes a PGlite database and runs on Bun.
 
 Nile Js uses Bun's native HTTP server. The starter stores its data in an embedded PGlite database, so you do not install or run a database server.
 
@@ -7728,7 +7622,7 @@ grep '"version"' node_modules/@nilejs/nile/package.json
 
 You should see `"version": "1.0.0",`. If the version is older, stop here and read the last troubleshooting item on this page.
 
-## Look at what you got [#look-at-what-you-got]
+## Project files [#project-files]
 
 The starter has this structure. The comments describe what each file is for.
 
@@ -7789,7 +7683,7 @@ my-app listening on http://localhost:8000
 
 The first start can take between 10 and 30 seconds because PGlite creates the `data/` folder. Later starts are faster. Wait for the `listening` line before you send requests. Keep this terminal open. Press Ctrl+C to stop the server.
 
-## Make your first request [#make-your-first-request]
+## Call an action [#call-an-action]
 
 Open a second terminal in the `my-app` folder and run:
 
@@ -7871,9 +7765,9 @@ const completeTaskSchema = z.object({
 
 type CompleteTaskInput = z.infer<typeof completeTaskSchema>;
 
-const completeTaskHandler = async (input: CompleteTaskInput) => {
+const completeTaskHandler = async (data: CompleteTaskInput) => {
   const result = await taskModel.update({
-    id: input.id,
+    id: data.id,
     data: { status: "done" },
   });
 
@@ -7884,7 +7778,7 @@ const completeTaskHandler = async (input: CompleteTaskInput) => {
   return Ok({ task: result.value });
 };
 
-export const completeAction = createAction<CompleteTaskInput>({
+export const completeAction = createAction({
   name: "complete",
   description: "Mark a task as done",
   validation: completeTaskSchema,
@@ -8107,11 +8001,11 @@ const archiveProjectSchema = z.object({
 
 type ArchiveProjectInput = z.infer<typeof archiveProjectSchema>;
 
-const archiveProjectHandler = (input: ArchiveProjectInput) => {
-  return archiveProject(input);
+const archiveProjectHandler = (data: ArchiveProjectInput) => {
+  return archiveProject(data);
 };
 
-export const archiveProjectAction = createAction<ArchiveProjectInput>({
+export const archiveProjectAction = createAction({
   name: "archive",
   description: "Archive a project",
   validation: archiveProjectSchema,

@@ -12,12 +12,12 @@ const renameSchema = z.object({
 
 type RenameInput = z.infer<typeof renameSchema>;
 
-const renameHandler = (input: RenameInput) => {
-  if (input.name === "system") {
+const renameHandler = (data: RenameInput) => {
+  if (data.name === "system") {
     return Err("Choose a different name");
   }
 
-  return Ok({ name: input.name });
+  return Ok({ name: data.name });
 };`,
 	},
 	policies: {
@@ -27,16 +27,14 @@ const renameHandler = (input: RenameInput) => {
 import type { BeforeActionHandler } from "@nilejs/nile";
 import { Err, Ok } from "@nilejs/nile/fp";
 
-type AccessHook = BeforeActionHandler<unknown, string>;
+const requireSession: BeforeActionHandler<boolean, string> = (hookContext) => {
+  const session = hookContext.nileContext.getSession("rest");
 
-const requireSession: AccessHook = (params) => {
-  const session = params.nileContext.getSession("rest");
-
-  if (params.action.isProtected && session === undefined) {
+  if (hookContext.action.isProtected && session === undefined) {
     return Err("Sign in to continue");
   }
 
-  return Ok(params.payload);
+  return Ok(true);
 };
 
 const server = await createNileServer({

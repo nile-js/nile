@@ -3,7 +3,7 @@ title: "Rate-limited quote"
 description: "Publish a public price action that allows a short burst per client, then refuses requests until the bucket refills"
 ---
 
-This example adds a public `catalog.quote` action with a token-bucket limit. Each client may send a burst of 20 requests, and the bucket refills at 5 requests per second. A client that exceeds the limit gets a failure that says how long to wait.
+Add a public `catalog.quote` action with a token-bucket limit. Each client can send a burst of 20 calls, then receives 5 new calls per second. Calls over the limit return a failure with the wait time.
 
 ## What you need
 
@@ -30,20 +30,20 @@ const PRICE_IN_CENTS: Readonly<Record<string, number>> = {
   "MUG-WHITE": 900,
 };
 
-const quoteHandler = (input: QuoteInput) => {
-  const unitPrice = PRICE_IN_CENTS[input.sku];
+const quoteHandler = (data: QuoteInput) => {
+  const unitPrice = PRICE_IN_CENTS[data.sku];
   if (unitPrice === undefined) {
     return Err("Unknown SKU");
   }
 
   return Ok({
-    sku: input.sku,
-    quantity: input.quantity,
-    totalInCents: unitPrice * input.quantity,
+    sku: data.sku,
+    quantity: data.quantity,
+    totalInCents: unitPrice * data.quantity,
   });
 };
 
-export const quoteAction = createAction<QuoteInput>({
+export const quoteAction = createAction({
   name: "quote",
   description: "Return the public price for a product quantity",
   validation: quoteSchema,
@@ -151,12 +151,12 @@ const server = await createNileServer({
   onBoot: {
     // The first PGlite start on a slow machine can take longer than the 10 second default.
     maxWaitTime: 30_000,
-    fn: async (ctx) => {
+    fn: async (context) => {
       const prepared = await pushSchema();
       if (prepared.isErr) {
         return prepared;
       }
-      ctx.resources?.logger?.info({
+      context.resources?.logger?.info({
         atFunction: "onBoot",
         message: "my-app booted - PGLite schema ready",
       });

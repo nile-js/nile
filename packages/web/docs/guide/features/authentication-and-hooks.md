@@ -21,23 +21,20 @@ import {
   createServices,
 } from "@nilejs/nile";
 import type { NileContext } from "@nilejs/nile";
-import { Err, Ok, type Result } from "@nilejs/nile/fp";
+import { Err, Ok } from "@nilejs/nile/fp";
 import { z } from "zod";
 
-const requireRolesHook: BeforeActionHandler<boolean, string> = ({
-  nileContext,
-  action,
-}): Result<boolean, string> => {
-  if (!action.isProtected) {
+const requireRolesHook: BeforeActionHandler<boolean, string> = (hookContext) => {
+  if (!hookContext.action.isProtected) {
     return Ok(true);
   }
 
-  const session = nileContext.getSession("rest");
+  const session = hookContext.nileContext.getSession("rest");
   if (session === undefined) {
     return Err("Sign in to continue");
   }
 
-  const requiredRoles = action.accessControl ?? [];
+  const requiredRoles = hookContext.action.accessControl ?? [];
   if (requiredRoles.length === 0) {
     return Ok(true);
   }
@@ -61,8 +58,8 @@ const profileSchema = z.object({
 type ProfileInput = z.infer<typeof profileSchema>;
 
 const profileHandler = (
-  input: ProfileInput,
-  context?: NileContext<unknown>
+  data: ProfileInput,
+  context?: NileContext
 ) => {
   const session = context?.getSession("rest");
   if (session === undefined) {
@@ -71,11 +68,11 @@ const profileHandler = (
 
   return Ok({
     userId: session.userId,
-    organizationId: input.includeOrganization ? session.organizationId : null,
+    organizationId: data.includeOrganization ? session.organizationId : null,
   });
 };
 
-const profileAction = createAction<ProfileInput>({
+const profileAction = createAction({
   name: "profile",
   description: "Read the signed-in user profile",
   isProtected: true,
@@ -83,7 +80,7 @@ const profileAction = createAction<ProfileInput>({
   handler: profileHandler,
 });
 
-const invoicesAction = createAction<ProfileInput>({
+const invoicesAction = createAction({
   name: "invoices",
   description: "List invoices for billing administrators",
   isProtected: true,

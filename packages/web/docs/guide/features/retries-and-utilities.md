@@ -3,7 +3,7 @@ title: "Retries and utilities"
 description: "Retry external calls with jittered backoff, keep a bounded short-lived store, and wrap database failures safely"
 ---
 
-Nile Js includes a few helpers for work outside the action pipeline: retries with backoff for calls to other services, a bounded in-memory store for short-lived values, and a wrapper that turns thrown database errors into safe failures. Import them from `utils` in `@nilejs/nile`.
+Use `utils` for retries, bounded stores and diagnostics. Use `safeTry` from `@nilejs/nile/fp` to catch failures from database or provider calls.
 
 ## When to use them
 

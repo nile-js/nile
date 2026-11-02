@@ -3,7 +3,7 @@ title: "Errors and Results"
 description: "Return expected failures and guard operations with Slang Results"
 ---
 
-A team should be able to see how an operation can fail beside its business logic. Nile handlers return `Ok(data)` or `Err(message)` from `@nilejs/nile/fp`, Nile's re-export of [slang-ts](https://www.npmjs.com/package/slang-ts), so expected failures become explicit branches. Import every slang-ts helper from there; your code then shares Nile's copy and needs no separate dependency.
+Return `Ok(data)` when an action succeeds and `Err(message)` for an expected failure. Import Result helpers from `@nilejs/nile/fp` so your application and Nile use the same types.
 
 ```ts
 import { createAction } from "@nilejs/nile";
@@ -16,20 +16,20 @@ const createProjectSchema = z.object({
 
 type CreateProjectInput = z.infer<typeof createProjectSchema>;
 
-const createProjectHandler = (input: CreateProjectInput) => {
-  if (input.name.toLowerCase() === "system") {
+const createProjectHandler = (data: CreateProjectInput) => {
+  if (data.name.toLowerCase() === "system") {
     return Err("Choose a different project name");
   }
 
   const project = {
     id: crypto.randomUUID(),
-    name: input.name,
+    name: data.name,
   };
 
   return Ok({ project: project });
 };
 
-export const createProject = createAction<CreateProjectInput>({
+export const createProject = createAction({
   name: "create",
   description: "Create a project",
   validation: createProjectSchema,
@@ -46,7 +46,7 @@ Use `safeTry` around an external call or application function that can reject or
 ```ts
 import { Err, Ok, safeTry } from "@nilejs/nile/fp";
 
-const saved = await safeTry(() => saveProject(input));
+const saved = await safeTry(() => saveProject(data));
 if (saved.isErr) {
   context?.resources?.logger?.error({
     atFunction: "createProject",
@@ -68,16 +68,16 @@ Every successful HTTP response carries a `message`. By default it reads `Action 
 import { createAction } from "@nilejs/nile";
 import { Ok } from "@nilejs/nile/fp";
 
-export const archiveProject = createAction<ArchiveProjectInput>({
+export const archiveProject = createAction({
   name: "archive",
   description: "Archive a project",
   successMessage: "Project archived",
   validation: archiveProjectSchema,
-  handler: (input) => {
-    if (input.notifyTeam) {
-      return Ok({ id: input.id }, "Project archived and the team notified");
+  handler: (data: ArchiveProjectInput) => {
+    if (data.notifyTeam) {
+      return Ok({ id: data.id }, "Project archived and the team notified");
     }
-    return Ok({ id: input.id });
+    return Ok({ id: data.id });
   },
 });
 ```
