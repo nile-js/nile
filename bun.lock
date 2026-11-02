@@ -10,7 +10,7 @@
     },
     "packages/cli": {
       "name": "@nilejs/cli",
-      "version": "1.0.2",
+      "version": "1.0.3",
       "bin": {
         "nile": "./dist/index.js",
       },
@@ -57,7 +57,7 @@
     },
     "packages/nile": {
       "name": "@nilejs/nile",
-      "version": "1.0.4",
+      "version": "1.0.5",
       "dependencies": {
         "@hono/node-server": "^2.1.5",
         "@opentelemetry/api": "1.9.1",

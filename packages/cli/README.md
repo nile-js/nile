@@ -107,7 +107,7 @@ Every registered action is included in `ServicePayloads`. Actions without a vali
 
 ## Current starter
 
-CLI 1.0.2 targets Nile `^1.0.4`, Zod 4, TypeScript 7 and the Drizzle model helpers. The generated layout passes Nile’s strict boot checks. Database setup returns a Result and prevents startup on failure; shutdown drains Nile’s work before closing PGlite. Helpers are available as `utils.createModel`, and Result helpers come from `@nilejs/nile/fp`.
+The starter uses Nile `^1.0.5`, Zod 4, TypeScript 7 and the Drizzle model helpers. The generated layout passes Nile’s strict boot checks. Database setup returns a Result and prevents startup on failure; shutdown drains Nile’s work before closing PGlite. Helpers are available as `utils.createModel`, and Result helpers come from `@nilejs/nile/fp`.
 
 Existing apps are not rewritten when the CLI updates. For an older starter, add a service entry point at `src/services/<domain>/index.ts`, register its actions there, and import that service from `services.config.ts`. [Nile’s migration notes](https://github.com/nile-js/nile/blob/main/packages/nile/docs/release-migration.md) describe the current error and startup behavior.
 
