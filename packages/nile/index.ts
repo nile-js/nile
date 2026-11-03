@@ -84,7 +84,6 @@ export type {
   ServerConfig,
   ServerRuntime,
   Sessions,
-  WebSocketContext,
 } from "./nile/types";
 export * from "./project";
 export {

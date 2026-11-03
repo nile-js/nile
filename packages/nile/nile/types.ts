@@ -21,20 +21,12 @@ import type { NileScheduler, SchedulerOptions } from "../scheduling/types";
 import type { NileSocket, SocketConfig } from "../websocket/socket-types";
 import type { createSchemaExporter } from "./schema";
 
-export interface WebSocketContext {
-  connection: unknown;
-  headers?: Record<string, string>;
-  cookies?: Record<string, string>;
-  [key: string]: unknown;
-}
-
 export interface RPCContext {
   [key: string]: unknown;
 }
 
 export interface Sessions {
   rest?: Record<string, unknown>;
-  ws?: Record<string, unknown>;
   rpc?: { enabled?: boolean };
 }
 
@@ -77,7 +69,7 @@ export interface NileContext<TDB = unknown> {
   readonly _store: Readonly<Map<string, unknown>>;
   /**
    * Retrieves a value by key.
-   * For request-scoped keys ("rest", "ws", "rpc") reads from AsyncLocalStorage.
+   * For request-scoped keys ("rest", "nativeRest", "rpc") reads from AsyncLocalStorage.
    * For all other keys reads from the global _store.
    */
   readonly get: <T = unknown>(key: string) => T | undefined;

@@ -5,12 +5,7 @@ import type { NativeRequestContext } from "@/native/types";
 import type { AuthContext } from "../auth/types";
 import type { ExecutionContext } from "../execution/types";
 import { createHookContext } from "./hook-context";
-import type {
-  NileContext,
-  RPCContext,
-  Sessions,
-  WebSocketContext,
-} from "./types";
+import type { NileContext, RPCContext, Sessions } from "./types";
 
 /** One schema problem, addressed by its dotted field path (empty for the payload itself). */
 export interface ValidationIssue {
@@ -45,7 +40,6 @@ export interface RequestStore {
   credentials?: AuthContext;
   rest?: HonoContext;
   nativeRest?: NativeRequestContext;
-  ws?: WebSocketContext;
   rpc?: RPCContext;
   sessions: Sessions;
   hookContext?: HookContext;

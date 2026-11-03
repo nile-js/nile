@@ -2,7 +2,7 @@ import type { AuthContext } from "../auth/types";
 import type { RateLimitStore } from "../controls/rate-limit-types";
 import type { Engine } from "../engine/types";
 
-export type ExecutionTransport = "rest" | "rpc" | "ws" | "cron";
+export type ExecutionTransport = "rest" | "rpc" | "cron";
 export interface ExecutionContext {
   traceId?: string;
   spanId?: string;

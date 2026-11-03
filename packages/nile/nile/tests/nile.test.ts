@@ -50,7 +50,6 @@ describe("createNileContext - sessions (per-request via AsyncLocalStorage)", () 
   it("should return undefined for sessions outside a request scope", () => {
     const ctx = createNileContext();
     expect(ctx.getSession("rest")).toBeUndefined();
-    expect(ctx.getSession("ws")).toBeUndefined();
     expect(ctx.getSession("rpc")).toBeUndefined();
   });
 
@@ -61,7 +60,7 @@ describe("createNileContext - sessions (per-request via AsyncLocalStorage)", () 
     await runInRequestScope({ sessions: {} }, () => {
       ctx.setSession("rest", restSession);
       expect(ctx.getSession("rest")).toEqual(restSession);
-      expect(ctx.getSession("ws")).toBeUndefined();
+      expect(ctx.getSession("rpc")).toBeUndefined();
     });
   });
 
@@ -90,18 +89,18 @@ describe("createNileContext - sessions (per-request via AsyncLocalStorage)", () 
     const ctx = createNileContext();
 
     await runInRequestScope({ sessions: {} }, () => {
-      ctx.setSession("ws", { connId: "old" });
-      ctx.setSession("ws", { connId: "new" });
-      expect(ctx.getSession("ws")).toEqual({ connId: "new" });
+      ctx.setSession("rpc", { callId: "old" });
+      ctx.setSession("rpc", { callId: "new" });
+      expect(ctx.getSession("rpc")).toEqual({ callId: "new" });
     });
   });
 });
 
 describe("createNileContext - request-scoped get() for interface contexts", () => {
-  it("should return undefined for rest/ws/rpc outside a request scope", () => {
+  it("should return undefined for rest/nativeRest/rpc outside a request scope", () => {
     const ctx = createNileContext();
     expect(ctx.get("rest")).toBeUndefined();
-    expect(ctx.get("ws")).toBeUndefined();
+    expect(ctx.get("nativeRest")).toBeUndefined();
     expect(ctx.get("rpc")).toBeUndefined();
   });
 
@@ -111,7 +110,7 @@ describe("createNileContext - request-scoped get() for interface contexts", () =
 
     await runInRequestScope({ rest: mockHonoCtx, sessions: {} }, () => {
       expect(ctx.get("rest")).toBe(mockHonoCtx);
-      expect(ctx.get("ws")).toBeUndefined();
+      expect(ctx.get("nativeRest")).toBeUndefined();
       expect(ctx.get("rpc")).toBeUndefined();
     });
   });
@@ -286,7 +285,6 @@ describe("getRequestStore", () => {
     const mockStore = {
       sessions: {},
       rest: undefined,
-      ws: undefined,
       rpc: undefined,
     };
 

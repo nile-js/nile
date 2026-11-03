@@ -176,8 +176,7 @@ export function createNileTelemetry(options: TelemetryOptions): NileTelemetry {
         `${details.service}.${details.action}${details.hook ? `:${details.hook}` : ""}`,
         {
           kind:
-            details.context.transport === "rest" ||
-            details.context.transport === "ws"
+            details.context.transport === "rest"
               ? SpanKind.SERVER
               : SpanKind.INTERNAL,
           attributes: {
