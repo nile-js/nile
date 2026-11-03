@@ -1,3 +1,10 @@
+import type {
+  NileSocketClient,
+  NileSocketConfig,
+  SocketTopics,
+  TopicShape,
+} from "./socket-types.js";
+
 /** Standard Nile API response shape */
 export interface ExternalResponse<T = Record<string, unknown>> {
   status: boolean;
@@ -58,7 +65,7 @@ export interface ExploreActionsResponse {
     isProtected: boolean;
     validation: boolean;
     accessControl: string[];
-    visibility?: { rest?: boolean; rpc?: boolean; ws?: boolean };
+    visibility?: { rest?: boolean; rpc?: boolean };
   }>;
 }
 
@@ -76,6 +83,8 @@ export interface NileClientConfig {
   headers?: Record<string, string>;
   /** Optional timeout in ms (default: 30000) */
   timeout?: number;
+  /** Socket settings for `client.socket`. The socket connects on first use. */
+  socket?: NileSocketConfig;
 }
 
 /** Options for individual fetch calls (body and method are managed internally) */
@@ -116,7 +125,11 @@ export interface UploadParams {
 /** Interface for the typed client */
 export interface NileClient<
   TPayloads = Record<string, Record<string, unknown>>,
+  TTopics extends TopicShape<TTopics> = SocketTopics,
 > {
+  /** Typed topics over Socket.IO: `send`, `receive` and `close`. */
+  socket: NileSocketClient<TTopics>;
+
   /** Invoke an action with full type-safety for payload */
   invoke: <
     S extends keyof TPayloads & string,

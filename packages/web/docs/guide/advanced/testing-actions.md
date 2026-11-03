@@ -7,7 +7,7 @@ description: "Test action rules with server.invoke and Bun's test runner, withou
 
 ## When to use it
 
-Test every validation rule, every `Err` path and every hook that changes behavior. Use HTTP tests only for routing, headers and content types, which `server.invoke` does not exercise.
+Test every validation rule, every `Err` path and every hook that changes behavior. Keep HTTP tests for routing, headers and content types, which only an HTTP request reaches.
 
 ## Complete example
 
@@ -62,7 +62,7 @@ describe("notes.add", () => {
     });
 
     expect(result.isOk).toBe(true);
-    expect(result.isErr).toBe(false);
+    expect(result.value).toEqual({ note: { text: "Ship the release" } });
   });
 
   test("rejects an empty note before the handler runs", async () => {
@@ -73,6 +73,7 @@ describe("notes.add", () => {
     });
 
     expect(result.isErr).toBe(true);
+    expect(result.error).toContain("Text is required");
   });
 });
 ```
@@ -82,7 +83,7 @@ In the example project, running the file produced:
 ```text
  2 pass
  0 fail
- 3 expect() calls
+ 4 expect() calls
 Ran 2 tests across 1 file.
 ```
 
@@ -107,7 +108,7 @@ Without `credentials`, the call returns `Authentication required: no request con
 
 - Calling `createNileServer` again returns the existing instance and logs a warning. Pass `forceNewInstance: true` when a file needs a second server with different settings.
 - Pass the same `services` and `resources` objects the application uses so the test runs the real definitions.
-- Use a fresh in-memory database fixture for each file that writes data. Do not share the application's data directory.
+- Give each file that writes data a fresh in-memory database, separate from the application's data directory.
 
 ## Options that matter
 
@@ -116,11 +117,11 @@ Without `credentials`, the call returns `Authentication required: no request con
 | Action input | `payload` in `server.invoke` |
 | Identity | `credentials` for protected actions, or `session` for trusted application code |
 | Cancellation | `signal` to test how a handler stops |
-| Rate limits | An `execution.rateLimit` policy with a small `capacity`, so the test can reach the limit quickly |
+| Rate limits | An `execution.rateLimit` policy with a small `limit`, so the test reaches it quickly |
 
 ## Limits
 
-- `server.invoke` does not test routing, CORS, multipart parsing or response headers. Test those through the HTTP app.
+- Routing, CORS, multipart parsing and response headers run only for HTTP requests. Test those through the HTTP app.
 - A test that depends on time should inject its own clock or use short windows.
 - Tests that write to a shared database can interfere with each other. Give each test file its own data.
 
@@ -133,6 +134,6 @@ Without `credentials`, the call returns `Authentication required: no request con
 
 ## See also
 
-- [HTTP, WebSocket and direct calls](/guide/features/calling-actions) explains `server.invoke` options.
+- [HTTP and direct calls](/guide/features/calling-actions) explains `server.invoke` options.
 - [Errors and Results](/guide/basics/errors-and-results) explains the Result shapes you assert on.
 - [Production operations](/guide/reference/operations) covers execution options your tests may need to set.

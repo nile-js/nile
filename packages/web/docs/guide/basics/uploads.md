@@ -28,7 +28,7 @@ rest: {
 }
 ```
 
-Limits cover file count, per-file and total size, filename length, and allowed MIME signatures/extensions. These checks are not malware scanning or application-specific document validation. Enforcing content type checks the request against the action's `isSpecial.contentType`.
+Limits cover file count, per-file and total size, filename length, and allowed MIME signatures and extensions. Scanning for malware and checking what a document contains stay in your handler. `enforceContentType` checks the request against the action's `isSpecial.contentType`.
 
 ## Receive a structured payload
 
@@ -64,9 +64,9 @@ export const inspectDocument = createAction({
 });
 ```
 
-The handler receives `{ fields, files }`. Repeated same-kind keys become arrays. The current entry point rejects a key used for both a file and text, regardless of `uploadMode`; changing that option does not enable mixed keys. Routing `action` is removed from parsed fields, while `intent` and `service` may remain. Read the application fields you actually need.
+The handler receives `{ fields, files }`. A key repeated with the same kind of value becomes an array. A key used for both a file and text is rejected, whatever the `uploadMode`. The routing field `action` is removed from `fields`, while `intent` and `service` may stay, so read only the fields your action needs.
 
-If supplying an action Zod schema, describe the **structured payload**, not the JSON shape of a normal action. Add your normal identity and access rules to protected uploads.
+An upload action's Zod schema describes the **structured payload** `{ fields, files }`. Protect upload actions with the same identity and access rules as any other action.
 
 ## Send from the frontend
 
@@ -86,7 +86,7 @@ if (result.isErr) {
 console.log(result.value);
 ```
 
-Here `nile` is a [configured client](/guide/basics/client) and `selectedFile` is the File chosen by the user. The client creates FormData with the routing fields. Do not manually set a multipart Content-Type header; Fetch supplies its boundary.
+Here `nile` is a [configured client](/guide/basics/client) and `selectedFile` is the File chosen by the user. The client builds the FormData with the routing fields. Leave the Content-Type header unset so Fetch adds the multipart boundary.
 
 For a direct request:
 
@@ -96,4 +96,4 @@ curl http://localhost:8000/api/services \
   -F 'title=Project brief' -F 'document=@./brief.pdf'
 ```
 
-Upload parsing/limit failures return a failure envelope with validation details; content-type mismatch can return 415. Handle the failure before treating the upload as stored. Nile does not save files automatically; persistence, cleanup and private-download authorization remain application decisions.
+A parsing or limit failure returns a failure envelope with validation details, and a content-type mismatch can return 415. Files reach your handler in memory: saving them, cleaning them up and authorizing private downloads are up to your application.

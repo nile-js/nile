@@ -19,15 +19,7 @@ import type { LifecycleResource, NileLifecycle } from "../lifecycle/types";
 import type { ProjectOptions } from "../project/types";
 import type { NileScheduler, SchedulerOptions } from "../scheduling/types";
 import type { NileSocket, SocketConfig } from "../websocket/socket-types";
-import type {} from "../websocket/types";
 import type { createSchemaExporter } from "./schema";
-
-export interface WebSocketContext {
-  connection: unknown;
-  headers?: Record<string, string>;
-  cookies?: Record<string, string>;
-  [key: string]: unknown;
-}
 
 export interface RPCContext {
   [key: string]: unknown;
@@ -35,7 +27,6 @@ export interface RPCContext {
 
 export interface Sessions {
   rest?: Record<string, unknown>;
-  ws?: Record<string, unknown>;
   rpc?: { enabled?: boolean };
 }
 
@@ -70,14 +61,15 @@ export interface Resources<TDB = unknown> {
 }
 
 export interface NileContext<TDB = unknown> {
-  websocket?: NileSocket;
+  /** Topic messaging; present when the server config has `socket`. */
+  socket?: NileSocket;
   /** Current invocation metadata; undefined outside an execution scope. */
   readonly execution?: ExecutionContext;
   /** Global key-value store — intentionally shared across requests */
   readonly _store: Readonly<Map<string, unknown>>;
   /**
    * Retrieves a value by key.
-   * For request-scoped keys ("rest", "ws", "rpc") reads from AsyncLocalStorage.
+   * For request-scoped keys ("rest", "nativeRest", "rpc") reads from AsyncLocalStorage.
    * For all other keys reads from the global _store.
    */
   readonly get: <T = unknown>(key: string) => T | undefined;
@@ -131,8 +123,8 @@ interface SharedServerConfig {
   resources?: Resources<unknown>;
   /** JWT auth configuration — enables built-in token verification for protected actions */
   auth?: AuthConfig;
-  // Independent interfaces share the action engine.
-  websocket?: SocketConfig;
+  /** Typed topics over Socket.IO. Connections verify the JWT from `auth`. */
+  socket?: SocketConfig;
   rpc?: { enabled?: boolean };
   onBeforeActionHandler?: BeforeActionHandler<unknown, unknown>;
   onAfterActionHandler?: AfterActionHandler<unknown, unknown>;
@@ -179,7 +171,7 @@ export type NileStats = EngineStats & { startupDurationMs: number };
 
 export interface NileServer {
   schema: ReturnType<typeof createSchemaExporter>;
-  websocket?: NileSocket;
+  socket?: NileSocket;
   /** Combined HTTP/socket entry point. Bun supplies its server as the second argument. */
   fetch: (
     request: Request,

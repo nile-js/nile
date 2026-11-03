@@ -9,9 +9,9 @@ The [application structure guide](/guide/start/application-structure) shows how 
 
 ## Bring your application’s data resource
 
-Create and configure a database client with your chosen library. Pass the existing client through `resources.database` if handlers or models should resolve it from Nile context. Connection management, credentials, migrations, indexes and deployment remain application responsibilities.
+Create and configure a database client with your chosen library. Pass the existing client through `resources.database` if handlers or models should resolve it from Nile context. Connections, credentials, migrations, indexes and deployment stay in your application.
 
-You can instead pass dependencies directly to your functions. A repository does not need to import Nile merely to be callable from an action.
+You can instead pass dependencies to your functions as parameters, so a repository calls no Nile API at all.
 
 ## Optional Drizzle helpers
 
@@ -25,18 +25,18 @@ Access the Drizzle helpers through `import { utils } from "@nilejs/nile"`:
 | `DBX<TDB>`, `DBParams<TDB>` | Describe a database or transaction dependency. |
 | `utils.handleError` | Log an investigable failure and return an Err. |
 
-Install and configure the relevant Drizzle packages/driver in your application before choosing these helpers. They do not provision a database or run migrations.
+Install and configure Drizzle and its driver in your application before using these helpers. The helpers create no database and run no migrations.
 
 ## What stays in your application
 
-Use ordinary functions for joins, reporting, multi-model business rules and external integrations. `createModel` exposes its table and schemas for extending common CRUD behavior; it is not a complete repository abstraction for every domain.
+Write your own functions for joins, reports, rules spanning several models and external integrations. `createModel` exposes its table and schemas so those functions stay in step with the table.
 
-For multi-step writes, decide transaction boundaries explicitly. Calling several actions or attaching an after hook does not make the work atomic. A noncritical notification failure may be acceptable; a partially applied financial operation may not be. That policy belongs beside the business operation.
+For multi-step writes, decide which writes share a transaction. Calling several actions or adding an after hook runs them separately. A failed notification may be acceptable; a half-applied payment is not. Make that decision in the operation itself.
 
-## Failure boundaries
+## Failures and transactions
 
-Expected missing data can return `Err`. Driver failures should be guarded with `safeTry` and handled according to the operation. `handleError` needs a configured or explicit logger and throws if one is absent. Missing database configuration also fails rather than silently continuing.
+Expected missing data can return `Err`. Wrap driver calls in `safeTry` and handle the failure for the operation. `handleError` needs a configured or explicit logger and throws without one. A missing database configuration fails too.
 
-`createTransactionVariant` deliberately throws when the wrapped function returns an Err so a database transaction can roll back. It does not convert the rejection back into an Err. Guard the whole transaction call with `safeTry` when the caller needs a Result. If no `dbx` is supplied, the wrapper calls the function without starting a transaction and still throws on Err. Supply a root database with a `transaction` method when a new transaction is required; an existing Drizzle transaction can create a nested transaction or savepoint when it exposes the same method.
+`createTransactionVariant` deliberately throws when the wrapped function returns an Err so a database transaction can roll back. The rejection stays a rejection, so wrap the whole transaction call in `safeTry` when the caller needs a Result. If no `dbx` is supplied, the wrapper calls the function without starting a transaction and still throws on Err. Supply a root database with a `transaction` method when a new transaction is required; an existing Drizzle transaction can create a nested transaction or savepoint when it exposes the same method.
 
-See [createModel](/guide/internals/db/create-model) for the exact method boundaries, and [errors and Results](/guide/basics/errors-and-results) for application error handling.
+See [createModel](/guide/internals/db/create-model) for each method's behavior, and [errors and Results](/guide/basics/errors-and-results) for application error handling.

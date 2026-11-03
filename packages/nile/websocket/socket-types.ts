@@ -1,38 +1,58 @@
 import type { Server as NodeServer } from "node:http";
 import type { Result } from "slang-ts";
-import type z from "zod";
 import type { createTopicSchemaReader } from "../messaging/schema";
-import type { TopicDefinitions, TopicMessaging } from "../messaging/types";
-import type { NileContext } from "../nile/types";
-import type { BaseWebSocketConfig, WebSocketIdentity } from "./types";
+import type {
+  SocketUser,
+  TopicDefinitions,
+  TopicMessaging,
+} from "../messaging/types";
 
-export type SocketPolicyContext<T extends TopicDefinitions = TopicDefinitions> =
-  {
-    [K in keyof T & string]: {
-      topic: K;
-      scope: T[K] extends { scope: infer S extends z.ZodType }
-        ? z.output<S>
-        : z.output<ReturnType<typeof z.json>> | undefined;
-      context: NileContext;
-      identity: WebSocketIdentity;
-    };
-  }[keyof T & string];
-export interface SocketConfig<T extends TopicDefinitions = TopicDefinitions>
-  extends Omit<BaseWebSocketConfig, "authenticate"> {
-  authenticate?: (
-    request: Request,
-    auth: Record<string, string>
-  ) =>
-    | Result<WebSocketIdentity, string>
-    | Promise<Result<WebSocketIdentity, string>>;
-  topics?: T;
+export interface SocketHandshake {
+  request: Request;
+  /** The `auth` object the client sent when it connected. */
+  auth: Record<string, string>;
+}
+export interface SocketConnection {
+  connectionId: string;
+  user: SocketUser | undefined;
+}
+export interface SocketLimits {
+  /** Default 1000. */
+  maxConnections?: number;
+  /** Default 5000. */
+  authenticationTimeoutMs?: number;
+  /** Default 1 MiB. */
+  maxMessageBytes?: number;
+  /** Default 1 MiB. */
+  maxBufferedBytes?: number;
+  /** Per connection. Default 32. */
+  maxConcurrentMessages?: number;
+  /** Per connection. Default 100. */
   maxSubscriptions?: number;
-  authorizeSubscription?(
-    input: SocketPolicyContext<T>
-  ): Result<boolean, string> | Promise<Result<boolean, string>>;
-  authorizePublish?(
-    input: SocketPolicyContext<T>
-  ): Result<boolean, string> | Promise<Result<boolean, string>>;
+  /** Per connection. Default 600. */
+  messagesPerMinute?: number;
+}
+export interface SocketConfig<T extends TopicDefinitions = TopicDefinitions> {
+  topics?: T;
+  /** Socket.IO path. Default `/socket.io`. */
+  path?: string;
+  /** Browser origins are denied unless listed; non-browser clients may omit Origin. */
+  allowedOrigins?: string[];
+  /**
+   * Identify a connection yourself. Without it, Nile verifies the JWT from the
+   * server's `auth` config, taking the token from the client's `auth.token`,
+   * the auth header or the auth cookie. Return `Ok(undefined)` for an anonymous connection.
+   */
+  authenticate?: (
+    handshake: SocketHandshake
+  ) =>
+    | Result<SocketUser | undefined, string>
+    | Promise<Result<SocketUser | undefined, string>>;
+  limits?: SocketLimits;
+  onConnect?: (connection: SocketConnection) => void | Promise<void>;
+  onDisconnect?: (
+    connection: SocketConnection & { reason: string }
+  ) => void | Promise<void>;
 }
 /** Structural runtime boundary keeps Node declarations independent of Bun globals. */
 export interface BunSocketServer {
@@ -57,8 +77,8 @@ export interface NileSocket<T extends TopicDefinitions = TopicDefinitions>
   extends TopicMessaging<T> {
   schema: ReturnType<typeof createTopicSchemaReader>;
   path: string;
-  bun?: BunSocketHandler;
-  idleTimeout: number;
+  /** Spread into Bun.serve: `Bun.serve({ fetch: server.fetch, ...server.socket.bun })`. */
+  bun?: { websocket: BunSocketHandler; idleTimeout: number };
   handleRequest: (
     request: Request,
     server: BunSocketServer

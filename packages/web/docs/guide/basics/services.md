@@ -1,9 +1,9 @@
 ---
 title: "Services"
-description: "Group related actions into an explicitly registered business domain"
+description: "Group related actions into an explicitly registered domain"
 ---
 
-Group related operations in a service named for their business domain, such as projects, billing or membership. Register its public actions in the domain’s `index.ts`.
+Group related operations in a service named for their domain, such as projects, billing or membership. Register its public actions in the domain’s `index.ts`.
 
 ```ts
 import { createService, createServices } from "@nilejs/nile";
@@ -21,11 +21,11 @@ export const services = createServices([projectsService]);
 
 Pass `services` to `createNileServer`. Nile registers that list at startup and rejects duplicate service names or duplicate action names within a service.
 
-A service is an application grouping, not a separately deployed microservice. It does not create a database, process or network boundary. Your ordinary business functions and models can be shared through explicit imports or application resources.
+A service groups actions inside one application and one process. Its domain functions and models can be imported by other services or shared through context resources.
 
 ## Keep registration useful
 
-Put the registry in a predictable file, such as `services/services.config.ts`. Give actions descriptions that explain the business effect. Keep large implementations in their own domain modules so the registry remains easy to scan.
+Put the registry in a predictable file, such as `services/services.config.ts`. Give each action a description of what it changes. Keep large implementations in their own domain modules so the registry remains easy to scan.
 
 Nile logs service/action totals and per-service registration timings at startup by default. Inspect the same snapshot without printing:
 
@@ -33,6 +33,6 @@ Nile logs service/action totals and per-service registration timings at startup 
 console.log(server.stats());
 ```
 
-The snapshot contains `totalServices`, `totalActions`, `registrationDurationMs`, `startupDurationMs` and a `services` array with each service's `actionCount` and `registrationDurationMs`. It measures registration after modules have been constructed, not module import time or database loading per service. Set `logServices: false` to suppress the startup table.
+The snapshot contains `totalServices`, `totalActions`, `registrationDurationMs`, `startupDurationMs` and a `services` array with each service's `actionCount` and `registrationDurationMs`. The timings start once your modules are loaded, so they leave out import time and database setup. Set `logServices: false` to hide the startup table.
 
 See [application structure](/guide/start/application-structure) for a domain layout that gives new teammates a well known path through the code.

@@ -45,7 +45,7 @@ const createProjectHandler = (
 };
 ```
 
-This handler assumes `CreateProjectInput` is inferred from the action's schema; pass it to `createAction` as `handler: createProjectHandler`. Logging happens where you configure or call it; a logger resource does not automatically create an audit record for every request.
+`CreateProjectInput` is inferred from the action's schema; pass the handler to `createAction` as `handler: createProjectHandler`. The logger writes only what you log, so add your own audit entries where you need them.
 
 ## Shared resources and request identity are different
 
@@ -57,19 +57,20 @@ This handler assumes `CreateProjectInput` is inferred from the action's schema; 
 | `get("nativeRest")` | Current request's native HTTP context, on Bun native. |
 | `getSession("rest")` / `setSession("rest", value)` | Current request's session. Both HTTP adapters use this session key. |
 | `hookContext`, `updateHookState` | State and logs isolated to the current action execution. |
+| `socket` | Topic messaging, present when the server has `socket` config. Use `getContext({ topics })` for typed topics. |
 
-Do not store the current user in a shared `set("user", ...)` key. Concurrent requests would observe the same application value. Use request sessions for identity and action hook state for per-execution work. Transport request contexts and sessions are carried through AsyncLocalStorage; nested/concurrent action executions get their own hook state.
+Keep the current user out of `set("user", ...)`: every concurrent request reads the same shared value. Use request sessions for identity and hook state for per-call work. Request contexts and sessions follow each request through AsyncLocalStorage, and nested or concurrent action calls each get their own hook state.
 
 ```ts
 const session = context?.getSession("rest");
 const userId = session?.userId;
 ```
 
-Outside a request scope, session access returns no session and session writes have no effect. For application helpers, passing the required dependency as a parameter often makes reuse and testing clearer than looking up context implicitly.
+Outside a request, `getSession` returns `undefined` and `setSession` has no effect. In your own helpers, pass the dependency as a parameter; the helper is then easier to reuse and test.
 
 ## Get a typed resource when needed
 
-`getContext<TDatabase>()` exposes the active Nile context with a typed database resource. Keep that use at an application boundary; a model factory can receive the database explicitly. No particular database is required.
+`getContext<TDatabase>()` returns the active Nile context with a typed database resource. Call it near the edge of your app, such as a startup module, and pass the database to model factories as a parameter. Any database works.
 
 ```ts
 import { getContext } from "@nilejs/nile";
@@ -79,6 +80,6 @@ const context = getContext<AppDatabase>();
 const database = context.resources?.database;
 ```
 
-`AppDatabase` is your application's database type. `getContext` fails if no Nile instance is available, so initialize the application before calling it.
+`AppDatabase` is your application's database type. `getContext` throws until `createNileServer` has run, so create the server first.
 
 Next: [authentication and access policy](/guide/basics/auth), [hooks](/guide/basics/hooks-and-pipelines), and [runtime-specific request access](/guide/start/runtime-adapters).

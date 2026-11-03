@@ -107,20 +107,20 @@ Use `getContext<AppDatabase>()` outside a handler when you need the typed resour
 
 | Option | Values | Effect |
 | --- | --- | --- |
-| `mode` | `"prod"`, `"dev"`, `"agentic"` | Output format. `dev` is readable in a terminal, `prod` is structured for collection. |
-| `chunking` | `"none"`, `"daily"`, `"weekly"`, `"monthly"` | How files are split under `logs/`. Nile does not delete old files. |
+| `mode` | `"prod"`, `"dev"`, `"agentic"` | `prod` writes JSON lines to files under `logs/`. `dev` prints readable lines to the console and writes no file. `agentic` writes nothing and returns each entry as a JSON string from the log call. |
+| `chunking` | `"none"`, `"daily"`, `"weekly"`, `"monthly"` | How `prod` log files are split. Old files stay until you remove them. |
 
 Each entry includes the application name, the function name you pass as `atFunction`, the message, your optional `data` and a log ID. Nile attaches execution IDs to related log entries.
 
 ## Limits
 
 - `context.set` writes to a map in this process. Other instances do not see it, and a restart clears it.
-- A logger resource does not record every request. Log the events you need.
-- Time-based chunking does not ship or delete logs. Plan retention for your deployment.
+- The logger writes only the entries you log, so log the events you need.
+- Chunking only splits files. Shipping and deleting old logs is part of your deployment.
 
 ## Common mistakes
 
-- Storing the current user with `set("user", ...)`. Concurrent requests share that value. Read the session instead.
+- Storing the current user with `set("user", ...)`. Concurrent requests share the value; read the session instead.
 - Logging passwords, tokens or personal data in `data`. Log identifiers and outcomes.
 - Calling `getContext` at module load before `createNileServer` has run.
 - Assuming `context.execution` exists outside an execution. Read it with `?.`.

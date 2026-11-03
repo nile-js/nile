@@ -3,11 +3,11 @@ title: "Execution options"
 description: "Set a timeout for each execution and layer rate limits from the server down to one action"
 ---
 
-Execution options control how long an action may run and how often it may be called. They apply to every transport: HTTP, the socket transport, `server.invoke` and scheduled jobs. Set them under `execution` in `createNileServer`.
+Execution options control how long an action may run and how often it may be called. They apply to every way an action runs: HTTP, `server.invoke` and scheduled jobs. Set them under `execution` in `createNileServer`.
 
 ## When to use them
 
-Use a timeout to stop a slow dependency from holding a request open. Use layered rate limits when one service is expensive and another should not be limited at all. The timeout does not roll back work, so pair it with idempotent writes or a queue.
+Use a timeout to stop a slow dependency from holding a request open. Use layered rate limits when one service is expensive and another should not be limited at all. A timeout undoes no work, so pair it with writes safe to repeat, or a queue.
 
 ## Complete example
 
@@ -87,28 +87,28 @@ export const server = await createNileServer({
 
 ## How policies resolve
 
-The most specific policy wins. For `billing.export`, the action policy applies. For another `billing` action, the service policy applies. For any other service, the global policy applies. `false` at any level removes the inherited policy for that level and everything below it.
+The most specific policy wins. For `billing.export`, the action policy applies. For another `billing` action, the service policy applies. For any other service, the global policy applies. `false` counts as a policy: on a service it turns off the limit for every action in that service without its own policy, and an action with its own `rateLimit` keeps it.
 
-The `key` function receives the execution details. Its `context.clientKey` value comes from the connection address for HTTP calls. Use a verified user or organization identifier from the session when quotas should follow the account instead of the connection.
+The `key` function receives the call details. For HTTP calls, `context.clientKey` is the client's address. Use a verified user or organization identifier from the session when quotas should follow the account instead of the connection.
 
 ## How it behaves
 
 - A timed-out execution returns a failure. Handlers that pass `context.execution.signal` to their dependencies can stop early.
 - Work that ignores the signal keeps running until it finishes, and the execution stays tracked until then.
 - Rate limit checks run after JWT verification and the global before hook. A call denied by the limit does not run the handler.
-- Store state is per process. Use a shared store only when it checks and consumes the quota atomically.
+- Store state is per process. A shared store must check and use up the quota in one atomic step.
 
 ## Limits
 
-- A timeout does not undo writes. Make the write step idempotent or move it into a queue.
-- A quota with `maxKeys` refuses new keys when full, rather than evicting an active client.
+- A timeout undoes no writes. Make the write safe to repeat, or move it into a queue.
+- A store with `maxKeys` refuses new keys when full and keeps every client it already tracks.
 - Each `rateLimit` value is a separate store unless you pass the same store object.
 
 ## Common mistakes
 
 - Setting a timeout shorter than a legitimate database call.
-- Forgetting that a service-level `false` also disables the action-level policies beneath it.
-- Using `context.clientKey` behind a proxy that does not forward the real address.
+- Expecting a service-level `false` to turn off a policy set on one of its actions. The action policy still applies.
+- Keying on `context.clientKey` behind a proxy without forwarding the client address, so every caller shares one quota.
 - Expecting a rate limit to replace authentication.
 
 ## See also

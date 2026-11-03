@@ -50,7 +50,7 @@ export const createProjectAction = createAction({
 });
 ```
 
-`createAction` infers its type from the handler. Register the action in a service, then call it through the frontend client, `server.invoke` or Socket.IO. The [core package guide](https://github.com/nile-js/nile/blob/main/packages/nile/README.md) shows registration, startup and a client call.
+`createAction` infers its type from the handler. Register the action in a service, then call it through the frontend client or `server.invoke`. The [core package guide](https://github.com/nile-js/nile/blob/main/packages/nile/README.md) shows registration, startup and a client call.
 
 ## Packages
 
@@ -58,7 +58,7 @@ export const createProjectAction = createAction({
 | --- | --- |
 | [@nilejs/nile](https://www.npmjs.com/package/@nilejs/nile) | Server, actions, validation, hooks, logging and backend utilities |
 | [@nilejs/cli](https://www.npmjs.com/package/@nilejs/cli) | Project scaffolding, action generators and client contracts |
-| [@nilejs/client](https://www.npmjs.com/package/@nilejs/client) | Typed HTTP calls and a Socket.IO client |
+| [@nilejs/client](https://www.npmjs.com/package/@nilejs/client) | Typed HTTP calls and Socket.IO topics |
 
 Explore the [reference application](https://github.com/nile-js/nile/tree/main/packages/example), [documentation source](https://github.com/nile-js/nile/tree/main/packages/web) and [benchmark suite](https://github.com/nile-js/nile/tree/main/packages/benchmarks).
 

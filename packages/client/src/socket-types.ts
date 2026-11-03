@@ -1,14 +1,14 @@
 import type { ClientResult } from "./types.js";
 
+type WireJson = object | string | number | boolean | null;
+
 export interface TopicContract {
-  data: object | string | number | boolean | null;
-  input?: object | string | number | boolean | null;
-  scope?: object | string | number | boolean | null;
+  data: WireJson;
+  input?: WireJson;
+  scope?: WireJson;
 }
 export type TopicShape<T> = { [K in keyof T]: TopicContract };
-export type ActionShape<A> = { [S in keyof A]: { [K in keyof A[S]]: object } };
 export type SocketTopics = Record<string, TopicContract>;
-export type SocketActions = Record<string, Record<string, object>>;
 export type SocketSelection<T, K extends keyof T> = {
   topic: K;
 } & (T[K] extends { scope: infer S }
@@ -27,38 +27,45 @@ export interface SocketMessage<K extends string, D> {
   id: string;
   topic: K;
   data: D;
-  scope?: object | string | number | boolean | null;
+  scope?: WireJson;
   time: string;
+  /** Present when a client sent the message; absent for server messages. */
+  from?: { connectionId: string; userId?: string };
 }
-export interface NileSocketClientConfig {
-  baseUrl: string;
+export interface NileSocketConfig {
+  /** Socket server origin when it differs from `baseUrl`. Defaults to the origin of `baseUrl`. */
+  url?: string;
+  /** Socket.IO path. Default `/socket.io`; must match the server. */
   path?: string;
+  /** Connection and acknowledgement timeout in ms. Default 30000. */
   timeout?: number;
+  /** Sent when connecting, e.g. `{ token }`. A function is called again on every reconnect. */
   auth?:
     | Record<string, string>
     | (() => Record<string, string> | Promise<Record<string, string>>);
-  onSubscriptionError?: (input: { topic: string; error: string }) => void;
+  onConnect?: () => void;
+  onDisconnect?: (reason: string) => void;
+  /** Fires after a reconnect once active subscriptions are restored. */
+  onReconnect?: () => void;
+  /** A connection failure, or a subscription refused while restoring it after a reconnect. */
+  onError?: (error: { error: string; topic?: string }) => void;
 }
-export interface NileSocketClient<
-  A extends ActionShape<A>,
-  T extends TopicShape<T>,
-> {
-  invoke: <S extends keyof A & string, K extends keyof A[S] & string>(input: {
-    service: S;
-    action: K;
-    payload: A[S][K];
-  }) => Promise<ClientResult>;
+export interface SocketSubscription {
+  topic: string;
+  /** Stop this listener; the server subscription ends when the last listener for it stops. */
+  unsubscribe: () => Promise<ClientResult<{ subscribed: boolean }>>;
+}
+export interface NileSocketClient<T extends TopicShape<T> = SocketTopics> {
+  /** Send to a topic; the server checks the topic's `canSend` and validates the data. */
   send: <K extends keyof T & string>(
     input: SocketPublication<T, K>
   ) => Promise<ClientResult<SocketMessage<K, T[K]["data"]>>>;
+  /** Subscribe to a topic and listen for its messages in one call. */
   receive: <K extends keyof T & string>(
     input: SocketSelection<T, K> & {
       onMessage: (message: SocketMessage<K, T[K]["data"]>) => void;
     }
-  ) => Promise<
-    ClientResult<{
-      unsubscribe: () => Promise<ClientResult<{ subscribed: boolean }>>;
-    }>
-  >;
+  ) => Promise<ClientResult<SocketSubscription>>;
+  /** Disconnect and drop every listener. The client cannot reconnect afterwards. */
   close: () => void;
 }

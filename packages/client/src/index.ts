@@ -1,14 +1,15 @@
 export { createNileClient } from "./create-client.js";
+export { createNileSocketClient } from "./deprecated.js";
 export { buildFormData, sendUploadRequest } from "./request.js";
-export { createNileSocketClient } from "./socket-client.js";
 export type {
   NileSocketClient,
-  NileSocketClientConfig,
-  SocketActions,
+  NileSocketConfig,
   SocketMessage,
   SocketPublication,
   SocketSelection,
+  SocketSubscription,
   SocketTopics,
+  TopicContract,
 } from "./socket-types.js";
 export type {
   ClientErr,

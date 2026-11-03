@@ -11,7 +11,7 @@ Use a local hook when a step produces data the main handler needs, such as norma
 
 ## Complete example
 
-`orders.checkout` normalizes its input in a before hook, validates the normalized value and then runs the checkout rule. An after hook adds metadata to the response. A global after hook records the action name in the execution state.
+`orders.checkout` normalizes its input in a before hook, validates the normalized value and then runs the checkout rule. An after hook adds a `receivedAt` time to the response. A global after hook records the action name in the execution state.
 
 ```ts
 import {
@@ -57,8 +57,8 @@ const checkoutHandler = (data: CheckoutInput) => {
   return Ok({ sku: data.sku, quantity: data.quantity, status: "accepted" });
 };
 
-const stampHook = (data: unknown) => {
-  return Ok(data);
+const stampHook = (data: Record<string, unknown>) => {
+  return Ok({ ...data, receivedAt: new Date().toISOString() });
 };
 
 const stampAction = createAction({
@@ -124,7 +124,7 @@ export const server = await createNileServer({
 6. Local after hooks, in listed order. Each receives the previous step's value.
 7. The global after hook, which receives the final Result.
 
-In the example, `prepare` receives the raw payload, returns the uppercased SKU, and then Zod validates that value. Validation therefore sees the normalized input.
+In the example, `prepare` receives the raw payload and returns the uppercased SKU, and Zod then validates the normalized value.
 
 ## Local hooks
 
@@ -133,7 +133,7 @@ In the example, `prepare` receives the raw payload, returns the uppercased SKU, 
 | `service`, `action` | The action whose handler runs. |
 | `isCritical` | `true` stops the pipeline when the hook fails. `false` records the failure and continues with the previous value. |
 
-A local hook runs its handler directly. It does not run that action's JWT check, validation or its own hooks. Put any required check inside the hook's handler. Setting `isProtected` on the hook's action does not protect the parent.
+A local hook runs only its handler, skipping that action's JWT check, validation and hooks. Put any required check inside the hook's handler; `isProtected` on the hook's action protects nothing.
 
 ## Global hooks
 
@@ -149,16 +149,15 @@ Set `result: { pipeline: true }` on an action to return the final output togethe
 
 ## Limits
 
-- Hook failures do not undo writes made by earlier steps. Keep writes in the final step, or handle compensation yourself.
-- Hook logs can contain payloads. Do not enable pipeline output on actions that handle secrets.
-- The global after hook does not run after an earlier failure.
+- A failing hook undoes no writes from earlier steps. Keep writes in the final step, or reverse them yourself.
+- Hook logs contain payloads, so keep pipeline output off for actions handling secrets.
+- The global after hook runs only when every earlier step succeeded.
 
 ## Common mistakes
 
 - Expecting a local hook to enforce its target action's `isProtected` or validation.
 - Making a noncritical hook responsible for a required change. Its failure is recorded and then ignored.
 - Returning `Ok(payload)` from the global before hook and expecting the payload to change.
-- Deep chains of hooks that call hooks. Keep each step a single, clear action.
 
 ## See also
 

@@ -1,6 +1,6 @@
 {
   "name": "@nilejs/cli",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "description": "CLI for scaffolding and generating Nile backend projects",
   "type": "module",
   "bin": {
@@ -10,6 +10,31 @@
     "dist",
     "template"
   ],
+  "homepage": "https://nile-js.github.io/nile/",
+  "bugs": {
+    "url": "https://github.com/nile-js/nile/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nile-js/nile.git",
+    "directory": "packages/cli"
+  },
+  "author": "Hussein Kizz",
+  "license": "MIT",
+  "keywords": [
+    "nile",
+    "cli",
+    "scaffolding",
+    "generator",
+    "codegen",
+    "backend",
+    "typescript",
+    "bun",
+    "zod"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "bun run scripts/build.ts",
     "dev": "bun run src/index.ts",

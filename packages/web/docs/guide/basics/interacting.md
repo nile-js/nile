@@ -28,7 +28,7 @@ Execution requires a specific service and action; wildcards are for discovery. N
 }
 ```
 
-An action failure has `status: false`, its error message and `data: {}`. Engine failures, including a missing action, normally return HTTP 400. Invalid request envelopes also return 400; a missing HTTP route returns 404. Check the envelope as well as the HTTP response. See [errors and Results](/guide/basics/errors-and-results).
+An action failure has `status: false`, its error message and `data: {}`, or `{ errorCode, issues }` for invalid input. Every action failure, including an unknown action, returns HTTP 400, and so does a malformed request body. A missing HTTP route returns 404. Check `status` in the body as well as the HTTP status. See [errors and Results](/guide/basics/errors-and-results).
 
 ## Use the client for application calls
 
@@ -49,6 +49,6 @@ console.log(result.value);
 
 The [frontend client](/guide/basics/client) maps the envelope to a Result: `isErr` is true for a failed envelope, and `value` holds the action's data on success.
 
-`explore` lists operation metadata and `schema` converts supported input schemas to JSON Schema. Both are disabled unless discovery is configured. See [discovery and agent integrations](/guide/basics/discovery-and-agents) before exposing them.
+`explore` lists operation metadata and `schema` returns input schemas as JSON Schema. Both answer only when discovery is enabled. See [discovery and agent integrations](/guide/basics/discovery-and-agents) before exposing them.
 
 For file input use [multipart uploads](/guide/basics/uploads). For webhooks or HTTP-specific semantics use [custom routes](/guide/basics/custom-routes).

@@ -3,9 +3,7 @@ title: "Getting started"
 description: "Create a Nile Js project, call its first action, add an action that changes data and call it from a client"
 ---
 
-Create a project, call the Tasks service, then add an action and call it through the frontend client. The starter includes a PGlite database and runs on Bun.
-
-Nile Js uses Bun's native HTTP server. The starter stores its data in an embedded PGlite database, so you do not install or run a database server.
+Create a project, call the Tasks service, then add an action and call it through the frontend client. The starter runs on Bun's native HTTP server and stores its data in an embedded PGlite database, so you run no separate database server.
 
 ## Check the prerequisites
 
@@ -15,15 +13,15 @@ Nile Js uses Bun's native HTTP server. The starter stores its data in an embedde
 bun --version
 ```
 
-You should see `1.4.2` or a later 1.4 release. This guide was verified with Bun 1.4.2. Older versions were not tested.
+You should see `1.4.2` or a later 1.4 release. This guide was verified with Bun 1.4.2.
 
-2. Check that curl is available:
+2. Check for curl:
 
 ```sh
 curl --version
 ```
 
-You should see a first line that starts with `curl`.
+You should see a first line starting with `curl`.
 
 ## Create the project
 
@@ -32,7 +30,7 @@ bunx @nilejs/cli new my-app
 cd my-app
 ```
 
-You should see `Created my-app` and a short list of next commands. The command copies the starter files. It does not install packages yet.
+You should see `Created my-app` and a short list of next commands. The command copies the starter files; you install the packages in the next step.
 
 ## Install the packages
 
@@ -41,7 +39,7 @@ bun install
 grep '"version"' node_modules/@nilejs/nile/package.json
 ```
 
-You should see `"version": "1.0.0",`. If the version is older, stop here and read the last troubleshooting item on this page.
+You should see `"version": "1.1.0",` or a later 1.x release. This guide describes Nile Js 1.x.
 
 ## Project files
 
@@ -90,7 +88,7 @@ cp .env.example .env
 bun run dev
 ```
 
-The `.env` file only contains a comment for now. Keep it so that later variables have a home.
+The `.env` file holds only a comment. Later variables, such as a JWT secret, go in it.
 
 You should see a table with the `tasks` service and five actions, then the startup lines. The timing numbers vary:
 
@@ -143,7 +141,7 @@ curl -s -X POST http://localhost:8000/api/services \
   -d '{"intent":"execute","service":"tasks","action":"create","payload":{"title":""}}'
 ```
 
-You should see `"status": false`, a message that names the field a generated unique `data.errorCode`, and one entry per failed field in `data.issues`:
+You should see `"status": false`, a message naming the field, a generated `data.errorCode`, and one entry per failed field in `data.issues`:
 
 ```json
 {
@@ -168,7 +166,7 @@ You will add `tasks.complete`. It marks one task as `done` and returns the saved
 bun run gen action tasks complete
 ```
 
-You should see `Action created at src/services/tasks/actions/complete.ts` and a hint to import `completeAction`. The generator does not change the service’s action list; register the action in `src/services/tasks/index.ts` in the next step.
+You should see `Action created at src/services/tasks/actions/complete.ts` and a hint to import `completeAction`. The generator leaves the service’s action list alone, so you register the action in `src/services/tasks/index.ts` in the next step.
 
 ### Replace the generated code
 
@@ -207,7 +205,7 @@ export const completeAction = createAction({
 });
 ```
 
-The schema checks the input before the handler runs. The handler returns `Ok` with the saved task or `Err` with a message. The Results section in [errors and Results](/guide/basics/errors-and-results) explains that pattern.
+The schema checks the input before the handler runs. The handler returns `Ok` with the saved task or `Err` with a message. [Errors and Results](/guide/basics/errors-and-results) explains the pattern.
 
 ### Register the action
 
@@ -254,7 +252,7 @@ You should see `"status": true` and the task with `"status": "done"`.
 
 ## Call the action from a client
 
-`@nilejs/client` is a small typed client for Nile Js. It works in a browser app and in server-side TypeScript. In your project folder, install it:
+`@nilejs/client` calls Nile Js actions with typed payloads, from a browser app or from server-side TypeScript. In your project folder, install it:
 
 ```sh
 bun add @nilejs/client
@@ -348,7 +346,7 @@ curl -s http://localhost:8000/status
 curl -s http://localhost:8000/ready
 ```
 
-You should see `{"status":true,"message":"my-app is running","data":{}}` from `/status` and `{"status":true,"message":"Ready","data":{}}` from `/ready`. Use `/ready` to check that the server finished booting. Use `/status` for a simple liveness check.
+You should see `{"status":true,"message":"my-app is running","data":{}}` from `/status` and `{"status":true,"message":"Ready","data":{}}` from `/ready`. Use `/ready` to check whether the server finished booting. Use `/status` as a liveness check.
 
 ## What to read next
 
@@ -380,7 +378,7 @@ You should see `{"status":true,"message":"my-app is running","data":{}}` from `/
 
 - **A validation message in the response.** The action’s input did not match the schema. Read the field named after `→ at`, correct the payload and send the request again.
 
-- **TypeScript reports that two `Result` types are not compatible.** Two copies of `slang-ts` are installed. Import Results from `@nilejs/nile/fp` instead of `slang-ts`, and remove `slang-ts` from your own dependencies so your code and Nile Js share one copy. `bun pm ls | grep slang-ts` shows the installed versions.
+- **TypeScript reports two `Result` types as incompatible.** Two copies of `slang-ts` are installed. Import Results from `@nilejs/nile/fp` instead of `slang-ts`, and remove `slang-ts` from your own dependencies so your code and Nile Js share one copy. `bun pm ls | grep slang-ts` shows the installed versions.
 
 - **An older application has a different layout.** Follow the [migration guide](/guide/start/migration) when updating it. New projects created by the current CLI use the domain entry points shown here.
 

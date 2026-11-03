@@ -84,7 +84,6 @@ export type {
   ServerConfig,
   ServerRuntime,
   Sessions,
-  WebSocketContext,
 } from "./nile/types";
 export * from "./project";
 export {
@@ -138,9 +137,7 @@ export * as utils from "./utils/public";
 export type {
   NileSocket,
   SocketConfig,
-  SocketPolicyContext,
+  SocketConnection,
+  SocketHandshake,
+  SocketLimits,
 } from "./websocket/socket-types";
-export type {
-  WebSocketConfig,
-  WebSocketIdentity,
-} from "./websocket/types";

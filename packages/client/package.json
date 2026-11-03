@@ -1,6 +1,6 @@
 {
   "name": "@nilejs/client",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "type": "module",
   "description": "Standalone, type-safe client for Nile backend framework",
   "main": "./dist/index.cjs",
@@ -16,6 +16,31 @@
   "files": [
     "dist"
   ],
+  "homepage": "https://nile-js.github.io/nile/",
+  "bugs": {
+    "url": "https://github.com/nile-js/nile/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nile-js/nile.git",
+    "directory": "packages/client"
+  },
+  "author": "Hussein Kizz",
+  "license": "MIT",
+  "keywords": [
+    "nile",
+    "client",
+    "backend",
+    "typescript",
+    "type-safe",
+    "fetch",
+    "result",
+    "socket.io",
+    "realtime"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",

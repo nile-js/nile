@@ -53,13 +53,13 @@ Every client method returns the same Result pattern the server uses. Check `isEr
 | `value` | The action's data | `null` |
 | `error` | `null` | A message string |
 | `message` | The server's success message for HTTP calls, such as the action's `successMessage` | Not present |
-| `details` | Not present | Any data the server attached to the failure. Validation and lookup failures currently send an empty object, so read `error` for the message. |
+| `details` | Not present | The `data` the server sent with the failure. A validation failure sends `{ errorCode, issues }`; most other failures send `{}`. Timeouts and network failures set `null`. |
 
-Calls do not throw for expected failures. A validation error, a denied action, a timeout and a network failure all arrive as failed Results.
+A validation error, a denied action, a timeout and a network failure all arrive as failed Results, so `invoke` resolves on every expected failure.
 
 `data` is a deprecated alias: it holds the same value as `value` or `details`. Use `value` and `details` in new code.
 
-The input map checks service names, action names and payloads. `invoke` returns a general record, so response types are **not inferred** from the server handler. Validate the value when the frontend depends on its shape:
+The input map checks service names, action names and payloads. `invoke` returns a general record, so the response type is unknown on the frontend. Validate the value when the frontend depends on its shape:
 
 ```ts
 import { z } from "zod";
@@ -85,11 +85,11 @@ const showProject = async (): Promise<void> => {
 };
 ```
 
-Use this operation in your chosen UI query or mutation library for loading state, caching and invalidation. Nile does not manage a frontend cache.
+Call it from your UI query or mutation library, which owns loading state, caching and invalidation.
 
 ## Request options
 
-Client configuration accepts `baseUrl`, `credentials`, `headers` and `timeout` (default 30,000 ms). Per-call overrides go inside **`fetchOptions`**:
+Client configuration accepts `baseUrl`, `credentials`, `headers`, `timeout` (default 30 seconds) and `socket`. Per-call overrides go inside **`fetchOptions`**:
 
 ```ts
 const result = await nile.invoke({
@@ -103,7 +103,7 @@ const result = await nile.invoke({
 });
 ```
 
-`accessToken` comes from your application's authentication flow. Cookie authentication also needs an appropriate server CORS and credential configuration when the frontend and API use different origins.
+`accessToken` comes from your application's authentication flow. With cookie authentication across origins, also allow the frontend origin and credentials in the server's CORS configuration.
 
 ## Generate the input map
 
@@ -111,9 +111,33 @@ const result = await nile.invoke({
 bunx @nilejs/cli generate schema --entry src/services/services.config.ts --output src/generated
 ```
 
-The CLI reads the local service registry and writes `schemas.ts` and `types.ts`. It runs a Bun subprocess for extraction and does not require discovery to be enabled. Actions without a validation schema are included with an object payload type (`Record<string, unknown>`), so `tasks.list` accepts `{}`. This generated fallback does not add server-side validation. Payloads use `z.input` so schema defaults remain optional for callers, while handlers use the parsed output type. `types.ts` exports `ServicePayloads`; import it into `createNileClient<ServicePayloads>`. Share or publish that contract to a separate frontend repository when needed.
+The CLI reads the local service registry and writes `schemas.ts` and `types.ts`, with discovery on or off. An action without a validation schema gets the payload type `Record<string, unknown>`, so `tasks.list` accepts `{}`; the server still validates nothing for it. Payload types use `z.input`, so fields with schema defaults stay optional for callers, while handlers get the parsed output type. `types.ts` exports `ServicePayloads`; import it into `createNileClient<ServicePayloads>`. Share or publish that contract to a separate frontend repository when needed.
 
 Regenerate the input map when input contracts change. See [type-system boundaries](/guide/basics/type-system).
+
+## Topics
+
+The same client sends and receives [topic messages](/guide/features/websockets) through `nile.socket`. Pass your topic types as the second type parameter and socket settings under `socket`:
+
+```ts
+const nile = createNileClient<ServicePayloads, Topics>({
+  baseUrl: "http://localhost:8000/api",
+  socket: { auth: () => ({ token: accessToken }) },
+});
+
+const received = await nile.socket.receive({
+  topic: "projects.updated",
+  onMessage: (message) => {
+    console.log(message.data);
+  },
+});
+
+if (received.isErr) {
+  console.error(received.error);
+}
+```
+
+The socket connects on its first `send` or `receive`. Actions always go over HTTP.
 
 ## Discovery and uploads
 

@@ -11,7 +11,7 @@ Use an upload action when a client sends a document or image with other fields i
 
 ## Complete example
 
-The server sets the limits. The action reads one `document` file and one `title` field. The handler returns the file's name, type and size; a real action would save the file to storage.
+The server sets the limits. The action reads one `document` file and one `title` field. The handler returns the file's name, type and size; your action would save the file to storage.
 
 ```ts
 import {
@@ -185,14 +185,14 @@ The complete runnable project, including oversized and wrong-type checks, is in 
 
 - A multipart request to an action that declares a different `isSpecial.contentType`, such as `application/json`, returns HTTP 415 with `data.expected` and `data.received`.
 - A file over the limit returns a failure with `error_category: "validation"`, the limit name, the maximum and the offending files. In the example project, a 6 MiB file returned `upload limit exceeded` with `"limit":"maxFileSize","max":5242880`.
-- A multipart request to an ordinary action that does not declare `isSpecial` runs as that action. Use this only for actions that do not need files.
+- A multipart request to an action without `isSpecial` runs as a normal call to it, so send files only to upload actions.
 
 ## Limits
 
-- Validation trusts the declared type and the file extension. It does not inspect the file's bytes. In the example, a text file named `fake.png` with type `image/png` was accepted. Check the content in your handler when it matters.
+- Validation trusts the declared type and the file extension, without reading the file's bytes. In the example, a text file named `fake.png` with type `image/png` was accepted. Check the content in your handler when it matters.
 - The whole body is read before parsing. A request larger than `maxBodyBytes` is refused even when each file is within its own limit. Raise `maxBodyBytes` when `maxTotalSize` is larger than the default 10 MiB, plus room for the form fields.
-- Nile Js does not scan for malware, store files or enforce who may download them. Those belong to your application.
-- Buffered parsing holds the upload in memory while it is handled.
+- Malware scanning, storage and download permissions belong to your application.
+- The whole upload stays in memory while it is handled.
 
 ## Common mistakes
 

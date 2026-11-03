@@ -1,6 +1,7 @@
 export type {
   NileSocket,
   SocketConfig,
-  SocketPolicyContext,
+  SocketConnection,
+  SocketHandshake,
+  SocketLimits,
 } from "./socket-types";
-export type { WebSocketIdentity } from "./types";

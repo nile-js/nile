@@ -37,11 +37,11 @@ export const createProject = createAction({
 });
 ```
 
-The schema checks the input shape before the handler. The guard expresses an application rule. A real persistence call would live in the application's model or repository.
+The schema checks the input shape before the handler runs. The `if` enforces a rule of your application. Saving the project belongs in your model.
 
 ## Handle an operation that can fail
 
-Use `safeTry` around an external call or application function that can reject or throw. Inspect the Result, log useful internal context, and return an appropriate message to the caller.
+Wrap a call that can reject or throw in `safeTry`. Check the Result, log what you need internally, and return a message the caller can act on.
 
 ```ts
 import { Err, Ok, safeTry } from "@nilejs/nile/fp";
@@ -82,23 +82,23 @@ export const archiveProject = createAction({
 });
 ```
 
-Import `Ok` from `@nilejs/nile/fp`; Nile Js installs slang-ts 0.1.1 or later, which adds the message argument. The [frontend client](/guide/basics/client) exposes the message as `result.message`. WebSocket calls return the data only.
+Import `Ok` from `@nilejs/nile/fp` to get the message argument. The [frontend client](/guide/basics/client) exposes the message as `result.message`.
 
-## Keep the three boundaries distinct
+## The three Result shapes
 
-| Boundary | Successful value | Failure |
+| Where | Successful value | Failure |
 |---|---|---|
 | Handler | `Ok({ project })`, inspect with `isOk` / `value` | `Err(message)`, inspect with `isErr` / `error` |
 | HTTP | `{ status: true, message, data }` | `{ status: false, message, data: {} }` for engine failures |
 | Frontend client | `{ isOk: true, isErr: false, value, error: null }` | `{ isOk: false, isErr: true, value: null, error: message, details }`; `details` holds any data the server attached |
 
-Object handler values become HTTP `data` directly. Primitive, array or null values are wrapped as `{ result: value }`. Returning `{ project }` makes a frontend operation's shape explicit.
+An object returned by a handler becomes HTTP `data` as is. A primitive, array or null is wrapped as `{ result: value }`, so return an object such as `{ project }` to keep the frontend shape clear.
 
-Action lookup, authentication, hook, validation and handler Result failures normally return HTTP **400**. A missing action is not an HTTP 404. Unknown HTTP routes return 404; disabled/denied discovery returns 403. Transport errors and custom routes have their own status behavior.
+Every action failure returns HTTP **400**: an unknown action, failed authentication, a failing hook, invalid input or an `Err` from the handler. Unknown HTTP routes return 404, and disabled or denied discovery returns 403. Custom routes set their own status.
 
 ## Validation failures
 
-HTTP responses contain exactly `status`, `message` and `data`. For validation failures, `status` is false, the generated unique diagnostic reference is in `data.errorCode`, and the message uses Zod's `prettifyError`. Custom schema messages are preserved. Nile also retains the existing field-level `data.issues` for frontend forms.
+HTTP responses contain exactly `status`, `message` and `data`. For a validation failure, `status` is false, `data.errorCode` holds a generated reference, and the message comes from Zod's `prettifyError`, keeping your custom schema messages. `data.issues` lists each failed field for frontend forms.
 
 ```json
 {
@@ -111,20 +111,20 @@ HTTP responses contain exactly `status`, `message` and `data`. For validation fa
 }
 ```
 
-The code is generated for each failure; it is not an error category, an HTTP status or a fixed value such as `INTERNAL_ERROR`. An explicit validation message supplied by a framework input check takes precedence over Zod's default formatting.
+The code is new for each failure. Use it to find the matching log entry; it is not an error category or an HTTP status. A message set on a framework input check replaces Zod's default formatting.
 
 ## Unexpected throws and intentional failures
 
-Nile contains unexpected throws and rejected callbacks at its internal operation boundaries, including Slang nested-Result panics. Callers receive `Error Code: <generated-code> - could not complete the action`; the original exception text does not become the response message. Configured logging receives bounded cause diagnostics without SQL, error messages or payloads by default. Without a configured logger, Nile writes the bounded diagnostic to the console. Logger failures cannot replace the safe failure.
+Nile catches unexpected throws and rejected promises in handlers, hooks and its own callbacks, including Slang nested-Result panics. The caller receives `Error Code: <generated-code> - could not complete the action`, and the exception text stays out of the response. Your logger receives a short summary of the cause, without SQL, error messages or payloads. Without a logger, Nile writes the summary to the console. If the logger itself fails, the caller still gets the same safe error.
 
-`raw` is reserved for internal diagnostics. Nile strips every `raw` property recursively from outgoing JSON objects and arrays, including explicit copies, `toJSON` output, custom JSON Responses, Socket.IO replies and topic messages. This happens at serialization, independently of exception handling, so successful actions cannot expose it either. It also means application response contracts must not use a public field named `raw`. JSON HTTP responses are buffered at this boundary to apply the filter; non-JSON assets keep their normal binary/stream behavior.
+`raw` is reserved for internal diagnostics. Nile strips every `raw` property recursively from outgoing JSON objects and arrays, including explicit copies, `toJSON` output, custom JSON Responses and topic messages. The filter runs on every response, successful ones included, so do not name a public field `raw`. JSON HTTP responses are buffered to apply the filter; other responses stream as usual.
 
-Intentional `Err(message)` values retain their messages. Keep them safe for callers; wrapping a sensitive driver error in `Err` deliberately exposes that text. Direct `safeTry` imports from `/fp` retain Slang's original behavior and are not automatic public-response sanitizers.
+An `Err(message)` you return reaches the caller word for word, so keep it safe: wrapping a database driver error in `Err` sends its text to the caller. `safeTry` keeps the caught error text in `result.error`, so translate it before you return it.
 
-Execution admission and socket/queue capacity are released after failure. Unexpected startup failures reject initialization after cleanup with a sanitized error; explicit boot `Err` messages and framework timeout messages remain useful. This is a boundary around work Nile owns or awaits, not a process-wide uncaught-exception handler for unrelated timers or detached application promises.
+A failed call frees its execution slot and any queue or socket capacity it held. An unexpected startup failure cleans up, then rejects `createNileServer` with a safe error; an `Err` from `onBoot` and timeout messages keep their text. Nile catches failures only in work it runs or awaits. A throw from your own timer or a promise nobody awaits reaches the process as usual.
 
-`handleError({ message, data, atFunction })` logs through an explicit or configured logger and returns an `Err` formatted as `Error Code: <generated-code> - <your message>`. It fails fast if no logger is available. Use it when that traceable message is appropriate for the caller, and keep confidential details in logged data.
+`handleError({ message, data, atFunction })` logs through an explicit or configured logger and returns an `Err` formatted as `Error Code: <generated-code> - <your message>`. It throws when no logger is available. Use it when the caller should get a traceable message, and keep confidential details in the logged data.
 
-Result handling does not make a multi-step operation transactional or undo earlier side effects. Keep those decisions in the domain/data layer.
+Returning `Err` undoes nothing already done. Put transactions for multi-step writes in your domain or data layer.
 
 Next: [hooks and their failure rules](/guide/basics/hooks-and-pipelines).

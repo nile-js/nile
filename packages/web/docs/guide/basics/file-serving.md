@@ -16,12 +16,12 @@ rest: {
 
 The default directory is `./assets`, relative to the application's working directory. A file at `assets/logo.png` is available at `GET /assets/logo.png`; the asset namespace is independent of `rest.baseUrl`.
 
-Bun native uses Bun file responses and supports GET/HEAD. Hono selects its runtime-specific static adapter. Select `runtime: "bun"` or `runtime: "node"` explicitly; `native: true` requires Bun.
+Bun native serves GET and HEAD with Bun file responses. Hono uses its static adapter for the selected runtime, so set `runtime: "bun"` or `runtime: "node"`.
 
 ## Decide what belongs in the directory
 
-Static files are public resources, not protected actions. Do not place private documents there expecting action authorization hooks to protect them. Use an authenticated route or your application's storage access mechanism for private files.
+Every file in the directory is public: action hooks and JWT checks never run for it. Serve private files from an authenticated route or your storage provider.
 
-Enabling native static serving creates a missing configured directory. Missing files fall through; native serving rejects traversal and symlink escapes. Keep file permissions, persistent volumes and deployment working directories deliberate.
+Bun native creates the directory when it is missing. A request for a missing file falls through to your other routes, and paths escaping the directory through `..` or symlinks are refused. Set file permissions, persistent volumes and the working directory in your deployment.
 
-A reverse proxy, CDN or object store may be a better fit for larger deployments. Nile does not provision one or automatically persist files uploaded through an action. See [uploads](/guide/basics/uploads) for the upload boundary and [deployment](/guide/start/deploy) for resource ownership.
+For larger deployments, a reverse proxy, CDN or object store usually serves assets better. Uploaded files are saved only where your action writes them. See [uploads](/guide/basics/uploads) and [deployment](/guide/start/deploy).

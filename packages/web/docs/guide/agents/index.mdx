@@ -7,7 +7,7 @@ Give your coding assistant the service registry, the relevant action schemas and
 
 ## Why services and actions suit agents
 
-- **Named units.** A service groups one business area, and each action names one operation. An agent can list the services, see that `orders` already has `create`, and add `cancel` beside it.
+- **Named units.** A service groups one domain, and each action names one operation. An agent can list the services, see that `orders` already has `create`, and add `cancel` beside it.
 - **Typed input.** The Zod schema defines what an action accepts. The inferred type and the handler's signature come from it, so the compiler checks an agent's edits.
 - **Predictable results.** Every handler returns `Ok` or `Err`. Each caller, including a generated client, checks `isErr` the same way.
 - **A registry.** `services.config.ts` lists every action the server exposes. Reading that one file shows the surface.
@@ -27,7 +27,7 @@ Context7 can supply library documentation to an assistant that has it configured
 
 Discovery lets a trusted tool list services and read input schemas at runtime. It uses the `explore` and `schema` intents on `POST /api/services`, and it needs a discovery secret. The [API discovery feature](/guide/features/api-discovery) has the request format.
 
-Discovery returns descriptions. It does not run protected actions or check roles. Give an agent a tool that calls only the operations you allow, and keep the secret on the tool's server.
+Discovery returns descriptions only, without running protected actions or checking roles. Give an agent a tool that calls only the operations you allow, and keep the secret on the tool's server.
 
 For the design of discovery and what it exposes, read [discovery and agents](/guide/basics/discovery-and-agents).
 

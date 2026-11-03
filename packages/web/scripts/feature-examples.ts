@@ -67,23 +67,26 @@ const logProjectCreated = (projectId: string) => {
 	sockets: {
 		file: "messaging/order-updates.ts",
 		language: "typescript",
-		raw: `import { createTopics, getContext } from "@nilejs/nile";
+		raw: `import { createTopic, createTopics, getContext } from "@nilejs/nile";
 import { z } from "zod";
 
-const topics = createTopics({
-  "orders.updated": {
-    schema: z.object({
-      orderId: z.string(),
-      status: z.enum(["pending", "paid"]),
-    }),
-  },
+const orderUpdated = createTopic({
+  name: "orders.updated",
+  data: z.object({
+    orderId: z.string(),
+    status: z.enum(["pending", "paid"]),
+  }),
+  canReceive: ({ user }) => user !== undefined,
 });
 
-const notifyOrderPaid = async (orderId: string) => {
-  const context = getContext({ topics: topics });
+export const topics = createTopics([orderUpdated]);
 
-  return await context.websocket.send({
+const notifyOrderPaid = async (orderId: string, userId: string) => {
+  const { socket } = getContext({ topics: topics });
+
+  return await socket.send({
     topic: "orders.updated",
+    to: { userId: userId },
     data: { orderId: orderId, status: "paid" },
   });
 };`,

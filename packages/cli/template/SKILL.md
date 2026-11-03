@@ -1,6 +1,6 @@
 ---
 name: nile
-description: Work in a Nile Js backend (@nilejs/nile 1.x). Organize business operations as services and actions with Zod validation, Result returns, hooks, JWT protection and typed clients. Use when adding or changing actions, services, hooks, uploads, topics, schedules or the @nilejs/client calls in a Nile Js project.
+description: Work in a Nile Js backend (@nilejs/nile 2.x). Organize business operations as services and actions with Zod validation, Result returns, hooks, JWT protection and typed clients. Use when adding or changing actions, services, hooks, uploads, topics, schedules or the @nilejs/client calls in a Nile Js project.
 license: MIT
 ---
 
@@ -39,7 +39,6 @@ src/
     client.ts                      connection and driver
     models/                        persistence operations
   hooks/                           shared action policies
-  business/                        optional reusable domain functions
   generated/                       client payload/schema contracts
 ```
 
@@ -258,7 +257,7 @@ This helper is internal: its failure still needs translation before being return
 
 - HTTP: `POST /api/services` with `{ "intent": "execute", "service": "projects", "action": "create", "payload": { ... } }`.
 - Client (`@nilejs/client`): `createNileClient<Payloads>({ baseUrl })`, then `await nile.invoke({ service, action, payload })`. Every method returns a Result: `if (result.isErr) { ... return; }`, then read `result.value`. On failure `result.error` is the message and `result.details` holds the server's `data`. `data` is a deprecated alias; do not use it.
-- Sockets: `createNileSocketClient<Actions, Topics>` owns its connection. Use `socket.invoke`, `socket.send` and `socket.receive`; check each Result and unsubscribe/close when finished. Declare backend topics and validate their data and scope; frontend types come from shared or generated definitions. Authorization is still a backend policy.
+- Topics: define each with `createTopic({ name, data, scope?, canReceive?, canSend? })` and pass `createTopics([...])` to the server `socket` config. A missing `canReceive` or `canSend` denies clients. Connections verify the server `auth` JWT; `user` in the checks is `{ userId, organizationId, claims }` or `undefined`. In actions, `const { socket } = getContext({ topics })`, then `socket.send({ topic, scope?, to?: { userId } | { connectionId }, data })` after the write commits. On the frontend, `nile.socket.receive({ topic, scope, onMessage })` subscribes and returns a Result holding `unsubscribe()`; `nile.socket.send` sends. Sockets do not call actions; use `nile.invoke`.
 - Server code: `await server.invoke({ service, action, payload, credentials? })`. Protected actions need `credentials` with headers.
 - Uploads: `nile.upload({ service, action, files, fields })` for `isSpecial: { contentType: "multipart/form-data" }` actions. A JSON request to such an action returns HTTP 400.
 
@@ -267,7 +266,7 @@ This helper is internal: its failure still needs translation before being return
 1. Find the domain in `services.config.ts` and read its `index.ts`. Name the action for the business operation, then define its input schema and named handler.
 2. Keep a short, single-use rule in that handler. Extract ordinary domain functions when a rule is reused, complicated enough to test independently, or coordinates a transaction. Do not create a repository, class or service layer solely because a folder exists.
 3. Put data access in the project’s model convention. `utils.createModel` and `utils.getZodSchema` are optional Drizzle helpers; a handwritten model is also valid. Pass the database or transaction explicitly where transaction ownership matters.
-4. For a growing action, move its private helpers under its action folder’s `modules/`. Put helpers shared by the domain in the service’s `modules/`. Cross-domain rules can use `business/` when useful. Do not expose a private helper as an action just to call it.
+4. For a growing action, move its private helpers under its action folder’s `modules/`. Put helpers shared by the domain in the service’s `modules/`. A rule another domain also needs stays in the domain that owns it; the other service imports it from there. Do not expose a private helper as an action just to call it.
 5. Register the action in the domain’s `actions` list. An export alone does not make it reachable. Register a new service in the root registry.
 6. Carry validated input into business functions and trusted identity into policy checks. Keep request identity in scoped sessions and execution state, not process-wide context values.
 7. Verify the registered operation through `server.invoke` or a transport when changing validation, permissions or registration. Test a transaction’s rollback and idempotency when those are part of the business guarantee.
@@ -311,7 +310,7 @@ Read the page for the feature you change before you write code:
 - [Cron jobs](https://nile-js.github.io/nile/guide/features/cron-jobs)
 - [Database models](https://nile-js.github.io/nile/guide/features/database-models)
 - [API discovery and schemas](https://nile-js.github.io/nile/guide/features/api-discovery)
-- [HTTP, WebSocket and direct calls](https://nile-js.github.io/nile/guide/features/calling-actions)
+- [HTTP and direct calls](https://nile-js.github.io/nile/guide/features/calling-actions)
 - [Retries and utilities](https://nile-js.github.io/nile/guide/features/retries-and-utilities)
 - [Rate limiting](https://nile-js.github.io/nile/guide/features/rate-limiting)
 - [File uploads](https://nile-js.github.io/nile/guide/features/file-uploads)
@@ -337,7 +336,7 @@ Advanced pages cover handler context, composed hooks, execution options and test
 - A global before hook's returned value does not replace the payload. Use a local hook to transform input.
 - A local hook does not protect the parent action.
 - `context.set` values are shared by all requests. Never store the current user there.
-- A rate limit or topic policy that is missing denies or does not apply. Read the feature page for the default.
+- A rate limit or topic permission (`canReceive`, `canSend`) that is missing denies or does not apply. Read the feature page for the default.
 - Multiple replicas each keep their own queues, schedules, rate-limit counters and WebSocket subscriptions.
 - JWT failures return fixed messages such as `JWT authentication failed: token expired` or `JWT authentication failed: invalid token`. They never include the token or its claims, so do not add them back in your own logs.
 - Import Results from `@nilejs/nile/fp`, not a separately installed `slang-ts`. Two copies of `slang-ts` produce type errors.

@@ -1,3 +1,26 @@
+# Nile 1.1.0 migration notes
+
+Nile 1.1.0 redesigns topics and sockets. Apps without `websocket` config need no changes. Update `@nilejs/client` to 1.1.0 alongside it.
+
+## Server
+
+- The config key `websocket` is now `socket`. `server.websocket` and `context.websocket` are now `server.socket` and `context.socket`, so `getContext({ topics }).websocket.send` becomes `getContext({ topics }).socket.send`.
+- Topics are a list. Define each with `createTopic({ name, data, scope? })` and pass `createTopics([topicA, topicB])`. The topic's `schema` field is now `data`.
+- `authorizeSubscription` and `authorizePublish` are removed. Put `canReceive` and `canSend` on each topic instead. They return a plain `true` or `false`, not `Ok(boolean)`, and receive `{ topic, scope, user, connectionId }`; `canSend` also gets the parsed `data`. A missing check still denies.
+- Connections verify the server's `auth` JWT by default, reading the client's `auth.token`, the auth header or the auth cookie. A connection without a token is anonymous, and an invalid token is refused. `authenticate` is now optional and takes `({ request, auth })`. It returns `Ok(user)` with `{ userId, organizationId?, claims }`, `Ok(undefined)` for anonymous, or `Err`. `WebSocketIdentity`, `session`, `credentials`, `clientKey` and `expiresAt` are gone; expiry comes from the JWT `exp` claim.
+- Sockets no longer call actions. The `nile:invoke` event and the action `visibility.ws` flag are removed. Call actions over HTTP or with `server.invoke`. The `"ws"` execution transport, the `ws` session (`getSession("ws")`), `context.get("ws")` and the `WebSocketContext` type are removed with it.
+- Limits moved under `socket.limits`, with the same names and defaults.
+- `server.socket.bun` is now `{ websocket, idleTimeout }`, so `Bun.serve({ fetch: server.fetch, ...server.socket.bun })`. `server.websocket.idleTimeout` is removed.
+- New: `socket.send({ ..., to: { userId } })` or `to: { connectionId }` targets connections. `socket.receive` without a scope listens on every scope of a scoped topic. `onConnect` and `onDisconnect` report connections. Client-sent messages carry `from: { connectionId, userId }`.
+
+## Client
+
+- `createNileSocketClient` is removed. Use `createNileClient<Actions, Topics>({ baseUrl, socket: { auth } })` and `nile.socket.send`, `nile.socket.receive` and `nile.socket.close`. The old export remains as a stub that throws with these steps, so an upgrade fails loudly rather than silently.
+- Socket `invoke` is removed; use `nile.invoke`.
+- `socket.url` sets the socket server when it differs from `baseUrl`. Only its origin is used.
+- `onSubscriptionError` is now `socket.onError`, which also reports connection failures. `onConnect`, `onDisconnect` and `onReconnect` are new.
+- The subscription in a `receive` Result now also has `topic`.
+
 # Nile 1.0.5 migration notes
 
 No migration is required from 1.0.4. If updating from an earlier version, apply the notes below.

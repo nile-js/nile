@@ -24,10 +24,7 @@ export function createInvoker(
     }
     const parent = getRequestStore();
     const session =
-      options.session ??
-      parent?.sessions.rpc ??
-      parent?.sessions.rest ??
-      parent?.sessions.ws;
+      options.session ?? parent?.sessions.rpc ?? parent?.sessions.rest;
     return Promise.resolve(
       runInRequestScope(
         {

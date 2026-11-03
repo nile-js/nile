@@ -17,7 +17,7 @@ export async function createServerTransports({
   engine: Engine;
   lifecycle: NileLifecycle;
   context: NileContext;
-}): Promise<Pick<NileServer, "fetch" | "rest" | "nativeRest" | "websocket">> {
+}): Promise<Pick<NileServer, "fetch" | "rest" | "nativeRest" | "socket">> {
   const clientAddresses = new WeakMap<Request, string>();
   const configureRest = <T extends NonNullable<ServerConfig["rest"]>>(
     rest: T
@@ -60,43 +60,42 @@ export async function createServerTransports({
       serverName: config.serverName,
     });
   }
-  const websocket = config.websocket
+  const socket = config.socket
     ? await (
         await import("../websocket/socket-transport")
       ).createSocketTransport({
         runtime: config.runtime ?? "bun",
-        engine,
-        context,
+        auth: config.auth,
         lifecycle,
-        config: config.websocket,
+        config: config.socket,
       })
     : undefined;
-  context.websocket = websocket;
-  if (config.websocket?.topics) {
-    context.set("nile:websocket:topics", config.websocket.topics);
+  context.socket = socket;
+  if (config.socket?.topics) {
+    context.set("nile:socket:topics", config.socket.topics);
   }
   return {
     rest,
     nativeRest,
-    websocket,
+    socket,
     fetch(request, listener) {
       const address = listener?.requestIP(request)?.address;
       if (address) {
         clientAddresses.set(request, address);
       }
       if (
-        websocket &&
+        socket &&
         new URL(request.url).pathname.replace(TRAILING_SLASH, "") ===
-          websocket.path.replace(TRAILING_SLASH, "")
+          socket.path.replace(TRAILING_SLASH, "")
       ) {
         if (listener) {
-          return websocket.handleRequest(request, listener);
+          return socket.handleRequest(request, listener);
         }
         return Promise.resolve(
           Response.json(
             {
               status: false,
-              message: "WebSocket requests require the runtime upgrade adapter",
+              message: "Socket requests require the runtime upgrade adapter",
               data: {},
             },
             { status: 426 }

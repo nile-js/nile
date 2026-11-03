@@ -4,7 +4,7 @@ import { getRequestStore } from "./request-scope";
 import type { NileContext, Resources, Sessions } from "./types";
 
 /** Keys that are stored per-request via AsyncLocalStorage, not on the global _store */
-const REQUEST_SCOPED_KEYS = new Set(["rest", "nativeRest", "ws", "rpc"]);
+const REQUEST_SCOPED_KEYS = new Set(["rest", "nativeRest", "rpc"]);
 
 interface CreateNileContextParams<TDB = unknown> {
   resources?: Resources<TDB>;
@@ -13,7 +13,7 @@ interface CreateNileContextParams<TDB = unknown> {
 /**
  * Creates a new Nile context with an internal key-value store.
  * The context provides get/set methods for arbitrary global values, and
- * transparently delegates request-scoped reads (rest, ws, rpc, sessions)
+ * transparently delegates request-scoped reads (rest, nativeRest, rpc, sessions)
  * to AsyncLocalStorage so concurrent requests never share mutable state.
  *
  * Each action execution gets isolated hook state through its child request scope.

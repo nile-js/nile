@@ -17,7 +17,7 @@ For an executed action, the order is:
 6. Action `hooks.after`, in their listed order, after handler success.
 7. Global `onAfterActionHandler`, after successful preceding steps.
 
-A before hook sees input **before validation**. Check the values it uses; do not treat the payload as validated business input yet. A failing step stops later steps except for a noncritical local hook failure.
+A before hook sees input **before validation**, so check every value it reads. A failing step stops the steps after it, except a failing local hook marked `isCritical: false`.
 
 ## Global checks
 
@@ -38,9 +38,9 @@ const onBeforeActionHandler: BeforeActionHandler<boolean, string> = (
 };
 ```
 
-Set `onBeforeActionHandler` in your server configuration to this hook. Global before-hook success allows execution to continue; **its returned value does not replace the payload**. Use local before hooks for transformations. Global before-hook failure always stops execution.
+Set `onBeforeActionHandler` in your server configuration to this hook. When it returns `Ok`, the action continues with the original payload: **its returned value is ignored**. Use local before hooks to transform input. When it returns `Err`, the action stops.
 
-The global after hook receives `{ nileContext, action, payload, result }`. Its Result becomes the final output; returning an error stops success. It is not an always-run `finally` callback and does not run after an earlier failure.
+The global after hook receives `{ nileContext, action, payload, result }`, and its Result becomes the final output, so returning `Err` fails the call. It runs only after every earlier step succeeded; put cleanup in `finally` or the lifecycle.
 
 ## Local transformations
 
@@ -57,9 +57,9 @@ hooks: {
 }
 ```
 
-The before chain starts with the original payload. Each successful hook's `value` becomes the next hook's input, then the main schema validates the final value. The after chain starts with the handler's successful value and similarly replaces the eventual response.
+The before chain starts with the original payload. Each successful hook's `value` becomes the next hook's input, then the main schema validates the final value. The after chain starts with the handler's successful value, and each hook's `value` replaces the response in the same way.
 
-A referenced hook runs **its handler directly**. Nile does not recursively run that action's own authentication, validation or hook pipeline. Put required checks inside the hook handler; setting `isProtected` on a referenced hook alone does not protect the parent operation.
+A referenced hook runs **only its handler**, skipping that action's own authentication, validation and hooks. Put required checks inside the hook handler; `isProtected` on a hook action protects nothing.
 
 | Local hook outcome | `isCritical: true` | `isCritical: false` |
 |---|---|---|
@@ -67,10 +67,10 @@ A referenced hook runs **its handler directly**. Nile does not recursively run t
 | `Err(message)` | Stop with failure | Record failure and keep the preceding value |
 | Missing referenced action | Stop with failure | Record the diagnostic and continue |
 
-Use noncritical steps only when losing that step is acceptable. They do not roll back earlier writes. For observation that must preserve the result, return the received input on success.
+Mark a step noncritical only when the action can succeed without it. A failure undoes no earlier writes. A hook that only observes should return the input it received.
 
 ## Keep state local to the execution
 
-Hooks and the handler share `nileContext.hookContext` for the current action execution. `updateHookState(key, value)` stores execution-local information. Global hooks still run; their state is isolated between concurrent and nested action executions.
+Hooks and the handler share `nileContext.hookContext` for the current call. `updateHookState(key, value)` stores state for this call only, kept apart from concurrent and nested calls, global hooks included.
 
-`result: { pipeline: true }` returns `{ data: finalOutput, pipeline: hookLogs }` as the action value. Hook logs include inputs and outputs, so enable this only when those details are suitable for the caller. This is a debugging aid, not a durable audit trail.
+`result: { pipeline: true }` returns `{ data: finalOutput, pipeline: hookLogs }` as the action value. Hook logs include inputs and outputs, so enable it only when the caller may see them. Use it for debugging; it stores nothing.

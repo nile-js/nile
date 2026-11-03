@@ -60,7 +60,7 @@ export const services = createServices([
 ]);
 ```
 
-Send a payload with an empty name and an empty city:
+Send a payload with a two-letter name and an empty city:
 
 ```sh
 curl -s -X POST http://localhost:8000/api/services \

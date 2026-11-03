@@ -3,7 +3,7 @@ title: "Rate limiting"
 description: "Limit how often a client can call an action, using a shared limiter with per-service and per-action policies"
 ---
 
-Rate limiting caps how often one client can call an action. Nile Js applies the limit before the handler runs, so a client that sends a burst gets a failure instead of extra work. Limits live in memory, so each process enforces its own.
+Rate limiting caps how often one client can call an action. Nile Js applies the limit before the handler runs, so a client sending a burst gets a failure instead of extra work. Limits live in memory, so each process enforces its own.
 
 ## When to use it
 
@@ -95,14 +95,14 @@ The 21 successes include the 20 tokens of the burst and one refill during the lo
 | `execution.rateLimit` | Policy for every action. |
 | `execution.services[name].rateLimit` | Policy for one service. Overrides the global policy. |
 | `execution.services[name].actions[name].rateLimit` | Policy for one action. Overrides the service policy. |
-| `rateLimit: false` | Turns off an inherited policy for that service or action. |
+| `rateLimit: false` | Turns off an inherited policy for that service or action. An action's own policy still applies under a service set to `false`. |
 | `key` | Function that returns the client key. It receives the execution details, including the verified identity. |
 
 Policies resolve from the most specific to the least specific. Keys are computed after JWT verification and the global before hook, so you can key on a verified user or organization.
 
 ## HTTP-level limits
 
-`rest.rateLimiting` limits requests to the services endpoint by a header value. Use it only with a header that your proxy sets and overwrites. A client can set any header it likes, including `x-forwarded-for`, so a client-controlled header is not a verified identity. Keep this limit in place alongside the action policy when you need both.
+`rest.rateLimiting` limits requests to the services endpoint by a header value. Use it only with a header your proxy sets and overwrites: a client can send any header, `x-forwarded-for` included, so a header the client controls proves nothing about who it is. The HTTP limit and action policies apply together.
 
 ## How it behaves
 
@@ -115,14 +115,14 @@ Policies resolve from the most specific to the least specific. Keys are computed
 
 - The default store is in memory. Two replicas each allow the full quota.
 - A restart clears every counter.
-- A shared store must check and consume atomically. Separate read and write calls can race. Nile Js does not supply Redis or database stores.
+- A shared store, such as one backed by Redis or your database, must check and use up the quota in one atomic step; separate read and write calls let two requests pass at once. You provide the shared store.
 
 ## Common mistakes
 
 - Keying on a client-controlled header.
 - Using one limiter for every service without thinking about its cost. Give expensive actions their own policy.
 - Expecting a limit to stop a determined attacker. Pair it with authentication and a proxy or firewall.
-- Forgetting that `rateLimit: false` turns off inheritance for that service or action.
+- Expecting `rateLimit: false` on a service to turn off a policy set on one of its actions.
 
 ## See also
 

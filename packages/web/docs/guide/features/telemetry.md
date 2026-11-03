@@ -46,7 +46,7 @@ export const server = await createNileServer({
 });
 ```
 
-`createNileTelemetry` loads the OpenTelemetry packages only when you call it. A server that does not call it does not load them.
+`createNileTelemetry` loads the OpenTelemetry packages when you call it, so a server without telemetry never loads them.
 
 ## Options that matter
 
@@ -64,19 +64,19 @@ export const server = await createNileServer({
 ## What is recorded
 
 - Spans carry the action or job name, duration, outcome and transport. Standard incoming trace headers are propagated.
-- Metrics use bounded labels. Request IDs go on spans and logs, not on metric labels, so metric cardinality stays low.
-- Nile does not capture payloads, tokens, raw errors or personal data. Anything you write into a log `data` object is still your responsibility.
+- Metrics use a fixed set of labels. Request IDs go on spans and logs only, which keeps the number of metric series small.
+- Spans and metrics leave out payloads, tokens, raw errors and personal data. What you put in a log `data` object is logged as you wrote it.
 
 ## Limits
 
 - The collector is a separate service. If it is unreachable, Nile logs export errors and the action still returns its normal Result.
-- Calling `telemetry.flush()` while the collector is unreachable rejects. Wrap a manual flush in `try` and `catch`, and log the failure.
-- Export uses bounded buffers and deadlines, so a slow collector does not hold up requests.
+- `telemetry.flush()` rejects while the collector is unreachable. Wrap a manual flush in `safeTry` and log the failure.
+- Export uses size-limited buffers and timeouts, so a slow collector never holds up requests.
 
 ## Common mistakes
 
 - Putting a collector token directly in source code. Read it from an environment variable through your configuration module.
-- Expecting a Nile dashboard. Point the endpoint at a collector that your team already uses.
+- Looking for a Nile dashboard. Point the endpoint at the collector your team already uses.
 - Setting `hookTracing` on every service. Hook spans add volume, so enable it while you diagnose a specific action.
 - Using request IDs as metric labels in your own instrumentation.
 

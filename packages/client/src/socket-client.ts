@@ -1,13 +1,11 @@
 import type { Socket } from "socket.io-client";
+import { clientErr, clientOk } from "./result.js";
 import type {
-  ActionShape,
   NileSocketClient,
-  NileSocketClientConfig,
-  SocketActions,
+  NileSocketConfig,
   SocketTopics,
   TopicShape,
 } from "./socket-types.js";
-import { clientErr, clientOk } from "./result.js";
 import type { ClientResult } from "./types.js";
 
 type WireValue = object | string | number | boolean | null | undefined;
@@ -24,11 +22,20 @@ interface Listener {
   normalizedScope?: WireValue;
 }
 
-/** Own a lazy Socket.IO connection with no offline write buffering or automatic invocation retries. */
-export function createNileSocketClient<
-  Actions extends ActionShape<Actions> = SocketActions,
+/** The socket connects to an origin; any path in a URL would be read by Socket.IO as a namespace. */
+export function socketOrigin(url: string): string | undefined {
+  try {
+    return new URL(url).origin;
+  } catch {
+    // A relative URL such as "/api" means the page's own origin.
+    return undefined;
+  }
+}
+
+/** Own a lazy Socket.IO connection with no offline write buffering. */
+export function createNileSocket<
   Topics extends TopicShape<Topics> = SocketTopics,
->(config: NileSocketClientConfig): NileSocketClient<Actions, Topics> {
+>(config: NileSocketConfig): NileSocketClient<Topics> {
   const timeout = config.timeout ?? 30_000;
   if (!Number.isSafeInteger(timeout) || timeout < 1) {
     throw new Error("Socket timeout must be positive");
@@ -36,6 +43,7 @@ export function createNileSocketClient<
   let socket: Socket | undefined;
   let connecting: Promise<ClientResult<Socket>> | undefined;
   let closed = false;
+  let everConnected = false;
   const listeners = new Set<Listener>();
   const pending = new Set<() => void>();
   const fail = (error: string) => clientErr(error);
@@ -108,10 +116,7 @@ export function createNileSocketClient<
       }
       const message = result.error;
       settleCallback(() =>
-        config.onSubscriptionError?.({
-          topic: listener.topic,
-          error: message,
-        })
+        config.onError?.({ topic: listener.topic, error: message })
       );
     }
   };
@@ -135,7 +140,7 @@ export function createNileSocketClient<
             }
             const current =
               socket ??
-              io(config.baseUrl, {
+              io(config.url ? socketOrigin(config.url) : undefined, {
                 path: config.path ?? "/socket.io",
                 autoConnect: false,
                 withCredentials: true,
@@ -153,13 +158,26 @@ export function createNileSocketClient<
               });
             if (!socket) {
               socket = current;
-              current.on("disconnect", () => {
+              current.on("disconnect", (reason: string) => {
                 for (const cancel of [...pending]) {
                   cancel();
                 }
+                settleCallback(() => config.onDisconnect?.(reason));
               });
               current.on("connect", () => {
-                rejoin();
+                if (!everConnected) {
+                  everConnected = true;
+                  settleCallback(() => config.onConnect?.());
+                  return;
+                }
+                rejoin().then(() =>
+                  settleCallback(() => config.onReconnect?.())
+                );
+              });
+              current.on("connect_error", () => {
+                settleCallback(() =>
+                  config.onError?.({ error: "Socket connection failed" })
+                );
               });
               current.on("nile:message", (message: WireValue) =>
                 dispatchMessage(message, listeners)
@@ -197,7 +215,6 @@ export function createNileSocketClient<
     return connecting;
   };
   return {
-    invoke: (input) => request("nile:invoke", input),
     send: (input) => request("nile:send", input),
     async receive(input) {
       const listener: Listener = {
@@ -217,14 +234,15 @@ export function createNileSocketClient<
       }
       listener.normalizedScope = result.value?.scope;
       return clientOk({
+        topic: input.topic,
         unsubscribe: () => {
-            listener.active = false;
-            listeners.delete(listener);
-            const shared = [...listeners].some(
-              (item) =>
-                item.topic === listener.topic &&
-                stableScope(item.scope) === stableScope(listener.scope)
-            );
+          listener.active = false;
+          listeners.delete(listener);
+          const shared = [...listeners].some(
+            (item) =>
+              item.topic === listener.topic &&
+              stableScope(item.scope) === stableScope(listener.scope)
+          );
           if (shared || closed) {
             return Promise.resolve(clientOk({ subscribed: shared }));
           }

@@ -3,7 +3,7 @@ title: "Handler context"
 description: "Read shared resources, sessions and execution details from an action handler"
 ---
 
-Use `data` for the action’s validated data and `context` for its execution context. Nile passes context for HTTP calls, sockets, `server.invoke` and scheduled actions.
+Use `data` for the action’s validated data and `context` for its execution context. Nile passes context for HTTP calls, `server.invoke` and scheduled actions.
 
 ## Signature
 
@@ -48,7 +48,7 @@ export const createProjectAction = createAction({
 
 Supply the logger through `resources.logger` when creating the server. Logs written during an action include its execution identifier.
 
-The handler type makes context optional, so you can call a handler directly in a unit test. Use `?.` for optional resources. If an operation requires a resource or session, check for it before continuing.
+Context is optional in the handler type, so you can call a handler directly in a unit test. Read resources with `?.`, and check for a resource or session your operation needs before using it.
 
 ## Read execution details
 
@@ -56,14 +56,13 @@ The handler type makes context optional, so you can call a handler directly in a
 | --- | --- |
 | `context.resources` | Shared resources supplied when the server starts, such as a database and logger |
 | `context.getSession("rest")` | The verified HTTP session, or an identity supplied by your authentication integration |
-| `context.getSession("ws")` | The current socket session |
 | `context.execution.requestId` | Correlating work and logs within an execution |
-| `context.execution.transport` | Identifying the transport used for this call |
+| `context.execution.transport` | How the action was called: `"rest"`, `"rpc"` for `server.invoke`, or `"cron"` for a schedule |
 | `context.execution.signal` | Passing cancellation to a database, provider or other dependency |
 | `context.execution.clientKey` | Applying a policy using the resolved client identity |
 | `context.hookContext` | State, output, failures and logs for the current action pipeline |
 
-Read optional execution fields with `?.`, for example `context?.execution?.signal`. Dependencies must honor the signal for cancellation to stop their work. A deadline does not roll back completed writes.
+Read optional execution fields with `?.`, for example `context?.execution?.signal`. Cancellation stops only the work of dependencies listening to the signal, and a deadline undoes no completed writes.
 
 ## Share state within an action
 
@@ -90,11 +89,22 @@ export const logProjectArchived = (projectId: string) => {
 };
 ```
 
-Call `getContext` after server initialization. Pass a dependency explicitly when a helper should also run outside Nile, such as in a standalone script or domain unit test.
+Call `getContext` after `createNileServer` has run. When a helper should also run outside Nile, such as in a script or a unit test, pass the dependency as a parameter instead.
 
-## Publish topic messages
+## Send topic messages
 
-Use the context’s typed socket interface to publish messages from an action. Declare the topics and their data schemas in your backend, then configure them under `websocket`. The [WebSockets guide](/guide/features/websockets) shows topic definitions, access policies and a named action handler.
+`getContext({ topics })` returns the context with a typed `socket`, so an action can send a message after its write commits:
+
+```ts
+const { socket } = getContext({ topics: topics });
+
+const sent = await socket.send({
+  topic: "projects.updated",
+  data: { projectId: project.id },
+});
+```
+
+The [WebSockets guide](/guide/features/websockets) shows topic definitions, permissions and the server `socket` configuration.
 
 ## See also
 

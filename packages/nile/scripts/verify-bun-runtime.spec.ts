@@ -7,12 +7,14 @@ import {
 import { InMemorySpanExporter } from "@opentelemetry/sdk-trace-base";
 import { serve } from "bun";
 import { Ok, safeTry } from "slang-ts";
-import { createNileSocketClient } from "../../client/src/socket-client";
+import z from "zod";
+import { createNileClient } from "../../client/src/create-client";
 import { createAction } from "../engine/create-action";
+import { createTopic, createTopics } from "../messaging/topics";
 import { createNileServer } from "../nile/server";
 import { createNileTelemetry } from "../telemetry/create-telemetry";
 
-test("Bun-native HTTP, WebSocket and telemetry integration", async () => {
+test("Bun-native HTTP, socket topics and telemetry integration", async () => {
   /** Real Bun-native HTTP/socket/export check; no application database or fixed port. */
   const exporter = new InMemorySpanExporter();
   const metricExporter = new InMemoryMetricExporter(
@@ -31,7 +33,16 @@ test("Bun-native HTTP, WebSocket and telemetry integration", async () => {
     forceNewInstance: true,
     logServices: false,
     rest: { baseUrl: "/api", allowedOrigins: [], enableStatus: true },
-    websocket: {},
+    socket: {
+      topics: createTopics([
+        createTopic({
+          name: "ping",
+          data: z.object({ n: z.number() }),
+          canReceive: () => true,
+          canSend: () => true,
+        }),
+      ]),
+    },
     onBeforeActionHandler: () => Ok(null),
     execution: { diagnostics: { telemetry, hookTracing: true } },
     services: [
@@ -49,17 +60,17 @@ test("Bun-native HTTP, WebSocket and telemetry integration", async () => {
       },
     ],
   });
-  if (!app.websocket?.bun) {
-    throw new Error("WebSocket adapter missing");
+  if (!app.socket?.bun) {
+    throw new Error("Socket adapter missing");
   }
   const listener = serve({
     hostname: "127.0.0.1",
     port: 0,
     fetch: app.fetch,
-    websocket: app.websocket.bun,
+    ...app.socket.bun,
   });
-  const socket = createNileSocketClient({
-    baseUrl: `http://127.0.0.1:${listener.port}`,
+  const { socket } = createNileClient({
+    baseUrl: `http://127.0.0.1:${listener.port}/api`,
   });
   const outcome = await safeTry(async () => {
     const response = await fetch(
@@ -82,16 +93,24 @@ test("Bun-native HTTP, WebSocket and telemetry integration", async () => {
     assert.equal(response.status, 200);
     const envelope = (await response.json()) as { data: { transport: string } };
     assert.equal(envelope.data.transport, "rest");
-    const invoked = await socket.invoke({
-      service: "work",
-      action: "run",
-      payload: {},
+    const pinged = new Promise<number>((resolve) => {
+      socket
+        .receive({
+          topic: "ping",
+          onMessage: ({ data }) => resolve((data as { n: number }).n),
+        })
+        .then(async (received) => {
+          assert.equal(received.error, null);
+          assert.equal(
+            (await socket.send({ topic: "ping", data: { n: 7 } })).error,
+            null
+          );
+        });
     });
-    assert.equal(invoked.error, null);
-    assert.equal(invoked.data?.transport, "ws");
+    assert.equal(await pinged, 7);
     await telemetry.flush();
     const spans = exporter.getFinishedSpans();
-    assert.equal(spans.length, 4);
+    assert.equal(spans.length, 2);
     const http = spans.find(
       (span) =>
         span.name === "work.run" && span.attributes["nile.transport"] === "rest"
@@ -119,5 +138,5 @@ test("Bun-native HTTP, WebSocket and telemetry integration", async () => {
   if (outcome.isErr) {
     throw new Error(outcome.error);
   }
-  console.log("Bun native HTTP, WebSocket and OpenTelemetry smoke passed");
+  console.log("Bun native HTTP, socket topics and OpenTelemetry smoke passed");
 });

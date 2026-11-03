@@ -1,16 +1,14 @@
 import { sendNileRequest, sendUploadRequest } from "./request.js";
-import type {
-  ClientResult,
-  NileClient,
-  NileClientConfig,
-  UploadParams,
-} from "./types.js";
+import { createNileSocket } from "./socket-client.js";
+import type { SocketTopics, TopicShape } from "./socket-types.js";
+import type { NileClient, NileClientConfig, UploadParams } from "./types.js";
 
 /**
  * Creates a type-safe Nile client for interacting with backend services.
  *
  * @param config - The client configuration including baseUrl
- * @returns A factory object with invoke, explore, schema, and upload methods
+ * @returns A factory object with invoke, explore, schema and upload methods, plus
+ *   `socket` for topics. The socket connects on its first `send` or `receive`.
  *
  * @example
  * const nile = createNileClient<ServicePayloads>({ baseUrl: "/api" });
@@ -24,23 +22,32 @@ import type {
  * } else {
  *   console.log(result.value);
  * }
+ *
+ * const received = await nile.socket.receive({
+ *   topic: "tasks.updated",
+ *   onMessage: (message) => console.log(message.data),
+ * });
  */
 export function createNileClient<
   TPayloads = Record<string, Record<string, unknown>>,
->(config: NileClientConfig): NileClient<TPayloads> {
+  TTopics extends TopicShape<TTopics> = SocketTopics,
+>(config: NileClientConfig): NileClient<TPayloads, TTopics> {
   return {
+    socket: createNileSocket<TTopics>({
+      ...config.socket,
+      url: config.socket?.url ?? config.baseUrl,
+    }),
+
     /** Invoke a service action through the backend engine pipeline */
     invoke: async <
       S extends keyof TPayloads & string,
       A extends keyof TPayloads[S] & string,
-    >(
-      params: {
-        service: S;
-        action: A;
-        payload: TPayloads[S][A];
-        fetchOptions?: Parameters<typeof sendNileRequest>[5];
-      }
-    ) => {
+    >(params: {
+      service: S;
+      action: A;
+      payload: TPayloads[S][A];
+      fetchOptions?: Parameters<typeof sendNileRequest>[5];
+    }) => {
       const { service, action, payload, fetchOptions } = params;
       const result = await sendNileRequest<Record<string, unknown>>(
         config,

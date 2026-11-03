@@ -1,11 +1,11 @@
 ---
 title: "Application structure"
-description: "Give each service, action and business rule a predictable place as your team grows"
+description: "Give each service, action and domain rule a predictable place as your team grows"
 ---
 
-Give each business domain a service and each operation an action. Keep small rules in the handler, shared rules in ordinary functions and data access in models.
+Give each business domain a service and each operation an action. Keep small rules in the handler, rules shared within a domain in the service's `modules/`, and data access in models.
 
-Register services and actions explicitly. At startup, Nile checks the source structure once: an application entry at `src/index.ts` or `src/server.ts`, the explicit `services/services.config.ts` registry, each domain’s `index.ts` and `actions/` directory, and the named entry plus `index.ts` for folder-based actions. Shared `modules/` directories are optional. It also reports oversized action files, helping the team keep the same conventions as the application grows.
+Register services and actions explicitly. At startup, Nile checks the source structure once: an application entry at `src/index.ts` or `src/server.ts`, the explicit `services/services.config.ts` registry, each domain’s `index.ts` and `actions/` directory, and the named entry plus `index.ts` for folder-based actions. Shared `modules/` directories are optional. It also reports oversized action files, so the team keeps the same conventions as the application grows.
 
 ## Start with one domain
 
@@ -25,10 +25,8 @@ src/
           modules/
             check-archive-policy.ts
       modules/
+        calculate-project-progress.ts
         types.ts
-  business/
-    projects/
-      calculate-project-progress.ts
   db/
     client.ts
     models/
@@ -42,7 +40,7 @@ src/
 
 Keep the same domain names across the frontend operation, service, action and model. A teammate looking for project creation can follow `projects.create` to `actions/create-project.ts`, then to the project model. A coding agent has the same explicit registration map and named modules to follow.
 
-For a smaller project, keep the business functions and model inside the domain directory instead. Pick one convention and apply it consistently. The CLI template uses `src/services/services.config.ts` as its registry.
+Rules shared by several actions in a domain go in the service's `modules/` directory. A rule another domain also needs stays in the domain that owns it, and the other service imports it from there. The CLI template uses `src/services/services.config.ts` as its registry.
 
 ## Grow an action into a folder
 
@@ -59,7 +57,7 @@ Structure violations fail startup by default (`"error"`). Set `project: { root: 
 | Place | Responsibility |
 |---|---|
 | Action | Describe the operation, validate input, check identity or policy, coordinate the business call and return a Result. |
-| Ordinary business function | Calculate or enforce a domain rule that can be reused without an HTTP request. |
+| Domain function in `modules/` | Calculate or enforce a domain rule that can be reused without an HTTP request. |
 | Model or repository | Own the application's data access and return useful success or failure information. |
 | Service registry | Show which named operations the application exposes. |
 | Shared context | Supply long-lived resources such as a logger or database client. |
@@ -99,7 +97,7 @@ To add project archiving:
 1. Find the `projects` service and read a neighboring action.
 2. Define the archive input schema beside `actions/archive-project/archive-project.ts`.
 3. Check the caller's access before changing project state.
-4. Put data access in the project model and reusable domain rules in ordinary functions.
+4. Put data access in the project model and reusable domain rules in the service's `modules/`.
 5. Return an explicit Result for success and expected failures.
 6. Register the action, then call `projects.archive` from the client.
 

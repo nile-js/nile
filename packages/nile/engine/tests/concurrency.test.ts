@@ -319,7 +319,6 @@ describe("per-execution hook context isolation", () => {
   it("restores outer execution state after a nested action and shares its request session", async () => {
     const context = createNileContext();
     const outerStore = context.hookContext;
-    const ws = { connection: { id: "socket" } };
     const rpc = { id: "rpc" };
     const events: string[] = [];
     const engine = createEngine({
@@ -334,7 +333,6 @@ describe("per-execution hook context isolation", () => {
               handler: (_data, supplied) => {
                 const ctx = requireContext(supplied);
                 expect(ctx.hookContext.actionName).toBe("nested.child");
-                expect(ctx.get("ws")).toBe(ws);
                 expect(ctx.get("rpc")).toBe(rpc);
                 expect(ctx.hookContext.state.owner).toBe("child");
                 expect(ctx.getSession("rest")).toEqual({ id: "session" });
@@ -377,7 +375,7 @@ describe("per-execution hook context isolation", () => {
       },
     });
     const sessions = { rest: { id: "session" } };
-    await runInRequestScope({ sessions, ws, rpc }, async () => {
+    await runInRequestScope({ sessions, rpc }, async () => {
       const result = await engine.executeAction(
         "nested",
         "parent",
