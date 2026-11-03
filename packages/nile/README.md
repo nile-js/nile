@@ -7,7 +7,7 @@ Nile Js is a TypeScript-first, service and actions oriented backend framework. B
 
 Each business domain gets one folder, and each operation one file. Your hundredth feature follows the same layout as your first, so a teammate or coding agent knows where to look.
 
-Not an evening project, Nile has taken me 2 years to get where it is today, I have been refining its developer experience, performance and ergonomics.
+This is not an evening project, Nile has taken me 2 years to get where it is today, I have been refining its developer experience, performance and ergonomics.
 
 Included with every project:
 
