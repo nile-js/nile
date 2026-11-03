@@ -5,9 +5,30 @@
 
 Nile Js is a TypeScript-first, service and actions oriented backend framework. Built for small teams and coding agents that iterate fast.
 
-Keep shipping as your backend grows. Each feature gets a recognizable home, so the next one fits the same structure and a teammate or coding agent finds it at first look.
+Each business domain gets one folder, and each operation one file. Your hundredth feature follows the same layout as your first, so a teammate or coding agent knows where to look.
 
-The hard parts come solved out of the box: input validation, errors as values, hooks, logging and JWT authentication. Run it on Bun or Node.js and bring your own database.
+Included with every project:
+
+- Input validation with Zod, with readable messages and field-level issues
+- Errors returned as values, `Ok` or `Err`
+- Before and after hooks, global or per action
+- JWT authentication for protected actions
+- Structured logging, and a shared context for your database and other resources
+- Rate limiting for actions and HTTP routes
+- Queues, debounce and throttle
+- Retries with jitter for external calls
+- Cron jobs on calendar, interval or one-time schedules
+- File uploads with size, count and type limits
+- Static file serving and custom routes
+- CORS rules for the server and for each action
+- Typed WebSocket topics over Socket.IO, with permissions on each topic
+- API discovery, with input schemas for clients and coding agents
+- OpenTelemetry traces and metrics
+- Readiness reporting and graceful shutdown
+- A startup check for your service layout
+- A typed frontend client, and a CLI for scaffolding and generators
+- Bun's native server, or Hono on Bun and Node.js
+- Your own database, with Drizzle ORM helpers built in
 
 [Documentation](https://nile-js.github.io/nile/guide/) · [Getting started](https://nile-js.github.io/nile/guide/start/getting-started/) · [Examples](https://nile-js.github.io/nile/guide/examples/)
 
@@ -30,7 +51,7 @@ bun add @nilejs/nile zod
 
 ## Write an action
 
-Define the schema, derive the data type and write a named handler. `createAction` infers the action type from the handler.
+An action is one operation your backend exposes, such as creating a task. It has a name, a Zod schema for its input and a handler. Define the schema, derive the data type and write a named handler. `createAction` infers the action type from the handler.
 
 ```ts
 // src/services/tasks/actions/create.ts
@@ -66,7 +87,7 @@ This action returns a task. Add a model call to the handler when you want to sav
 
 ## Register the service
 
-Keep each domain’s actions in its service entry point:
+A service groups the actions of one business domain, and every call names one service and one action. Keep each domain’s actions in its service entry point:
 
 ```ts
 // src/services/tasks/index.ts
