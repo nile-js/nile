@@ -9,26 +9,26 @@ Each business domain gets one folder, and each operation one file. Your hundredt
 
 Included with every project:
 
-- Input validation with Zod, with readable messages and field-level issues
-- Errors returned as values, `Ok` or `Err`
-- Before and after hooks, global or per action
-- JWT authentication for protected actions
-- Structured logging, and a shared context for your database and other resources
-- Rate limiting for actions and HTTP routes
+- Validation with Zod
+- Errors as values
+- Hooks
+- JWT authentication
+- Structured logging
+- Rate limiting
 - Queues, debounce and throttle
-- Retries with jitter for external calls
-- Cron jobs on calendar, interval or one-time schedules
-- File uploads with size, count and type limits
-- Static file serving and custom routes
-- CORS rules for the server and for each action
-- Typed WebSocket topics over Socket.IO, with permissions on each topic
-- API discovery, with input schemas for clients and coding agents
-- OpenTelemetry traces and metrics
-- Readiness reporting and graceful shutdown
-- A startup check for your service layout
-- A typed frontend client, and a CLI for scaffolding and generators
-- Bun's native server, or Hono on Bun and Node.js
-- Your own database, with Drizzle ORM helpers built in
+- Retries
+- Cron jobs
+- File uploads
+- Static files and custom routes
+- CORS
+- WebSockets
+- API discovery
+- OpenTelemetry
+- Readiness and graceful shutdown
+- Typed frontend client
+- CLI with generators
+- Bun or Node.js, native or Hono
+- Bring your own database, with Drizzle ORM helpers
 
 [Documentation](https://nile-js.github.io/nile/guide/) · [Getting started](https://nile-js.github.io/nile/guide/start/getting-started/) · [Examples](https://nile-js.github.io/nile/guide/examples/)
 
