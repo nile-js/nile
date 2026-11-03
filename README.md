@@ -3,9 +3,11 @@
 [![npm version](https://img.shields.io/npm/v/@nilejs/nile.svg)](https://www.npmjs.com/package/@nilejs/nile)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Nile Js is a functional TypeScript backend framework for small teams. Group your backend into services for business domains and actions for individual operations. Validation, error handling, logging and shared resources follow the same conventions as your application grows.
+Nile Js is a TypeScript-first, service and actions oriented backend framework. Built for small teams and coding agents that iterate fast.
 
-A teammate or coding agent can find a feature through its service, open the action and follow its business logic and data access. You write ordinary TypeScript functions for the rules of your product.
+A service groups the actions of one business domain. An action is one operation: a name, a validation schema and a handler. Every call names one service and one action, and the handler returns `Ok` with data or `Err` with a message.
+
+Each service is a folder in `src/services` with one file per action. Open the domain, find the action and follow it to the data access. Your team and your coding agent work from the same map.
 
 [Documentation](https://nile-js.github.io/nile/guide/) · [Getting started](https://nile-js.github.io/nile/guide/start/getting-started/) · [Examples](https://nile-js.github.io/nile/guide/examples/)
 
