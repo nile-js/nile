@@ -206,7 +206,7 @@ Multipart calls share the same cancellation, deadline and Result behavior as JSO
 
 ## Compatibility
 
-Version 2.0.0 supports Nile 2.x. Topics moved onto `createNileClient` as `nile.socket`, and `createNileSocketClient` and socket `invoke` were removed; call actions with `nile.invoke` over HTTP. The HTTP client API is unchanged.
+Version 1.1.0 supports Nile 1.1.x and reworks the socket API introduced in 1.0.x. Topics moved onto `createNileClient` as `nile.socket`, and `createNileSocketClient` and socket `invoke` were removed; the old helper is still exported as a stub that throws with the migration steps. Call actions with `nile.invoke` over HTTP. The HTTP client API is unchanged, so only 1.0.x socket users need to migrate.
 
 ## License
 

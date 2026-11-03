@@ -67,9 +67,9 @@ You can keep existing models, queries and integrations. Database migrations and 
 
 The sections below list what changed in each release, newest first. Apply every section between your current version and the one you install. The full notes ship with the package in `docs/release-migration.md`.
 
-### Sockets in Nile 2.0
+### Sockets in Nile 1.1
 
-Nile 2.0 renames the `websocket` config to `socket` and moves permissions onto each topic. Define topics with `createTopic({ name, data, scope?, canReceive?, canSend? })` and `createTopics([...])`, and replace `authorizeSubscription` and `authorizePublish` with each topic's `canReceive` and `canSend`. Connections now verify the server's `auth` JWT by default. Sockets no longer call actions, and the frontend uses `nile.socket.send` and `nile.socket.receive` on `createNileClient` instead of `createNileSocketClient`. See [WebSockets](/guide/features/websockets) for the new setup.
+Nile 1.1 renames the `websocket` config to `socket` and moves permissions onto each topic. Define topics with `createTopic({ name, data, scope?, canReceive?, canSend? })` and `createTopics([...])`, and replace `authorizeSubscription` and `authorizePublish` with each topic's `canReceive` and `canSend`. Connections now verify the server's `auth` JWT by default. Sockets no longer call actions, and the frontend uses `nile.socket.send` and `nile.socket.receive` on `createNileClient`. The removed `createNileSocketClient` export remains as a stub that throws with these steps, so an upgrade fails loudly instead of silently. See [WebSockets](/guide/features/websockets) for the new setup.
 
 ### Slang 0.2.2 and database failures
 

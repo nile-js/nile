@@ -1,4 +1,5 @@
 export { createNileClient } from "./create-client.js";
+export { createNileSocketClient } from "./deprecated.js";
 export { buildFormData, sendUploadRequest } from "./request.js";
 export type {
   NileSocketClient,

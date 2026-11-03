@@ -27,7 +27,7 @@
     },
     "packages/client": {
       "name": "@nilejs/client",
-      "version": "2.0.0",
+      "version": "1.1.0",
       "dependencies": {
         "socket.io-client": "4.8.4",
       },
@@ -57,7 +57,7 @@
     },
     "packages/nile": {
       "name": "@nilejs/nile",
-      "version": "2.0.0",
+      "version": "1.1.0",
       "dependencies": {
         "@hono/node-server": "^2.1.5",
         "@opentelemetry/api": "1.9.1",

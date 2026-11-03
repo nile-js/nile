@@ -1,6 +1,6 @@
-# Nile 2.0.0 migration notes
+# Nile 1.1.0 migration notes
 
-Nile 2.0.0 redesigns topics and sockets. Apps without `websocket` config need no changes. Update `@nilejs/client` to 2.0.0 alongside it.
+Nile 1.1.0 redesigns topics and sockets. Apps without `websocket` config need no changes. Update `@nilejs/client` to 1.1.0 alongside it.
 
 ## Server
 
@@ -15,7 +15,7 @@ Nile 2.0.0 redesigns topics and sockets. Apps without `websocket` config need no
 
 ## Client
 
-- `createNileSocketClient` is removed. Use `createNileClient<Actions, Topics>({ baseUrl, socket: { auth } })` and `nile.socket.send`, `nile.socket.receive` and `nile.socket.close`.
+- `createNileSocketClient` is removed. Use `createNileClient<Actions, Topics>({ baseUrl, socket: { auth } })` and `nile.socket.send`, `nile.socket.receive` and `nile.socket.close`. The old export remains as a stub that throws with these steps, so an upgrade fails loudly rather than silently.
 - Socket `invoke` is removed; use `nile.invoke`.
 - `socket.url` sets the socket server when it differs from `baseUrl`. Only its origin is used.
 - `onSubscriptionError` is now `socket.onError`, which also reports connection failures. `onConnect`, `onDisconnect` and `onReconnect` are new.
