@@ -437,9 +437,6 @@
 :is(.nile-domain, .nile-domain-flow) [data-layer="modules"] {
 	--layer: #818cf8;
 }
-:is(.nile-domain, .nile-domain-flow) [data-layer="business"] {
-	--layer: #fbbf24;
-}
 :is(.nile-domain, .nile-domain-flow) [data-layer="models"] {
 	--layer: #4ade80;
 }

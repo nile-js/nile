@@ -3,14 +3,7 @@ import type { CSSProperties } from "react";
 import { PartHeader } from "./how-nile-works";
 import { withBase } from "./links";
 
-type Layer =
-	| "root"
-	| "services"
-	| "actions"
-	| "modules"
-	| "business"
-	| "models"
-	| "hooks";
+type Layer = "root" | "services" | "actions" | "modules" | "models" | "hooks";
 
 /** The application structure guide's layout; each entry takes its layer's color. */
 const TREE: {
@@ -28,7 +21,6 @@ const TREE: {
 	{ depth: 4, kind: "file", name: "create-project.ts", layer: "actions" },
 	{ depth: 4, kind: "file", name: "archive-project.ts", layer: "actions" },
 	{ depth: 3, kind: "folder", name: "modules", layer: "modules" },
-	{ depth: 1, kind: "folder", name: "business", layer: "business" },
 	{ depth: 1, kind: "folder", name: "db/models", layer: "models" },
 	{ depth: 1, kind: "folder", name: "hooks", layer: "hooks" },
 ];
@@ -43,12 +35,7 @@ const LEGEND: { layer: Layer; name: string; job: string }[] = [
 	{
 		layer: "modules",
 		name: "Modules",
-		job: "Helpers the domain keeps private",
-	},
-	{
-		layer: "business",
-		name: "Business",
-		job: "Plain functions for domain rules",
+		job: "Rules shared within the domain",
 	},
 	{ layer: "models", name: "Models", job: "Data access that returns Results" },
 	{ layer: "hooks", name: "Hooks", job: "Policies around every action" },
@@ -58,7 +45,6 @@ const FLOW: { name: string; layer: Layer }[] = [
 	{ name: "Request", layer: "root" },
 	{ name: "Hooks", layer: "hooks" },
 	{ name: "Action", layer: "actions" },
-	{ name: "Business", layer: "business" },
 	{ name: "Model", layer: "models" },
 	{ name: "Result", layer: "root" },
 ];
