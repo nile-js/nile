@@ -7,6 +7,8 @@ Nile Js is a TypeScript-first, service and actions oriented backend framework. B
 
 Each business domain gets one folder, and each operation one file. Your hundredth feature follows the same layout as your first, so a teammate or coding agent knows where to look.
 
+Not an evening project: Nile has taken me two years to get where it is today, refining its developer experience, performance and ergonomics.
+
 Included with every project:
 
 - Validation with Zod
@@ -51,65 +53,62 @@ bun add @nilejs/nile zod
 
 ## Write an action
 
-An action is one operation your backend exposes, such as creating a task. It has a name, a Zod schema for its input and a handler. Define the schema, derive the data type and write a named handler. `createAction` infers the action type from the handler.
+An action is one operation your backend exposes, such as creating a project. It has a name, a Zod schema for its input and a handler. A service groups the actions of one business domain, and every call names one service and one action.
 
 ```ts
-// src/services/tasks/actions/create.ts
+// src/services/projects/actions/create-project.ts
 import { createAction } from "@nilejs/nile";
 import { Ok } from "@nilejs/nile/fp";
 import { z } from "zod";
 
-const createTaskSchema = z.object({
-  title: z.string().min(1, "Title is required"),
+const createProjectSchema = z.object({
+  name: z.string().trim().min(1, "Name is required"),
 });
 
-type CreateTaskData = z.infer<typeof createTaskSchema>;
+type CreateProjectInput = z.infer<typeof createProjectSchema>;
 
-const createTaskHandler = (data: CreateTaskData) => {
-  const task = {
+const createProjectHandler = (data: CreateProjectInput) => {
+  const project = {
     id: crypto.randomUUID(),
-    title: data.title,
-    status: "pending",
+    name: data.name,
   };
 
-  return Ok({ task: task });
+  return Ok({ project: project });
 };
 
-export const createTaskAction = createAction({
+export const createProject = createAction({
   name: "create",
-  description: "Create a task",
-  validation: createTaskSchema,
-  handler: createTaskHandler,
+  description: "Create a project",
+  validation: createProjectSchema,
+  handler: createProjectHandler,
 });
 ```
 
-This action returns a task. Add a model call to the handler when you want to save it. Use `Err(message)` for an expected failure and check a model’s Result before reading its value.
+Nile checks the payload against `createProjectSchema` before the handler runs. When the check fails, the caller gets a readable message with each failing field, and the handler is skipped. The handler itself is a plain function: it receives typed data and returns a Result. `createAction` infers the action's type from it.
 
-## Register the service
-
-A service groups the actions of one business domain, and every call names one service and one action. Keep each domain’s actions in its service entry point:
+## Group actions into a service
 
 ```ts
-// src/services/tasks/index.ts
+// src/services/projects/index.ts
 import { createService } from "@nilejs/nile";
-import { createTaskAction } from "./actions/create";
+import { createProject } from "./actions/create-project";
 
-export const tasksService = createService({
-  name: "tasks",
-  description: "Task management",
-  actions: [createTaskAction],
+export const projects = createService({
+  name: "projects",
+  description: "Organize the team's projects",
+  actions: [createProject],
 });
 ```
-
-Register the service in the application:
 
 ```ts
 // src/services/services.config.ts
 import { createServices } from "@nilejs/nile";
-import { tasksService } from "./tasks";
+import { projects } from "./projects";
 
-export const services = createServices([tasksService]);
+export const services = createServices([projects]);
 ```
+
+`services.config.ts` lists every service in the application, so one file shows everything your backend can do.
 
 ## Start the server
 
@@ -119,7 +118,7 @@ import { createNileServer } from "@nilejs/nile";
 import { services } from "./services/services.config";
 
 const server = await createNileServer({
-  serverName: "my-app",
+  serverName: "Team workspace",
   runtime: "bun",
   native: true,
   services: services,
@@ -129,71 +128,130 @@ const server = await createNileServer({
   },
 });
 
-if (server.nativeRest) {
-  Bun.serve({
-    port: 8000,
-    fetch: server.nativeRest.fetch,
-  });
+if (!server.nativeRest) {
+  throw new Error("Native adapter unavailable");
 }
+
+Bun.serve({ port: 8000, fetch: server.nativeRest.fetch });
 ```
+
+Every action now answers at `POST /api/services`. On Node.js, use the [Hono adapter](https://nile-js.github.io/nile/guide/start/runtime-adapters/) instead.
 
 Nile checks your source layout at startup. Each service needs an `index.ts` and an `actions/` directory, alongside the application’s `services.config.ts` registry. See [application structure](https://nile-js.github.io/nile/guide/start/application-structure/) for larger actions, shared modules and startup settings.
 
-You can also use the [Hono adapter on Bun or Node.js](https://nile-js.github.io/nile/guide/start/runtime-adapters/).
-
-## Call the action
-
-Install the frontend client:
+## Call it from the frontend
 
 ```sh
 bun add @nilejs/client
 ```
 
-```ts
+```tsx
+// components/create-project-button.tsx
 import { createNileClient } from "@nilejs/client";
 
 const nile = createNileClient({
   baseUrl: "http://localhost:8000/api",
 });
 
-const result = await nile.invoke({
-  service: "tasks",
-  action: "create",
-  payload: { title: "Ship the next feature" },
-});
+export function CreateProjectButton() {
+  const handleClick = async () => {
+    const result = await nile.invoke({
+      service: "projects",
+      action: "create",
+      payload: { name: "Customer portal" },
+    });
 
-if (result.isErr) {
-  console.error(result.error);
-} else {
-  console.log(result.value);
+    if (result.isErr) {
+      console.error(result.error);
+      return;
+    }
+
+    console.log(result.value);
+  };
+
+  return <button onClick={handleClick}>Create project</button>;
 }
 ```
 
-Generate `ServicePayloads` with `bun run gen schema` and pass it to `createNileClient<ServicePayloads>` for service names, action names and payload checking. Within your backend, call the same operation with `server.invoke`.
+The call names the service and the action, and the payload is the action's input. One endpoint serves every action, and a new action is callable as soon as its service lists it. `invoke` returns a Result for every call, including network failures, so one `isErr` check covers every way the call can fail. After the check, `result.value` holds the data the handler returned.
 
-HTTP action calls use `POST /api/services` with `intent`, `service`, `action` and `payload`. Responses contain exactly `status`, `message` and `data`:
+Run `bun run gen schema` to generate `ServicePayloads`, then create the client with `createNileClient<ServicePayloads>`. Your editor completes service and action names and checks each payload against the action's schema.
+
+Over HTTP, an action call is `POST /api/services` with `intent`, `service`, `action` and `payload`. Responses contain exactly `status`, `message` and `data`:
 
 ```json
 {
   "status": true,
   "message": "Action completed.",
   "data": {
-    "task": {
+    "project": {
       "id": "aa5f730d-b2ce-40fa-8b74-98f6ea4ab271",
-      "title": "Ship the next feature",
-      "status": "pending"
+      "name": "Customer portal"
     }
   }
 }
 ```
 
-## Handle failures
+## Errors as values
 
-An action returns `Ok(value)` or `Err(message)`. Import Results, Options and async helpers from `@nilejs/nile/fp`. Nile-specific helpers, including optional Drizzle models, are available through `utils` from `@nilejs/nile`.
+A Nile handler returns its failures instead of throwing them. `Ok(value)` carries the result. `Err(message)` carries an expected failure, and its message reaches the caller as written. Every outcome of an action is visible in its return statements.
+
+```ts
+// src/services/orders/actions/quote.ts
+import { createAction } from "@nilejs/nile";
+import { Err, Ok } from "@nilejs/nile/fp";
+import { z } from "zod";
+import { productModel } from "@/db/models";
+
+const quoteSchema = z.object({
+  id: z.string().min(1),
+  quantity: z.number().int().positive(),
+});
+
+type QuoteData = z.infer<typeof quoteSchema>;
+
+const quoteHandler = async (data: QuoteData) => {
+  const product = await productModel.findById(data.id);
+  if (product.isErr) {
+    return Err("Product not found");
+  }
+
+  if (product.value.stock < data.quantity) {
+    return Err("Not enough stock");
+  }
+
+  return Ok({ total: product.value.price * data.quantity });
+};
+
+export const quoteAction = createAction({
+  name: "quote",
+  description: "Quote a product order",
+  validation: quoteSchema,
+  handler: quoteHandler,
+});
+```
+
+The model returns a Result too, so the handler checks `product.isErr` before reading `product.value`. The frontend handles the same two outcomes:
+
+```tsx
+// components/quote.tsx
+const result = await nile.invoke({
+  service: "orders",
+  action: "quote",
+  payload: { id, quantity },
+});
+
+if (result.isErr) {
+  showError(result.error);
+  return;
+}
+
+showTotal(result.value.total);
+```
 
 Validation failures include a readable message, a unique `data.errorCode` and field-level `data.issues`. The client exposes the message as `result.error` and failure data as `result.details`.
 
-Unexpected errors return a safe message with a generated reference matching the log’s `log_id`. Keep database and provider details in your logs. Use `safeTry` to catch dependency failures and `utils.handleError` to log diagnostics with a message suitable for the caller. See [errors and Results](https://nile-js.github.io/nile/guide/basics/errors-and-results/) for examples.
+An unexpected exception is still caught. The caller receives a safe message with a reference, and the details go to your logs under the same reference. Use `safeTry` to catch dependency failures and `utils.handleError` to log diagnostics with a message suitable for the caller. Results, Options and async helpers come from `@nilejs/nile/fp`. See [errors and Results](https://nile-js.github.io/nile/guide/basics/errors-and-results/).
 
 ## Apply shared policies with hooks
 
