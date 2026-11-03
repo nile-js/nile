@@ -5,9 +5,9 @@
 
 Nile Js is a TypeScript-first, service and actions oriented backend framework. Built for small teams and coding agents that iterate fast.
 
-A service groups the actions of one business domain. An action is one operation: a name, a validation schema and a handler. Every call names one service and one action, and the handler returns `Ok` with data or `Err` with a message.
+Keep shipping as your backend grows. Each feature gets a recognizable home, so the next one fits the same structure and a teammate or coding agent finds it at first look.
 
-Each service is a folder in `src/services` with one file per action. Open the domain, find the action and follow it to the data access. Your team and your coding agent work from the same map.
+The hard parts come solved out of the box: input validation, errors as values, hooks, logging and JWT authentication. Run it on Bun or Node.js and bring your own database.
 
 [Documentation](https://nile-js.github.io/nile/guide/) · [Getting started](https://nile-js.github.io/nile/guide/start/getting-started/) · [Examples](https://nile-js.github.io/nile/guide/examples/)
 
