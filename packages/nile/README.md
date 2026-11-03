@@ -9,7 +9,7 @@ Each business domain gets one folder, and each operation one file. Your hundredt
 
 This is not an evening project, Nile has taken me 2 years to get where it is today, I have been refining its developer experience, performance and ergonomics.
 
-Included with every project:
+What's included in every project:
 
 - Validation with Zod
 - Errors as values
