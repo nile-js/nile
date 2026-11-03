@@ -5,15 +5,15 @@ description: "Answers to common questions about Nile applications and their trad
 
 ## Who is Nile for?
 
-Small teams building growing business applications: internal tools, dashboards, billing systems and product backends. A few conventions give each operation a recognizable home, so adding another feature does not require inventing another application structure.
+Small teams building growing business applications: internal tools, dashboards, billing systems and product backends. A few conventions give each operation a recognizable home, so each new feature follows the structure already in place.
 
-The maintainer uses Nile for a fintech backend with over 500 actions, an internal Back Office shipped in days, and Wi-Fi billing receiving thousands of requests a day. These are in-house accounts, not independent performance or delivery guarantees.
+The maintainer uses Nile for a fintech backend with over 500 actions, an internal Back Office shipped in days, and Wi-Fi billing receiving thousands of requests a day. These are the maintainer's own projects, not independent measurements.
 
 ## Does Nile enforce domain-driven design?
 
-Yes, so the codebase still scales as it grows. Each business domain is a service under `src/services`, listed in the `services.config.ts` registry, with one file per action. Nile checks that layout at startup and reports misplaced or oversized action files. A violation stops startup by default, including in existing applications. Set `project: { structure: "warn" }` explicitly to continue with warnings, or `false` to disable the check.
+Yes, so the codebase stays navigable as it grows. Each domain is a service under `src/services`, listed in the `services.config.ts` registry, with one file per action. Nile checks that layout at startup and reports misplaced or oversized action files. A violation stops startup by default. Set `project: { structure: "warn" }` explicitly to continue with warnings, or `false` to disable the check.
 
-Inside that layout, aggregates and repositories stay your choice. Ordinary functions can contain business rules; only operations exposed through the action API need to become actions.
+Inside that layout, aggregates and repositories stay your choice. Domain rules live in each service's `modules/`, and only operations you expose to callers become actions.
 
 Start with the [application structure guide](/guide/start/application-structure).
 
@@ -30,44 +30,44 @@ Send `POST /api/services` when `rest.baseUrl` is `/api`. The body identifies the
 }
 ```
 
-Nile registers named operations at startup and resolves them through precomputed lookups. This keeps dispatch independent of scanning the entire action collection. Parsing, validation, hooks, business logic and response serialization still take time; constant-time lookup does not imply constant request cost or guaranteed throughput.
+Nile builds its action lookup once at startup, so finding an action takes the same time however many you register. Parsing, validation, hooks, your handler and the response still take time.
 
-Use meaningful operation names and register each action in its service. [Custom routes](/guide/basics/custom-routes) remain available for webhooks, health checks and other HTTP needs.
+Use meaningful operation names and register each action in its service. Use [custom routes](/guide/basics/custom-routes) for webhooks, health checks and other HTTP needs.
 
 ## What happens when an action fails?
 
-Return `Err(message)` for an expected failure and `Ok(data)` for success. Guarded handler execution converts unexpected handler failures into a failed Result. HTTP responses use a `status`, `message`, `data` envelope; the client exposes its own response shape.
+Return `Err(message)` for an expected failure and `Ok(data)` for success. An unexpected throw in a handler also becomes a failed Result, with a safe message. HTTP responses use a `status`, `message`, `data` envelope; the client exposes its own response shape.
 
-Startup configuration errors can throw, and transport errors can return HTTP 500. The Result convention does not make applications crash-proof. See [errors and Results](/guide/basics/errors-and-results).
+Invalid startup configuration throws, and a transport error can return HTTP 500, so Results cover your actions, not the whole process. See [errors and Results](/guide/basics/errors-and-results).
 
 ## Does Nile handle access control?
 
-Nile can verify JWTs for protected actions when server authentication is configured. Your application implements role, organization and resource policies through hooks or business logic. `accessControl` metadata alone does not enforce a policy. [Authentication](/guide/basics/auth) explains the boundary.
+Nile can verify JWTs for protected actions when server authentication is configured. Your application implements role, organization and resource policies through hooks or business logic. `accessControl` labels take effect only through your hook. [Authentication](/guide/basics/auth) explains the split.
 
 ## Are sessions persistent?
 
-No. Request sessions carry identity/state within the current request. They are not a cross-request session database. Persist workflow progress in your application’s chosen storage and load it explicitly when needed.
+No. A request session holds identity and state for the current request only. Save progress that spans requests in your own storage and load it when needed.
 
 ## How does the frontend connect?
 
-Use `@nilejs/client` to invoke named actions. The CLI can generate service/action input types from the local service registry using Bun. This checks operation names and payloads when supplied to the client; it does not automatically infer server return types end to end. See the [client guide](/guide/basics/client).
+Use `@nilejs/client` to call named actions over HTTP and to send and receive [topic messages](/guide/features/websockets) through `nile.socket`. The CLI generates input types from your service registry, so the client checks operation names and payloads; response types stay unknown until you validate them. See the [client guide](/guide/basics/client).
 
 ## Can agents discover and execute operations?
 
-When explicitly enabled, `explore` and `schema` expose operation metadata and supported input schemas. An agent integration still needs to select permitted tools, supply credentials, validate its inputs and invoke actions. Discovery is disabled by default. Nile does not ship an MCP server or universal model adapter.
+When you enable discovery, `explore` and `schema` return operation metadata and input schemas. Your agent integration, such as an MCP server you write, selects the allowed tools, supplies credentials and calls the actions. Discovery is off by default.
 
-Predictable code organization also helps coding agents navigate an application. That is separate from runtime discovery. See [discovery and agents](/guide/basics/discovery-and-agents).
+A predictable layout also helps coding agents read your code, with or without runtime discovery. See [discovery and agents](/guide/basics/discovery-and-agents).
 
 ## What is cached?
 
-JSON Schema conversions are performed on demand and cached by default. Action results are not automatically cached. Your application owns data caches, invalidation and any persistent state. Discovery cache controls are documented in the discovery guide.
+JSON Schema conversions run on request and are cached by default. Nile caches no action results; data caches and invalidation are part of your application. Discovery cache controls are documented in the discovery guide.
 
 ## Must I use Bun, Hono or Drizzle?
 
-Choose Bun native explicitly with `runtime: "bun", native: true`. Existing applications retain the Hono adapter by default; it supports Bun and Node. Their middleware and request-context APIs differ.
+Choose Bun native explicitly with `runtime: "bun", native: true`. Hono is the default adapter and runs on Bun and Node.js. The two adapters have different middleware and request-context APIs.
 
 Choose your own database and data-access modules. Nile’s Drizzle helpers are optional. Read [runtime adapters](/guide/start/runtime-adapters) and [data access](/guide/internals/db/).
 
-## What about performance and future features?
+## What about performance?
 
-The [performance page](/guide/reference/performance) includes recorded measurements, methodology and reproducible sources. They describe a specific workload and machine. Follow [repository issues](https://github.com/nile-js/nile/issues) for current discussion.
+The [performance page](/guide/reference/performance) includes recorded measurements, methodology and reproducible sources. They describe one workload on one machine. Discussion happens in the [repository issues](https://github.com/nile-js/nile/issues).

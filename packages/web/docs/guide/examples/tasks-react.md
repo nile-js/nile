@@ -351,7 +351,7 @@ empty title rejected true ✖ Title is required
   → at title
 ```
 
-The last line proves the server's validation reached the client. Because the client returns `isErr`, the component can show the message without catching an exception.
+The last line shows the server's validation reaching the client. The client returns it as a failed Result, so the component shows the message without catching an exception.
 
 ## 7. Check the types and the server render
 

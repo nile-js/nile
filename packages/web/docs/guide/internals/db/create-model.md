@@ -3,11 +3,11 @@ title: "Model helpers"
 description: "Create a Drizzle-backed model with typed CRUD methods and Result failures"
 ---
 
-Use `createModel` when a Drizzle-backed domain needs well known CRUD operations. Keep custom business queries in ordinary model functions rather than forcing every operation through a generic helper.
+Use `createModel` when a Drizzle-backed domain needs well known CRUD operations. Write custom queries as your own model functions next to it.
 
 ## Create a model
 
-This example assumes your application already defines the Drizzle table and database client; it does not create or migrate a database.
+The example uses a Drizzle table and database client your application already defines; creating and migrating the database stays with your application.
 
 ```ts
 import { utils } from "@nilejs/nile";
@@ -47,9 +47,9 @@ Check `checked.success` before reading `checked.data`. A model also exposes its 
 | `findPaginated({ limit?, offset? })` | `{ items, total, hasMore }`. |
 | `findPaginated({ limit?, cursor, cursorColumn? })` | `{ items, nextCursor, hasMore }`. |
 
-Ordinary methods return `Promise<Result<T, string>>`. `create` and `update` check their data against the generated insert/update schemas, then execute their queries. They validate the supplied data; they do not substitute the schema’s transformed output into the write.
+Ordinary methods return `Promise<Result<T, string>>`. `create` and `update` check their data against the generated insert/update schemas, then execute their queries. The write uses the data you supplied, not the schema's transformed output.
 
-Pagination defaults to 50 items. Offset mode is selected without a cursor. Cursor mode uses descending order and a less-than comparison on the selected column, fetching an extra row to detect another page. Choose a suitable stable cursor for your data; the helper does not add a multi-column tie-breaker automatically.
+Pagination defaults to 50 items. Offset mode is selected without a cursor. Cursor mode uses descending order and a less-than comparison on the selected column, fetching an extra row to detect another page. Choose a cursor column with unique values, since rows sharing a value can be skipped or repeated.
 
 `findAll` and offset pagination use `created_at`, then `createdAt`, for descending ordering when present. Otherwise no default ordering is applied.
 

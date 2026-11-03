@@ -31,7 +31,7 @@ export const createProject = createAction({
 
 `Action<T, E>` and `ActionHandler<T, E>` use `T` for handler data and `E` for the error type. Annotate the named handler’s data once; `createAction` infers the action type from it.
 
-The main action's schema parses input at runtime, including supported defaults and transforms. Keep the handler type aligned with the schema's parsed output (`z.infer`). Before hooks run before that parsing and must treat incoming values accordingly.
+The main action's schema parses input at runtime, including supported defaults and transforms. Keep the handler type aligned with the schema's parsed output (`z.infer`). Before hooks run before that parsing, so they see the raw payload.
 
 ## Generate frontend inputs
 
@@ -58,19 +58,19 @@ if (result.isErr) {
 }
 ```
 
-Generated contracts are snapshots, so regenerate and share them with consumers when inputs change. Inspect generated types for transformed or custom schema types; JSON Schema cannot preserve every Zod runtime behavior.
+Generated contracts are snapshots: regenerate and share them when inputs change. Check the generated types for transformed or custom schemas, since JSON Schema cannot express every Zod runtime behavior.
 
 ## What is checked
 
-| Boundary | What it checks |
+| Where | What it checks |
 |---|---|
 | `createAction` | The handler input at compile time. |
 | Main action `validation` | Incoming payload at runtime before its handler. |
-| Service registry | A heterogeneous action collection; individual input types are erased for dispatch. |
+| Service registry | Nothing per action: actions of every input type share one list. |
 | `createNileClient<ServicePayloads>` | Service name, action name and payload at compile time. |
-| Client Result | `value` is a general record; the client does not infer the handler's output type. Validate `value` in application code if needed. |
-| Discovery JSON Schema | A description of representable inputs, not execution of custom refinements or application policy. |
+| Client Result | Nothing: `value` is a general record. Validate it in your application when you depend on its shape. |
+| Discovery JSON Schema | Nothing at runtime: it describes the inputs JSON Schema can express, without your refinements or policies. |
 
-The client exports `ExternalResponse<T>` and `ClientResult<T>` (the `ClientOk` or `ClientErr` Result) for describing responses, but `invoke` does not infer an action's output or accept an output-type generic. Validate incoming data on the server even when a client or coding agent uses generated types.
+The client exports `ExternalResponse<T>` and `ClientResult<T>` (the `ClientOk` or `ClientErr` Result) for typing responses yourself; `invoke` takes no output type. Generated types check the caller at compile time only, so the server still validates every payload.
 
 Next: [frontend integration](/guide/basics/client) and [discovery](/guide/basics/discovery-and-agents).

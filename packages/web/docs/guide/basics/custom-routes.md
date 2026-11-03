@@ -3,11 +3,11 @@ title: "Custom routes"
 description: "Add HTTP routes for webhooks, downloads and streaming responses"
 ---
 
-Use actions for business operations, and ordinary HTTP routes when an integration expects a particular URL, method or response. Webhooks, authentication callbacks and streaming endpoints can live beside Nile's action API.
+Use actions for your operations, and HTTP routes when an integration expects a particular URL, method or response. Webhooks, authentication callbacks and streaming endpoints can live beside Nile's action API.
 
 ## Bun native routes
 
-After constructing a Bun native server, register routes before starting its listener:
+After creating a Bun native server, register routes before starting its listener:
 
 ```ts
 const native = server.nativeRest;
@@ -28,7 +28,7 @@ native.addMiddleware("/api", async (context, next) => {
 Bun.serve({ port: 8000, fetch: native.fetch });
 ```
 
-Throw `createNativeHttpError(message, status)` from a route or middleware to return that HTTP status with the message. Other errors return a sanitized 500 response.
+Throw `createNativeHttpError(message, status)` from a route or middleware to return that HTTP status with the message. Any other error returns a 500 response with a safe message.
 
 ```ts
 import { createNativeHttpError } from "@nilejs/nile";
@@ -43,9 +43,9 @@ native.route("GET", "/projects/:id/export", (context) => {
 });
 ```
 
-Native handlers use standard `Request` and `Response` APIs, with `context.json`, `text`, `respond`, outgoing `headers` and request-local state helpers. Routes support exact paths, named/optional parameters and a terminal wildcard. `ALL` matches any method. Exact matches take precedence; a later exact registration replaces the same method/path.
+Native handlers use standard `Request` and `Response` APIs, with `context.json`, `text`, `respond`, outgoing `headers` and request-local state helpers. Routes support exact paths, named and optional parameters, and a wildcard at the end of the path. `ALL` matches any method. An exact match wins over a pattern, and registering the same method and exact path again replaces the earlier route.
 
-Native middleware may return a Response to stop execution, or await `next()` and modify the resulting headers. It must respond or call `next`, and must not call `next` twice. Static serving and CORS preflight occur ahead of user middleware.
+Native middleware either returns a Response to stop the request, or awaits `next()` and changes the response headers. Call `next` at most once. Static files and CORS preflight are handled before your middleware runs.
 
 ## Hono routes
 
@@ -67,7 +67,7 @@ server.rest?.addMiddleware("/api", async (context, next) => {
 });
 ```
 
-Use `server.rest.addMiddleware` for middleware that must run before Nile's services handler; late `app.use` registration is not a reliable way to wrap an already registered route. The current compatibility middleware runner does not consistently adopt a directly returned Response. For a Hono services-endpoint denial, use Hono's `HTTPException` rather than relying on a returned Response:
+Use `server.rest.addMiddleware` for middleware that must run before Nile's services handler; `app.use` added later may run after the route. To refuse a request to the services endpoint, throw Hono's `HTTPException`, since a returned Response may be ignored:
 
 ```ts
 import { HTTPException } from "hono/http-exception";
@@ -80,10 +80,10 @@ server.rest?.addMiddleware("/api", async (context, next) => {
 });
 ```
 
-This demonstrates a missing-header guard, not a complete key-verification policy. For business-action access, prefer an explicit [authorization hook](/guide/basics/auth).
+The example only checks the header is present; verify the key itself in your application. For access to actions, use an [authorization hook](/guide/basics/auth).
 
-## Reuse logic, preserve the boundary
+## Share code with actions
 
-A custom route can call ordinary business functions and access `server.context.resources`. It does not automatically run an action's schema, JWT check or hooks. Validate input and enforce the integration's signature/authentication requirements before calling the business function.
+A custom route can call your domain functions and read `server.context.resources`. It skips every action check: schema, JWT and hooks. Validate the input and verify the caller, such as a webhook signature, before calling your domain function.
 
-Hono Context and native context APIs are different; plugins require deliberate migration. See [runtime adapters](/guide/start/runtime-adapters).
+Hono Context and the native context have different APIs, so Hono plugins need porting to run on Bun native. See [runtime adapters](/guide/start/runtime-adapters).

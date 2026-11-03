@@ -36,11 +36,11 @@ if (loaded.isErr) {
 }
 ```
 
-Slang 0.2.2 preserves a caught error on the non-enumerable `result.raw` property. Use `safeTry` directly; Nile's former `dbTry` and `DbTryOptions` exports have been removed. `raw` retains driver causes for internal inspection without serializing them automatically. The ordinary `result.error` can still contain SQL or driver messages: return a deliberate safe message rather than passing that failure to a caller.
+`safeTry` keeps the caught error on the non-enumerable `result.raw` property, for your logs only; it never appears in JSON output. `result.error` can still hold SQL or driver text, so return a message you wrote instead of passing the failure on to the caller.
 
-Nile's model methods use `safeTry` and pass bounded diagnostics from `result.raw` into their existing operation-specific error logs. `handleError` returns the safe message with its log reference. Transaction ownership, commit and rollback behavior are unchanged.
+Nile's model methods use `safeTry` the same way and log a short diagnostic from `result.raw`. `handleError` logs through your Nile logger, then returns the safe message with its log reference.
 
-`describeError` omits messages, SQL, parameters, detail and stack traces by default. Set `includeMessages: true` only when appropriate for internal diagnostics. Never log or send `raw` wholesale to a public client. Configure a Nile logger when using `handleError`.
+`describeError` leaves out messages, SQL, parameters, details and stack traces by default. Set `includeMessages: true` only for internal diagnostics, and never send `raw` to a client.
 
 To inspect an error directly:
 
@@ -52,9 +52,9 @@ const diagnostic = await utils.describeError(error, {
 });
 ```
 
-Causes appear deepest first. Circular causes, hostile properties and thenable causes are handled without following them indefinitely. Configuration mistakes throw. This helper does not create a separate log viewer or classify business failures automatically.
+Causes are listed deepest first. A chain of causes pointing back at itself, or holding odd values, is cut off safely. Invalid options throw.
 
-## Explicit retries and polling
+## Retries and polling
 
 ```ts
 import { utils } from "@nilejs/nile";
@@ -86,15 +86,24 @@ if (delivered.isErr) {
 }
 ```
 
-Each additional attempt requires the application's explicit decision. `end(value)` returns success; `stop(message)` returns failure; reaching the attempt bound returns a string failure, without pretending it has an arbitrary application error type. Policy exceptions return a safe policy failure. Do not retry a business write unless its idempotency makes repetition appropriate.
+`onResult` decides after each attempt: `retry()` waits and tries again, `end(value)` returns success and `stop(message)` returns failure. Running out of attempts or time returns a failure with a string message, and a throw inside `onResult` returns a safe failure. Retry a write only when repeating it is safe.
 
-Slang `superPromise` supplies the whole-run cooperative deadline and cancellable wait settlement. The first attempt starts immediately unless `initialDelayMs` is provided. Later attempts use exponential backoff, with jitter below the computed cap; the complete delay never exceeds `maxDelayMs`. There is at least a 1ms wait between retries so immediate failures cannot starve cancellation timers.
+The first attempt starts at once, unless you set `initialDelayMs`. Later attempts wait longer each time, plus a random amount, and never more than `maxDelayMs`. Every retry waits at least 1 millisecond.
 
-Defaults: 10 total attempts, 60s whole-run deadline, 2s base delay, 30s delay cap, 500ms jitter and a 20-record metadata history. `maxHistory` can be at most 1000. The policy receives `attempt`, the current Result and bounded `attempts` timing/outcome metadata. Previous payloads/errors are not retained automatically. `startedAt` uses epoch milliseconds by default; `clock` and `random` are injectable for deterministic checks.
+| Option | Default |
+| --- | --- |
+| `maxAttempts` | 10 |
+| `timeoutMs` (whole run) | 60 seconds |
+| `baseDelayMs` | 2 seconds |
+| `maxDelayMs` | 30 seconds |
+| `jitterMs` | 500 milliseconds |
+| `maxHistory` | 20 records, at most 1000 |
 
-Cancellation ends a backoff wait immediately and prevents another attempt. During in-flight work it is cooperative: if a function ignores its signal, the helper awaits actual settlement. This preserves queue concurrency accounting and never starts overlapping attempts. A deadline cannot force JavaScript or a database driver to stop. Queues and lifecycle drain can therefore still observe work that ignores cancellation.
+`onResult` also receives `attempt` and `attempts`, a short history of each attempt's timing and outcome; earlier payloads and errors are not kept. Pass `clock` and `random` to make timing predictable in tests.
 
-## Bounded ephemeral storage
+Cancelling ends a wait at once and starts no further attempt. An attempt already running stops only if its function listens to the signal; otherwise the helper waits for it to finish, so attempts never overlap. A deadline cannot force JavaScript or a database driver to stop.
+
+## Short-lived storage
 
 ```ts
 const cache = utils.createMemoryStore<OrderSummary>({
@@ -112,9 +121,9 @@ const cached = cache.get(order.id);
 cache.delete(order.id);
 ```
 
-Default admission is `reject-new`; LRU must be selected deliberately. LRU reads promote entries, while TTL is measured from the most recent set, not the most recent read. An indexed expiry queue keeps one node per expiring key: updates and deletes do not accumulate stale expiry records. Expiration is lazy, without a background timer or whole-store scan on each lookup. Capacity checks and size inspection remove due entries; reads reject an expired target immediately.
+A full store refuses new keys by default (`eviction: "reject-new"`). With `"lru"`, it drops the least recently read or written entry instead. The TTL counts from the last `set`, not the last read. Expired entries are removed as you touch the store, and reading an expired key returns `undefined`.
 
-There are at most 1000 keys by default. Omit TTL for bounded values that live until removed. Each set can override the configured TTL with a positive millisecond duration. A rejected insertion preserves current live values. Values are held by reference; `has` distinguishes a stored undefined from a miss.
+The store holds 1000 keys by default. Leave out `ttlMs` for values kept until you delete them; a `set` can pass its own positive `ttlMs`. A refused `set` keeps every stored value. Values are stored by reference, and `has` tells a stored `undefined` apart from a missing key.
 
 For one-time values:
 
@@ -125,7 +134,7 @@ tokens.set({ key: tokenId, value: expectedToken });
 const accepted = tokens.consume({ key: tokenId, expected: suppliedToken });
 ```
 
-Consume is a synchronous compare-and-delete: only the matching caller consumes it. Comparison uses `Object.is`, including reference identity for objects. This is process-local, not a distributed atomic store. `clear()` empties it; `close()` also prevents future writes. Do not use LRU cache eviction for active quota records or durable idempotency claims.
+`consume` deletes the value only when `expected` matches it, compared with `Object.is`, so one caller wins. The store lives in one process. `clear()` empties it, and `close()` also refuses later writes. Keep quota records and run-once claims in a `"reject-new"` store, so a full store never drops them.
 
 ## Reclaim idle keyed queues
 
@@ -145,11 +154,11 @@ const result = await writes.run(draft, { signal: signal });
 server.lifecycle.register(utils.createControlResource("draft-writes", writes));
 ```
 
-Each key serializes independently. After real work becomes idle, the timer starts; a later call cancels that timer. A cancelled caller does not make still-running work idle. Idle controls are closed and their keys released, allowing capacity to be reused.
+Each key gets its own queue, so calls for one document run one at a time while other documents proceed. When a key's queue has been idle for `idleMs`, it is closed and its key freed for reuse; a new call before then resets the timer, and a cancelled caller leaves running work alone.
 
-Idle cleanup requires passive `whenIdle()` support, supplied by queues. A control whose drain flushes buffered work, such as a throttle, is rejected for this option. With `idleMs` omitted, existing retention behavior remains unchanged. This protects control timing instead of silently resetting it. Serialization is process-local; database constraints/locks remain application decisions.
+`idleMs` works with queues only; a throttle or batch is refused, since closing one would flush its buffered work. Without `idleMs`, every key's queue stays until the control closes. The queues live in one process, so database constraints and locks are still yours to set.
 
-## Client address normalization and trust metadata
+## Client addresses
 
 ```ts
 const identity = utils.resolveClientIdentity(request, {
@@ -164,17 +173,9 @@ logger.info({
 });
 ```
 
-The result includes `address`, listener `peer` and source: `peer`, `forwarded` or `unknown`. IPv4-mapped IPv6 addresses normalize to dotted IPv4. Trust checks accept the normalized form and preserve explicit trust in the original spelling. Forwarded addresses are used only when an actual peer and explicit trust permit walking the chain; a header alone never establishes identity.
+The result has `address`, the connection's `peer` address and `source`: `"peer"`, `"forwarded"` or `"unknown"`. IPv4 addresses written as IPv6 are converted to dotted IPv4. Forwarded headers are read only when `trustProxy` accepts the connection's peer, so a header alone never sets the address.
 
-The existing `resolveClientAddress(request, options)` continues returning just the address. `normalizeIp(value)` is also available separately. The HTTP boundary uses the same resolver for execution client keys. No application config imports, fraud policy, bans or DB audit writes are built into this utility.
-
-## Verification
-
-The utility tests use deterministic clocks/cancellation and mock failures. The real DB fixture uses an explicitly approved disposable PGlite database under /tmp, closes it and exercises Drizzle model failures without application configuration. Run it from packages/nile in the source checkout:
-
-```sh
-bun test ./scripts/verify-db-utilities.spec.ts
-```
+`resolveClientAddress(request, options)` returns just the address, and `normalizeIp(value)` normalizes one address. Nile uses the same resolver for `context.execution.clientKey`.
 
 ## See also
 

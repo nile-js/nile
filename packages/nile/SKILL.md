@@ -39,7 +39,6 @@ src/
     client.ts                      connection and driver
     models/                        persistence operations
   hooks/                           shared action policies
-  business/                        optional reusable domain functions
   generated/                       client payload/schema contracts
 ```
 
@@ -267,7 +266,7 @@ This helper is internal: its failure still needs translation before being return
 1. Find the domain in `services.config.ts` and read its `index.ts`. Name the action for the business operation, then define its input schema and named handler.
 2. Keep a short, single-use rule in that handler. Extract ordinary domain functions when a rule is reused, complicated enough to test independently, or coordinates a transaction. Do not create a repository, class or service layer solely because a folder exists.
 3. Put data access in the project’s model convention. `utils.createModel` and `utils.getZodSchema` are optional Drizzle helpers; a handwritten model is also valid. Pass the database or transaction explicitly where transaction ownership matters.
-4. For a growing action, move its private helpers under its action folder’s `modules/`. Put helpers shared by the domain in the service’s `modules/`. Cross-domain rules can use `business/` when useful. Do not expose a private helper as an action just to call it.
+4. For a growing action, move its private helpers under its action folder’s `modules/`. Put helpers shared by the domain in the service’s `modules/`. A rule another domain also needs stays in the domain that owns it; the other service imports it from there. Do not expose a private helper as an action just to call it.
 5. Register the action in the domain’s `actions` list. An export alone does not make it reachable. Register a new service in the root registry.
 6. Carry validated input into business functions and trusted identity into policy checks. Keep request identity in scoped sessions and execution state, not process-wide context values.
 7. Verify the registered operation through `server.invoke` or a transport when changing validation, permissions or registration. Test a transaction’s rollback and idempotency when those are part of the business guarantee.

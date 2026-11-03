@@ -72,6 +72,6 @@ Generate rankings and charts using the commands in the benchmark README. Ranking
 
 ## Compared with the published package
 
-A separate [three-round comparison against npm 0.0.17](/benchmarks/npm-comparison.json) measured the current native build at about 1.25 times the published package's throughput without payload validation, and 1.31 times with validation. Both ran on Bun, using whole installed packages and their resolved dependencies. This is an observation on this PC, not a tenfold improvement or a code-only measurement.
+A separate [three-round comparison against npm 0.0.17](/benchmarks/npm-comparison.json) measured the current native build at about 1.25 times the published package's throughput without payload validation, and 1.31 times with validation. Both ran on Bun, using whole installed packages and their resolved dependencies. Both measurements include each package's dependencies and were taken on this PC.
 
 Performance supports the development workflow; it does not replace application design, database planning or production load testing. Continue with [application structure](/guide/start/application-structure) to see how growing business operations stay navigable.

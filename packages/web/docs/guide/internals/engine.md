@@ -7,9 +7,9 @@ Registered actions share one execution path for authentication, hooks, validatio
 
 ## Registration
 
-`createNileServer` creates an engine from the supplied services. Registration builds action lookups and bound executors once, records service/action counts and rejects duplicate service names or duplicate action names within a service.
+`createNileServer` creates an engine from the supplied services. Registration builds the action lookup once, records service and action counts, and rejects duplicate service names or duplicate action names within a service.
 
-Registered names identify operations. Keep meaningful domain names and action names; the engine does not infer folder structure or discover source files automatically.
+Registered names identify operations, so choose meaningful service and action names. The engine knows only what you register, never your folders or files.
 
 ## Execution order
 
@@ -23,17 +23,17 @@ For a successful action, the order is:
 6. Action after hooks, sequentially.
 7. Global after hook.
 
-An error stops the relevant pipeline unless an action hook is explicitly noncritical. After hooks run after a successful handler; they are not a `finally` block. Referenced hook actions execute their handler, not recursively their full configured pipeline.
+An error stops the pipeline, except a failing action hook marked `isCritical: false`. After hooks run only after a successful handler, so put cleanup in `finally`. A referenced hook action runs only its handler, without its own pipeline.
 
-Before hooks run before the main action’s validation. Treat their incoming data as untrusted. The global before hook’s successful return is a continuation signal; action before-hook results form the payload passed to the next action hook and validation.
+Before hooks run before the main action’s validation. Treat their incoming data as untrusted. The global before hook's `Ok` only lets the call continue, while each action before hook's value becomes the payload for the next hook and for validation.
 
 See [hooks and pipelines](/guide/basics/hooks-and-pipelines) for practical examples and failure policies.
 
-## State boundaries
+## What each call keeps
 
-Each action execution gets isolated hook state. Hooks for that execution can share `context.hookContext.state`, including under concurrent or nested action calls. Request sessions hold the request’s identity. Neither provides persistence between requests.
+Each action execution gets isolated hook state. Hooks for that execution can share `context.hookContext.state`, including under concurrent or nested action calls. Request sessions hold the request’s identity. Neither is saved between requests.
 
-Application resources and general context keys remain shared. Put a database client or logger there; do not put the current user or per-request mutable data in a global key. See [context](/guide/basics/context).
+Application resources and general context keys are shared by every request. Put a database client or logger there, and keep the current user and per-request data out of them. See [context](/guide/basics/context).
 
 ## Calling the engine directly
 
@@ -52,10 +52,10 @@ if (result.isErr) {
 }
 ```
 
-Direct execution bypasses HTTP parsing, CORS, transport middleware and rate limits. Authentication for protected actions still depends on configured authentication and a suitable request/session context. It is not a shortcut around access policy.
+A direct call skips HTTP parsing, CORS, HTTP middleware and `rest.rateLimiting`. `execution.rateLimit` policies, hooks and authentication still run, so a protected action still needs credentials.
 
-Use ordinary domain functions when composition does not need another action pipeline.
+Call a domain function directly when you do not need a second action pipeline.
 
 ## Measuring registration
 
-`server.engine.stats()` returns service/action registration counts and timing. `server.stats()` also includes startup duration. These are startup snapshots, not live throughput or request latency metrics. See [server setup](/guide/internals/server) and [recorded performance](/guide/reference/performance).
+`server.engine.stats()` returns service/action registration counts and timing. `server.stats()` also includes startup duration. Both are startup snapshots; use [telemetry](/guide/features/telemetry) for request timings. See [server setup](/guide/internals/server) and [recorded performance](/guide/reference/performance).

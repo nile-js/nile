@@ -11,7 +11,7 @@ Your services, actions, validation and Result handling stay the same across Nile
 | Existing Bun/Hono application | `runtime: "bun"`, omit `native` | `server.rest.app` |
 | Node.js application | `runtime: "node"`, omit `native` | `server.rest.app` |
 
-Hono remains the default compatibility path. Updating Nile does not opt an existing application into Bun native. Native requires an explicit Bun runtime; a conflicting configuration fails at setup.
+Hono is the default adapter. Bun native runs only with `native: true` and `runtime: "bun"`; `native: true` with any other runtime fails at setup.
 
 ## Bun native
 
@@ -58,11 +58,11 @@ if (!app) {
 serve({ port: 8000, fetch: app.fetch });
 ```
 
-Construction and listening are separate in every case. Runtime support here is Bun and Node.js; do not assume other Hono deployment targets are supported by Nile.
+Creating the server and listening are separate steps on every adapter. Nile supports Bun and Node.js.
 
 ## Move an existing Hono application deliberately
 
-Changing `native` is only one part of migration. Replace Hono-specific request access, routes, middleware and plugins with native equivalents.
+Setting `native: true` changes the adapter, not your Hono-specific code. Replace Hono request access, routes, middleware and plugins with their native equivalents:
 
 | Hono integration | Bun native equivalent |
 |---|---|
@@ -71,10 +71,10 @@ Changing `native` is only one part of migration. Replace Hono-specific request a
 | Hono `c.req.raw` | Native `c.request` |
 | Hono `c.req.param("id")` | Native `c.params.id` |
 | `context.get("rest")` for Hono Context | `context.get<NativeRequestContext>("nativeRest")` |
-| `context.getSession("rest")` | Unchanged authenticated-session key |
+| `context.getSession("rest")` | `context.getSession("rest")`, the same session key |
 
 Native request contexts expose `json`, `text`, `respond`, outgoing `headers`, `setHeader`, request-local `get`/`set`, and cached `parseBody`. Standard Request and Response APIs handle headers, URLs and streams.
 
-Global hooks, local hooks, JWT configuration, multipart actions, discovery, static files, status, rate limiting and startup stats use the same application model. Callback and custom-store types that depend on the HTTP adapter differ. Migrate Hono-context CORS callbacks to `rest.cors.actions` native policies; static boolean and plain-option action CORS settings can remain.
+Global hooks, local hooks, JWT configuration, multipart actions, discovery, static files, status, rate limiting and startup stats use the same application model. Callback and custom-store types that depend on the HTTP adapter differ. Move Hono-context CORS callbacks to `rest.cors.actions` native policies. Boolean and plain-option action CORS settings work on both adapters.
 
 Test authentication, authorization, custom routes, uploads and middleware before switching an existing deployment. See [custom routes](/guide/basics/custom-routes) and [deployment](/guide/start/deploy).

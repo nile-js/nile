@@ -35,17 +35,17 @@ logger.info({
 
 | Mode | Behavior |
 | --- | --- |
-| `dev` | Writes readable records to the console; returns a console-oriented marker. |
+| `dev` | Prints readable records to the console and writes no file. |
 | `prod` | Writes structured records through Pino to local log files; returns the log ID. |
-| `agentic` | Returns a JSON record string for the caller to consume; it is not an agent integration or persistent log sink. |
+| `agentic` | Writes nothing and returns the record as a JSON string, for the caller to use. |
 
 Files are written under `logs/` relative to the working directory. With no chunking, the path is `logs/{appName}.log`. Daily, weekly and monthly chunking split files under an application subdirectory.
 
-Time-based chunking does not delete old logs, ship them to another system or provide a retention policy. Configure storage, collection and retention for your deployment. Avoid recording credentials, sensitive payloads or personal data unnecessarily.
+Chunking only splits files by time. Storing, collecting and deleting old logs is part of your deployment. Leave credentials, sensitive payloads and personal data out of log entries.
 
 ## Return a failure with log context
 
-For an expected business refusal, `Err("Project is archived")` may be enough. For a failure that needs investigation, `handleError` logs through an explicit logger or the current Nile resource and returns an Err:
+For an expected refusal, `Err("Project is archived")` is often enough. For a failure that needs investigation, `handleError` logs through an explicit logger or the current Nile resource and returns an Err:
 
 ```ts
 import { utils } from "@nilejs/nile";
@@ -75,6 +75,6 @@ const errors = getLogs(
 );
 ```
 
-Use the same chunking strategy as the writer. Filters include application name, log ID, level and date range. Reading local files is useful for inspection; it is not a substitute for deployment-wide observability.
+Use the same chunking strategy as the writer. Filters include application name, log ID, level and date range. Reading local files suits inspection on one machine; use [telemetry](/guide/features/telemetry) to see every instance.
 
 Continue with [errors and Results](/guide/basics/errors-and-results) and [hooks](/guide/basics/hooks-and-pipelines).

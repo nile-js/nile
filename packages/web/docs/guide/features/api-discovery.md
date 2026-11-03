@@ -7,7 +7,7 @@ Discovery answers two questions for tools and agents: which services and actions
 
 ## When to use it
 
-Use discovery when an integration, a code generator or an AI agent needs the current action list and their input shapes. Keep it away from browsers and public clients. Discovery describes actions; it does not authorize calling them.
+Use discovery when an integration, a code generator or an AI agent needs the current action list and their input shapes. Keep it away from browsers and public clients. Discovery describes actions; calling one still needs the action's normal credentials.
 
 ## Complete example
 
@@ -76,7 +76,7 @@ export const fetchActionSchema = async (
 };
 ```
 
-Requests to `explore` and `schema` must include `discoverySecret` in the payload. A header or a JWT does not satisfy the gate.
+Requests to `explore` and `schema` must include `discoverySecret` in the payload; a header or a JWT is ignored.
 
 Without the secret, the server refuses the request:
 
@@ -107,6 +107,7 @@ With the secret, `explore` lists services and their action names. A `schema` req
 | `explore` | `"name"` | `"name"` | Details for one action. |
 | `schema` | `"name"` | `"name"` | JSON Schema for one action, keyed by the action name. |
 | `schema` | `"*"` or `"name"` | `"*"` | Schemas for several actions. |
+| `schema` with `payload.kind: "topics"` | `"*"` | `"*"` | JSON Schema for every [socket topic](/guide/features/websockets), with its `data` and `scope`. |
 
 ## Options that matter
 
@@ -122,18 +123,18 @@ With the secret, `explore` lists services and their action names. A `schema` req
 
 - Schemas are converted only when a schema request needs them. Ordinary calls never convert them.
 - The JSON Schema describes the Zod input. Refinements, transforms and defaults may become looser descriptions, so the server still validates every call.
-- Replacing an action's `validation` schema object refreshes its cached conversion. Changing fields on the same object can leave the cache stale.
-- Discovery does not run JWT checks or role hooks. Anyone with the secret can read the descriptions.
+- Assigning a new `validation` schema object refreshes the cached conversion; changing fields on the same object keeps the old one.
+- Discovery skips JWT checks and role hooks, so anyone with the secret reads every description.
 
 ## Limits
 
-- The stock `@nilejs/client` `explore` and `schema` methods send an empty payload, so they cannot pass the secret. Use a plain `fetch` on a trusted server, as in the example.
-- Discovery is not a permission system. Keep the secret out of browser bundles and public repositories.
-- `visibility.rest: false` hides an action's detail, but the service list can still show its name.
+- The `@nilejs/client` `explore` and `schema` methods send an empty payload, so they cannot pass the secret. Use a plain `fetch` on a trusted server, as in the example.
+- The secret only guards descriptions. Keep it out of browser bundles and public repositories.
+- `visibility.rest: false` hides an action's detail, but the service list still shows its name.
 
 ## Common mistakes
 
-- Enabling discovery without a secret in production. Without a secret, the gate does not check anything.
+- Enabling discovery without a secret in production, which lets anyone read it.
 - Putting the discovery secret in a frontend bundle.
 - Assuming schema output is filtered to the caller's role.
 - Treating a tool description as permission to call an action. Call actions through your normal authentication.

@@ -103,6 +103,7 @@ The `database` value is the Drizzle client your application creates. It is decla
 | `findById(id)` | Matching row | No row matches. |
 | `update({ id, data, dbx? })` | Updated row | No row matches, or data does not match the update schema. |
 | `delete(id)` | Deleted row | No row matches. |
+| `createTx({ data, dbx })`, `updateTx({ id, data, dbx })` | As `create` and `update` | As `create` and `update`. Given a database with `transaction`, they run inside one and roll it back on failure. |
 | `findAll()` | Array of rows | The query fails. An empty table returns an empty array. |
 | `findPaginated({ limit?, offset? })` | `{ items, total, hasMore }` | The query fails. |
 | `findPaginated({ limit?, cursor, cursorColumn? })` | `{ items, nextCursor, hasMore }` | The query fails. |
@@ -125,14 +126,14 @@ The model also exposes `table` and `schemas.insert`, `schemas.update` and `schem
 - `create` and `update` check the data against the generated Zod schemas before they query. They write the data you supplied.
 - Offset pagination uses a count of the whole table. Cursor pages fetch one extra row to decide whether another page exists.
 - `findAll` and offset pagination sort by `created_at` when the table has it. Otherwise no default order applies.
-- Query failures are logged with bounded diagnostics and returned as a safe failure. Driver messages that may contain data are not returned.
-- `createTx` and `updateTx` run inside a transaction only when you pass `dbx`. Omitting `dbx` does not start one.
+- A failed query is logged with a short diagnostic and returns a safe message; the driver's message, which can contain data, stays in the log.
+- `createTx` and `updateTx` run inside a transaction only when you pass `dbx`; without it they run as a plain write.
 
 ## Limits
 
 - The helpers cover single-table work. Multi-step writes need an explicit transaction.
 - Cursor pages need a column that is unique and ordered. `id` works for UUIDs only if it sorts the way you want.
-- A transaction-wrapped Err is thrown to roll back. Guard that call with `safeTry`.
+- To roll back, the `Tx` variants throw on an `Err`. Call them inside `safeTry`.
 
 ## Common mistakes
 

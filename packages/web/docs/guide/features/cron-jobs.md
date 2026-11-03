@@ -1,9 +1,9 @@
 ---
 title: "Cron jobs"
-description: "Run recurring business work on calendar, interval or one-time schedules, and trigger a job by hand for testing"
+description: "Run recurring work on calendar, interval or one-time schedules, and trigger a job by hand for testing"
 ---
 
-Scheduled jobs run business functions on a timetable without an HTTP request. Each job has a name, a schedule and a handler. Nile Js starts the schedules when the server boots and reports each run to a recorder you provide.
+Scheduled jobs run your functions on a timetable, with no HTTP request. Each job has a name, a schedule and a handler. Nile Js starts the schedules when the server boots and reports each run to a recorder you provide.
 
 ## When to use it
 
@@ -118,23 +118,23 @@ Calendar schedules use UTC when you omit `timezone`.
 
 ## How it behaves
 
-- Overlapping runs are skipped. A job that is still running when its next time arrives does not start a second copy.
+- Overlapping runs are skipped: when a job is still running at its next time, that run is reported as `skipped`.
 - Missed runs are not replayed after a restart.
 - Interval jobs wait for the previous run to finish before counting the interval.
-- Failures and return values are not stored automatically. Your recorder decides what to keep.
-- A stopped scheduler does not restart. Create a new server instance to schedule again.
+- Nile keeps no run history. Your recorder decides what to store.
+- A stopped scheduler stays stopped. Create a new server instance to schedule again.
 
 ## Limits
 
 - Every process that has schedules enabled runs them. Two replicas run each job twice unless you run schedules in one process or use an external scheduler.
-- One-time jobs are not stored, so a restart before their time forgets them.
-- Recording events does not make a run durable.
+- One-time jobs live in memory, so a restart before their time drops them.
+- Recorded events are history only. A run cut short by a crash is not retried.
 
 ## Common mistakes
 
 - Enabling schedules on every replica of a web service and assuming each job runs once.
 - Forgetting `timezone`. Calendar jobs then run at UTC times.
-- Writing the business logic inside the job object. Keep it in a function you can test and call from an action.
+- Writing the job's logic inside the job object. Keep it in a function you can test and call from an action.
 - Ignoring the `Err` from a job. Return a Result and record the failure.
 
 ## See also

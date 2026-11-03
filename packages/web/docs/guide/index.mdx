@@ -1,6 +1,6 @@
 ---
 title: Build with Nile
-description: Ship business operations with a consistent structure your team can follow as the application grows
+description: Ship operations with a consistent structure your team can follow as the application grows
 ---
 
 Build your backend around services and actions. A service groups a business domain, such as billing. An action defines one operation with a validation schema and a handler. Your team and coding agents can follow the same structure as you add features.
@@ -22,11 +22,11 @@ Create the [starter project](/guide/start/getting-started), call its Tasks servi
 | Trace a failed operation | [Logging](/guide/internals/logging) |
 | Use the handler context, hooks and execution options | [Advanced](/guide/advanced) |
 
-## Keep the business logic yours
+## Keep the domain logic yours
 
 Use ordinary TypeScript functions for domain rules and your chosen library for data access. Nile Js supplies the shared execution patterns: validation, Results, hooks, context and logging. Register your services explicitly so someone joining the project can see which operations it exposes.
 
-Choose [Bun native or the Hono adapter](/guide/start/runtime-adapters) for HTTP. Call the same action through `server.invoke` within your backend, or expose it over Socket.IO when your application needs a connected client.
+Choose [Bun native or the Hono adapter](/guide/start/runtime-adapters) for HTTP. Call the same action through `server.invoke` within your backend, and send [typed topic messages](/guide/features/websockets) over Socket.IO when screens need live updates.
 
 ## Work with a coding assistant
 

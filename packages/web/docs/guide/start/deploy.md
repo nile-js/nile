@@ -3,15 +3,16 @@ title: "Deployment"
 description: "Build, check readiness and shut down a Nile application"
 ---
 
-Nile builds a request handler; your runtime starts and owns the listener. A long-running Bun or Node.js service is the straightforward deployment model.
+Nile builds a request handler, and your runtime starts the listener. Deploy it as a long-running Bun or Node.js service.
 
 ## Choose the adapter explicitly
 
 - **Bun native:** `runtime: "bun", native: true`, then `Bun.serve({ fetch: server.nativeRest.fetch, port })` after checking it exists.
 - **Bun with Hono:** `runtime: "bun"`, omit `native`, then serve `server.rest.app.fetch`.
 - **Node.js with Hono:** `runtime: "node"`, omit `native`, then pass `server.rest.app.fetch` to `serve` from `@hono/node-server`.
+- **Sockets:** on Bun, serve `server.fetch` and spread `server.socket.bun` into `Bun.serve`. On Node.js, call `server.socket.attachNode(httpServer)`.
 
-See [complete startup examples](/guide/start/runtime-adapters). Use a current supported runtime and verify it against your pinned Nile release and dependencies. The recorded performance run used Bun 1.4.2; this is measurement provenance, not a minimum-version guarantee.
+See [complete startup examples](/guide/start/runtime-adapters). Pin your runtime version and test it with your Nile release and dependencies. The [performance run](/guide/reference/performance) used Bun 1.4.2.
 
 ## Keep the runtime patched
 
@@ -38,16 +39,16 @@ Do not place production credentials in checked-in examples or browser bundles.
 
 ## Own the process lifecycle
 
-Run the listener under your hosting platform, container supervisor or service manager. Set its host and port through application configuration, terminate TLS at your chosen boundary, and implement graceful shutdown for the listener and application-owned resources.
+Run the listener under your hosting platform, container supervisor or service manager. Set its host and port through application configuration, terminate TLS at your proxy or load balancer, and shut down the listener and your own resources gracefully.
 
 `rest.enableStatus: true` adds `GET /status` and `GET /ready` at the root of the server, outside your API prefix. Readiness follows Nile’s lifecycle state. Register application-owned resources with `server.lifecycle`, and connect the deployment shutdown signal to `server.lifecycle.shutdown()` before closing the listener. See [lifecycle and shutdown](/guide/reference/operations#deploy-and-shut-down-predictably).
 
-Nile prints startup service/action registration stats by default. `logServices: false` turns off that output; `server.stats()` returns the startup snapshot either way. Registration timing is not ongoing request latency or a full profiler.
+Nile prints service and action registration stats at startup. `logServices: false` turns off the output; `server.stats()` returns the startup snapshot either way. The timings cover registration, not request latency.
 
 ## Keep persistence and scale decisions explicit
 
-Nile does not require a database or run a schema migration for you. The CLI template's PGLite startup setup is an example application choice. Configure persistent storage, backups, migrations and transaction boundaries for your own data layer before production use.
+Your application owns its database. The CLI template's PGlite setup is one choice; configure persistent storage, backups, migrations and transactions for your own data layer before production.
 
-For multiple instances, shared state, sessions, jobs and external resources need an application-level plan. The consistent service/action structure helps the team maintain a growing codebase; it is not automatic distributed infrastructure.
+Each Nile instance keeps its own queues, schedules, rate-limit counters, sessions and socket subscriptions. Running several instances needs shared stores or a message bus you provide.
 
-Serverless or edge deployment needs a separate compatibility and lifecycle review. Do not assume every Hono target works with Nile's filesystem, AsyncLocalStorage and application dependencies.
+Nile uses the filesystem and AsyncLocalStorage, so review serverless and edge targets for both before you deploy there. Nile supports Bun and Node.js.

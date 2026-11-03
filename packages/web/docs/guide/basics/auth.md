@@ -1,13 +1,13 @@
 ---
 title: "Authentication and access"
-description: "Verify credentials and apply access policies before business work runs"
+description: "Verify credentials and apply access policies before your handler runs"
 ---
 
 Configure JWT verification for protected actions. Use a global before hook for role, organization or resource access checks.
 
 ## Built-in JWT verification
 
-Configure server `auth` and mark the action `isProtected: true`. **Both are required**: `isProtected` alone does not enable verification.
+Configure server `auth` and mark the action `isProtected: true`. **You need both**: without server `auth`, an `isProtected` action runs for anyone.
 
 ```ts
 import type { ServerConfig } from "@nilejs/nile";
@@ -62,7 +62,9 @@ The verifier requires **both** identity fields as nonempty strings:
 | `userId` | `userId`, `id`, `sub` |
 | `organizationId` | `organizationId`, `organization_id`, `orgId` |
 
-Other claims remain available on the request-local `rest` session. Unprotected actions skip built-in token verification; merely sending a token does not populate their session.
+Other claims stay on the request's `rest` session. Unprotected actions skip token verification, so a token sent to one leaves its session empty.
+
+[Socket connections](/guide/features/websockets) verify tokens with the same `auth` settings.
 
 | Auth setting | Default | Meaning |
 |---|---|---|
@@ -102,7 +104,7 @@ if (verified.isErr) {
 
 ## Enforce your role policy
 
-`accessControl` stores policy labels; it does not enforce them automatically. This example defines an **all-listed-roles** policy in a global before hook:
+`accessControl` stores role labels for your own hooks to check. This global before hook requires **every listed role**:
 
 ```ts
 import type { BeforeActionHandler } from "@nilejs/nile";
@@ -119,23 +121,24 @@ export const authorizeAction: BeforeActionHandler<boolean, string> = (hookContex
     return Err("Sign in to continue");
   }
 
-  const roles = session.roles;
-  if (hookContext.action.accessControl?.length && !Array.isArray(roles)) {
+  const required = hookContext.action.accessControl ?? [];
+  const roles = Array.isArray(session.roles) ? session.roles : [];
+
+  const isAllowed = required.every((role) => roles.includes(role));
+  if (!isAllowed) {
     return Err("Access denied");
   }
-  const isAllowed = (hookContext.action.accessControl ?? []).every(
-    (role) => Array.isArray(roles) && roles.includes(role),
-  );
-  return isAllowed ? Ok(true) : Err("Access denied");
+
+  return Ok(true);
 };
 ```
 
-Pass `onBeforeActionHandler: authorizeAction` to the server, configure JWT auth, and use `isProtected: true, accessControl: ["project-admin"]` on the action. Adapt the policy to your actual role model. Check resource ownership and organization boundaries in the appropriate domain operation; a role label alone is insufficient.
+Pass `onBeforeActionHandler: authorizeAction` to the server, configure JWT auth, and use `isProtected: true, accessControl: ["project-admin"]` on the action. Adapt the policy to your own role model. A role label says nothing about which records a user owns, so check ownership and organization in the action itself.
 
 ## Use an existing authentication provider
 
-A global before hook can verify a Better Auth session, API key or another provider and call `nileContext.setSession("rest", identity)`. Enforce denial in that hook rather than relying on Nile's JWT switch. If using external sessions exclusively, omit built-in `auth` so its verifier does not reject the provider's credentials first.
+A global before hook can verify a Better Auth session, API key or another provider and call `nileContext.setSession("rest", identity)`. Refuse the call in that hook. When the provider handles every session, leave out built-in `auth`, or its JWT check rejects the provider's credentials first.
 
 Read the native Request through `get<NativeRequestContext>("nativeRest")` on Bun native, or Hono Context through `get<Context>("rest")` on Hono. Provider integration and RBAC are application code.
 
-Hooks run before input validation. Never trust a payload organization ID as the authenticated identity. Discovery has a [separate access gate](/guide/basics/discovery-and-agents), and CORS does not authorize an action.
+Hooks run before input validation. Take identity from the verified session, never from an organization ID in the payload. Discovery has a [separate access gate](/guide/basics/discovery-and-agents), and CORS does not authorize an action.

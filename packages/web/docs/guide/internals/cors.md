@@ -3,7 +3,7 @@ title: "CORS"
 description: "Choose allowed origins globally and for individual action routes"
 ---
 
-CORS controls which browser origins may read responses. Configure it once for the application, then override it only where an operation needs a different policy. It does not prevent non-browser callers from invoking an action and must not replace authorization.
+CORS controls which browser origins may read responses. Configure it once for the application, then override it only where an operation needs a different policy. Non-browser callers ignore it, so it never replaces authorization.
 
 ## Application policy
 
@@ -23,7 +23,7 @@ rest: {
 }
 ```
 
-Use explicit trusted origins when credentials are involved. Disabling CORS with `cors: { enabled: false }` skips CORS processing and callbacks; it does not make an endpoint private.
+Use explicit trusted origins when credentials are involved. `cors: { enabled: false }` skips CORS headers and callbacks; the endpoint stays reachable.
 
 ## Action-level policy
 
@@ -68,12 +68,12 @@ rest: {
 }
 ```
 
-This example demonstrates header access, not a secure partner identity check. Validate actual credentials through authentication/authorization.
+The example only reads a header; verify a partner's identity with authentication.
 
-Native map entries take precedence over legacy action policies. Hono callbacks use `context.req`; they must be migrated before enabling native transport. Unsupported legacy callbacks fail at setup when CORS is enabled.
+Native map entries win over policies set on the action. Hono callbacks use `context.req`, so port them before enabling Bun native; a Hono callback left on a native server fails at setup when CORS is enabled.
 
 ## Shared preflight
 
-All actions share the action endpoint. An OPTIONS preflight has no JSON action body, so it cannot choose an action-specific policy. The endpoint-level preflight must permit the origins, methods and headers required by intended action calls. The selected action’s policy then applies to the actual response.
+All actions share one endpoint. An OPTIONS preflight carries no action body, so it uses the endpoint policy, which must allow the origins, methods and headers your action calls need. The selected action’s policy then applies to the actual response.
 
 Hono also supports path rules through `cors.addCors`; native supports equivalent rules with native callback types. See [runtime adapters](/guide/start/runtime-adapters) and [HTTP transport](/guide/internals/rest) before migrating middleware or custom routes.

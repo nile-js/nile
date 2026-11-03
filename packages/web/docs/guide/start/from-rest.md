@@ -5,7 +5,7 @@ description: "Map well known HTTP operations to services and named actions"
 
 A growing product adds operations such as approving a submission, archiving a project or refunding a payment. Nile names those operations directly: `projects.archive`, `submissions.approve`, `payments.refund`.
 
-The goal is a consistent place for the team to work. You still design the operation, its input and its access policy. Nile gives it a common invocation shape rather than another per-operation route.
+You still design each operation, its input and its access policy. Nile gives every operation the same call shape instead of its own route.
 
 ## One interface, named operations
 
@@ -28,18 +28,22 @@ Send this to `POST /api/services` when `rest.baseUrl` is `/api`.
 | A common access policy | A global or action hook |
 | A frontend request helper | `client.invoke({ service, action, payload })` |
 
-Business logic can stay in ordinary functions and data access can stay in your chosen models. See [application structure](/guide/start/application-structure).
+Domain rules live in each service's `modules/`, and data access stays in your chosen models. See [application structure](/guide/start/application-structure).
 
-## What the constraint buys a small team
+## What one call shape gives a team
 
-Every operation has the same places to look for validation, policy and result handling. A new teammate can follow one action and use that pattern again. The frontend calls the business operation by name, while the registry provides a map of the application's capabilities.
+Every operation keeps validation, policy and result handling in the same places. A new teammate reads one action and finds the same layout in the next. The frontend calls the operation by name, and the service registry lists everything the application exposes.
 
-Nile precomputes action lookups at startup. That avoids scanning the action list on each call; it does not by itself guarantee higher HTTP throughput than another router. See the [measured workload](/guide/reference/performance).
+Nile builds its action lookup once at startup, so a call finds its action without scanning the list. Throughput still depends on your handlers and adapter; see the [measured workload](/guide/reference/performance).
 
 ## Keep HTTP where it is useful
 
 Webhooks, authentication callbacks and streaming responses can use [custom routes](/guide/basics/custom-routes). Choose native or Hono APIs for the selected adapter.
 
-The shared POST endpoint has trade-offs. Standard GET caching does not automatically apply to actions. Existing REST gateways, per-route analytics and generated OpenAPI integrations may need adaptation. Runtime `explore` and `schema` can describe registered operations when [discovery is enabled](/guide/basics/discovery-and-agents); they are not an OpenAPI server or a complete replacement for application documentation.
+The shared POST endpoint has trade-offs:
+
+- HTTP GET caching does not apply to actions.
+- REST gateways, per-route analytics and OpenAPI tooling expect one route per operation and may need changes.
+- `explore` and `schema` describe registered operations when [discovery is enabled](/guide/basics/discovery-and-agents). They return JSON Schema, not an OpenAPI document, and do not replace your application documentation.
 
 Move an existing application [one domain at a time](/guide/start/migration).

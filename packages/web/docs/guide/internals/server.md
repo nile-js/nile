@@ -35,15 +35,15 @@ Bun native requires explicit `runtime: "bun"`. Pass `server.nativeRest.fetch` to
 
 ## Shared resources
 
-Supply your application’s logger, database client or other long-lived resources through `resources`. Handlers and hooks receive the same application context. Nile does not open your database connection or manage its lifecycle.
+Supply your application’s logger, database client or other long-lived resources through `resources`. Handlers and hooks receive the same application context. Your application opens and closes the database connection; register it with `server.lifecycle` to close it on shutdown.
 
 Keep per-request identity in request sessions and action-specific values in hook state. General `context.set` keys are shared across requests. See [context](/guide/basics/context) and [logging](/guide/internals/logging).
 
 ## Startup work
 
-`onBoot.fn` receives context and returns `Ok(null)` or a failed Result. The default maximum wait is 10,000 ms; customize `onBoot.maxWaitTime` when necessary. Missing required configuration, failed boot work and duplicate registration are setup failures, not user input errors.
+`onBoot.fn` receives context and returns `Ok(null)` or a failed Result. Nile waits up to 10 seconds by default; set `onBoot.maxWaitTime` for slower boot work. Missing required configuration, failed boot work and duplicate registration make `createNileServer` reject.
 
-Nile reuses its existing instance unless `forceNewInstance: true` is set. Use that option deliberately when creating isolated instances, for example in tests.
+A second `createNileServer` call returns the existing instance unless you set `forceNewInstance: true`, for example to create isolated instances in tests.
 
 ## Understand what loaded
 
@@ -63,8 +63,8 @@ The returned snapshot contains:
 | `startupDurationMs` | Framework startup, including awaited boot work. |
 | `services` | Each service’s name, description, action count and `registrationDurationMs`. |
 
-These timings help explain startup work as your application grows. They do not measure live requests, imported module initialization before the factory call, database latency or production capacity.
+The timings cover startup inside `createNileServer`. Module imports before the call, requests, database latency and capacity are measured elsewhere, such as with [telemetry](/guide/features/telemetry).
 
 ## Add policy where the team can find it
 
-Global before/after hooks receive the application context and action metadata. Action hooks can compose reusable registered handlers with critical/noncritical failure behavior. Configure authentication explicitly and implement your application’s authorization rules. See [authentication](/guide/basics/auth) and [hooks](/guide/basics/hooks-and-pipelines).
+Global before/after hooks receive the application context and action metadata. Action hooks run other registered handlers as steps, each marked critical or noncritical. Configure authentication explicitly and implement your application’s authorization rules. See [authentication](/guide/basics/auth) and [hooks](/guide/basics/hooks-and-pipelines).

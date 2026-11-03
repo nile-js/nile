@@ -5,7 +5,7 @@ description: "Expose selected action schemas for tools and coding agents"
 
 Enable discovery so trusted tools can list registered services and inspect action schemas before calling them.
 
-Nile provides `explore` and `schema` intents. It does not include an MCP server, an autonomous agent runtime or automatic tool registration. Your integration decides which operations a tool can call and carries the caller's credentials.
+Nile provides the `explore` and `schema` intents. Connecting them to an agent, such as an MCP server or a tool registry, is your integration's job: it decides which operations a tool can call and carries the caller's credentials.
 
 ## Enable discovery deliberately
 
@@ -23,13 +23,13 @@ rest: {
 }
 ```
 
-The current CLI template explicitly enables discovery for development. Review that setting before deployment.
+The CLI template enables discovery for development. Review the setting before deployment.
 
-Discovery checks `payload.discoverySecret`; a request header or JWT alone does not satisfy that gate. The secret grants metadata access, not permission to execute a protected business action. Discovery does not run each action's JWT or authorization hooks. Do not expose sensitive descriptions or assume discovery results are filtered to the current user's role.
+Discovery checks `payload.discoverySecret` only; a header or JWT is ignored. The secret lets a tool read action metadata, not call protected actions. Discovery skips each action's JWT check and hooks, so every caller with the secret sees the same results. Keep sensitive details out of action descriptions.
 
 ## Inspect and invoke through an integration
 
-This ordinary Fetch request works with secret-protected discovery. Keep the discovery secret on a trusted integration server rather than in a public browser bundle.
+This Fetch request reads secret-protected discovery. Keep the discovery secret on a trusted integration server, out of browser bundles.
 
 ```ts
 const response = await fetch("https://api.example.com/api/services", {
@@ -45,11 +45,11 @@ const response = await fetch("https://api.example.com/api/services", {
 const document = await response.json();
 ```
 
-Check both the HTTP response and `document.status` before using `document.data.create` as the input description. Use `safeTry` around the Fetch/JSON operation in a production bridge, as with other external calls. The stock client's `schema` and `explore` methods send an empty payload, so they cannot currently pass this secret.
+Check both the HTTP response and `document.status` before using `document.data.create` as the input description. In production, wrap the Fetch and JSON parsing in `safeTry`, as with other external calls. The client's `schema` and `explore` methods send an empty payload, so they cannot pass the secret.
 
 An `explore` request with `service: "*", action: "*"` lists services. Use a specific service and `action: "*"` for its action summaries, or specify both for details. A `schema` request with both names returns `{ [actionName]: jsonSchema }` in `data`; wildcards request broader schema maps.
 
-After inspection, an allowed tool invokes the usual business operation:
+After inspection, an allowed tool calls the action as usual:
 
 ```json
 {
@@ -60,16 +60,16 @@ After inspection, an allowed tool invokes the usual business operation:
 }
 ```
 
-The request still needs the application's normal credentials and policies. Keep a tool allowlist, confirm consequential operations in your integration, and let Nile validate the input before the main handler. Do not let tool descriptions stand in for authorization.
+The request still needs the application's normal credentials and policies. Keep a list of the tools you allow, confirm operations with real consequences in your integration, and let Nile validate the input before the handler. Authorization comes from your policies, never from a tool description.
 
-## Schema conversion is lazy
+## Schemas are converted on request
 
-The original Zod schema validates execution input. Its JSON Schema description is converted only when a schema request needs it, then cached by default. Ordinary action execution does not require converting discovery schemas.
+The Zod schema validates input when the action runs. Its JSON Schema description is built the first time a schema request asks for it, then cached by default, so calling actions never pays for the conversion.
 
-- Set `rest.discovery.cacheSchemas: false` to disable the adapter's conversion cache globally.
+- Set `rest.discovery.cacheSchemas: false` to turn off the conversion cache for every action.
 - Set `cacheSchema: false` on an action to keep its conversion dynamic.
-- Replacing `action.validation` with a new schema root refreshes conversion. Mutating metadata on the same schema object can leave a cached description stale; replace the root or opt out.
+- The cache is keyed by schema object. Assigning a new schema to `action.validation` refreshes the description; changing metadata on the same schema object keeps the cached one, so assign a new schema or turn off caching.
 
-JSON Schema cannot express every Zod refinement, transform or runtime default. Unrepresentable parts may become permissive descriptions, and conversion failure or an action without validation can produce `null`. Always retain server-side validation.
+JSON Schema cannot express every Zod refinement, transform or runtime default. Those parts come out looser than the Zod schema, and an action without validation, or one whose conversion fails, returns `null`. The server always validates with the Zod schema itself.
 
-`visibility: { rest: false }` omits an action from detailed discovery/schema output. The top-level service listing can still name registered actions, and visibility is not an execution permission boundary. Enforce real access rules in [authentication and authorization](/guide/basics/auth).
+`visibility: { rest: false }` leaves an action out of action summaries and schema output, though the top-level service listing still includes its name. HTTP calls to the action still run, so enforce access with [authentication and authorization](/guide/basics/auth).

@@ -9,7 +9,7 @@ Use Nile’s `SKILL.md` to give a coding assistant the service layout, action pa
 
 - The project layout of a CLI starter and where the service registry lives.
 - The action pattern: a named Zod schema, an inferred input type, a named handler and `createAction`.
-- That handlers receive `(data, context)`, and which context fields to use.
+- Handlers receive `(data, context)`, and which context fields to use.
 - Results, the HTTP response envelope and the per-field `data.issues` on validation failures.
 - Calling actions over HTTP, with `@nilejs/client` and with `server.invoke`.
 - Authentication, hooks and discovery rules.
@@ -19,7 +19,7 @@ Use Nile’s `SKILL.md` to give a coding assistant the service layout, action pa
 
 The CLI starter includes the same guidance as a project-root `SKILL.md`. Nile’s package file is the reference after an upgrade; refresh a copied starter skill from it.
 
-The skill covers strict startup layout checks, returning Results directly, safe database diagnostics, generated validation references, and separate HTTP/socket clients. Its examples follow the same domain entry points as the starter.
+The skill covers strict startup layout checks, returning Results directly, safe database diagnostics, generated validation references, and topics on the same client as actions. Its examples follow the same domain entry points as the starter.
 
 ## Find the file
 

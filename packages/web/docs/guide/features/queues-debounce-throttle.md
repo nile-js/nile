@@ -3,7 +3,7 @@ title: "Queues, debounce and throttle"
 description: "Limit concurrency with queues, collapse repeated calls with debounce and cap call frequency with throttle"
 ---
 
-Nile Js provides function controls for work that should not run in parallel, repeat too often or pile up. Each control wraps one task function and returns a `run` method that resolves with a Result. The controls live in memory, so they apply to one process.
+Nile Js provides function controls for work which must not run in parallel, repeat too often or pile up. Each control wraps one task function and returns a `run` method that resolves with a Result. The controls live in memory, so they apply to one process.
 
 ## When to use each control
 
@@ -121,7 +121,7 @@ server.lifecycle.register(utils.createControlResource("receipt-queue", receiptQu
 
 ## How it behaves
 
-- A full queue returns a failure from `run`. It does not block the caller or drop work silently.
+- When the queue is full, `run` returns a failure straight away, so the caller decides what to do.
 - A debounce replaces earlier pending calls. Their `run` promises resolve with a failure, and only the last input runs.
 - A throttle with `leading: true` runs the first call immediately and ignores calls in the window unless `trailing` is true.
 - Tasks may return a plain value or a Result. The control unwraps the value for callers.
@@ -130,14 +130,14 @@ server.lifecycle.register(utils.createControlResource("receipt-queue", receiptQu
 ## Limits
 
 - Limits apply per process. Two replicas each run their own queue.
-- A queue does not retry failed tasks. Use [retries](/guide/features/retries-and-utilities) inside the task when a retry is safe.
+- A failed task returns its failure once. Use [retries](/guide/features/retries-and-utilities) inside the task when a retry is safe.
 - Create controls at module level. A control created inside a handler is new for each request, so it limits nothing.
 
 ## Common mistakes
 
 - Using debounce for work where every call must run, such as recording a payment.
 - Ignoring the Result of `run`.
-- Forgetting to register the control, so shutdown does not wait for queued work.
+- Forgetting to register the control, so shutdown exits without waiting for queued work.
 - Setting `capacity` without deciding what the caller should do when the queue is full.
 
 ## See also

@@ -7,7 +7,7 @@ Expose readiness and liveness checks for your deployment platform. On shutdown, 
 
 ## When to use it
 
-Enable the status endpoints for any service behind a load balancer or orchestrator. Call `server.lifecycle.shutdown` when your platform sends a termination signal, so in-flight requests finish before the process exits.
+Enable the status endpoints for any service behind a load balancer or orchestrator. Call `server.lifecycle.shutdown` when your platform sends a termination signal, so running requests finish before the process exits.
 
 ## Complete example
 
@@ -81,7 +81,7 @@ With `rest.enableStatus: true`, two `GET` endpoints appear outside `/api`:
 
 | Endpoint | Use it for | Response while running | Response during shutdown |
 | --- | --- | --- | --- |
-| `/status` | Liveness: the process answers | `{"status":true,"message":"my-app is running","data":{}}` | Not part of the readiness contract |
+| `/status` | Liveness: the process answers | `{"status":true,"message":"my-app is running","data":{}}` | Check `/ready` for shutdown state |
 | `/ready` | Readiness: the server accepts work | `{"status":true,"message":"Ready","data":{}}` with HTTP 200 | `{"status":false,"message":"Nile is shutting down","data":{}}` with HTTP 503 |
 
 Point liveness probes at `/status` and readiness probes at `/ready`. Use readiness to take a replica out of rotation before it drains.
@@ -99,13 +99,13 @@ Shutdown proceeds in this order:
 3. Accepted executions drain. A deadline asks them to cancel.
 4. Registered resources stop, drain and close.
 
-The report contains `timedOut`, `errors` and `remainingExecutions`. In the example server, a shutdown with nothing in flight returned:
+The report contains `timedOut`, `errors` and `remainingExecutions`. In the example server, a shutdown with nothing running returned:
 
 ```json
 {"timedOut":false,"errors":[],"remainingExecutions":0}
 ```
 
-Repeated calls share one shutdown. A deadline cannot force JavaScript to stop, so work that ignores its cancellation signal may still be running when the report returns.
+Repeated calls share one shutdown. A deadline cannot force JavaScript to stop, so work ignoring its cancellation signal may still be running when the report returns.
 
 ## Register resources
 
@@ -127,16 +127,15 @@ server.lifecycle.register({
 
 ## Limits
 
-- Nile Js does not install signal handlers. Connect `SIGTERM` or your platform's signal to `shutdown`, as the example does.
-- Shutdown does not roll back writes that were already in progress.
+- Connect `SIGTERM`, or your platform's signal, to `shutdown` yourself, as the example does.
+- Shutdown undoes no writes already in progress.
 - Startup failures reject the boot promise after cleaning up. Your process decides whether to exit.
 
 ## Common mistakes
 
-- Exiting the process on `SIGTERM` without calling `shutdown`. In-flight requests are cut off.
+- Exiting the process on `SIGTERM` without calling `shutdown`, which cuts off running requests.
 - Setting a shutdown timeout longer than your platform's grace period.
 - Registering a database pool without a `close` callback.
-- Calling `shutdown` with a timeout longer than the grace period your platform allows.
 
 ## See also
 
