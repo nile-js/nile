@@ -75,7 +75,7 @@ export const FEATURES = [
 		icon: Radio,
 		title: "WebSockets",
 		description:
-			"Typed topics validate every message before Socket.IO delivers it. Invoke actions with the dedicated socket client.",
+			"Typed topics validate every message before Socket.IO delivers it. Each topic decides who can receive and send.",
 		guide: "/guide/features/websockets",
 		size: "wide",
 		tone: "sky",
@@ -113,9 +113,9 @@ export const FEATURES = [
 	{
 		key: "interfaces",
 		icon: Route,
-		title: "HTTP, WebSocket and direct calls",
+		title: "HTTP and direct calls",
 		description:
-			"Call the same action over HTTP, sockets or directly in your backend. Run on Bun native or Hono.",
+			"Call the same action over HTTP or directly in your backend. Run on Bun native or Hono.",
 		guide: "/guide/features/calling-actions",
 		size: "single",
 		tone: "cyan",
@@ -135,7 +135,7 @@ export const FEATURES = [
 		icon: Gauge,
 		title: "Rate limiting",
 		description:
-			"Share one action quota across HTTP, sockets and direct calls. Fixed or sliding windows, token buckets and cooldowns.",
+			"Share one action quota across HTTP and direct calls. Fixed or sliding windows, token buckets and cooldowns.",
 		guide: "/guide/features/rate-limiting",
 		size: "wide",
 		tone: "blue",

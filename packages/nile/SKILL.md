@@ -1,6 +1,6 @@
 ---
 name: nile
-description: Work in a Nile Js backend (@nilejs/nile 1.x). Organize business operations as services and actions with Zod validation, Result returns, hooks, JWT protection and typed clients. Use when adding or changing actions, services, hooks, uploads, topics, schedules or the @nilejs/client calls in a Nile Js project.
+description: Work in a Nile Js backend (@nilejs/nile 2.x). Organize business operations as services and actions with Zod validation, Result returns, hooks, JWT protection and typed clients. Use when adding or changing actions, services, hooks, uploads, topics, schedules or the @nilejs/client calls in a Nile Js project.
 license: MIT
 ---
 
@@ -258,7 +258,7 @@ This helper is internal: its failure still needs translation before being return
 
 - HTTP: `POST /api/services` with `{ "intent": "execute", "service": "projects", "action": "create", "payload": { ... } }`.
 - Client (`@nilejs/client`): `createNileClient<Payloads>({ baseUrl })`, then `await nile.invoke({ service, action, payload })`. Every method returns a Result: `if (result.isErr) { ... return; }`, then read `result.value`. On failure `result.error` is the message and `result.details` holds the server's `data`. `data` is a deprecated alias; do not use it.
-- Sockets: `createNileSocketClient<Actions, Topics>` owns its connection. Use `socket.invoke`, `socket.send` and `socket.receive`; check each Result and unsubscribe/close when finished. Declare backend topics and validate their data and scope; frontend types come from shared or generated definitions. Authorization is still a backend policy.
+- Topics: define each with `createTopic({ name, data, scope?, canReceive?, canSend? })` and pass `createTopics([...])` to the server `socket` config. A missing `canReceive` or `canSend` denies clients. Connections verify the server `auth` JWT; `user` in the checks is `{ userId, organizationId, claims }` or `undefined`. In actions, `const { socket } = getContext({ topics })`, then `socket.send({ topic, scope?, to?: { userId } | { connectionId }, data })` after the write commits. On the frontend, `nile.socket.receive({ topic, scope, onMessage })` subscribes and returns a Result holding `unsubscribe()`; `nile.socket.send` sends. Sockets do not call actions; use `nile.invoke`.
 - Server code: `await server.invoke({ service, action, payload, credentials? })`. Protected actions need `credentials` with headers.
 - Uploads: `nile.upload({ service, action, files, fields })` for `isSpecial: { contentType: "multipart/form-data" }` actions. A JSON request to such an action returns HTTP 400.
 
@@ -311,7 +311,7 @@ Read the page for the feature you change before you write code:
 - [Cron jobs](https://nile-js.github.io/nile/guide/features/cron-jobs)
 - [Database models](https://nile-js.github.io/nile/guide/features/database-models)
 - [API discovery and schemas](https://nile-js.github.io/nile/guide/features/api-discovery)
-- [HTTP, WebSocket and direct calls](https://nile-js.github.io/nile/guide/features/calling-actions)
+- [HTTP and direct calls](https://nile-js.github.io/nile/guide/features/calling-actions)
 - [Retries and utilities](https://nile-js.github.io/nile/guide/features/retries-and-utilities)
 - [Rate limiting](https://nile-js.github.io/nile/guide/features/rate-limiting)
 - [File uploads](https://nile-js.github.io/nile/guide/features/file-uploads)
@@ -337,7 +337,7 @@ Advanced pages cover handler context, composed hooks, execution options and test
 - A global before hook's returned value does not replace the payload. Use a local hook to transform input.
 - A local hook does not protect the parent action.
 - `context.set` values are shared by all requests. Never store the current user there.
-- A rate limit or topic policy that is missing denies or does not apply. Read the feature page for the default.
+- A rate limit or topic permission (`canReceive`, `canSend`) that is missing denies or does not apply. Read the feature page for the default.
 - Multiple replicas each keep their own queues, schedules, rate-limit counters and WebSocket subscriptions.
 - JWT failures return fixed messages such as `JWT authentication failed: token expired` or `JWT authentication failed: invalid token`. They never include the token or its claims, so do not add them back in your own logs.
 - Import Results from `@nilejs/nile/fp`, not a separately installed `slang-ts`. Two copies of `slang-ts` produce type errors.

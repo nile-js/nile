@@ -34,7 +34,7 @@ const TOOLS = [
 	{
 		title: "Nile Js client",
 		description:
-			"Call actions from JavaScript, with a socket client for live work.",
+			"Call actions from JavaScript, and send and receive topics on the same client.",
 		href: "https://www.npmjs.com/package/@nilejs/client",
 		icon: Code2,
 	},

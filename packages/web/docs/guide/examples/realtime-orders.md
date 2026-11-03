@@ -1,9 +1,9 @@
 ---
 title: "Realtime order updates"
-description: "Define typed order topics, verify the JWT on each socket connection, publish from a protected action and receive updates in a client"
+description: "Define a typed order topic, let the server JWT check each socket connection, send from a protected action and receive updates in a client"
 ---
 
-Publish order status changes to socket subscribers in the same organization. Authenticate each connection, check subscription access and protect the action which changes the order.
+Send order status changes to socket subscribers in the same organization. Each connection is checked with the same JWT as the protected action that changes the order, and the topic decides who can receive it.
 
 ## What you need
 
@@ -42,63 +42,36 @@ export const config = {
 
 ## 4. Define the topic
 
-Create `src/realtime/topics.ts`. The topic has a payload schema and a scope schema. Subscribers match on `organizationId`:
+Create `src/realtime/topics.ts`. The topic has a data schema, a scope schema and a `canReceive` check. A connection can receive only its own organization's scope:
 
 ```ts
-import { createTopics, type InferTopics } from "@nilejs/nile";
+import { createTopic, createTopics, type InferTopics } from "@nilejs/nile";
 import { z } from "zod";
 
-export const topics = createTopics({
-  "orders.updated": {
-    schema: z.object({
-      orderId: z.string(),
-      status: z.enum(["placed", "packed", "shipped"]),
-    }),
-    scope: z.object({
-      organizationId: z.string(),
-    }),
+const orderUpdated = createTopic({
+  name: "orders.updated",
+  data: z.object({
+    orderId: z.string(),
+    status: z.enum(["placed", "packed", "shipped"]),
+  }),
+  scope: z.object({
+    organizationId: z.string(),
+  }),
+  canReceive: ({ scope, user }) => {
+    return scope.organizationId === user?.organizationId;
   },
 });
+
+export const topics = createTopics([orderUpdated]);
 
 export type Topics = InferTopics<typeof topics>;
 ```
 
-## 5. Verify the token on each connection
+The topic has no `canSend`, so clients cannot send to it. Only server code sends order updates.
 
-Create `src/realtime/socket-auth.ts`. The socket client sends its token in the connection's `auth` object. This function runs `verifyJWT` on it and returns the identity and the headers that protected actions need:
+## 5. Let the server check each connection
 
-```ts
-import { type AuthConfig, verifyJWT, type WebSocketIdentity } from "@nilejs/nile";
-import { Err, Ok, type Result } from "@nilejs/nile/fp";
-import { config } from "@/config";
-
-const jwtConfig: AuthConfig = {
-  secret: config.jwtSecret,
-  method: "header",
-};
-
-/** The socket client sends its token in the connection auth object. */
-export const authenticateSocket = async (
-  _request: Request,
-  auth: Record<string, string>
-): Promise<Result<WebSocketIdentity, string>> => {
-  const bearer = `Bearer ${auth.token ?? ""}`;
-  const headers = new Headers({ authorization: bearer });
-
-  const verified = await verifyJWT({ headers: headers }, jwtConfig);
-  if (verified.isErr) {
-    return Err(verified.error);
-  }
-
-  return Ok({
-    session: {
-      userId: verified.value.userId,
-      organizationId: verified.value.organizationId,
-    },
-    credentials: { headers: headers },
-  });
-};
-```
+There is nothing to write for this step. Because the server config in step 9 has `auth`, every socket connection is checked with the same JWT secret as protected actions. The client sends its token in the connection's `auth` object, and the verified `userId` and `organizationId` become the `user` that `canReceive` sees.
 
 ## 6. Keep the orders in memory
 
@@ -139,7 +112,7 @@ export const updateOrderStatus = (
 
 ## 7. Add the protected status action
 
-Create `src/services/orders/actions/set-status.ts`. The action checks that the order belongs to the caller's organization, updates the status and publishes to the topic with `getContext({ topics })`:
+Create `src/services/orders/actions/set-status.ts`. The action checks that the order belongs to the caller's organization, updates the status and sends to the topic with `getContext({ topics })`:
 
 ```ts
 import { createAction, type NileContext, getContext } from "@nilejs/nile";
@@ -174,8 +147,8 @@ const setStatusHandler = async (
     return Err("Order not found");
   }
 
-  const { websocket } = getContext({ topics: topics });
-  const sent = await websocket.send({
+  const { socket } = getContext({ topics: topics });
+  const sent = await socket.send({
     topic: "orders.updated",
     scope: { organizationId: order.organizationId },
     data: { orderId: order.id, status: order.status },
@@ -224,7 +197,7 @@ export const services = createServices([tasksService, ordersService]);
 
 ## 9. Configure the server
 
-Replace `src/index.ts`. It adds the `websocket` block, which uses the topics and the policies, and serves the HTTP and socket handlers with `Bun.serve`:
+Replace `src/index.ts`. It adds the `socket` block with the topics, and serves the HTTP and socket handlers with `Bun.serve`:
 
 ```ts
 import { createLogger, createNileServer, utils } from "@nilejs/nile";
@@ -232,7 +205,6 @@ import { sql } from "drizzle-orm";
 import { Ok, safeTry } from "@nilejs/nile/fp";
 import { config } from "@/config";
 import { db } from "@/db/client";
-import { authenticateSocket } from "@/realtime/socket-auth";
 import { topics } from "@/realtime/topics";
 import { services } from "@/services/services.config";
 
@@ -276,14 +248,9 @@ const server = await createNileServer({
   services,
   resources: { logger, database: db },
   auth: { secret: config.jwtSecret, method: "header" },
-  websocket: {
+  socket: {
     topics: topics,
     allowedOrigins: ["http://localhost:5173"],
-    authenticate: authenticateSocket,
-    authorizeSubscription: ({ scope, identity }) => {
-      return Ok(scope.organizationId === identity.session?.organizationId);
-    },
-    authorizePublish: () => Ok(false),
   },
   rest: {
     baseUrl: "/api",
@@ -310,16 +277,15 @@ const server = await createNileServer({
   },
 });
 
-const websocketBun = server.websocket?.bun;
-if (websocketBun === undefined) {
+const socketBun = server.socket?.bun;
+if (socketBun === undefined) {
   throw new Error("Bun socket adapter is unavailable");
 }
 
 const listener = Bun.serve({
   port: 8000,
   fetch: server.fetch,
-  websocket: websocketBun,
-  idleTimeout: server.websocket?.idleTimeout,
+  ...socketBun,
 });
 
 server.lifecycle.register({
@@ -331,8 +297,6 @@ server.lifecycle.register({
 
 console.log(`\nmy-app listening on http://localhost:${listener.port}\n`);
 ```
-
-`authorizePublish` returns `Ok(false)`, so clients cannot publish to the topic. Only server code sends messages.
 
 ## 10. Add the token helper
 
@@ -360,12 +324,12 @@ const token = await sign(
 console.log(token);
 ```
 
-## 11. Write the socket client
+## 11. Write the client
 
-Create `client-orders.ts`. It subscribes to `org_7`, calls `set-status` over the same socket connection and waits for the live message:
+Create `client-orders.ts`. It receives `org_7` updates on `nile.socket`, calls `set-status` over HTTP and waits for the live message:
 
 ```ts
-import { createNileSocketClient } from "@nilejs/client";
+import { createNileClient } from "@nilejs/client";
 import type { Topics } from "./src/realtime/topics";
 
 interface OrderActions {
@@ -376,13 +340,14 @@ interface OrderActions {
 
 const token = process.env.TOKEN ?? "";
 
-const socket = createNileSocketClient<OrderActions, Topics>({
-  baseUrl: "http://localhost:8000",
-  auth: () => ({ token: token }),
+const nile = createNileClient<OrderActions, Topics>({
+  baseUrl: "http://localhost:8000/api",
+  headers: { authorization: `Bearer ${token}` },
+  socket: { auth: () => ({ token: token }) },
 });
 
 const messageReceived = new Promise<void>((resolve) => {
-  const subscribed = socket.receive({
+  const subscribed = nile.socket.receive({
     topic: "orders.updated",
     scope: { organizationId: "org_7" },
     onMessage: (message) => {
@@ -403,20 +368,20 @@ await new Promise<void>((resolve) => {
   setTimeout(resolve, 500);
 });
 
-const changed = await socket.invoke({
+const changed = await nile.invoke({
   service: "orders",
   action: "set-status",
   payload: { orderId: "ord_1001", status: "packed" },
 });
 
 if (changed.isErr) {
-  console.error("invoke failed", changed.error, changed.details);
+  console.error("invoke failed", changed.error);
 } else {
   console.log("invoke ok", JSON.stringify(changed.value));
 }
 
 await messageReceived;
-socket.close();
+nile.socket.close();
 ```
 
 ## 12. Run it
@@ -450,10 +415,10 @@ You should see the subscription refused and the order reported as not found for 
 
 ```text
 subscribe failed Topic access denied
-invoke failed Order not found null
+invoke failed Order not found
 ```
 
-A client that sends no token cannot connect at all. Its socket attempt fails at authentication with `Socket connection failed`.
+A client that sends no token connects anonymously. `canReceive` sees no `user` and refuses the subscription, and the protected action refuses the call.
 
 ## 13. Type-check
 
@@ -471,12 +436,12 @@ You should see no output and exit with status 0.
 
 ## Troubleshooting
 
-- **`Socket connection failed`.** The token is missing, expired or signed with another secret. Sign a new token with the same `.env`.
+- **`Socket connection failed`.** The token is expired or signed with another secret, so the server refused the connection. Sign a new token with the same `.env`.
 - **The client connects but receives nothing.** Check that the subscription's `organizationId` matches the token and the order. Watch `subscribe failed` in the output.
 - **`Bun socket adapter is unavailable`.** The server did not start with `runtime: "bun"` and `native: true`. Check `src/index.ts`.
 
 ## See also
 
-- [WebSockets](/guide/features/websockets) explains each policy and limit.
+- [WebSockets](/guide/features/websockets) explains each permission check and limit.
 - [Sockets and typed messages](/guide/reference/realtime) has the complete contract.
 - [Protected profile](/guide/examples/protected-profile) explains the JWT check this example reuses.

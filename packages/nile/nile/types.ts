@@ -19,7 +19,6 @@ import type { LifecycleResource, NileLifecycle } from "../lifecycle/types";
 import type { ProjectOptions } from "../project/types";
 import type { NileScheduler, SchedulerOptions } from "../scheduling/types";
 import type { NileSocket, SocketConfig } from "../websocket/socket-types";
-import type {} from "../websocket/types";
 import type { createSchemaExporter } from "./schema";
 
 export interface WebSocketContext {
@@ -70,7 +69,8 @@ export interface Resources<TDB = unknown> {
 }
 
 export interface NileContext<TDB = unknown> {
-  websocket?: NileSocket;
+  /** Topic messaging; present when the server config has `socket`. */
+  socket?: NileSocket;
   /** Current invocation metadata; undefined outside an execution scope. */
   readonly execution?: ExecutionContext;
   /** Global key-value store — intentionally shared across requests */
@@ -131,8 +131,8 @@ interface SharedServerConfig {
   resources?: Resources<unknown>;
   /** JWT auth configuration — enables built-in token verification for protected actions */
   auth?: AuthConfig;
-  // Independent interfaces share the action engine.
-  websocket?: SocketConfig;
+  /** Typed topics over Socket.IO. Connections verify the JWT from `auth`. */
+  socket?: SocketConfig;
   rpc?: { enabled?: boolean };
   onBeforeActionHandler?: BeforeActionHandler<unknown, unknown>;
   onAfterActionHandler?: AfterActionHandler<unknown, unknown>;
@@ -179,7 +179,7 @@ export type NileStats = EngineStats & { startupDurationMs: number };
 
 export interface NileServer {
   schema: ReturnType<typeof createSchemaExporter>;
-  websocket?: NileSocket;
+  socket?: NileSocket;
   /** Combined HTTP/socket entry point. Bun supplies its server as the second argument. */
   fetch: (
     request: Request,

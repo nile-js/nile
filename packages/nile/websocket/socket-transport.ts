@@ -2,22 +2,24 @@ import { Err, Ok, type Result } from "slang-ts";
 import type { Socket } from "socket.io";
 import { Server } from "socket.io";
 import z from "zod";
+import type { AuthConfig } from "../auth/types";
 import { createRateLimiter } from "../controls/rate-limit";
 import { guardOperation } from "../diagnostics/guard-operation";
 import { toPublicJson } from "../diagnostics/public-json";
-import type { Engine } from "../engine/types";
 import type { NileLifecycle } from "../lifecycle/types";
 import { createTopicMessaging } from "../messaging/messaging";
 import { createTopicSchemaReader } from "../messaging/schema";
+import type { SocketUser, TopicAccess } from "../messaging/types";
 import { publicationSchema, selectionSchema } from "../messaging/validation";
-import { runInRequestScope } from "../nile/request-scope";
-import type { NileContext } from "../nile/types";
-import { checkSocketPolicy, invokeSocketAction } from "./socket-actions";
+import { authenticateWithJwt, expiryOf } from "./socket-auth";
 import { createBunSocketInterface } from "./socket-bun";
 import { resolveSocketLimits } from "./socket-limits";
 import { createNodeSocketAttachment } from "./socket-node";
-import type { NileSocket, SocketConfig } from "./socket-types";
-import type { WebSocketIdentity } from "./types";
+import type {
+  NileSocket,
+  SocketConfig,
+  SocketConnection,
+} from "./socket-types";
 
 type Ack = (result: {
   error: string | null;
@@ -26,17 +28,36 @@ type Ack = (result: {
 
 const TRAILING_SLASH = /\/$/;
 
-/** Own one Socket.IO server per Nile instance; HTTP and sockets share engine and lifecycle. */
+/** A permission must exist and return exactly `true`; throws and other values deny. */
+async function checkAccess<A>(
+  check: ((access: A) => boolean | Promise<boolean>) | undefined,
+  access: A
+): Promise<Result<true, string>> {
+  if (!check) {
+    return Err("Topic access is not permitted");
+  }
+  const allowed = await guardOperation(() => check(access));
+  return allowed.isOk && allowed.value === true
+    ? Ok(true)
+    : Err("Topic access denied");
+}
+
+/** Lifecycle callbacks are the app's code; their failures never break a connection. */
+function notify<T>(callback: ((input: T) => unknown) | undefined, input: T) {
+  if (callback) {
+    guardOperation(() => callback(input));
+  }
+}
+
+/** Own one Socket.IO server per Nile instance; HTTP and sockets share the lifecycle and JWT config. */
 export async function createSocketTransport({
   config,
-  engine,
-  context,
+  auth,
   lifecycle,
   runtime,
 }: {
   config: SocketConfig;
-  engine: Engine;
-  context: NileContext;
+  auth?: AuthConfig;
   lifecycle: NileLifecycle;
   runtime: "bun" | "node";
 }): Promise<NileSocket> {
@@ -45,7 +66,10 @@ export async function createSocketTransport({
     throw new Error("Socket path must be an absolute URL path");
   }
   const bounds = resolveSocketLimits(config);
-  const topics = createTopicMessaging(config.topics ?? {});
+  const definitions = config.topics ?? {};
+  const topics = createTopicMessaging(definitions);
+  const definitionOf = (topic: string) =>
+    Object.hasOwn(definitions, topic) ? definitions[topic] : undefined;
   const io = new Server({
     path,
     maxHttpBufferSize: bounds.bytes,
@@ -82,7 +106,7 @@ export async function createSocketTransport({
   }
   const identities = new Map<
     string,
-    { identity: WebSocketIdentity; request: Request }
+    { user: SocketUser | undefined; request: Request }
   >();
   const quota = createRateLimiter({
     strategy: "fixed-window",
@@ -118,14 +142,15 @@ export async function createSocketTransport({
             ),
           });
     let timer: ReturnType<typeof setTimeout>;
-    const authenticated = guardOperation(() =>
-      config.authenticate
-        ? config.authenticate(
-            request,
-            z.record(z.string(), z.string()).parse(socket.handshake.auth)
-          )
-        : Ok<WebSocketIdentity>({})
-    );
+    const authenticated = guardOperation(() => {
+      const handshake = {
+        request,
+        auth: z.record(z.string(), z.string()).parse(socket.handshake.auth),
+      };
+      return config.authenticate
+        ? config.authenticate(handshake)
+        : authenticateWithJwt(handshake, auth);
+    });
     // Retain the capacity reservation until the actual callback settles, even after timeout.
     authenticated.then(() => {
       pendingAuth--;
@@ -148,7 +173,10 @@ export async function createSocketTransport({
         next(new Error("Authentication failed"));
         return;
       }
-      identities.set(socket.id, { identity: result.value, request });
+      identities.set(socket.id, {
+        user: result.value ?? undefined,
+        request,
+      });
       next();
     });
   });
@@ -158,6 +186,11 @@ export async function createSocketTransport({
       socket.disconnect(true);
       return;
     }
+    const connection: SocketConnection = {
+      connectionId: socket.id,
+      user: entry.user,
+    };
+    const expiresAt = expiryOf(entry.user);
     const controller = new AbortController();
     const subscriptions = new Map<string, () => void>();
     let active = 0;
@@ -176,8 +209,7 @@ export async function createSocketTransport({
     });
     const alive = () =>
       !controller.signal.aborted &&
-      (entry.identity.expiresAt === undefined ||
-        entry.identity.expiresAt > Date.now());
+      (expiresAt === undefined || expiresAt > Date.now());
     const deliver = (message: z.output<z.ZodType>) => {
       if (!alive()) {
         socket.disconnect(true);
@@ -240,62 +272,34 @@ export async function createSocketTransport({
           });
       });
     };
-    const authorize = async (
-      input: z.input<typeof selectionSchema>,
-      publish: boolean
-    ) => {
-      const selection = await topics.validate(input);
-      if (selection.isErr) {
-        return selection;
-      }
-      const policy = publish
-        ? config.authorizePublish
-        : config.authorizeSubscription;
-      const allowed = await checkSocketPolicy(
-        policy
-          ? () =>
-              runInRequestScope(
-                {
-                  context,
-                  sessions: { ws: { ...entry.identity.session } },
-                  ws: { connection: socket.id },
-                },
-                () =>
-                  policy({
-                    topic: input.topic,
-                    scope: selection.value.scope,
-                    identity: entry.identity,
-                    context,
-                  })
-              )
-          : undefined
-      );
-      return allowed.isErr ? allowed : selection;
-    };
-    handle("nile:invoke", (input) =>
-      invokeSocketAction({
-        engine,
-        context,
-        identity: entry.identity,
-        signal: controller.signal,
-        request: entry.request,
-        input,
-        connection: socket.id,
-      })
-    );
+    const accessFor = (
+      topic: string,
+      scope: TopicAccess["scope"]
+    ): TopicAccess => ({
+      topic,
+      scope,
+      user: entry.user,
+      connectionId: socket.id,
+    });
     handle("nile:send", async (input) => {
       const parsed = publicationSchema.safeParse(input);
       if (!parsed.success) {
         return Err("Invalid topic message");
       }
-      const allowed = await authorize(parsed.data, true);
-      if (allowed.isErr) {
-        return allowed;
-      }
-      if (!alive()) {
-        return Err("Socket disconnected");
-      }
-      return topics.send(parsed.data);
+      const definition = definitionOf(parsed.data.topic);
+      return await topics.send(parsed.data, {
+        from: { connectionId: socket.id, userId: entry.user?.userId },
+        authorize: async (selected, data) => {
+          const allowed = await checkAccess(definition?.canSend, {
+            ...accessFor(selected.topic, selected.scope),
+            data,
+          });
+          if (allowed.isOk && !alive()) {
+            return Err("Socket disconnected");
+          }
+          return allowed;
+        },
+      });
     });
     const releaseSubscription = (
       key: string,
@@ -313,13 +317,28 @@ export async function createSocketTransport({
       }
       return Ok({ subscribed: true, scope });
     };
-    let pendingSubscriptions = 0;
-    handle("nile:receive", async (input) => {
+    /** Validate the selection, then require the topic's `canReceive`. */
+    const selectReceivable = async (input: z.input<z.ZodType>) => {
       const parsed = selectionSchema.safeParse(input);
       if (!parsed.success) {
         return Err("Invalid topic subscription");
       }
-      const allowed = await authorize(parsed.data, false);
+      const selected = await topics.validate(parsed.data);
+      if (selected.isErr) {
+        return selected;
+      }
+      const permitted = await checkAccess(
+        definitionOf(parsed.data.topic)?.canReceive,
+        accessFor(selected.value.topic, selected.value.scope)
+      );
+      if (permitted.isErr) {
+        return Err(permitted.error);
+      }
+      return Ok({ input: parsed.data, ...selected.value });
+    };
+    let pendingSubscriptions = 0;
+    handle("nile:receive", async (input) => {
+      const allowed = await selectReceivable(input);
       if (allowed.isErr) {
         return allowed;
       }
@@ -333,10 +352,10 @@ export async function createSocketTransport({
         return Err("Subscription capacity reached");
       }
       pendingSubscriptions++;
-      const subscribed = await topics.receive({
-        ...parsed.data,
-        onMessage: deliver,
-      });
+      const subscribed = await topics.receive(
+        { ...allowed.value.input, onMessage: deliver },
+        { connectionId: socket.id, userId: entry.user?.userId }
+      );
       pendingSubscriptions--;
       if (subscribed.isErr) {
         return subscribed;
@@ -360,7 +379,7 @@ export async function createSocketTransport({
       subscriptions.delete(selected.value.key);
       return Ok({ subscribed: false });
     });
-    socket.on("disconnect", () => {
+    socket.on("disconnect", (reason: string) => {
       controller.abort();
       for (const unsubscribe of subscriptions.values()) {
         unsubscribe();
@@ -368,7 +387,9 @@ export async function createSocketTransport({
       subscriptions.clear();
       identities.delete(socket.id);
       quota.reset(socket.id);
+      notify(config.onDisconnect, { ...connection, reason });
     });
+    notify(config.onConnect, connection);
   });
   lifecycle.register({
     name: "websocket",
@@ -388,9 +409,8 @@ export async function createSocketTransport({
   return {
     ...topics.api,
     path,
-    schema: createTopicSchemaReader(config.topics ?? {}),
+    schema: createTopicSchemaReader(definitions),
     ...createBunSocketInterface(bunEngine, bounds),
-    idleTimeout: 30,
     attachNode: nodeAttachment.attachNode,
     connections: () => identities.size,
   };

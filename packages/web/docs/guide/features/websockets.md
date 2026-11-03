@@ -1,24 +1,26 @@
 ---
 title: "WebSockets"
-description: "Define typed topics, control who can subscribe or publish, send messages from actions and receive them in a client"
+description: "Define typed topics with their own permissions, send messages from actions or clients, and receive them through the Nile client"
 ---
 
-Nile Js sends typed messages to connected clients over Socket.IO. You define each topic with a Zod schema, decide who may subscribe and publish, and send messages from your actions after a change commits. Your frontend receives them through `@nilejs/client`.
+Nile Js sends typed messages over Socket.IO. Each topic carries its own Zod schema, optional scope and permission checks. Server code sends with `getContext().socket.send`, and the frontend sends and receives through `nile.socket` on the same `@nilejs/client` you use for actions.
 
 ## When to use it
 
-Use topics when a screen should update without a refresh, such as a payment status or an order timeline. Do not use topics as a queue: delivery is live only, with no stored history and no replay after a reconnect.
+Use topics when a screen should update without a refresh, such as a payment status, an order timeline or a chat room. Do not use topics as a queue: delivery is live only, with no stored history and no replay after a reconnect.
+
+Actions stay on HTTP. The socket carries topic messages only.
 
 ## Complete example
 
-The server file defines the topic, the access policies and an action that publishes after it changes a payment. Policies run for every subscription and every client publish. `authenticate` runs once per connection.
+The server file defines two topics, a server config and an action that sends after it changes a payment:
 
 ```ts
 import {
-  type Message,
   createAction,
   createNileServer,
   createServices,
+  createTopic,
   createTopics,
   getContext,
   type InferTopics,
@@ -26,38 +28,52 @@ import {
 import { Err, Ok } from "@nilejs/nile/fp";
 import { z } from "zod";
 
-export const topics = createTopics({
-  "payments.updated": {
-    schema: z.object({
-      paymentId: z.string(),
-      status: z.enum(["pending", "paid"]),
-    }),
-    scope: z.object({
-      organizationId: z.string(),
-    }),
-  },
+const paymentUpdated = createTopic({
+  name: "payments.updated",
+  data: z.object({
+    paymentId: z.string(),
+    status: z.enum(["pending", "paid"]),
+  }),
+  scope: z.object({ organizationId: z.string() }),
+  canReceive: ({ scope, user }) =>
+    scope.organizationId === user?.organizationId,
 });
 
+const notice = createTopic({
+  name: "notices",
+  data: z.object({ text: z.string() }),
+  canReceive: ({ user }) => user !== undefined,
+});
+
+export const topics = createTopics([paymentUpdated, notice]);
 export type Topics = InferTopics<typeof topics>;
 
 const markPaidSchema = z.object({
   paymentId: z.string().min(1),
+  organizationId: z.string().min(1),
+  payerId: z.string().min(1),
 });
 
 type MarkPaidInput = z.infer<typeof markPaidSchema>;
 
 const markPaidHandler = async (data: MarkPaidInput) => {
-  const { websocket } = getContext({ topics: topics });
+  // Save the payment first, then tell the screens that show it.
+  const { socket } = getContext({ topics: topics });
 
-  const sent = await websocket.send({
+  const sent = await socket.send({
     topic: "payments.updated",
-    scope: { organizationId: "org_123" },
+    scope: { organizationId: data.organizationId },
     data: { paymentId: data.paymentId, status: "paid" },
   });
-
   if (sent.isErr) {
     return Err(sent.error);
   }
+
+  await socket.send({
+    topic: "notices",
+    to: { userId: data.payerId },
+    data: { text: "Your payment went through" },
+  });
 
   return Ok({ paymentId: data.paymentId, status: "paid" });
 };
@@ -84,54 +100,31 @@ export const server = await createNileServer({
   native: true,
   services: services,
   auth: { secret: config.jwtSecret, method: "header" },
-  websocket: {
+  socket: {
     topics: topics,
     allowedOrigins: ["https://shop.example.com"],
-    authenticate: (request, auth) => {
-      const token = auth.token;
-      if (token === undefined || token.length === 0) {
-        return Err("Missing token");
-      }
-      return Ok({
-        session: { organizationId: "org_123", userId: "user_1" },
-        expiresAt: Date.now() + 60 * 60 * 1000,
-      });
-    },
-    authorizeSubscription: ({ scope, identity }) => {
-      return Ok(scope.organizationId === identity.session?.organizationId);
-    },
-    authorizePublish: () => Ok(false),
   },
   rest: { baseUrl: "/api", allowedOrigins: ["https://shop.example.com"] },
 });
-
-export const describeMessage = (
-  message: Message<"payments.updated", Topics["payments.updated"]["data"]>
-): string => {
-  return `${message.data.paymentId} is ${message.data.status}`;
-};
 ```
 
-The `authenticate` callback in this example accepts any token and returns a fixed session. Replace it with real verification, as shown in [the realtime order example](/guide/examples/realtime-orders), before you deploy.
+Socket connections verify the same JWT as your protected actions. The `user` in a permission check is `{ userId, organizationId, claims }` from that token, or `undefined` when the client connected without one.
 
-The client subscribes to one organization's scope and then calls the action over the same connection:
+The client uses the same `createNileClient` you use for actions:
 
 ```ts
-import { createNileSocketClient } from "@nilejs/client";
+import { createNileClient } from "@nilejs/client";
 import type { Topics } from "./websockets";
 
-interface PaymentActions {
-  payments: {
-    "mark-paid": { paymentId: string };
-  };
-}
-
-const socket = createNileSocketClient<PaymentActions, Topics>({
-  baseUrl: "https://shop.example.com",
-  auth: () => ({ token: session.token }),
+const nile = createNileClient<Actions, Topics>({
+  baseUrl: "https://shop.example.com/api",
+  socket: {
+    auth: () => ({ token: session.token }),
+    onReconnect: () => reloadPayments(),
+  },
 });
 
-const received = await socket.receive({
+const received = await nile.socket.receive({
   topic: "payments.updated",
   scope: { organizationId: organizationId },
   onMessage: (message) => {
@@ -141,80 +134,133 @@ const received = await socket.receive({
 
 if (received.isErr) {
   console.error(received.error);
-} else {
-  console.log("subscribed");
 }
 
-const marked = await socket.invoke({
-  service: "payments",
-  action: "mark-paid",
-  payload: { paymentId: paymentId },
+const subscription = received.value;
+
+// Later, when the screen goes away:
+await subscription?.unsubscribe();
+nile.socket.close();
+```
+
+`receive` subscribes and starts listening in one call. It returns a Result, because the topic may not exist, the scope may be wrong or `canReceive` may refuse.
+
+## Two-way topics
+
+A topic with `canSend` accepts messages from clients. Nile validates the data against the schema, runs `canSend` with the parsed data, then delivers the message to everyone receiving that topic and scope, the sender included:
+
+```ts
+const chatMessage = createTopic({
+  name: "chat.message",
+  data: z.object({ text: z.string().min(1).max(2000) }),
+  scope: z.object({ roomId: z.string() }),
+  canReceive: ({ scope, user }) => isMember(user, scope.roomId),
+  canSend: ({ scope, user }) => isMember(user, scope.roomId),
+});
+```
+
+```ts
+const sent = await nile.socket.send({
+  topic: "chat.message",
+  scope: { roomId: roomId },
+  data: { text: text },
 });
 
-if (marked.isErr) {
-  console.error(marked.error, marked.details);
+if (sent.isErr) {
+  showError(sent.error);
 }
+```
 
-socket.close();
+A message a client sent carries `from: { connectionId, userId }`, set by the server. Server code can listen to those messages with `socket.receive`. Leave out the scope to hear every room:
+
+```ts
+const { socket } = getContext({ topics: topics });
+
+await socket.receive({
+  topic: "chat.message",
+  onMessage: async (message) => {
+    await saveChatMessage(message.scope, message.from?.userId, message.data.text);
+  },
+});
+```
+
+## Sending to one user
+
+`to` sends a message to the connections of one user, or to one connection, instead of everyone in a scope. Those connections still need to be receiving the topic, so `canReceive` still applies:
+
+```ts
+await socket.send({ topic: "notices", to: { userId: "user_1" }, data: { text: "Hi" } });
+await socket.send({ topic: "notices", to: { connectionId: connection }, data: { text: "Hi" } });
 ```
 
 ## Options that matter
 
+Server, under `socket`:
+
 | Option | Purpose |
 | --- | --- |
-| `topics` | Topic definitions from `createTopics`. Pass the same object to `getContext({ topics })`. |
+| `topics` | Topics from `createTopics`. Pass the same object to `getContext({ topics })`. |
 | `allowedOrigins` | Browser origins that may connect. Other browser origins are refused. |
 | `path` | Socket.IO path. Default `/socket.io`. Set it on the client too. |
-| `authenticate(request, auth)` | Verifies the connection and returns an identity with `session`, `credentials` and optional `expiresAt`. |
-| `authorizeSubscription` | Returns `Ok(true)` to allow a subscription. Omitting it denies subscriptions to clients. |
-| `authorizePublish` | Returns `Ok(true)` to allow a client to publish. Omitting it denies client publishes. |
-| `maxConnections` | Connection limit. Default 1000. |
-| `authenticationTimeoutMs` | Time allowed to authenticate. Default 5000. |
-| `maxMessageBytes`, `maxBufferedBytes` | Message and buffer limits. Default 1 MiB. |
-| `maxConcurrentMessages`, `maxSubscriptions`, `messagesPerMinute` | Per-connection limits. Defaults 32, 100 and 600. |
+| `authenticate({ request, auth })` | Replaces the built-in JWT check. Return `Ok(user)`, `Ok(undefined)` for anonymous, or `Err` to refuse. |
+| `onConnect`, `onDisconnect` | Called with `{ connectionId, user }` when a connection opens or closes. |
+| `limits` | `maxConnections` (1000), `authenticationTimeoutMs` (5000), `maxMessageBytes` and `maxBufferedBytes` (1 MiB), `maxConcurrentMessages` (32), `maxSubscriptions` (100), `messagesPerMinute` (600). |
+
+Topic, in `createTopic`:
+
+| Option | Purpose |
+| --- | --- |
+| `name` | Topic name, up to 256 characters. |
+| `data` | Zod schema for the message data. |
+| `scope` | Optional Zod schema. Subscribers and senders must give a scope that matches. |
+| `canReceive` | Returns `true` to let a client receive. Without it, clients cannot receive the topic. |
+| `canSend` | Returns `true` to let a client send. Without it, clients cannot send to the topic. |
+
+Client, under `socket` in `createNileClient`:
+
+| Option | Purpose |
+| --- | --- |
+| `url` | Socket server origin when it differs from `baseUrl`. Defaults to the origin of `baseUrl`. |
+| `path` | Socket.IO path. Default `/socket.io`. |
+| `auth` | Sent on connect, such as `{ token }`. A function runs again on every reconnect. |
+| `onConnect`, `onDisconnect`, `onReconnect`, `onError` | Connection events. `onError` also reports a subscription refused while restoring it after a reconnect. |
+| `timeout` | Connection and acknowledgement timeout. Default 30000 ms. |
 
 ## How it behaves
 
-- Authentication happens once per connection. Reconnecting refreshes it and rechecks subscriptions.
-- `send` on the server validates the payload against the topic schema and delivers it to subscribers whose scope matches. It does not run your client publish policy, because server code is trusted.
+- The client connects on its first `send` or `receive`. An app that never uses topics never opens a socket.
+- Authentication happens once per connection. A token's `exp` is checked on every message, and an expired connection is closed. Reconnecting refreshes the token and restores subscriptions.
+- A connection without a token is anonymous. A token that is present but invalid refuses the connection.
+- `send` on the server validates the data against the topic schema. It does not run `canSend`, because server code is trusted.
 - A successful `send` means the message was accepted for live delivery. It does not mean every subscriber processed it.
-- Send after the database write commits. A failed send does not undo the write.
 - Subscriptions, connections and delivery live in one process. Multiple replicas need an application-level bridge, which Nile Js does not supply.
-- A client's `receive` registers a listener. Several listeners can share one server subscription.
-
-## Limits
-
-- No durable storage, replay or offline queue. A client that disconnects misses messages sent while it was away. Reload its state from an action when it reconnects.
-- Protected actions called over the socket still need credentials on the connection. Put the verified headers in `credentials`.
-- Scopes must be JSON values that match the topic's `scope` schema.
 
 ## Common mistakes
 
-- Omitting `authorizeSubscription` and wondering why subscriptions fail. Omitting a policy denies by default.
-- Returning `Ok(true)` from `authorizePublish` for every client. Clients could then publish any message to any scope.
+- Leaving out `canReceive` and wondering why `receive` fails with "Topic access is not permitted". A missing check denies.
+- Returning `true` from `canSend` for everyone. Any client could then send any message to any scope.
 - Calling `getContext()` without `{ topics }`, which loses the topic types.
 - Sending a message before the database change commits.
+- Putting a path in `socket.url`. The socket connects to an origin; use `path` for a custom Socket.IO path.
 
 ## Server setup on Bun
 
-Serve the Bun socket handler with the HTTP fetch handler. Read the idle timeout from `server.websocket`:
+Spread the Bun adapter into `Bun.serve` next to the HTTP fetch handler:
 
 ```ts
-const websocketBun = server.websocket?.bun;
-if (websocketBun === undefined) {
+const socketBun = server.socket?.bun;
+if (socketBun === undefined) {
   throw new Error("Bun socket adapter is unavailable");
 }
 
 const listener = Bun.serve({
   port: 8000,
   fetch: server.fetch,
-  websocket: websocketBun,
-  idleTimeout: server.websocket?.idleTimeout,
+  ...socketBun,
 });
 ```
 
 ## See also
 
 - [Sockets and typed messages](/guide/reference/realtime) has the complete contract, schema export and limits.
-- [HTTP, WebSocket and direct calls](/guide/features/calling-actions) shows the three ways to call an action.
 - [Realtime order updates example](/guide/examples/realtime-orders) runs the full flow with two organizations.

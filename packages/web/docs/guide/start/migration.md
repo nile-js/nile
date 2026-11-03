@@ -63,6 +63,10 @@ Compare success, invalid input, missing identity, denied access and downstream f
 You can retain existing models, queries and integrations. Database migrations and transactional behavior remain application responsibilities. See [runtime adapters](/guide/start/runtime-adapters) before replacing Hono-specific integrations.
 
 
+## Sockets in Nile 2.0
+
+Nile 2.0 renames the `websocket` config to `socket` and moves permissions onto each topic. Define topics with `createTopic({ name, data, scope?, canReceive?, canSend? })` and `createTopics([...])`, and replace `authorizeSubscription` and `authorizePublish` with each topic's `canReceive` and `canSend`. Connections now verify the server's `auth` JWT by default. Sockets no longer call actions, and the frontend uses `nile.socket.send` and `nile.socket.receive` on `createNileClient` instead of `createNileSocketClient`. See [WebSockets](/guide/features/websockets) for the new setup.
+
 ## Slang 0.2.2 and database failures
 
 Nile now re-exports Slang 0.2.2 through `@nilejs/nile/fp`, including `list`, `struct`, `sets`, `memoized`, `taskGroup`, `createStepper`, `createSignal` and `createChannel`. Import from that entry point to share Nile's Result implementation.

@@ -61,7 +61,6 @@ export interface Action<T = unknown, E = string> {
   visibility?: {
     rest?: boolean;
     rpc?: boolean;
-    ws?: boolean;
   };
   isSpecial?: {
     contentType: "multipart/form-data" | "application/json" | "other";

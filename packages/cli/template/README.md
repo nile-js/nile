@@ -85,7 +85,7 @@ Responses have exactly `status`, `message` and `data`. The default success messa
 
 ## Optional features
 
-Keep business logic in actions and ordinary functions. Configure other features when the product needs them: [typed Socket.IO topics](https://nile-js.github.io/nile/guide/features/websockets/), [cron jobs](https://nile-js.github.io/nile/guide/features/cron-jobs/), [rate limits](https://nile-js.github.io/nile/guide/features/rate-limiting/), [queues](https://nile-js.github.io/nile/guide/features/queues-debounce-throttle/) and [telemetry](https://nile-js.github.io/nile/guide/features/telemetry/). The frontend package provides both `createNileClient` and a separate `createNileSocketClient`.
+Keep business logic in actions and ordinary functions. Configure other features when the product needs them: [typed Socket.IO topics](https://nile-js.github.io/nile/guide/features/websockets/), [cron jobs](https://nile-js.github.io/nile/guide/features/cron-jobs/), [rate limits](https://nile-js.github.io/nile/guide/features/rate-limiting/), [queues](https://nile-js.github.io/nile/guide/features/queues-debounce-throttle/) and [telemetry](https://nile-js.github.io/nile/guide/features/telemetry/). On the frontend, `createNileClient` calls actions and sends and receives topics through `nile.socket`.
 
 ## Adding services
 

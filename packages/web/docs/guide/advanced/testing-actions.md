@@ -133,6 +133,6 @@ Without `credentials`, the call returns `Authentication required: no request con
 
 ## See also
 
-- [HTTP, WebSocket and direct calls](/guide/features/calling-actions) explains `server.invoke` options.
+- [HTTP and direct calls](/guide/features/calling-actions) explains `server.invoke` options.
 - [Errors and Results](/guide/basics/errors-and-results) explains the Result shapes you assert on.
 - [Production operations](/guide/reference/operations) covers execution options your tests may need to set.

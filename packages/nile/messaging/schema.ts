@@ -25,7 +25,7 @@ export function createTopicSchemaReader(
           Object.entries(topics).map(([name, definition]) => [
             name,
             {
-              data: read(definition.schema),
+              data: read(definition.data),
               ...(definition.scope ? { scope: read(definition.scope) } : {}),
             },
           ])

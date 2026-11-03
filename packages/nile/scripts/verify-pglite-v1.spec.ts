@@ -6,25 +6,28 @@ import { PGlite } from "@electric-sql/pglite";
 import { serve } from "bun";
 import { Err, Ok, safeTry } from "slang-ts";
 import z from "zod";
-import { createNileSocketClient } from "../../client/src/socket-client";
+import { createNileClient } from "../../client/src/create-client";
 import { createQueue } from "../controls/queue";
 import { createAction } from "../engine/create-action";
-import { createTopics } from "../messaging/topics";
+import { createTopic, createTopics } from "../messaging/topics";
 import type { InferTopics } from "../messaging/types";
 import { createNileServer, getContext } from "../nile/server";
 
-const topics = createTopics({
-  "orders.updated": {
-    schema: z.object({ id: z.string(), total: z.number().nonnegative() }),
+const topics = createTopics([
+  createTopic({
+    name: "orders.updated",
+    data: z.object({ id: z.string(), total: z.number().nonnegative() }),
     scope: z.object({ organization: z.string() }),
-  },
-});
+    canReceive: ({ scope, user }) =>
+      scope.organization === user?.organizationId,
+  }),
+]);
 interface Actions {
   orders: { read: { id: string }; save: { id: string; total: number } };
 }
 
 // Explicitly selected by the owner: this fixture never reads application DB configuration.
-test("isolated PGlite persists direct/HTTP/socket actions and streams committed updates", async () => {
+test("isolated PGlite persists direct and HTTP actions and streams committed updates over sockets", async () => {
   const directory = await mkdtemp("/tmp/nile-v1-pglite-");
   const db = new PGlite(join(directory, "database"));
   await db.exec(
@@ -45,12 +48,14 @@ test("isolated PGlite persists direct/HTTP/socket actions and streams committed 
     logServices: false,
     rest: { baseUrl: "/api", allowedOrigins: [], discovery: { enabled: true } },
     execution: { timeoutMs: 5000 },
-    websocket: {
+    socket: {
       topics,
-      authenticate: (_request, auth) =>
-        Ok({ session: { organization: auth.organization ?? "shop" } }),
-      authorizeSubscription: ({ scope, identity }) =>
-        Ok(scope.organization === identity.session?.organization),
+      authenticate: ({ auth }) =>
+        Ok({
+          userId: "fixture",
+          organizationId: auth.organization ?? "shop",
+          claims: {},
+        }),
     },
     schedules: {
       jobs: [
@@ -84,7 +89,7 @@ test("isolated PGlite persists direct/HTTP/socket actions and streams committed 
                     [input.id, input.total]
                   );
                 });
-                const published = await getContext({ topics }).websocket.send({
+                const published = await getContext({ topics }).socket.send({
                   topic: "orders.updated",
                   scope: { organization: "shop" },
                   data: input,
@@ -112,26 +117,25 @@ test("isolated PGlite persists direct/HTTP/socket actions and streams committed 
       },
     ],
   });
-  if (!app.websocket?.bun) {
+  if (!app.socket?.bun) {
     throw new Error("Bun socket adapter missing");
   }
   const listener = serve({
     hostname: "127.0.0.1",
     port: 0,
-    idleTimeout: app.websocket.idleTimeout,
     fetch: app.fetch,
-    websocket: app.websocket.bun,
+    ...app.socket.bun,
   });
   const baseUrl = `http://127.0.0.1:${listener.port}`;
-  const socket = createNileSocketClient<Actions, InferTopics<typeof topics>>({
-    baseUrl,
-    timeout: 3000,
+  const nile = createNileClient<Actions, InferTopics<typeof topics>>({
+    baseUrl: `${baseUrl}/api`,
+    socket: { timeout: 3000 },
   });
-  const other = createNileSocketClient<Actions, InferTopics<typeof topics>>({
-    baseUrl,
-    auth: { organization: "other" },
-    timeout: 3000,
-  });
+  const socket = nile.socket;
+  const other = createNileClient<Actions, InferTopics<typeof topics>>({
+    baseUrl: `${baseUrl}/api`,
+    socket: { auth: { organization: "other" }, timeout: 3000 },
+  }).socket;
   const checked = await safeTry(async () => {
     const saved = await app.invoke({
       service: "orders",
@@ -174,13 +178,13 @@ test("isolated PGlite persists direct/HTTP/socket actions and streams committed 
       });
     assert.equal((await post(20)).status, 200);
     assert.equal(await received, 20);
-    const read = await socket.invoke({
+    const read = await nile.invoke({
       service: "orders",
       action: "read",
       payload: { id: "order-1" },
     });
     assert.equal(read.error, null);
-    assert.equal(read.data?.total, 20);
+    assert.equal((read.data as { total?: number } | null)?.total, 20);
     assert.equal((await post(-1)).status, 400);
     assert.equal(
       (

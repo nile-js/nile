@@ -7,7 +7,7 @@ import type { NileSocket } from "../websocket/socket-types";
 /** Export discovery contracts without requiring an HTTP listener or importing application boot code. */
 export function createSchemaExporter(
   engine: Engine,
-  websocket?: NileSocket
+  socket?: NileSocket
 ): (options: {
   path?: string;
 }) => Promise<Result<{ services: unknown; topics: unknown }, string>> {
@@ -23,7 +23,7 @@ export function createSchemaExporter(
     if (services.isErr || !services.value.status) {
       return Err("Could not export action schemas");
     }
-    const topics = websocket ? await websocket.schema() : Ok({});
+    const topics = socket ? await socket.schema() : Ok({});
     if (topics.isErr) {
       return Err("Could not export topic schemas");
     }

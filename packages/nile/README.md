@@ -210,7 +210,7 @@ Set `onBeforeActionHandler` to `authorizeAction` in your server configuration. Y
 | Task | Guide |
 | --- | --- |
 | Share a database, logger and other resources | [Context and logging](https://nile-js.github.io/nile/guide/features/context-and-logging/) |
-| Publish typed messages and call actions over Socket.IO | [WebSockets](https://nile-js.github.io/nile/guide/features/websockets/) |
+| Send and receive typed topic messages over Socket.IO | [WebSockets](https://nile-js.github.io/nile/guide/features/websockets/) |
 | Run recurring or one-time jobs | [Cron jobs](https://nile-js.github.io/nile/guide/features/cron-jobs/) |
 | Limit calls and concurrent work | [Rate limiting](https://nile-js.github.io/nile/guide/features/rate-limiting/) and [queues](https://nile-js.github.io/nile/guide/features/queues-debounce-throttle/) |
 | Save and query data with Drizzle helpers | [Database models](https://nile-js.github.io/nile/guide/features/database-models/) |

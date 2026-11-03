@@ -138,52 +138,57 @@ HTTP responses contain exactly `status`, `message` and `data`. The client maps t
 
 For a validation failure, `result.error` is the readable message and `result.details` contains `{ errorCode, issues }`. `ValidationFailureData` is exported for applications that narrow this unknown failure data. Other failures can carry different details, so check the shape before using it. Diagnostic failures may include `Error Code: <unique-code> - <message>` in the message. Treat the code as a reference to share with your backend logs; do not use it as a fixed error category.
 
-## Socket.IO actions and topics
+## Topics over Socket.IO
 
-Create a separate socket client. It owns the connection; you do not pass a socket into each invocation. Use shared types, generated action types, or define your frontend contracts explicitly. Topic definitions and authorization policies must also be configured on the backend.
+The same client sends and receives typed topic messages through `nile.socket`. Actions stay on HTTP. The socket connects on its first `send` or `receive`, so an app that never uses topics never opens one. Topic definitions and their `canReceive` and `canSend` checks live on the backend.
 
 ```ts
-import { createNileSocketClient } from "@nilejs/client";
+import { createNileClient } from "@nilejs/client";
 import type { ServicePayloads } from "./generated/types";
 
 type Topics = {
   "tasks.changed": {
     data: { taskId: string; status: string };
+    scope: { projectId: string };
   };
 };
 
-const socket = createNileSocketClient<ServicePayloads, Topics>({
-  baseUrl: "http://localhost:8000",
-  auth: () => {
-    return { token: "your-session-token" };
+const nile = createNileClient<ServicePayloads, Topics>({
+  baseUrl: "http://localhost:8000/api",
+  socket: {
+    // url: "https://realtime.example.com", when sockets run on another server
+    auth: () => {
+      return { token: "your-session-token" };
+    },
+    onReconnect: () => reloadTasks(),
   },
 });
 
-const subscription = await socket.receive({
+const received = await nile.socket.receive({
   topic: "tasks.changed",
+  scope: { projectId: "project-1" },
   onMessage: (message) => {
-    console.log(message.data.taskId, message.data.status);
+    console.log(message.data.taskId, message.data.status, message.from?.userId);
   },
 });
 
-const result = await socket.invoke({
-  service: "tasks",
-  action: "create",
-  payload: { title: "Ship the next feature" },
-});
+if (received.isErr) {
+  console.error(received.error);
+}
 
-const publication = await socket.send({
+const sent = await nile.socket.send({
   topic: "tasks.changed",
+  scope: { projectId: "project-1" },
   data: { taskId: "task-123", status: "done" },
 });
 
-if (subscription.isOk) {
-  await subscription.value.unsubscribe();
+if (received.isOk) {
+  await received.value.unsubscribe();
 }
-socket.close();
+nile.socket.close();
 ```
 
-Keep the client open for as long as your application needs live updates. The connection is lazy, subscriptions rejoin after reconnecting, and disconnected writes are not buffered or retried automatically. Topic names, data and any required scope are checked from the supplied types; Nile validates them and enforces policies on the backend. The server can expose HTTP and sockets together. See [WebSockets](https://nile-js.github.io/nile/guide/features/websockets/) for server setup.
+`send`, `receive` and `unsubscribe` return a Result: a topic may not exist, the scope may be wrong or the server may refuse access. Subscriptions are restored after a reconnect, and a refused one is reported to `socket.onError`. Messages sent while disconnected are not buffered or retried. `socket.url` defaults to the origin of `baseUrl`; set `socket.path` when the server uses a custom Socket.IO path. See [WebSockets](https://nile-js.github.io/nile/guide/features/websockets/) for server setup.
 
 ## Uploads
 
@@ -201,7 +206,7 @@ Multipart calls share the same cancellation, deadline and Result behavior as JSO
 
 ## Compatibility
 
-Version 1.0.1 supports Nile 1.0.3 and 1.0.4 while keeping the existing HTTP and socket client APIs. It fixes header merging, cancellation and timeout cleanup; it does not add fields to Nile’s wire contract.
+Version 2.0.0 supports Nile 2.x. Topics moved onto `createNileClient` as `nile.socket`, and `createNileSocketClient` and socket `invoke` were removed; call actions with `nile.invoke` over HTTP. The HTTP client API is unchanged.
 
 ## License
 

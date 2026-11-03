@@ -19,8 +19,8 @@ type TopicServerConfig<
   T extends import("../messaging/types").TopicDefinitions,
   C = ServerConfig,
 > = C extends ServerConfig
-  ? Omit<C, "websocket"> & {
-      websocket: import("../websocket/socket-types").SocketConfig<T>;
+  ? Omit<C, "socket"> & {
+      socket: import("../websocket/socket-types").SocketConfig<T>;
     }
   : never;
 
@@ -42,8 +42,8 @@ export function getContext<
   const T extends import("../messaging/types").TopicDefinitions,
 >(options: {
   topics: T;
-}): Omit<NileContext, "websocket"> & {
-  websocket: import("../websocket/socket-types").NileSocket<T>;
+}): Omit<NileContext, "socket"> & {
+  socket: import("../websocket/socket-types").NileSocket<T>;
 };
 export function getContext<TDB = unknown>(): NileContext<TDB>;
 export function getContext(options?: {
@@ -57,8 +57,7 @@ export function getContext(options?: {
   }
   if (
     options &&
-    (!context.websocket ||
-      context.get("nile:websocket:topics") !== options.topics)
+    (!context.socket || context.get("nile:socket:topics") !== options.topics)
   ) {
     throw new Error(
       "Topic definitions do not belong to the active Nile instance"
@@ -82,11 +81,11 @@ export function createNileServer<
 >(
   config: TopicServerConfig<T>
 ): Promise<
-  Omit<NileServer, "websocket" | "context"> & {
-    context: Omit<NileContext, "websocket"> & {
-      websocket: import("../websocket/socket-types").NileSocket<T>;
+  Omit<NileServer, "socket" | "context"> & {
+    context: Omit<NileContext, "socket"> & {
+      socket: import("../websocket/socket-types").NileSocket<T>;
     };
-    websocket: import("../websocket/socket-types").NileSocket<T>;
+    socket: import("../websocket/socket-types").NileSocket<T>;
   }
 >;
 export function createNileServer(config: ServerConfig): Promise<NileServer>;
@@ -221,7 +220,7 @@ export async function createNileServer(
         context: nileContext as NileContext<unknown>,
       };
 
-      server.schema = createSchemaExporter(engine, server.websocket);
+      server.schema = createSchemaExporter(engine, server.socket);
       attachSchedules(server, config.schedules, execution);
       lifecycle.ready();
       server.scheduler?.start();

@@ -30,12 +30,12 @@ Full text: https://nile-js.github.io/nile/llms-full.txt
 - [Examples](https://nile-js.github.io/nile/guide/examples): Build complete Nile Js features step by step, with every file, the exact commands and the output you should see
 - [Protected profile](https://nile-js.github.io/nile/guide/examples/protected-profile): Add JWT verification to the starter, read the signed-in user in an action, and enforce a role with a global before hook
 - [Rate-limited quote](https://nile-js.github.io/nile/guide/examples/rate-limited-quote): Publish a public price action that allows a short burst per client, then refuses requests until the bucket refills
-- [Realtime order updates](https://nile-js.github.io/nile/guide/examples/realtime-orders): Define typed order topics, verify the JWT on each socket connection, publish from a protected action and receive updates in a client
+- [Realtime order updates](https://nile-js.github.io/nile/guide/examples/realtime-orders): Define a typed order topic, let the server JWT check each socket connection, send from a protected action and receive updates in a client
 - [Tasks API in React](https://nile-js.github.io/nile/guide/examples/tasks-react): Call the starter's tasks actions from a React component with @nilejs/client, handle failures and allow the Vite origin
 - [Weekly report](https://nile-js.github.io/nile/guide/examples/weekly-report): Build a weekly report from the tasks table with a cron job, hand delivery to a queue and run the job on demand
 - [API discovery and schemas](https://nile-js.github.io/nile/guide/features/api-discovery): Let trusted tools list services and read action input schemas through the explore and schema intents
 - [Authentication and hooks](https://nile-js.github.io/nile/guide/features/authentication-and-hooks): Protect actions with JWT verification, enforce required roles and run checks before or after an action
-- [HTTP, WebSocket and direct calls](https://nile-js.github.io/nile/guide/features/calling-actions): Call one action from HTTP, a socket client or your own backend code, and know what each path requires
+- [HTTP and direct calls](https://nile-js.github.io/nile/guide/features/calling-actions): Call one action from HTTP or your own backend code, and know what each path requires
 - [Context and logging](https://nile-js.github.io/nile/guide/features/context-and-logging): Read shared resources, the current session and execution details from a handler, and write structured logs
 - [Cron jobs](https://nile-js.github.io/nile/guide/features/cron-jobs): Run recurring business work on calendar, interval or one-time schedules, and trigger a job by hand for testing
 - [Database models](https://nile-js.github.io/nile/guide/features/database-models): Create typed model helpers from a Drizzle table for inserts, lookups, updates, deletes and pagination
@@ -47,7 +47,7 @@ Full text: https://nile-js.github.io/nile/llms-full.txt
 - [Retries and utilities](https://nile-js.github.io/nile/guide/features/retries-and-utilities): Retry external calls with jittered backoff, keep a bounded short-lived store, and wrap database failures safely
 - [Telemetry](https://nile-js.github.io/nile/guide/features/telemetry): Send action traces and metrics from Nile Js to an OpenTelemetry collector over OTLP HTTP
 - [Validation and errors](https://nile-js.github.io/nile/guide/features/validation-and-errors): Validate action input with Zod and return expected failures as Results that clients can read
-- [WebSockets](https://nile-js.github.io/nile/guide/features/websockets): Define typed topics, control who can subscribe or publish, send messages from actions and receive them in a client
+- [WebSockets](https://nile-js.github.io/nile/guide/features/websockets): Define typed topics with their own permissions, send messages from actions or clients, and receive them through the Nile client
 - [Build with Nile](https://nile-js.github.io/nile/guide): Ship business operations with a consistent structure your team can follow as the application grows
 - [CORS](https://nile-js.github.io/nile/guide/internals/cors): Choose allowed origins globally and for individual action routes
 - [Model helpers](https://nile-js.github.io/nile/guide/internals/db/create-model): Create a Drizzle-backed model with typed CRUD methods and Result failures
@@ -62,7 +62,7 @@ Full text: https://nile-js.github.io/nile/llms-full.txt
 - [Coding assistants](https://nile-js.github.io/nile/guide/reference/llms-txt): Give coding assistants the same service and action documentation your team reads
 - [Running Nile in production](https://nile-js.github.io/nile/guide/reference/operations): Run direct calls, schedules, controlled work and diagnostics in production
 - [Performance and methodology](https://nile-js.github.io/nile/guide/reference/performance): Read the recorded shopping-workflow results and reproduce the comparison
-- [Sockets and typed messages](https://nile-js.github.io/nile/guide/reference/realtime): Invoke actions and exchange validated topic messages through Socket.IO
+- [Sockets and typed messages](https://nile-js.github.io/nile/guide/reference/realtime): Exchange validated topic messages through Socket.IO, with per-topic permissions and targeted delivery
 - [Shared backend utilities](https://nile-js.github.io/nile/guide/reference/shared-utilities): Use database, retry, storage and execution helpers through the utils namespace
 - [Application structure](https://nile-js.github.io/nile/guide/start/application-structure): Give each service, action and business rule a predictable place as your team grows
 - [Deployment](https://nile-js.github.io/nile/guide/start/deploy): Build, check readiness and shut down a Nile application
